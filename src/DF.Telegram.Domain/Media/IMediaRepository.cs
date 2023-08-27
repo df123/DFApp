@@ -1,0 +1,22 @@
+﻿using JetBrains.Annotations;
+using System.Threading.Tasks;
+using Volo.Abp.Domain.Repositories;
+
+namespace DF.Telegram.Media
+{
+    public interface IMediaRepository : IRepository<MediaInfo, long>
+    {
+        Task<MediaInfo[]> GetByAccessHashID(long accessHash, long tId);
+
+        Task<MediaInfo[]> GetByValueSHA1([NotNull] string valueSHA1);
+
+        Task<long> GetDownloadsSize();
+
+        Task<MediaInfo?> GetVideoEarliest();
+
+        Task<MediaInfo?> GetVideoReturn();
+
+        Task<MediaInfo[]> GetMediaNotReturn();
+
+    }
+}
