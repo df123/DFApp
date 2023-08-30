@@ -42,6 +42,7 @@ using DF.Telegram.Background;
 using Volo.Abp.Imaging;
 using DF.Telegram.Media;
 using Volo.Abp.AspNetCore.Mvc.AntiForgery;
+using System.Collections.Generic;
 
 namespace DF.Telegram.Web;
 
@@ -110,7 +111,7 @@ public class TelegramWebModule : AbpModule
         context.Services.AddSingleton<IQueueBase<string>, QueueBase<string>>();
         context.Services.AddSingleton<IQueueBase<DocumentQueueModel>, QueueBase<DocumentQueueModel>>();
         context.Services.AddSingleton<IQueueBase<PhotoQueueModel>, QueueBase<PhotoQueueModel>>();
-        context.Services.AddSingleton<IQueueBase<MediaInfoDto[]>, QueueBase<MediaInfoDto[]>>();
+        context.Services.AddSingleton<List<MediaInfoDto[]>>();
         context.Services.AddSingleton(new AppsettingsHelper(context.Services.GetConfiguration()));
         context.Services.AddSingleton(new HashHelper());
 

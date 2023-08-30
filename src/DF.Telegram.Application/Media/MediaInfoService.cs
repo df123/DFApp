@@ -162,27 +162,24 @@ namespace DF.Telegram.Media
         {
             try
             {
-                
                 if (_mediaQueue != null)
                 {
+                    Logger.LogInformation("Retrieve local to start deletion");
                     foreach (var item in _mediaQueue)
                     {
                         if (item != null && item.Length > 0)
                         {
                             var ids = item.Select(x => x.Id).ToList();
-                            Logger.LogInformation("Retrieve local to start deletion");
                             _documentQueue.Clear();
                             await _mediaInfoRepository.DeleteManyAsync(ids);
                             foreach (var item2 in item)
                             {
                                 SpaceHelper.DeleteFile(item2.SavePath);
                             }
-                            Logger.LogInformation("Fetch Local Delete Complete");
-                            return "success";
                         }
-                        return "fail";
                     }
-                    return "fail";
+                    Logger.LogInformation("Fetch Local Delete Complete");
+                    return "Success";
                 }
                 else
                 {
