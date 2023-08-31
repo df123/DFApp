@@ -21,12 +21,12 @@ namespace DF.Telegram.Media
             _dataFilter = dataFilter;
         }
 
-        public async Task<MediaInfo[]> GetByAccessHashID(long accessHash, long tId)
+        public async Task<MediaInfo[]> GetByAccessHashID(long accessHash, long tId, long size)
         {
             using (_dataFilter.Disable<ISoftDelete>())
             {
                 var dbSet = await GetDbSetAsync();
-                return await dbSet.Where(m => m.AccessHash == accessHash && m.TID == tId).ToArrayAsync();
+                return await dbSet.Where(m => m.AccessHash == accessHash && m.TID == tId && m.Size == size).ToArrayAsync();
             }
         }
 
@@ -46,28 +46,28 @@ namespace DF.Telegram.Media
                 DateTime todayAtZero = DateTimeHelper.GetTodayAtZero();
                 DateTime tomorrowAtZero = DateTimeHelper.GetTomorrowAtZero();
                 var dbSet = await GetDbSetAsync();
-                return await dbSet.Where(m => m.IsDownload == true &&
-                        m.TaskComplete >= todayAtZero &&
-                        m.TaskComplete < tomorrowAtZero).SumAsync(x => x.Size);
+                return await dbSet.Where(m => 
+                        m.LastModificationTime >= todayAtZero &&
+                        m.LastModificationTime < tomorrowAtZero).SumAsync(x => x.Size);
             }
         }
 
         public async Task<MediaInfo[]> GetMediaNotReturn()
         {
             var dbSet = await GetDbSetAsync();
-            return await dbSet.Where(m => m.IsReturn == false && m.IsDownload == true).ToArrayAsync();
+            return await dbSet.Where(m => (!string.IsNullOrWhiteSpace(m.SavePath))).ToArrayAsync();
         }
 
-        public async Task<MediaInfo?> GetVideoEarliest()
-        {
-            var dbSet = await GetDbSetAsync();
-            return await dbSet.FirstOrDefaultAsync(m => m.IsDownload == true);
-        }
+        //public async Task<MediaInfo?> GetVideoEarliest()
+        //{
+        //    var dbSet = await GetDbSetAsync();
+        //    return await dbSet.FirstOrDefaultAsync(m => m.IsDownload == true);
+        //}
 
-        public async Task<MediaInfo?> GetVideoReturn()
-        {
-            var dbSet = await GetDbSetAsync();
-            return await dbSet.FirstOrDefaultAsync(m => m.IsReturn == true && m.IsDownload == true);
-        }
+        //public async Task<MediaInfo?> GetVideoReturn()
+        //{
+        //    var dbSet = await GetDbSetAsync();
+        //    return await dbSet.FirstOrDefaultAsync(m => m.IsReturn == true && m.IsDownload == true);
+        //}
     }
 }

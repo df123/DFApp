@@ -23,7 +23,6 @@ namespace DF.Telegram.Migrations
             modelBuilder.Entity("DF.Telegram.IP.DynamicIP", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("TEXT");
 
                     b.Property<string>("ConcurrencyStamp")
@@ -104,12 +103,6 @@ namespace DF.Telegram.Migrations
                         .HasDefaultValue(false)
                         .HasColumnName("IsDeleted");
 
-                    b.Property<bool>("IsDownload")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<bool>("IsReturn")
-                        .HasColumnType("INTEGER");
-
                     b.Property<DateTime?>("LastModificationTime")
                         .HasColumnType("TEXT")
                         .HasColumnName("LastModificationTime");
@@ -117,6 +110,9 @@ namespace DF.Telegram.Migrations
                     b.Property<Guid?>("LastModifierId")
                         .HasColumnType("TEXT")
                         .HasColumnName("LastModifierId");
+
+                    b.Property<string>("MimeType")
+                        .HasColumnType("TEXT");
 
                     b.Property<string>("SavePath")
                         .HasColumnType("TEXT");
@@ -127,7 +123,7 @@ namespace DF.Telegram.Migrations
                     b.Property<long>("TID")
                         .HasColumnType("INTEGER");
 
-                    b.Property<DateTime?>("TaskComplete")
+                    b.Property<string>("Title")
                         .HasColumnType("TEXT");
 
                     b.Property<string>("ValueSHA1")

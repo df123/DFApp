@@ -3,8 +3,10 @@ using DF.Telegram.Media;
 using DF.Telegram.Queue;
 using Microsoft.Extensions.Logging;
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using TL;
@@ -59,8 +61,21 @@ namespace DF.Telegram.Background
 
         async Task ClientUpdate(IObject arg)
         {
-            if (arg is not Updates { updates: var updates } upd) return;
-            foreach (var update in updates)
+            if (arg is not Updates { updates: Update[] updateArray }) return;
+            string title = string.Empty;
+            if (arg is Updates)
+            {
+                Dictionary<long, ChatBase> chats = ((Updates)arg).Chats;
+                StringBuilder sb = new StringBuilder(8);
+                foreach (var chat in chats.Values)
+                {
+                    sb.Append(chat.Title);
+                    sb.Append(",");
+                }
+                sb.Remove(sb.Length - 1, 1);
+                title = sb.ToString();
+            }
+            foreach (Update update in updateArray)
             {
                 if (update is not UpdateNewMessage { message: Message message })
                 {
@@ -84,7 +99,9 @@ namespace DF.Telegram.Background
                         AccessHash = document.access_hash,
                         TID = document.id,
                         Size = document.size,
-                    });
+                        MimeType = document.mime_type,
+                        Title = title
+                    }) ;
                     if (canAdd != null)
                     {
                         _documentQueue.AddItem(new DocumentQueueModel()
@@ -102,6 +119,8 @@ namespace DF.Telegram.Background
                         AccessHash = photo.access_hash,
                         TID = photo.id,
                         Size = photo.LargestPhotoSize.FileSize,
+                        MimeType = "JPG",
+                        Title = title
                     });
                     if (canAdd != null)
                     {
@@ -118,21 +137,18 @@ namespace DF.Telegram.Background
 
         public async Task<MediaInfo?> AddDownloadInfo(MediaInfo mediaInfo)
         {
-            mediaInfo.IsDownload = false;
-            mediaInfo.IsReturn = false;
-
-            MediaInfo[] isArray = await _mediaInfoRepository.GetByAccessHashID(mediaInfo.AccessHash, mediaInfo.TID);
+            MediaInfo[] isArray = await _mediaInfoRepository.GetByAccessHashID(mediaInfo.AccessHash, mediaInfo.TID, mediaInfo.Size);
             if (isArray != null && isArray.Length > 0)
             {
-                Logger.LogInformation($"AccessHash:{mediaInfo.AccessHash},ID:{mediaInfo.TID},Already exists;");
+                Logger.LogInformation($"AccessHash:{mediaInfo.AccessHash},ID:{mediaInfo.TID},Size:{mediaInfo.Size},Already exists;");
 
-                return isArray.FirstOrDefault(m => m.IsDownload == false);
+                return null;
             }
 
             MediaInfo dto = await _mediaInfoRepository.InsertAsync(mediaInfo);
             if (dto != null && dto.Id > -1)
             {
-                Logger.LogInformation($"AccessHash:{mediaInfo.AccessHash},ID:{mediaInfo.TID},Save successfully;");
+                Logger.LogInformation($"New Media Save successfully;");
             }
             return dto;
         }
@@ -144,7 +160,7 @@ namespace DF.Telegram.Background
                 try
                 {
                     var model = await queue.GetItemAsync(stoppingToken);
-                    if(model == null)
+                    if (model == null)
                     {
                         continue;
                     }
@@ -173,8 +189,6 @@ namespace DF.Telegram.Background
 
                     mediaInfo.AccessHash = photo.access_hash;
                     mediaInfo.TID = photo.id;
-                    mediaInfo.IsDownload = true;
-                    mediaInfo.TaskComplete = DateTime.Now;
                     mediaInfo.SavePath = fileName;
                     mediaInfo.ValueSHA1 = valueSHA1;
 
@@ -202,7 +216,7 @@ namespace DF.Telegram.Background
                         continue;
                     }
                     var model = await queue.GetItemAsync(stoppingToken);
-                    if(model == null)
+                    if (model == null)
                     {
                         continue;
                     }
@@ -237,8 +251,6 @@ namespace DF.Telegram.Background
 
                     mediaInfo.AccessHash = document.access_hash;
                     mediaInfo.TID = document.id;
-                    mediaInfo.IsDownload = true;
-                    mediaInfo.TaskComplete = DateTime.Now;
                     mediaInfo.SavePath = fileName;
                     mediaInfo.ValueSHA1 = valueSHA1;
 
@@ -258,6 +270,7 @@ namespace DF.Telegram.Background
         {
             try
             {
+                if (mediaInfo.ValueSHA1 == null) { return; }
                 MediaInfo[] isArray = await _mediaInfoRepository.GetByValueSHA1(mediaInfo.ValueSHA1);
                 if (isArray.Length > 0)
                 {
@@ -281,6 +294,7 @@ namespace DF.Telegram.Background
             Logger.LogInformation($"Start deleting duplicates。ID:{mediaInfo.TID},AccessHash:{mediaInfo.AccessHash},Hash:{mediaInfo.ValueSHA1}");
             try
             {
+                if (mediaInfo.SavePath == null) { return; }
                 File.Delete(mediaInfo.SavePath);
                 await _mediaInfoRepository.DeleteAsync(mediaInfo);
 
@@ -292,29 +306,32 @@ namespace DF.Telegram.Background
             }
         }
 
-        private async Task DeleteFile()
-        {
-            MediaInfo? mediaInfo = null;
-            switch (AppsettingsHelper.app(new string[] { "RunConfig", "DeleteFileModle" }))
-            {
-                case "direct":
-                    mediaInfo = await _mediaInfoRepository.GetVideoEarliest();
-                    break;
-                default:
-                    mediaInfo = await _mediaInfoRepository.GetVideoReturn();
-                    break;
-            }
-            if (mediaInfo != null)
-            {
-                SpaceHelper.DeleteFile(mediaInfo.SavePath);
-                await _mediaInfoRepository.DeleteAsync(mediaInfo);
-                Logger.LogInformation($"Delete ID:{mediaInfo.TID},AccessHash:{mediaInfo.AccessHash},Hash:{mediaInfo.ValueSHA1},Sizes:{mediaInfo.Size}");
-            }
-            else
-            {
-                Thread.Sleep(10000);
-            }
-        }
+        //private async Task DeleteFile()
+        //{
+        //    MediaInfo? mediaInfo = null;
+        //    switch (AppsettingsHelper.app(new string[] { "RunConfig", "DeleteFileModle" }))
+        //    {
+        //        case "direct":
+        //            mediaInfo = await _mediaInfoRepository.GetVideoEarliest();
+        //            break;
+        //        default:
+        //            mediaInfo = await _mediaInfoRepository.GetVideoReturn();
+        //            break;
+        //    }
+        //    if (mediaInfo != null)
+        //    {
+        //        if (mediaInfo.SavePath != null)
+        //        {
+        //            SpaceHelper.DeleteFile(mediaInfo.SavePath);
+        //        }
+        //        await _mediaInfoRepository.DeleteAsync(mediaInfo);
+        //        Logger.LogInformation($"Delete ID:{mediaInfo.TID},AccessHash:{mediaInfo.AccessHash},Hash:{mediaInfo.ValueSHA1},Sizes:{mediaInfo.Size}");
+        //    }
+        //    else
+        //    {
+        //        Thread.Sleep(10000);
+        //    }
+        //}
 
         public async Task<double> CalculationDownloadsSize()
         {
@@ -358,7 +375,7 @@ namespace DF.Telegram.Background
                     Thread.Sleep(int.Parse(AppsettingsHelper.app(new string[] {
                 "RunConfig", "IntervalTime","SpaceTime","Duration"})));
                 }
-                await DeleteFile();
+                //await DeleteFile();
             }
             Logger.LogInformation($"{DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")} Enough space available, start downloading");
         }

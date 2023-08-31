@@ -7,12 +7,9 @@ namespace DF.Telegram.Media
         public long AccessHash { get; set; }
         public long TID { get; set; }
         public long Size { get; set; }
-        public bool IsDownload { get; set; }
-        public bool IsReturn { get; set; }
-        public DateTime? TaskComplete { get; set; }
-#nullable disable
-        public string SavePath { get; set; }
-        public string ValueSHA1 { get; set; }
-#nullable restore
+        public string? SavePath { get; set; }
+        public string? ValueSHA1 { get; set; }
+        public string? MimeType { get; set; }
+        public string? Title { get; set; }
     }
 }

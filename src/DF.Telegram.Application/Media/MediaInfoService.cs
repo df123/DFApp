@@ -52,7 +52,7 @@ namespace DF.Telegram.Media
         public async Task<MediaInfoDto[]> GetByAccessHashID(MediaInfoDto downloadInfo)
         {
             return ObjectMapper.Map<MediaInfo[], MediaInfoDto[]>(
-                await _mediaInfoRepository.GetByAccessHashID(downloadInfo.AccessHash, downloadInfo.TID));
+                await _mediaInfoRepository.GetByAccessHashID(downloadInfo.AccessHash, downloadInfo.TID,downloadInfo.Size));
         }
 
         public async Task<MediaInfoDto[]> GetByValueSHA1(MediaInfoDto mediaInfoDto)
@@ -66,15 +66,15 @@ namespace DF.Telegram.Media
             return await _mediaInfoRepository.GetDownloadsSize();
         }
 
-        public async Task<MediaInfoDto?> GetVideoEarliest()
-        {
-            return ObjectMapper.Map<MediaInfo?, MediaInfoDto?>(await _mediaInfoRepository.GetVideoEarliest());
-        }
+        //public async Task<MediaInfoDto?> GetVideoEarliest()
+        //{
+        //    return ObjectMapper.Map<MediaInfo?, MediaInfoDto?>(await _mediaInfoRepository.GetVideoEarliest());
+        //}
 
-        public async Task<MediaInfoDto?> GetVideoReturn()
-        {
-            return ObjectMapper.Map<MediaInfo?, MediaInfoDto?>(await _mediaInfoRepository.GetVideoReturn());
-        }
+        //public async Task<MediaInfoDto?> GetVideoReturn()
+        //{
+        //    return ObjectMapper.Map<MediaInfo?, MediaInfoDto?>(await _mediaInfoRepository.GetVideoReturn());
+        //}
 
         public QueueCountDto GetQueueCount()
         {

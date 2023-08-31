@@ -109,8 +109,6 @@ namespace DF.Telegram.Web.Controller
                 EnableRangeProcessing = true
             };
 
-            dto.IsReturn = true;
-
             var updateDto = _objectMapper.Map<MediaInfoDto, CreateUpdateMediaInfoDto>(dto);
 
             Check.NotNull(updateDto, nameof(updateDto));

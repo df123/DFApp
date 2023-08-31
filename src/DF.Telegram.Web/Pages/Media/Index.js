@@ -64,17 +64,8 @@ $(function () {
                     data: "size"
                 },
                 {
-                    title: l('MediaIsDownload'),
-                    data: "isDownload"
-                },
-                {
-                    title: l('MediaIsReturn'),
-                    data: "isReturn"
-                },
-                {
-                    title: l('MediaTaskComplete'),
-                    data: "taskComplete",
-                    dataFormat: "datetime"
+                    title: l('MediaMimeType'),
+                    data: "mimeType"
                 },
                 {
                     title: l('MediaSavePath'),
@@ -93,6 +84,10 @@ $(function () {
                     title: l('MediaLastModificationTime'),
                     data: "lastModificationTime",
                     dataFormat: "datetime"
+                },
+                {
+                    title: l('MediaChatTitle'),
+                    data: "title"
                 }
             ]
         })
