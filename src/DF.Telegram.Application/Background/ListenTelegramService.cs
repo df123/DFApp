@@ -177,7 +177,10 @@ namespace DF.Telegram.Background
                         continue;
                     }
 
-                    await IsSpaceUpperLimit(photo.LargestPhotoSize.FileSize);
+                    if (IsSpaceUpperLimit(photo.LargestPhotoSize.FileSize))
+                    {
+                        continue;
+                    }
                     await IsUpperLimit();
                     DeleteTempFiles(savePathPrefix);
                     string fileName = Path.Combine(savePathPrefix, $"{photo.id}.jpg");
@@ -232,7 +235,10 @@ namespace DF.Telegram.Background
                     {
                         continue;
                     }
-                    await IsSpaceUpperLimit(document.size + (2048L * 1024L * 1024L));
+                    if(IsSpaceUpperLimit(document.size + (2048L * 1024L * 1024L)))
+                    {
+                        continue;
+                    }
                     await IsUpperLimit();
                     if (document.size / 1024 / 1024 <= 10)
                     {
@@ -306,33 +312,6 @@ namespace DF.Telegram.Background
             }
         }
 
-        //private async Task DeleteFile()
-        //{
-        //    MediaInfo? mediaInfo = null;
-        //    switch (AppsettingsHelper.app(new string[] { "RunConfig", "DeleteFileModle" }))
-        //    {
-        //        case "direct":
-        //            mediaInfo = await _mediaInfoRepository.GetVideoEarliest();
-        //            break;
-        //        default:
-        //            mediaInfo = await _mediaInfoRepository.GetVideoReturn();
-        //            break;
-        //    }
-        //    if (mediaInfo != null)
-        //    {
-        //        if (mediaInfo.SavePath != null)
-        //        {
-        //            SpaceHelper.DeleteFile(mediaInfo.SavePath);
-        //        }
-        //        await _mediaInfoRepository.DeleteAsync(mediaInfo);
-        //        Logger.LogInformation($"Delete ID:{mediaInfo.TID},AccessHash:{mediaInfo.AccessHash},Hash:{mediaInfo.ValueSHA1},Sizes:{mediaInfo.Size}");
-        //    }
-        //    else
-        //    {
-        //        Thread.Sleep(10000);
-        //    }
-        //}
-
         public async Task<double> CalculationDownloadsSize()
         {
             long size = await _mediaInfoRepository.GetDownloadsSize();
@@ -362,22 +341,21 @@ namespace DF.Telegram.Background
             }
         }
 
-        public async Task IsSpaceUpperLimit(long sizes)
+        public bool IsSpaceUpperLimit(long sizes)
         {
-            double.TryParse(AppsettingsHelper.app("RunConfig", "AvailableFreeSpace"), out double availableFreeSpace);
-            Logger.LogInformation($"{DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")} Available Space {SpaceHelper.GetDriveAvailableMB(AppsettingsHelper.app("RunConfig", "SaveDrive"))} MB");
-            while (SpaceHelper.GetDriveAvailableMB(AppsettingsHelper.app("RunConfig", "SaveDrive")) - StorageUnitConversionHelper.ByteToMB(sizes) < availableFreeSpace)
+            double availableFreeSpace = double.Parse(AppsettingsHelper.app("RunConfig", "AvailableFreeSpace"));
+            string driveName = AppsettingsHelper.app("RunConfig", "SaveDrive");
+            if ((SpaceHelper.GetDriveAvailableMB(driveName) - StorageUnitConversionHelper.ByteToMB(sizes)) < availableFreeSpace)
             {
-                if (bool.Parse(AppsettingsHelper.app(new string[] {
-                "RunConfig", "IntervalTime","SpaceTime","Enable"})))
-                {
-                    Logger.LogInformation($"{DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")}The available space has reached the lower limit, downloading is suspended");
-                    Thread.Sleep(int.Parse(AppsettingsHelper.app(new string[] {
-                "RunConfig", "IntervalTime","SpaceTime","Duration"})));
-                }
-                //await DeleteFile();
+                Logger.LogInformation($"{DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")} Out of space stop downloading");
+                return true;
             }
-            Logger.LogInformation($"{DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")} Enough space available, start downloading");
+            else
+            {
+                Logger.LogInformation($"{DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")} Enough space available, start downloading");
+                return false;
+            }
+            
         }
 
         public void DeleteTempFiles(string path)

@@ -66,16 +66,6 @@ namespace DF.Telegram.Media
             return await _mediaInfoRepository.GetDownloadsSize();
         }
 
-        //public async Task<MediaInfoDto?> GetVideoEarliest()
-        //{
-        //    return ObjectMapper.Map<MediaInfo?, MediaInfoDto?>(await _mediaInfoRepository.GetVideoEarliest());
-        //}
-
-        //public async Task<MediaInfoDto?> GetVideoReturn()
-        //{
-        //    return ObjectMapper.Map<MediaInfo?, MediaInfoDto?>(await _mediaInfoRepository.GetVideoReturn());
-        //}
-
         public QueueCountDto GetQueueCount()
         {
             QueueCountDto queueCountDto = new QueueCountDto();

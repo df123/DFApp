@@ -12,11 +12,6 @@ namespace DF.Telegram.Media
 
         Task<long> GetDownloadsSize();
 
-        //Task<MediaInfo?> GetVideoEarliest();
-
-        //Task<MediaInfo?> GetVideoReturn();
-
         Task<MediaInfo[]> GetMediaNotReturn();
-
     }
 }

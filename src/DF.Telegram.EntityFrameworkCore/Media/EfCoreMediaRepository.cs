@@ -57,17 +57,5 @@ namespace DF.Telegram.Media
             var dbSet = await GetDbSetAsync();
             return await dbSet.Where(m => (!string.IsNullOrWhiteSpace(m.SavePath))).ToArrayAsync();
         }
-
-        //public async Task<MediaInfo?> GetVideoEarliest()
-        //{
-        //    var dbSet = await GetDbSetAsync();
-        //    return await dbSet.FirstOrDefaultAsync(m => m.IsDownload == true);
-        //}
-
-        //public async Task<MediaInfo?> GetVideoReturn()
-        //{
-        //    var dbSet = await GetDbSetAsync();
-        //    return await dbSet.FirstOrDefaultAsync(m => m.IsReturn == true && m.IsDownload == true);
-        //}
     }
 }
