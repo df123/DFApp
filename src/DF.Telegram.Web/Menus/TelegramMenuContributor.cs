@@ -41,6 +41,7 @@ public class TelegramMenuContributor : IMenuContributor
 
             mediaFirst.AddItem(new ApplicationMenuItem(TelegramMenus.Home, l["Menu:Media"], "~/Media", icon: "fas fa-play", order: 1));
             mediaFirst.AddItem(new ApplicationMenuItem(TelegramMenus.Home, l["Menu:Media:ExternalLink"], "~/Media/ExternalLink", icon: "fas fa-link", order: 2));
+            mediaFirst.AddItem(new ApplicationMenuItem(TelegramMenus.Home, l["Menu:Media:Chart"], "~/Media/Chart", icon: "fas fa-chart-bar", order: 3));
 
             context.Menu.Items.Insert(1, mediaFirst);
         }

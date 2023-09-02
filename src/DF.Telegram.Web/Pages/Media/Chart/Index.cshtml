@@ -1,0 +1,18 @@
+﻿@page
+@using DF.Telegram.Web.Pages.Media.Chart
+@using DF.Telegram.Localization
+@using Microsoft.Extensions.Localization
+@model IndexModel
+@inject IStringLocalizer<TelegramResource> L
+@section scripts{
+    <abp-script src="/Pages/Media/Chart/Index.js"></abp-script>
+}
+<abp-script src="/libs/chart.js/chart.umd.js" />
+<abp-card>
+    <abp-card-header>
+        <abp-card-title>@L["Media:ChartTitle"]</abp-card-title>
+    </abp-card-header>
+    <abp-card-body>
+        <canvas id="meidaChart"></canvas>
+    </abp-card-body>
+</abp-card>

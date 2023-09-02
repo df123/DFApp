@@ -3,6 +3,7 @@ using DF.Telegram.Helper;
 using JetBrains.Annotations;
 using Microsoft.EntityFrameworkCore;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Dynamic.Core;
 using System.Threading.Tasks;
@@ -19,6 +20,26 @@ namespace DF.Telegram.Media
         public EfCoreMediaRepository(IDbContextProvider<TelegramDbContext> dbContextProvider, IDataFilter dataFilter) : base(dbContextProvider)
         {
             _dataFilter = dataFilter;
+        }
+
+
+        public async Task<List<MediaInfo>> GetAllTitleNotNullContainSoftDelete()
+        {
+            using (_dataFilter.Disable<ISoftDelete>())
+            {
+                var dbSet = await GetDbSetAsync();
+                return await dbSet.Where(item => (!string.IsNullOrWhiteSpace(item.Title))).ToListAsync();
+            }
+        }
+
+
+        public async Task<MediaInfo[]> GetAllContainSoftDelete()
+        {
+            using (_dataFilter.Disable<ISoftDelete>())
+            {
+                var dbSet = await GetDbSetAsync();
+                return await dbSet.Where(item => true).ToArrayAsync();
+            }
         }
 
         public async Task<MediaInfo[]> GetByAccessHashID(long accessHash, long tId, long size)
@@ -46,7 +67,7 @@ namespace DF.Telegram.Media
                 DateTime todayAtZero = DateTimeHelper.GetTodayAtZero();
                 DateTime tomorrowAtZero = DateTimeHelper.GetTomorrowAtZero();
                 var dbSet = await GetDbSetAsync();
-                return await dbSet.Where(m => 
+                return await dbSet.Where(m =>
                         m.LastModificationTime >= todayAtZero &&
                         m.LastModificationTime < tomorrowAtZero).SumAsync(x => x.Size);
             }

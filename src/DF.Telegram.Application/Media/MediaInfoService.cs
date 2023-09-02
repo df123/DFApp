@@ -183,5 +183,27 @@ namespace DF.Telegram.Media
                 return ex.Message;
             }
         }
+
+        public async Task<ChartDataDto> GetChartData()
+        {
+            List<MediaInfo> lms = await _mediaInfoRepository.GetAllTitleNotNullContainSoftDelete();
+            var temp = lms.GroupBy(item => item.Title)
+                .Select(item =>
+                new
+                {
+                    Title = item.Key,
+                    Count = item.Count()
+                });
+
+            ChartDataDto dto = new ChartDataDto();
+            dto.Labels = new List<string>(temp.Count());
+            dto.Datas = new List<int>(temp.Count());
+            foreach (var item in temp)
+            {
+                dto.Labels.Add(item.Title!);
+                dto.Datas.Add(item.Count);
+            }
+            return dto;
+        }
     }
 }

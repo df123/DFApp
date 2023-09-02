@@ -25,5 +25,7 @@ namespace DF.Telegram.Media
 
         Task<string> GetExternalLinkDownload();
 
+        Task<ChartDataDto> GetChartData();
+
     }
 }
