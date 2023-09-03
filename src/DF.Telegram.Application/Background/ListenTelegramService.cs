@@ -101,7 +101,7 @@ namespace DF.Telegram.Background
                         Size = document.size,
                         MimeType = document.mime_type,
                         Title = title
-                    }) ;
+                    });
                     if (canAdd != null)
                     {
                         _documentQueue.AddItem(new DocumentQueueModel()
@@ -183,8 +183,13 @@ namespace DF.Telegram.Background
                     }
                     await IsUpperLimit();
                     DeleteTempFiles(savePathPrefix);
-                    string fileName = Path.Combine(savePathPrefix, $"{photo.id}.jpg");
-                    Logger.LogInformation($"Photo download {fileName},access:{photo.access_hash},id:{photo.id}");
+                    string title = PathHelper.RemoveInvalidPath(mediaInfo.Title!);
+                    string titleDirectoy = Path.Combine(savePathPrefix, title);
+                    if (!Directory.Exists(titleDirectoy))
+                    {
+                        Directory.CreateDirectory(titleDirectoy);
+                    }
+                    string fileName = Path.Combine(titleDirectoy, $"{photo.id}.jpg");
                     using var fileStream = File.Create(fileName);
                     var type = await _client.DownloadFileAsync(photo, fileStream);
                     string valueSHA1 = HashHelper.CalculationHash(fileStream);
@@ -197,7 +202,7 @@ namespace DF.Telegram.Background
 
                     await UpdateDownloadInfo(mediaInfo);
 
-                    Logger.LogInformation($"Photo download completed {fileName},access:{photo.access_hash},id:{photo.id}");
+                    Logger.LogInformation($"Photo download completed {fileName}");
                 }
                 catch (Exception e)
                 {
@@ -235,7 +240,7 @@ namespace DF.Telegram.Background
                     {
                         continue;
                     }
-                    if(IsSpaceUpperLimit(document.size + (2048L * 1024L * 1024L)))
+                    if (IsSpaceUpperLimit(document.size + (2048L * 1024L * 1024L)))
                     {
                         continue;
                     }
@@ -246,9 +251,14 @@ namespace DF.Telegram.Background
                     }
                     DeleteTempFiles(savePathPrefix);
                     int slash = document.mime_type.IndexOf('/');
-                    string fileName = Path.Combine(savePathPrefix, $"{document.id}.{document.mime_type[(slash + 1)..]}");
+                    string title = PathHelper.RemoveInvalidPath(mediaInfo.Title!);
+                    string titleDirectoy = Path.Combine(savePathPrefix, title);
+                    if (!Directory.Exists(titleDirectoy))
+                    {
+                        Directory.CreateDirectory(titleDirectoy);
+                    }
+                    string fileName = Path.Combine(titleDirectoy, $"{document.id}.{document.mime_type[(slash + 1)..]}");
                     string fileNameTemp = $"{fileName}.temp";
-                    Logger.LogInformation($"Video download {fileName},access:{document.access_hash},id:{document.id}");
                     using var fileStream = File.Create(fileNameTemp);
                     await _client.DownloadFileAsync(document, fileStream);
                     string valueSHA1 = HashHelper.CalculationHash(fileStream);
@@ -262,7 +272,7 @@ namespace DF.Telegram.Background
 
                     await UpdateDownloadInfo(mediaInfo);
 
-                    Logger.LogInformation($"Video download completed {fileName},access:{document.access_hash},id:{document.id}");
+                    Logger.LogInformation($"Video download completed {fileName}");
                 }
                 catch (Exception e)
                 {
@@ -355,7 +365,7 @@ namespace DF.Telegram.Background
                 Logger.LogInformation($"{DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")} Enough space available, start downloading");
                 return false;
             }
-            
+
         }
 
         public void DeleteTempFiles(string path)

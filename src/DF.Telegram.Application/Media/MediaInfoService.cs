@@ -103,31 +103,20 @@ namespace DF.Telegram.Media
             string returnDownloadUrlPrefix = AppsettingsHelper.app(new string[] { "RunConfig", "ReturnDownloadUrlPrefix" });
             Check.NotNullOrWhiteSpace(returnDownloadUrlPrefix, nameof(returnDownloadUrlPrefix));
 
+            string photoSavePath = AppsettingsHelper.app("RunConfig", "SavePhotoPathPrefix");
+            Check.NotNullOrWhiteSpace(photoSavePath, nameof(photoSavePath));
+
             var temp = await _mediaInfoRepository.GetMediaNotReturn();
 
             string zipPhotoName = $"{DateTime.Now.ToString("yyyyMMddHHmmss")}.zip";
-            string zipPhotoPathName = $"{AppsettingsHelper.app("RunConfig", "SavePhotoPathPrefix")}/{zipPhotoName}";
+            string zipPhotoPathName = Path.Combine(Path.GetDirectoryName(photoSavePath)!, zipPhotoName);
 
-            using (FileStream zipToCreate = new FileStream(zipPhotoPathName, FileMode.Create))
-            {
-                using (ZipArchive archive = new ZipArchive(zipToCreate, ZipArchiveMode.Create))
-                {
-                    foreach (var item in temp)
-                    {
-                        if (item.SavePath != null && Path.GetExtension(item.SavePath).Equals(".jpg", StringComparison.OrdinalIgnoreCase) && File.Exists(item.SavePath))
-                        {
-                            string entryName = Path.GetFileName(item.SavePath);
-                            archive.CreateEntryFromFile(item.SavePath, entryName);
-                        }
-                    }
-                }
-            }
-
+            ZipFile.CreateFromDirectory(photoSavePath, zipPhotoPathName);
 
             StringBuilder stringBuilder = new StringBuilder();
             if (File.Exists(zipPhotoPathName))
             {
-                stringBuilder.AppendLine($"{returnDownloadUrlPrefix}Photo/{zipPhotoName}");
+                stringBuilder.AppendLine(Path.Combine(returnDownloadUrlPrefix, zipPhotoName));
                 _mediaQueue.Add(new MediaInfoDto[] {new MediaInfoDto() { SavePath=zipPhotoPathName} });
             }
             foreach (var mediaInfo in temp)
