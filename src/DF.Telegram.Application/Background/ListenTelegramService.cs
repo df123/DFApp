@@ -250,12 +250,7 @@ namespace DF.Telegram.Background
                     DeleteTempFiles(savePathPrefix);
                     int slash = document.mime_type.IndexOf('/');
                     string title = PathHelper.RemoveInvalidPath(mediaInfo.Title!);
-                    string titleDirectoy = Path.Combine(savePathPrefix, title);
-                    if (!Directory.Exists(titleDirectoy))
-                    {
-                        Directory.CreateDirectory(titleDirectoy);
-                    }
-                    string fileName = Path.Combine(titleDirectoy, $"{document.id}.{document.mime_type[(slash + 1)..]}");
+                    string fileName = Path.Combine(savePathPrefix, $"{document.id}{title}.{document.mime_type[(slash + 1)..]}");
                     string fileNameTemp = $"{fileName}.temp";
                     using var fileStream = File.Create(fileNameTemp);
                     await _client.DownloadFileAsync(document, fileStream);
