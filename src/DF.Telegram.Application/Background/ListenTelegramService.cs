@@ -66,15 +66,13 @@ namespace DF.Telegram.Background
             if (arg is Updates)
             {
                 Dictionary<long, ChatBase> chats = ((Updates)arg).Chats;
-                StringBuilder sb = new StringBuilder(8);
+                title = chats.First().Value.Title;
                 foreach (var chat in chats.Values)
                 {
-                    sb.Append(chat.Title);
-                    sb.Append(",");
+                    Logger.LogInformation($"Title:{chat.Title},ID:{chat.ID},IsActive:{chat.IsActive},IsChannel:{chat.IsChannel},IsGroup:{chat.IsGroup}");
                 }
-                sb.Remove(sb.Length - 1, 1);
-                title = sb.ToString();
             }
+
             foreach (Update update in updateArray)
             {
                 if (update is not UpdateNewMessage { message: Message message })
