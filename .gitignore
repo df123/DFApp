@@ -276,3 +276,4 @@ src/DF.Telegram.Blazor.Server.Tiered/Logs/*
 /src/DF.Telegram.Web/Test.ps1
 /src/DF.Telegram.Web/VueApp/yarn.lock
 /src/DF.Telegram.Web/wwwroot/dist
+/src/DF.Telegram.Web/VueApp/pnpm-lock.yaml

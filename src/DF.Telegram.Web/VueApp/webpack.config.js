@@ -5,7 +5,8 @@ const { DefinePlugin } = require('webpack')
 
 module.exports = {
     entry: {
-        main: './src/main.ts'
+        MediaChart: './src/Media/Chart/main.ts',
+        MediaExternalLink: './src/Media/ExternalLink/main.ts'
     },
     output: {
         filename: '[name].entry.js',
@@ -18,10 +19,14 @@ module.exports = {
             {
                 test: /\.tsx?$/,
                 exclude: /node_modules/,
-                loader: 'ts-loader',
-                options: {
-                    appendTsSuffixTo: [/\.vue$/],
-                },
+                use: [
+                    {
+                      loader: 'ts-loader',
+                      options: {
+                        transpileOnly: true
+                      }
+                    }
+                  ]
             },
             {
                 test: /\.css$/,
