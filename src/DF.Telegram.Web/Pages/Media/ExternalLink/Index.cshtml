@@ -5,7 +5,8 @@
 @model IndexModel
 @inject IStringLocalizer<TelegramResource> L
 @section scripts{
-    <abp-script src="/Pages/Media/ExternalLink/Index.js"></abp-script>
+    <abp-script src="/dist/MediaExternalLink.entry.js"></abp-script>
+    <abp-script src="/dist/951.entry.js"></abp-script>
 }
 
 <abp-card>
@@ -13,11 +14,6 @@
         <abp-card-title>@L["Media:ExternalLinkTitle"]</abp-card-title>
     </abp-card-header>
     <abp-card-body>
-        <a abp-button="Primary" id="btnExternalLink">@L["Media:ExternalLinkTitle:GetLink"]</a>
-        <a abp-button="Primary" id="btnCopy">@L["Media:ExternalLinkTitle:Copy"]</a>
-        <a abp-button="Primary" id="btnMove">@L["Media:ExternalLinkTitle:Move"]</a>
-        <div class="form-floating" style="margin-top:10px;">
-            <textarea class="form-control" id="textExternalLink" style="height: 400px"></textarea>
-        </div>
+        <div id="app"></div>
     </abp-card-body>
 </abp-card>

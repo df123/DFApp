@@ -1,14 +1,51 @@
 <template>
-    <button @click="count++">Count2 is: {{ count }}</button>
+    <div>
+        <el-row>
+            <div class="botton-area">
+                <el-button type="primary" @click="getLink">{{ l('Media:ExternalLinkTitle:GetLink') }}</el-button>
+                <el-button type="primary" @click="copy">{{ l('Media:ExternalLinkTitle:Copy') }}</el-button>
+                <el-button type="primary" @click="move">{{ l('Media:ExternalLinkTitle:Move') }}</el-button>
+            </div>
+        </el-row>
+        <el-row style="margin-top: 10px;">
+            <el-input v-model="textarea" :rows="2" type="textarea" :autosize="{ minRows: 2, maxRows: 30 }"
+                placeholder="Please input" />
+        </el-row>
+    </div>
 </template>
 
 <script setup lang="ts">
-    import { ref } from 'vue'
-    const count = ref(0)
+import { ref } from 'vue'
+
+
+const l: Function = abp.localization.getResource('Telegram') as Function;
+
+const textarea = ref('')
+
+async function getLink() {
+    try {
+        let links: string = await dF.telegram.media.mediaInfo.getExternalLinkDownload() as string;
+        textarea.value = links;
+    } catch (error) {
+        alert(error);
+    }
+}
+
+function copy() {
+    navigator.clipboard.writeText(textarea.value);
+    alert(l('Media:ExternalLinkTitle:CopySuccessMesage'));
+}
+
+async function move() {
+    let result = await dF.telegram.media.mediaInfo.moveDownloaded() as string;
+    textarea.value = result;
+}
+
 </script>
 
 <style scoped>
-    button {
-        font-weight: bold;
-    }
+botton-area {
+    display: flex;
+    margin-bottom: 10px;
+}
 </style>

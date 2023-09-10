@@ -2,6 +2,10 @@
 const { VueLoaderPlugin } = require('vue-loader/dist/index')
 const { CleanWebpackPlugin } = require('clean-webpack-plugin')
 const { DefinePlugin } = require('webpack')
+// const MiniCssExtractPlugin = require("mini-css-extract-plugin");
+const AutoImport = require('unplugin-auto-import/webpack')
+const Components = require('unplugin-vue-components/webpack')
+const { ElementPlusResolver } = require('unplugin-vue-components/resolvers')
 
 module.exports = {
     entry: {
@@ -12,8 +16,14 @@ module.exports = {
         filename: '[name].entry.js',
         path: path.resolve(__dirname, '..', 'wwwroot', 'dist')
     },
-    devtool: 'source-map',
-    mode: 'development',
+    optimization: {
+        splitChunks: {
+            chunks: 'all',
+        },
+    },
+    // devtool: 'source-map',
+    // mode: 'development',
+    mode: 'production',
     module: {
         rules: [
             {
@@ -21,16 +31,17 @@ module.exports = {
                 exclude: /node_modules/,
                 use: [
                     {
-                      loader: 'ts-loader',
-                      options: {
-                        transpileOnly: true
-                      }
+                        loader: 'ts-loader',
+                        options: {
+                            transpileOnly: true
+                        }
                     }
-                  ]
+                ]
             },
             {
                 test: /\.css$/,
                 use: ['style-loader', 'css-loader'],
+                // use: [{ loader: MiniCssExtractPlugin.loader }, 'css-loader']
             },
             {
                 test: /\.(eot|woff(2)?|ttf|otf|svg)$/i,
@@ -49,5 +60,14 @@ module.exports = {
             __VUE_PROD_DEVTOOLS__: false,
             __VUE_OPTIONS_API__: false,
         }),
+        // new MiniCssExtractPlugin({
+        //     filename: "[name].entry.css"
+        // })
+        AutoImport({
+            resolvers: [ElementPlusResolver()],
+        }),
+        Components({
+            resolvers: [ElementPlusResolver()],
+        })
     ]
 };
