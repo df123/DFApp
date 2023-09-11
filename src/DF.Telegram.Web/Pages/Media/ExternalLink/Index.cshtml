@@ -5,8 +5,10 @@
 @model IndexModel
 @inject IStringLocalizer<TelegramResource> L
 @section scripts{
-    <abp-script src="/dist/MediaExternalLink.entry.js"></abp-script>
+    @* MediaExternalLink *@
     <abp-script src="/dist/951.entry.js"></abp-script>
+    <abp-script src="/dist/MediaExternalLink.entry.js"></abp-script>
+    @* MediaExternalLink *@
 }
 
 <abp-card>

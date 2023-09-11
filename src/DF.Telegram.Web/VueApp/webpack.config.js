@@ -6,6 +6,7 @@ const { DefinePlugin } = require('webpack')
 const AutoImport = require('unplugin-auto-import/webpack')
 const Components = require('unplugin-vue-components/webpack')
 const { ElementPlusResolver } = require('unplugin-vue-components/resolvers')
+const AbpRazorWebpackPlugin = require('./plugin/AbpRazorWebpackPlugin/index.js')
 
 module.exports = {
     entry: {
@@ -68,6 +69,7 @@ module.exports = {
         }),
         Components({
             resolvers: [ElementPlusResolver()],
-        })
+        }),
+        new AbpRazorWebpackPlugin({ path: 'dist', htmlpath: '../Pages' })
     ]
 };
