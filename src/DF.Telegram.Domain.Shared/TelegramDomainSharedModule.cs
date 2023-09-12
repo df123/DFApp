@@ -1,4 +1,4 @@
-﻿using DF.Telegram.Localization;
+using DF.Telegram.Localization;
 using Volo.Abp.AuditLogging;
 using Volo.Abp.BackgroundJobs;
 using Volo.Abp.FeatureManagement;
@@ -12,6 +12,8 @@ using Volo.Abp.SettingManagement;
 using Volo.Abp.TenantManagement;
 using Volo.Abp.Validation.Localization;
 using Volo.Abp.VirtualFileSystem;
+using Volo.Abp.BlobStoring.Database;
+using Volo.CmsKit;
 
 namespace DF.Telegram;
 
@@ -25,7 +27,9 @@ namespace DF.Telegram;
     typeof(AbpSettingManagementDomainSharedModule),
     typeof(AbpTenantManagementDomainSharedModule)    
     )]
-public class TelegramDomainSharedModule : AbpModule
+[DependsOn(typeof(BlobStoringDatabaseDomainSharedModule))]
+    [DependsOn(typeof(CmsKitDomainSharedModule))]
+    public class TelegramDomainSharedModule : AbpModule
 {
     public override void PreConfigureServices(ServiceConfigurationContext context)
     {

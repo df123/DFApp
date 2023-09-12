@@ -43,6 +43,7 @@ using Volo.Abp.Imaging;
 using DF.Telegram.Media;
 using Volo.Abp.AspNetCore.Mvc.AntiForgery;
 using System.Collections.Generic;
+using Volo.CmsKit.Web;
 
 namespace DF.Telegram.Web;
 
@@ -62,7 +63,8 @@ namespace DF.Telegram.Web;
     typeof(AbpImagingAbstractionsModule),
     typeof(AbpImagingImageSharpModule)
     )]
-public class TelegramWebModule : AbpModule
+[DependsOn(typeof(CmsKitWebModule))]
+    public class TelegramWebModule : AbpModule
 {
     public override void PreConfigureServices(ServiceConfigurationContext context)
     {

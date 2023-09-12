@@ -1,4 +1,4 @@
-﻿using DF.Telegram.IP;
+using DF.Telegram.IP;
 using DF.Telegram.Media;
 using Microsoft.EntityFrameworkCore;
 using Volo.Abp.AuditLogging.EntityFrameworkCore;
@@ -15,6 +15,8 @@ using Volo.Abp.PermissionManagement.EntityFrameworkCore;
 using Volo.Abp.SettingManagement.EntityFrameworkCore;
 using Volo.Abp.TenantManagement;
 using Volo.Abp.TenantManagement.EntityFrameworkCore;
+using Volo.Abp.BlobStoring.Database.EntityFrameworkCore;
+using Volo.CmsKit.EntityFrameworkCore;
 
 namespace DF.Telegram.EntityFrameworkCore;
 
@@ -94,5 +96,7 @@ public class TelegramDbContext :
             b.ConfigureByConvention();
         });
 
-    }
+        builder.ConfigureBlobStoring();
+            builder.ConfigureCmsKit();
+        }
 }
