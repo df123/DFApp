@@ -274,3 +274,5 @@ src/DF.Telegram.Blazor.Server.Tiered/Logs/*
 /src/DF.Telegram.Web/.config
 /src/DF.Telegram.Web/publish.ps1
 /src/DF.Telegram.Web/Test.ps1
+/src/DF.Telegram.Web/VueApp/pnpm-lock.yaml
+/src/DF.Telegram.Web/VueApp/待处理问题.md

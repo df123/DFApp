@@ -4,7 +4,8 @@
   "private": true,
   "dependencies": {
     "@abp/aspnetcore.mvc.ui.theme.leptonxlite": "~2.2.0-rc.1",
-    "@abp/chart.js": "^7.3.2"
+    "@abp/chart.js": "^7.3.2",
+    "@abp/cms-kit": "7.3.2"
   },
   "devDependencies": {
     "eslint": "^8.48.0"

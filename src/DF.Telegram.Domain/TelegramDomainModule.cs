@@ -1,4 +1,4 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using DF.Telegram.MultiTenancy;
 using Volo.Abp.AuditLogging;
@@ -14,6 +14,8 @@ using Volo.Abp.PermissionManagement.Identity;
 using Volo.Abp.PermissionManagement.OpenIddict;
 using Volo.Abp.SettingManagement;
 using Volo.Abp.TenantManagement;
+using Volo.Abp.BlobStoring.Database;
+using Volo.CmsKit;
 
 namespace DF.Telegram;
 
@@ -30,7 +32,9 @@ namespace DF.Telegram;
     typeof(AbpTenantManagementDomainModule),
     typeof(AbpEmailingModule)
 )]
-public class TelegramDomainModule : AbpModule
+[DependsOn(typeof(BlobStoringDatabaseDomainModule))]
+    [DependsOn(typeof(CmsKitDomainModule))]
+    public class TelegramDomainModule : AbpModule
 {
     public override void ConfigureServices(ServiceConfigurationContext context)
     {
