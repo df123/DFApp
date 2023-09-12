@@ -1,13 +1,5 @@
 <template>
     <div>
-        <el-row class="mb-4">
-            <el-button>Default</el-button>
-            <el-button type="primary">Primary</el-button>
-            <el-button type="success">Success</el-button>
-            <el-button type="info">Info</el-button>
-            <el-button type="warning">Warning</el-button>
-            <el-button type="danger">Danger</el-button>
-        </el-row>
         <canvas id="chart"></canvas>
     </div>
 </template>
@@ -16,7 +8,6 @@
 import { onMounted } from 'vue'
 import { Chart } from 'chart.js/auto'
 import { ChartDataDto } from '../Dto/dto'
-// const Chart = require('chart.js/auto');
 
 const l:Function = abp.localization.getResource('Telegram') as Function;
 
