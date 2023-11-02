@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using DF.Telegram.IP;
+using DF.Telegram.Lottery;
 using DF.Telegram.Media;
 using DF.Telegram.Queue;
 
@@ -20,6 +21,9 @@ public class TelegramApplicationAutoMapperProfile : Profile
 
         CreateMap<DynamicIP, DynamicIPDto>();
         CreateMap<CreateUpdateDynamicIPDto, DynamicIP>();
+
+        CreateMap<LotteryInfo, LotteryDto>();
+        CreateMap<CreateUpdateLotteryDto, LotteryInfo>();
 
     }
 }
