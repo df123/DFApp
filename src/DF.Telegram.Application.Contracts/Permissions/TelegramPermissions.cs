@@ -22,4 +22,13 @@ public static class TelegramPermissions
         public const string Delete = Default + ".Delete";
     }
 
+    public static class Lottery 
+    {
+        public const string Default = GroupName + ".Lottery";
+        public const string Create = Default + ".Create";
+        public const string Edit = Default + ".Edit";
+        public const string Delete = Default + ".Delete";
+    }
+
+
 }

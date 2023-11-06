@@ -19,6 +19,13 @@ public class TelegramPermissionDefinitionProvider : PermissionDefinitionProvider
         var dynamicIPGroup = context.AddGroup(TelegramPermissions.DynamicIP.Default, L("Permission:DynamicIPTelegaram"));
         var dynamicIPPermisson = dynamicIPGroup.AddPermission(TelegramPermissions.DynamicIP.Default, L("Permission:DynamicIPIP"));
         dynamicIPPermisson.AddChild(TelegramPermissions.DynamicIP.Delete, L("Permission:DynamicIPIP.Delete"));
+
+        var lotteryGroup = context.AddGroup(TelegramPermissions.Lottery.Default,L("Permission:LotteryTelegaram"));
+        var lotteryPermission = lotteryGroup.AddPermission(TelegramPermissions.Lottery.Default,L("Permission:Lottery"));
+        lotteryPermission.AddChild(TelegramPermissions.Lottery.Create, L("Permission:Lottery.Create"));
+        lotteryPermission.AddChild(TelegramPermissions.Lottery.Edit, L("Permission:Lottery.Edit"));
+        lotteryPermission.AddChild(TelegramPermissions.Lottery.Delete, L("Permission:Lottery.Delete"));
+
     }
 
     private static LocalizableString L(string name)

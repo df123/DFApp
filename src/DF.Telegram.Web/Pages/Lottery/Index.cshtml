@@ -1,0 +1,18 @@
+﻿@page
+@using DF.Telegram.Localization;
+@using Microsoft.Extensions.Localization;
+@model DF.Telegram.Web.Pages.Lottery.IndexModel
+
+@inject IStringLocalizer<TelegramResource> L
+@section scripts{
+    <abp-script src="/Pages/Lottery/Index.js"></abp-script>
+}
+
+<abp-card>
+    <abp-card-header>
+        <abp-card-title>@L["LotteryTitle"]</abp-card-title>
+    </abp-card-header>
+    <abp-card-body>
+        <abp-table striped-rows="true" id="LotteryTable"></abp-table>
+    </abp-card-body>
+</abp-card>

@@ -24,6 +24,6 @@ public class TelegramApplicationAutoMapperProfile : Profile
 
         CreateMap<LotteryInfo, LotteryDto>();
         CreateMap<CreateUpdateLotteryDto, LotteryInfo>();
-
+        CreateMap<LotteryDto, CreateUpdateLotteryDto > ();
     }
 }

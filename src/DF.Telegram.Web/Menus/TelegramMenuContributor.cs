@@ -60,6 +60,20 @@ public class TelegramMenuContributor : IMenuContributor
             );
         }
 
+        if (await context.IsGrantedAsync(TelegramPermissions.Lottery.Default))
+        {
+            context.Menu.Items.Insert(
+                1,
+                new ApplicationMenuItem(
+                    TelegramMenus.Home,
+                    l["Menu:Lottery"],
+                    "~/Lottery",
+                    icon: "fas fa-baseball-ball",
+                    order: 2
+                )
+            );
+        }
+
         if (MultiTenancyConsts.IsEnabled)
         {
             administration.SetSubItemOrder(TenantManagementMenuNames.GroupName, 1);
