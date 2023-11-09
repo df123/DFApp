@@ -23,6 +23,7 @@ public static class TelegramGlobalFeatureConfigurator
         GlobalFeatureManager.Instance.Modules.CmsKit(cmsKit =>
         {
             cmsKit.EnableAll();
+            cmsKit.Pages.SetEnabled(false);
         });
     }
 }
