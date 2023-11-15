@@ -122,6 +122,157 @@ namespace DF.Telegram.Migrations
                     b.ToTable("AppLottery", (string)null);
                 });
 
+            modelBuilder.Entity("DF.Telegram.Lottery.LotteryPrizegrades", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("ConcurrencyStamp")
+                        .IsConcurrencyToken()
+                        .HasMaxLength(40)
+                        .HasColumnType("TEXT")
+                        .HasColumnName("ConcurrencyStamp");
+
+                    b.Property<DateTime>("CreationTime")
+                        .HasColumnType("TEXT")
+                        .HasColumnName("CreationTime");
+
+                    b.Property<Guid?>("CreatorId")
+                        .HasColumnType("TEXT")
+                        .HasColumnName("CreatorId");
+
+                    b.Property<string>("ExtraProperties")
+                        .HasColumnType("TEXT")
+                        .HasColumnName("ExtraProperties");
+
+                    b.Property<bool>("IsDeleted")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER")
+                        .HasDefaultValue(false)
+                        .HasColumnName("IsDeleted");
+
+                    b.Property<DateTime?>("LastModificationTime")
+                        .HasColumnType("TEXT")
+                        .HasColumnName("LastModificationTime");
+
+                    b.Property<Guid?>("LastModifierId")
+                        .HasColumnType("TEXT")
+                        .HasColumnName("LastModifierId");
+
+                    b.Property<long>("LotteryResultId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("Type")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("TypeMoney")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("TypeNum")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("LotteryResultId");
+
+                    b.ToTable("AppLotteryPrizegrades", (string)null);
+                });
+
+            modelBuilder.Entity("DF.Telegram.Lottery.LotteryResult", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("AddMoney")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("AddMoney2")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Blue")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Blue2")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Code")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ConcurrencyStamp")
+                        .IsConcurrencyToken()
+                        .HasMaxLength(40)
+                        .HasColumnType("TEXT")
+                        .HasColumnName("ConcurrencyStamp");
+
+                    b.Property<string>("Content")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("CreationTime")
+                        .HasColumnType("TEXT")
+                        .HasColumnName("CreationTime");
+
+                    b.Property<Guid?>("CreatorId")
+                        .HasColumnType("TEXT")
+                        .HasColumnName("CreatorId");
+
+                    b.Property<string>("Date")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("DetailsLink")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ExtraProperties")
+                        .HasColumnType("TEXT")
+                        .HasColumnName("ExtraProperties");
+
+                    b.Property<bool>("IsDeleted")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER")
+                        .HasDefaultValue(false)
+                        .HasColumnName("IsDeleted");
+
+                    b.Property<DateTime?>("LastModificationTime")
+                        .HasColumnType("TEXT")
+                        .HasColumnName("LastModificationTime");
+
+                    b.Property<Guid?>("LastModifierId")
+                        .HasColumnType("TEXT")
+                        .HasColumnName("LastModifierId");
+
+                    b.Property<string>("M2Add")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Msg")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Name")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("PoolMoney")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Red")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Sales")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("VideoLink")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Week")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Z2Add")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("AppLotteryResult", (string)null);
+                });
+
             modelBuilder.Entity("DF.Telegram.Media.MediaInfo", b =>
                 {
                     b.Property<long>("Id")
@@ -2705,6 +2856,17 @@ namespace DF.Telegram.Migrations
                     b.ToTable("CmsUsers", (string)null);
                 });
 
+            modelBuilder.Entity("DF.Telegram.Lottery.LotteryPrizegrades", b =>
+                {
+                    b.HasOne("DF.Telegram.Lottery.LotteryResult", "Result")
+                        .WithMany("Prizegrades")
+                        .HasForeignKey("LotteryResultId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Result");
+                });
+
             modelBuilder.Entity("Volo.Abp.AuditLogging.AuditLogAction", b =>
                 {
                     b.HasOne("Volo.Abp.AuditLogging.AuditLog", null)
@@ -2865,6 +3027,11 @@ namespace DF.Telegram.Migrations
                         .IsRequired();
 
                     b.Navigation("Author");
+                });
+
+            modelBuilder.Entity("DF.Telegram.Lottery.LotteryResult", b =>
+                {
+                    b.Navigation("Prizegrades");
                 });
 
             modelBuilder.Entity("Volo.Abp.AuditLogging.AuditLog", b =>

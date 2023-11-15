@@ -44,6 +44,7 @@ using DF.Telegram.Media;
 using Volo.Abp.AspNetCore.Mvc.AntiForgery;
 using System.Collections.Generic;
 using Volo.CmsKit.Web;
+using Volo.Abp.BackgroundWorkers.Quartz;
 
 namespace DF.Telegram.Web;
 
@@ -61,7 +62,8 @@ namespace DF.Telegram.Web;
     typeof(AbpSwashbuckleModule),
     typeof(AbpBackgroundWorkersModule),
     typeof(AbpImagingAbstractionsModule),
-    typeof(AbpImagingImageSharpModule)
+    typeof(AbpImagingImageSharpModule),
+    typeof(AbpBackgroundWorkersQuartzModule)
     )]
 [DependsOn(typeof(CmsKitWebModule))]
     public class TelegramWebModule : AbpModule
@@ -154,6 +156,7 @@ namespace DF.Telegram.Web;
             return client;
         });
 
+        context.Services.AddHttpClient();
     }
 
     private void ConfigureAuthentication(ServiceConfigurationContext context)

@@ -25,5 +25,19 @@ public class TelegramApplicationAutoMapperProfile : Profile
         CreateMap<LotteryInfo, LotteryDto>();
         CreateMap<CreateUpdateLotteryDto, LotteryInfo>();
         CreateMap<LotteryDto, CreateUpdateLotteryDto > ();
+
+        CreateMap<LotteryResult, LotteryResultDto>();
+        CreateMap<CreateUpdateLotteryResultDto, LotteryResult>();
+        CreateMap<LotteryResultDto, CreateUpdateLotteryResultDto>();
+
+        CreateMap<LotteryPrizegrades, LotteryPrizegradesDto>();
+        CreateMap<CreateUpdateLotteryPrizegradesDto, LotteryPrizegrades>();
+        CreateMap<LotteryPrizegradesDto, CreateUpdateLotteryPrizegradesDto>();
+
+        CreateMap<ResultItemDto, CreateUpdateLotteryResultDto>();
+        CreateMap<PrizegradesItemDto, CreateUpdateLotteryPrizegradesDto>();
+
+        CreateMap<ResultItemDto, LotteryResult>();
+        CreateMap<PrizegradesItemDto, LotteryPrizegrades>();
     }
 }

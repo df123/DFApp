@@ -70,6 +70,9 @@ public class TelegramDbContext :
 
     public DbSet<LotteryInfo> LotteryInfos { get; set; }
 
+    public DbSet<LotteryResult> LotteryResults { get; set; }
+    public DbSet<LotteryPrizegrades> LotteryPrizegrades { get; set; }
+
     protected override void OnModelCreating(ModelBuilder builder)
     {
         base.OnModelCreating(builder);
@@ -105,7 +108,22 @@ public class TelegramDbContext :
             b.ConfigureByConvention();
         });
 
+        builder.Entity<LotteryResult>(b =>
+        {
+            b.ToTable(TelegramConsts.DbTablePrefix + "LotteryResult", TelegramConsts.DbSchema);
+            b.HasMany(e => e.Prizegrades)
+            .WithOne(e => e.Result)
+            .HasForeignKey(e => e.LotteryResultId);
+            b.ConfigureByConvention();
+        });
+
+        builder.Entity<LotteryPrizegrades>(b =>
+        {
+            b.ToTable(TelegramConsts.DbTablePrefix + "LotteryPrizegrades", TelegramConsts.DbSchema);
+            b.ConfigureByConvention();
+        });
+
         builder.ConfigureBlobStoring();
-            builder.ConfigureCmsKit();
-        }
+        builder.ConfigureCmsKit();
+    }
 }
