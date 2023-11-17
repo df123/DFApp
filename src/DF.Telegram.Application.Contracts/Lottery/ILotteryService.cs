@@ -13,7 +13,7 @@ namespace DF.Telegram.Lottery
         PagedAndSortedResultRequestDto,
         CreateUpdateLotteryDto>
     {
-      Task<LotteryInputDto> GetLotteryResult(string dayStart, string dayEnd, int pageNo);
+
     }
 
 }
