@@ -38,7 +38,7 @@ namespace DF.Telegram.Background
             _httpClientFactory = httpClientFactory;
         }
 
-        private override async Task Execute(IJobExecutionContext context)
+        public override async Task Execute(IJobExecutionContext context)
         {
             List<LotteryResult> result = await _lotteryResultRepository.GetListAsync(item => item.Code == "2013001");
 

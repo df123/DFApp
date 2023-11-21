@@ -62,16 +62,14 @@ public class TelegramMenuContributor : IMenuContributor
 
         if (await context.IsGrantedAsync(TelegramPermissions.Lottery.Default))
         {
-            context.Menu.Items.Insert(
-                1,
-                new ApplicationMenuItem(
-                    TelegramMenus.Home,
-                    l["Menu:Lottery"],
-                    "~/Lottery",
-                    icon: "fas fa-baseball-ball",
-                    order: 2
-                )
-            );
+
+            var lotteryFirst = new ApplicationMenuItem(TelegramMenus.Home, l["Menu:Lottery"], "~/Lottery", icon: "fas fa-baseball-ball", order: 3);
+
+            lotteryFirst.AddItem(new ApplicationMenuItem(TelegramMenus.Home, l["Menu:Lottery"], "~/Lottery", icon: "fas fa-baseball-ball", order: 1));
+            lotteryFirst.AddItem(new ApplicationMenuItem(TelegramMenus.Home, l["Menu:LotteryStatistics"], "~/Lottery/Statistics", icon: "fas fa-baseball-ball", order: 2));
+
+            context.Menu.Items.Insert(1, lotteryFirst);
+
         }
 
         if (MultiTenancyConsts.IsEnabled)

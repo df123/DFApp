@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 using System.Threading.Tasks;
+using DF.Telegram.Lottery.Statistics;
 using Volo.Abp.Application.Dtos;
 using Volo.Abp.Application.Services;
 
@@ -13,7 +14,7 @@ namespace DF.Telegram.Lottery
         PagedAndSortedResultRequestDto,
         CreateUpdateLotteryDto>
     {
-
+        Task<List<StatisticsWinDto>> GetStatisticsWin();
     }
 
 }
