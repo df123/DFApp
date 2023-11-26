@@ -60,6 +60,19 @@ public class TelegramMenuContributor : IMenuContributor
             );
         }
 
+        if (await context.IsGrantedAsync(TelegramPermissions.Lottery.Default))
+        {
+
+            var lotteryFirst = new ApplicationMenuItem(TelegramMenus.Home, l["Menu:Lottery"], "~/Lottery", icon: "fas fa-baseball-ball", order: 3);
+
+            lotteryFirst.AddItem(new ApplicationMenuItem(TelegramMenus.Home, l["Menu:Lottery"], "~/Lottery", icon: "fas fa-baseball-ball", order: 1));
+            lotteryFirst.AddItem(new ApplicationMenuItem(TelegramMenus.Home, l["Menu:LotteryStatistics"], "~/Lottery/Statistics", icon: "fas fa-baseball-ball", order: 2));
+            lotteryFirst.AddItem(new ApplicationMenuItem(TelegramMenus.Home, l["Menu:LotteryStatisticsItem"], "~/Lottery/StatisticsItem", icon: "fas fa-baseball-ball", order: 3));
+
+            context.Menu.Items.Insert(1, lotteryFirst);
+
+        }
+
         if (MultiTenancyConsts.IsEnabled)
         {
             administration.SetSubItemOrder(TenantManagementMenuNames.GroupName, 1);

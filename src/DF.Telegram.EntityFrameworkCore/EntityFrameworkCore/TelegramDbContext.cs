@@ -17,6 +17,7 @@ using Volo.Abp.TenantManagement;
 using Volo.Abp.TenantManagement.EntityFrameworkCore;
 using Volo.Abp.BlobStoring.Database.EntityFrameworkCore;
 using Volo.CmsKit.EntityFrameworkCore;
+using DF.Telegram.Lottery;
 
 namespace DF.Telegram.EntityFrameworkCore;
 
@@ -67,6 +68,11 @@ public class TelegramDbContext :
     public DbSet<MediaInfo> MediaInfos { get; set; }
     public DbSet<DynamicIP> DynamicIPs { get; set; }
 
+    public DbSet<LotteryInfo> LotteryInfos { get; set; }
+
+    public DbSet<LotteryResult> LotteryResults { get; set; }
+    public DbSet<LotteryPrizegrades> LotteryPrizegrades { get; set; }
+
     protected override void OnModelCreating(ModelBuilder builder)
     {
         base.OnModelCreating(builder);
@@ -96,7 +102,28 @@ public class TelegramDbContext :
             b.ConfigureByConvention();
         });
 
+        builder.Entity<LotteryInfo>(b =>
+        {
+            b.ToTable(TelegramConsts.DbTablePrefix + "Lottery", TelegramConsts.DbSchema);
+            b.ConfigureByConvention();
+        });
+
+        builder.Entity<LotteryResult>(b =>
+        {
+            b.ToTable(TelegramConsts.DbTablePrefix + "LotteryResult", TelegramConsts.DbSchema);
+            b.HasMany(e => e.Prizegrades)
+            .WithOne(e => e.Result)
+            .HasForeignKey(e => e.LotteryResultId);
+            b.ConfigureByConvention();
+        });
+
+        builder.Entity<LotteryPrizegrades>(b =>
+        {
+            b.ToTable(TelegramConsts.DbTablePrefix + "LotteryPrizegrades", TelegramConsts.DbSchema);
+            b.ConfigureByConvention();
+        });
+
         builder.ConfigureBlobStoring();
-            builder.ConfigureCmsKit();
-        }
+        builder.ConfigureCmsKit();
+    }
 }

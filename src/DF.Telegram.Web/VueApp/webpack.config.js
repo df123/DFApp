@@ -11,7 +11,8 @@ const AbpRazorWebpackPlugin = require('./plugin/AbpRazorWebpackPlugin/index.js')
 module.exports = {
     entry: {
         MediaChart: './src/Media/Chart/main.ts',
-        MediaExternalLink: './src/Media/ExternalLink/main.ts'
+        MediaExternalLink: './src/Media/ExternalLink/main.ts',
+        LotteryStatistics: './src/Lottery/Statistics/main.ts'
     },
     output: {
         filename: '[name].entry.js',

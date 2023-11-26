@@ -14,6 +14,7 @@ using Volo.Abp.Validation.Localization;
 using Volo.Abp.VirtualFileSystem;
 using Volo.Abp.BlobStoring.Database;
 using Volo.CmsKit;
+using Volo.Abp.BackgroundWorkers.Quartz;
 
 namespace DF.Telegram;
 
@@ -29,6 +30,7 @@ namespace DF.Telegram;
     )]
 [DependsOn(typeof(BlobStoringDatabaseDomainSharedModule))]
     [DependsOn(typeof(CmsKitDomainSharedModule))]
+    [DependsOn(typeof(AbpBackgroundWorkersQuartzModule))]
     public class TelegramDomainSharedModule : AbpModule
 {
     public override void PreConfigureServices(ServiceConfigurationContext context)
