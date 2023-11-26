@@ -69,7 +69,7 @@ namespace DF.Telegram.Background
                 title = chats.First().Value.Title;
                 foreach (var chat in chats.Values)
                 {
-                    Logger.LogInformation($"Title:{chat.Title},ID:{chat.ID},IsActive:{chat.IsActive},IsChannel:{chat.IsChannel},IsGroup:{chat.IsGroup}");
+                    Logger.LogDebug($"Title:{chat.Title},ID:{chat.ID},IsActive:{chat.IsActive},IsChannel:{chat.IsChannel},IsGroup:{chat.IsGroup}");
                 }
             }
 
@@ -138,7 +138,7 @@ namespace DF.Telegram.Background
             MediaInfo[] isArray = await _mediaInfoRepository.GetByAccessHashID(mediaInfo.AccessHash, mediaInfo.TID, mediaInfo.Size);
             if (isArray != null && isArray.Length > 0)
             {
-                Logger.LogInformation($"AccessHash:{mediaInfo.AccessHash},ID:{mediaInfo.TID},Size:{mediaInfo.Size},Already exists;");
+                Logger.LogDebug($"AccessHash:{mediaInfo.AccessHash},ID:{mediaInfo.TID},Size:{mediaInfo.Size},Already exists;");
 
                 return null;
             }
@@ -146,7 +146,7 @@ namespace DF.Telegram.Background
             MediaInfo dto = await _mediaInfoRepository.InsertAsync(mediaInfo);
             if (dto != null && dto.Id > -1)
             {
-                Logger.LogInformation($"New Media Save successfully;");
+                Logger.LogDebug($"New Media Save successfully;");
             }
             return dto;
         }
@@ -200,7 +200,7 @@ namespace DF.Telegram.Background
 
                     await UpdateDownloadInfo(mediaInfo);
 
-                    Logger.LogInformation($"Photo download completed {fileName}");
+                    Logger.LogDebug($"Photo download completed {fileName}");
                 }
                 catch (Exception e)
                 {
@@ -265,7 +265,7 @@ namespace DF.Telegram.Background
 
                     await UpdateDownloadInfo(mediaInfo);
 
-                    Logger.LogInformation($"Video download completed {fileName}");
+                    Logger.LogDebug($"Video download completed {fileName}");
                 }
                 catch (Exception e)
                 {
@@ -289,7 +289,7 @@ namespace DF.Telegram.Background
 
                 await _mediaInfoRepository.UpdateAsync(mediaInfo);
 
-                Logger.LogInformation($"AccessHash:{mediaInfo.AccessHash},ID:{mediaInfo.TID},Update successful;");
+                Logger.LogDebug($"AccessHash:{mediaInfo.AccessHash},ID:{mediaInfo.TID},Update successful;");
             }
             catch (Exception e)
             {
@@ -350,12 +350,12 @@ namespace DF.Telegram.Background
             string driveName = AppsettingsHelper.app("RunConfig", "SaveDrive");
             if ((SpaceHelper.GetDriveAvailableMB(driveName) - StorageUnitConversionHelper.ByteToMB(sizes)) < availableFreeSpace)
             {
-                Logger.LogInformation($"{DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")} Out of space stop downloading");
+                Logger.LogDebug($"{DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")} Out of space stop downloading");
                 return true;
             }
             else
             {
-                Logger.LogInformation($"{DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")} Enough space available, start downloading");
+                Logger.LogDebug($"{DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")} Enough space available, start downloading");
                 return false;
             }
 
