@@ -19,7 +19,7 @@ onMounted(async () => {
         let chartDataWin: number[] = [];
         dto.forEach(item => {
             chartDataLabels.push(item.code);
-            chartDataBuy.push(item.buyAmount * 50000);
+            chartDataBuy.push(item.buyAmount);
             chartDataWin.push(item.winAmount);
         })
         console.log(chartDataBuy)

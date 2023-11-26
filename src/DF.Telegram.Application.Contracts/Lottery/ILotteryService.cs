@@ -15,6 +15,7 @@ namespace DF.Telegram.Lottery
         CreateUpdateLotteryDto>
     {
         Task<List<StatisticsWinDto>> GetStatisticsWin();
+        Task<PagedResultDto<StatisticsWinItemDto>> GetStatisticsWinItem();
     }
 
 }
