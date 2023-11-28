@@ -278,3 +278,4 @@ src/DF.Telegram.Blazor.Server.Tiered/Logs/*
 /src/DF.Telegram.Web/VueApp/pnpm-lock.yaml
 /src/DF.Telegram.Web/VueApp/待处理问题.txt
 /src/DF.Telegram.Web/VueApp/待处理问题.md
+/src/DF.Telegram.Web/publish.sh

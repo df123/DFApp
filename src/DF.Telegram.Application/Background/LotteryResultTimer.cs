@@ -58,21 +58,29 @@ namespace DF.Telegram.Background
                 List<LotteryResult> result1 = await _lotteryResultRepository.GetListAsync(item => item.Date != null && item.Date.StartsWith(day));
                 if (result1 == null || result1.Count <= 0)
                 {
-                    await GetCurrentLotteryResult();
+                    LotteryResult lotteryResult = await _lotteryResultRepository.LastOrDefaultAsync();
+                    string dayStart = (lotteryResult.Date!.Split('('))[0];
+                    await GetCurrentLotteryResult(dayStart, 0);
                 }
             }
         }
 
-        private async Task GetCurrentLotteryResult()
+        private async Task GetCurrentLotteryResult(string dayStart, int pageNo)
         {
-            string dayStart, dayEnd;
-            dayStart = dayEnd = DateTime.Now.ToString("yyyy-MM-dd");
+            string dayEnd;
+            dayEnd = DateTime.Now.ToString("yyyy-MM-dd");
             LotteryInputDto dto = await GetLotteryResult(dayStart, dayEnd, 1);
-            if(dto.Result != null && dto.Result.Count >= 0)
+            if (dto.Result != null && dto.Result.Count >= 0)
             {
                 List<LotteryResult> result = _mapper.Map<List<ResultItemDto>, List<LotteryResult>>(dto.Result);
 
                 await _lotteryResultRepository.InsertManyAsync(result);
+
+
+                if (dto.PageNo < dto.PageNum)
+                {
+                    await GetCurrentLotteryResult(dayStart, pageNo + 1);
+                }
             }
         }
 
@@ -105,7 +113,7 @@ namespace DF.Telegram.Background
 
             LotteryInputDto? dto = JsonSerializer.Deserialize<LotteryInputDto>(await message.Content.ReadAsStringAsync());
 
-            if(dto == null)
+            if (dto == null)
             {
                 dto = new LotteryInputDto();
             }
