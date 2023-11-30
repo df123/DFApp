@@ -31,7 +31,7 @@ namespace DF.Telegram.Background
             Trigger = TriggerBuilder
                 .Create()
                 .WithIdentity(nameof(LotteryResultTimer))
-                .WithCronSchedule("0 0 22 * * ?")
+                .WithCronSchedule("0 0 23 * * ?")
                 .Build();
             _lotteryResultRepository = lotteryResultRepository;
             _mapper = mapper;
