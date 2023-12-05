@@ -9,5 +9,6 @@ namespace DF.Telegram.Lottery
         public int IndexNo { get; set; }
         public string? Number { get; set; }
         public string? ColorType { get; set; }
+        public int GroupId { get; set; }
     }
 }

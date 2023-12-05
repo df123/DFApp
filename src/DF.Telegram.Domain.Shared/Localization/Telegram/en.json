@@ -1,0 +1,88 @@
+{
+  "culture": "en",
+  "texts": {
+    "Welcome": "Welcome",
+    "LongWelcomeMessage": "Welcome to the application. This is a startup project based on the ABP framework. For more information, visit abp.io.",
+
+    "Menu:Home": "Home",
+    "Menu:Media": "Media",
+    "Menu:Media:ExternalLink": "External Link",
+    "Menu:Media:Chart": "Chart",
+    "Menu:DynamicIP": "Dynamic IP",
+
+    "Actions": "Actions",
+    "Close": "Close",
+    "Delete": "Delete",
+    "Edit": "Edit",
+    "Button:Download": "Download File",
+    "Permission:MediaTelegaram": "Media Telegaram",
+    "Permission:Medias": "Media Management",
+    "Permission:Medias.Create": "Creating new Media",
+    "Permission:Medias.Edit": "Editing the Media",
+    "Permission:Medias.Delete": "Deleting the Media",
+    "Permission:Medias.Download": "Download the Media",
+    "MediaDeletionConfirmationMessage": "Are you sure to delete the book '{0}'?",
+    "SuccessfullyDeleted": "Successfully deleted!",
+
+    "MediaTitle": "Media Management",
+    "MediaId": "Database Auto-increment ID",
+    "MediaAccessHash": "Telegram Access Hash",
+    "MediaTId": "Telegram ID",
+    "MediaSize": "Size",
+    "MediaMimeType": "Mime Type",
+    "MediaChatTitle": "Chat Title",
+    "MediaTaskComplete": "Task Complete",
+    "MediaSavePath": "Save Path",
+    "MediaValueSHA1": "Locally computed SHA1 value",
+    "MediaCreationTime": "Creation Time",
+    "MediaCreatorId": "Creator ID",
+    "MediaLastModificationTime": "Last Modification Time",
+    "MediaLastModifierId": "Last Modifier ID",
+
+    "Media:ExternalLinkTitle": "Media External Link Management",
+    "Media:ExternalLinkTitle:GetLink": "Get",
+    "Media:ExternalLinkTitle:Copy": "Copy",
+    "Media:ExternalLinkTitle:Move": "Move",
+    "Media:ExternalLinkTitle:CopySuccessMesage": "Success Copy!",
+
+    "Media:ChartTitle": "Media Chart",
+
+    "DynamicIPIPAddress": "IP Address",
+    "DynamicIPIP": "IP",
+    "DynamicIPPort": "Port",
+    "DynamicIPCreateTime": "Create Time",
+    "DynamicIPTitle": "Dynamic IP",
+    "Permission:DynamicIPTelegaram": "IP Management",
+    "Permission:DynamicIPIP": "IP",
+    "Permission:DynamicIPIP.Delete": "Deleting the IP",
+
+
+    "Menu:Lottery": "彩票",
+    "Menu:LotteryStatistics": "彩票分析",
+    "Menu:LotteryStatisticsItem": "彩票条目分析",
+    "LotteryTitle": "Lottery",
+    "Permission:LotteryTelegaram": "Lottery Telegaram",
+    "Permission:Lottery": "Lottery Management",
+    "Permission:Lottery.Create": "Creating new Lottery",
+    "Permission:Lottery.Edit": "Editing the Lottery",
+    "Permission:Lottery.Delete": "Deleting the Lottery",
+    "LotteryId": "Id",
+    "LotteryIndexNo": "Index No",
+    "LotteryNumber": "Number",
+    "LotteryColorType": "Color Type",
+    "LotteryGroupId": "Group Id",
+    "LotteryCreationTime": "Creation Time",
+    "LotteryLastModificationTime": "Last Modification Time",
+
+    "Lottery:LotteryStatisticsTitle": "Lottery Statistics",
+
+    "Lottery:LotteryStatisticsItemTitle": "Lottery Statistics Item",
+    "Lottery:LotteryStatisticsItem:Code": "Buy Code",
+    "Lottery:LotteryStatisticsItem:WinCode": "Win Code",
+    "Lottery:LotteryStatisticsItem:BuyNumber": "Buy Number",
+    "Lottery:LotteryStatisticsItem:WinNumber": "Win Number",
+    "Lottery:LotteryStatisticsItem:WinAmout": "Win Amout"
+
+
+  }
+}

@@ -57,6 +57,10 @@ $(function () {
                     data: "colorType"
                 },
                 {
+                    title: l('LotteryGroupId'),
+                    data: "groupId"
+                },
+                {
                     title: l('LotteryCreationTime'),
                     data: "creationTime",
                     dataFormat: "datetime"
