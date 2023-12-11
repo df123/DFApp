@@ -95,45 +95,6 @@ namespace DF.Telegram.Lottery
 
                     }
                 }
-
-                //for (var i = 0; i < tempList.Count; i = i + 7)
-                //{
-                //    foreach (LotteryResult lotteryResultItem in lotteryResults)
-                //    {
-                //        int redWin = 0;
-                //        StatisticsWinItemDto winDto = new StatisticsWinItemDto();
-                //        winDto.Code = item.Key.ToString();
-                //        winDto.WinCode = lotteryResultItem.Code;
-                //        winDto.WinAmount = 0;
-                //        string[] reds = lotteryResultItem.Red!.Split(',');
-
-
-                //        for (int v = 0; v < 6; v++)
-                //        {
-                //            winDto.BuyLottery.Reds.Add(tempList[v + i].Number);
-                //            winDto.WinLottery.Reds.Add(reds[v]);
-                //            for (int w = 0; w < reds.Length; w++)
-                //            {
-                //                if (tempList[v + i].Number == reds[w])
-                //                {
-                //                    redWin++;
-                //                    break;
-                //                }
-                //            }
-
-                //        }
-                //        winDto.BuyLottery.Blue = tempList[i + 6].Number;
-                //        winDto.WinLottery.Blue = lotteryResultItem.Blue;
-                //        int winMoney = int.Parse(JudgeWin(redWin, lotteryResultItem.Blue == tempList[i + 6].Number));
-                //        if (winMoney > 0)
-                //        {
-                //            winDto.WinAmount += winMoney;
-                //            winDto.BuyLotteryString = string.Join(",", string.Join(",", winDto.BuyLottery.Reds), winDto.BuyLottery.Blue);
-                //            winDto.WinLotteryString = string.Join(",", string.Join(",", winDto.WinLottery.Reds), winDto.WinLottery.Blue);
-                //            results.Add(winDto);
-                //        }
-                //    }
-                //}
             }
             pagedResultDto.Items = results;
             pagedResultDto.TotalCount = pagedResultDto.Items.Count;
