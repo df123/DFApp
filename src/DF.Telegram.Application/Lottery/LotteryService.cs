@@ -37,7 +37,7 @@ namespace DF.Telegram.Lottery
         public async Task<PagedResultDto<StatisticsWinItemDto>> GetStatisticsWinItem()
         {
             PagedResultDto<StatisticsWinItemDto> pagedResultDto = new PagedResultDto<StatisticsWinItemDto>();
-            List<LotteryResult> dto = await _lotteryResultrepository.GetListAsync();
+            List<LotteryResult> lotteryResults = await _lotteryResultrepository.GetListAsync();
             List<LotteryInfo> info = await _lotteryInforepository.GetListAsync();
 
             var infoGroup = info.GroupBy(item => item.IndexNo);
@@ -46,11 +46,14 @@ namespace DF.Telegram.Lottery
 
             foreach (var item in infoGroup)
             {
-                var tempList = item.OrderBy(o => o.Id).ToList();
+                List<LotteryInfo> tempList = item.OrderBy(o => o.Id).ToList();
 
-                for (var i = 0; i < tempList.Count; i = i + 7)
+                var groupIdList = tempList.GroupBy(x => x.GroupId);
+
+                foreach (var groupId in groupIdList)
                 {
-                    foreach (LotteryResult lotteryResultItem in dto)
+                    List<LotteryInfo> lotteryNumbers = groupId.OrderBy(x => x.Id).ToList();
+                    foreach (LotteryResult lotteryResultItem in lotteryResults)
                     {
                         int redWin = 0;
                         StatisticsWinItemDto winDto = new StatisticsWinItemDto();
@@ -60,23 +63,28 @@ namespace DF.Telegram.Lottery
                         string[] reds = lotteryResultItem.Red!.Split(',');
 
 
-                        for (int v = 0; v < 6; v++)
+                        winDto.BuyLottery.Reds.AddRange((lotteryNumbers.Where(x => x.ColorType != "1").Select(x => x.Number).ToArray())!);
+                        winDto.WinLottery.Reds.AddRange(reds);
+                        winDto.BuyLottery.Blue = lotteryNumbers.First(x => x.ColorType == "1").Number!;
+                        winDto.WinLottery.Blue = lotteryResultItem.Blue!;
+
+                        foreach (string red in reds)
                         {
-                            winDto.BuyLottery.Reds.Add(tempList[v + i].Number);
-                            winDto.WinLottery.Reds.Add(reds[v]);
-                            for (int w = 0; w < reds.Length; w++)
+                            foreach (LotteryInfo lotteryItem in lotteryNumbers)
                             {
-                                if (tempList[v + i].Number == reds[w])
+                                if (lotteryItem.ColorType == "1")
+                                {
+                                    continue;
+                                }
+                                if (red == lotteryItem.Number)
                                 {
                                     redWin++;
                                     break;
                                 }
                             }
-
                         }
-                        winDto.BuyLottery.Blue = tempList[i + 6].Number;
-                        winDto.WinLottery.Blue = lotteryResultItem.Blue;
-                        int winMoney = int.Parse(JudgeWin(redWin, lotteryResultItem.Blue == tempList[i + 6].Number));
+
+                        int winMoney = int.Parse(JudgeWin(redWin, lotteryResultItem.Blue == winDto.BuyLottery.Blue));
                         if (winMoney > 0)
                         {
                             winDto.WinAmount += winMoney;
@@ -84,6 +92,7 @@ namespace DF.Telegram.Lottery
                             winDto.WinLotteryString = string.Join(",", string.Join(",", winDto.WinLottery.Reds), winDto.WinLottery.Blue);
                             results.Add(winDto);
                         }
+
                     }
                 }
             }
@@ -94,7 +103,7 @@ namespace DF.Telegram.Lottery
 
         public async Task<List<StatisticsWinDto>> GetStatisticsWin()
         {
-            List<LotteryResult> dto = await _lotteryResultrepository.GetListAsync();
+            List<LotteryResult> lotteryResults = await _lotteryResultrepository.GetListAsync();
             List<LotteryInfo> info = await _lotteryInforepository.GetListAsync();
 
             var infoGroup = info.GroupBy(item => item.IndexNo);
@@ -105,30 +114,40 @@ namespace DF.Telegram.Lottery
             {
                 StatisticsWinDto winDto = new StatisticsWinDto();
                 winDto.Code = item.Key.ToString();
-                winDto.BuyAmount = item.Where(v => v.ColorType == "1").Count() * 2 * dto.Count;
+                winDto.BuyAmount = item.Where(v => v.ColorType == "1").Count() * 2 * lotteryResults.Count;
                 winDto.WinAmount = 0;
-                var tempList = item.OrderBy(o => o.Id).ToList();
+                List<LotteryInfo> tempList = item.OrderBy(o => o.Id).ToList();
 
-                for (var i = 0; i < tempList.Count; i = i + 7)
+                var groupIdList = tempList.GroupBy(x => x.GroupId);
+
+                foreach (var groupId in groupIdList)
                 {
-                    foreach (LotteryResult lotteryResultItem in dto)
+                    List<LotteryInfo> lotteryNumbers = groupId.OrderBy(x => x.Id).ToList();
+
+                    foreach (LotteryResult lotteryResultItem in lotteryResults)
                     {
                         int redWin = 0;
                         string[] reds = lotteryResultItem.Red!.Split(',');
 
-                        for (int v = 0; v < 6; v++)
+                        foreach (string s in reds)
                         {
-                            for (int w = 0; w < reds.Length; w++)
+                            foreach (LotteryInfo lotteryItem in lotteryNumbers)
                             {
-                                if (tempList[v + i].Number == reds[w])
+                                if (lotteryItem.ColorType == "1")
+                                {
+                                    continue;
+                                }
+                                if (s == lotteryItem.Number)
                                 {
                                     redWin++;
                                     break;
                                 }
                             }
-                            
                         }
-                        int winMoney = int.Parse(JudgeWin(redWin, lotteryResultItem.Blue == tempList[i + 6].Number));
+
+                        LotteryInfo blueLotteryInfo = lotteryNumbers.First(x => x.ColorType == "1");
+
+                        int winMoney = int.Parse(JudgeWin(redWin, lotteryResultItem.Blue == blueLotteryInfo.Number));
                         if (winMoney > 0)
                         {
                             winDto.WinAmount += winMoney;

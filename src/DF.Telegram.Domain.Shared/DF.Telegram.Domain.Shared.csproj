@@ -27,7 +27,6 @@
 
   <ItemGroup>
     <EmbeddedResource Include="Localization\Telegram\*.json" />
-    <Content Remove="Localization\Telegram\*.json" />
   </ItemGroup>
 
   <ItemGroup>

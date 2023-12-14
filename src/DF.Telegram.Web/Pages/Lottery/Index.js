@@ -26,10 +26,10 @@ $(function () {
                                     text: l('Delete'),
                                     visible: abp.auth.isGranted('Telegram.Lottery.Delete'),
                                     confirmMessage: function (data) {
-                                        return l('MediaDeletionConfirmationMessage', data.record.accessHash);
+                                        return l('MediaDeletionConfirmationMessage', data.record.id);
                                     },
                                     action: function (data) {
-                                        dF.telegram.media.mediaInfo
+                                        dF.telegram.lottery.lottery
                                             .delete(data.record.id)
                                             .then(function () {
                                                 abp.notify.info(l('SuccessfullyDeleted'));
@@ -55,6 +55,10 @@ $(function () {
                 {
                     title: l('LotteryColorType'),
                     data: "colorType"
+                },
+                {
+                    title: l('LotteryGroupId'),
+                    data: "groupId"
                 },
                 {
                     title: l('LotteryCreationTime'),

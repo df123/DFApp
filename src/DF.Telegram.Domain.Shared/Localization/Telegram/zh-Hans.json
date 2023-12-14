@@ -66,6 +66,7 @@
     "LotteryIndexNo": "期号",
     "LotteryNumber": "号码",
     "LotteryColorType": "类型",
+    "LotteryGroupId": "同期组号",
     "LotteryCreationTime": "创建时间",
     "LotteryLastModificationTime": "最后修改时间",
 

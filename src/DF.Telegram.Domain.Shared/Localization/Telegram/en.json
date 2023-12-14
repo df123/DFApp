@@ -70,6 +70,7 @@
     "LotteryIndexNo": "Index No",
     "LotteryNumber": "Number",
     "LotteryColorType": "Color Type",
+    "LotteryGroupId": "Group Id",
     "LotteryCreationTime": "Creation Time",
     "LotteryLastModificationTime": "Last Modification Time",
 
