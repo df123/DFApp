@@ -1,21 +1,18 @@
 ﻿using DF.Telegram.Lottery.Statistics;
-using DF.Telegram.Management;
-using Microsoft.AspNetCore.Http;
-using System;
+using DF.Telegram.Permissions;
+using Microsoft.AspNetCore.Authorization;
 using System.Collections.Generic;
 using System.Linq;
-using System.Net.Http;
-using System.Text;
-using System.Text.Json;
-using System.Text.Json.Serialization;
+using System.Linq.Dynamic.Core;
 using System.Threading.Tasks;
+using Volo.Abp;
 using Volo.Abp.Application.Dtos;
 using Volo.Abp.Application.Services;
 using Volo.Abp.Domain.Repositories;
-using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace DF.Telegram.Lottery
 {
+    [Authorize(TelegramPermissions.Lottery.Default)]
     public class LotteryService : CrudAppService<
         LotteryInfo,
         LotteryDto,
@@ -30,6 +27,12 @@ namespace DF.Telegram.Lottery
             IRepository<LotteryInfo, long> repository
             , IRepository<LotteryResult, long> lotteryResultrepository) : base(repository)
         {
+            GetPolicyName = TelegramPermissions.Lottery.Default;
+            GetListPolicyName = TelegramPermissions.Lottery.Default;
+            CreatePolicyName = TelegramPermissions.Lottery.Create;
+            UpdatePolicyName = TelegramPermissions.Lottery.Edit;
+            DeletePolicyName = TelegramPermissions.Lottery.Delete;
+
             _lotteryResultrepository = lotteryResultrepository;
             _lotteryInforepository = repository;
         }
@@ -198,5 +201,21 @@ namespace DF.Telegram.Lottery
             }
         }
 
+        public async Task<LotteryDto> CreateLotteryBatch(List<CreateUpdateLotteryDto> dtos)
+        {
+            Check.NotNullOrEmpty(dtos, nameof(dtos));
+            LotteryInfo infoStart = (await _lotteryInforepository.GetQueryableAsync()).OrderByDescending(item => item.IndexNo).First();
+            List<LotteryInfo> info = ObjectMapper.Map<List<CreateUpdateLotteryDto>, List<LotteryInfo>>(dtos);
+            await _lotteryInforepository.InsertManyAsync(info);
+            LotteryInfo infoEnd = (await _lotteryInforepository.GetQueryableAsync()).OrderByDescending(item => item.IndexNo).First();
+
+            if (infoEnd.Id > infoStart.Id)
+            {
+                return ObjectMapper.Map<LotteryInfo, LotteryDto>(infoEnd);
+            }
+
+            throw new System.Exception("批量保存失败");
+
+        }
     }
 }

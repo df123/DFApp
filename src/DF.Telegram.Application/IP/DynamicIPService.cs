@@ -1,16 +1,13 @@
 ﻿using DF.Telegram.Permissions;
 using Microsoft.AspNetCore.Authorization;
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using Volo.Abp.Application.Dtos;
 using Volo.Abp.Application.Services;
 using Volo.Abp.Domain.Repositories;
 
 namespace DF.Telegram.IP
 {
+    [Authorize(TelegramPermissions.DynamicIP.Default)]
     public class DynamicIPService : CrudAppService<
         DynamicIP,
         DynamicIPDto,
@@ -22,7 +19,8 @@ namespace DF.Telegram.IP
         {
             GetPolicyName = TelegramPermissions.DynamicIP.Default;
             GetListPolicyName = TelegramPermissions.DynamicIP.Default;
-            UpdatePolicyName = TelegramPermissions.DynamicIP.Delete;
+            CreatePolicyName = TelegramPermissions.DynamicIP.Default;
+            UpdatePolicyName = TelegramPermissions.DynamicIP.Default;
             DeletePolicyName = TelegramPermissions.DynamicIP.Delete;
         }
     }
