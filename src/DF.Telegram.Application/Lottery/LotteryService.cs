@@ -204,18 +204,9 @@ namespace DF.Telegram.Lottery
         public async Task<LotteryDto> CreateLotteryBatch(List<CreateUpdateLotteryDto> dtos)
         {
             Check.NotNullOrEmpty(dtos, nameof(dtos));
-            LotteryInfo infoStart = (await _lotteryInforepository.GetQueryableAsync()).OrderByDescending(item => item.IndexNo).First();
             List<LotteryInfo> info = ObjectMapper.Map<List<CreateUpdateLotteryDto>, List<LotteryInfo>>(dtos);
             await _lotteryInforepository.InsertManyAsync(info);
-            LotteryInfo infoEnd = (await _lotteryInforepository.GetQueryableAsync()).OrderByDescending(item => item.IndexNo).First();
-
-            if (infoEnd.Id > infoStart.Id)
-            {
-                return ObjectMapper.Map<LotteryInfo, LotteryDto>(infoEnd);
-            }
-
-            throw new System.Exception("批量保存失败");
-
+            return ObjectMapper.Map<LotteryInfo, LotteryDto>(info[0]);
         }
     }
 }
