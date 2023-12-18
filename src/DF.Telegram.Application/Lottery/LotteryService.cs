@@ -9,6 +9,7 @@ using Volo.Abp;
 using Volo.Abp.Application.Dtos;
 using Volo.Abp.Application.Services;
 using Volo.Abp.Domain.Repositories;
+using Volo.Abp.Uow;
 
 namespace DF.Telegram.Lottery
 {
@@ -22,10 +23,12 @@ namespace DF.Telegram.Lottery
     {
         private readonly IRepository<LotteryResult, long> _lotteryResultrepository;
         private readonly IRepository<LotteryInfo, long> _lotteryInforepository;
+        private readonly IUnitOfWorkManager _unitOfWorkManager;
 
         public LotteryService(
             IRepository<LotteryInfo, long> repository
-            , IRepository<LotteryResult, long> lotteryResultrepository) : base(repository)
+            , IRepository<LotteryResult, long> lotteryResultrepository
+            , IUnitOfWorkManager unitOfWorkManager) : base(repository)
         {
             GetPolicyName = TelegramPermissions.Lottery.Default;
             GetListPolicyName = TelegramPermissions.Lottery.Default;
@@ -35,6 +38,7 @@ namespace DF.Telegram.Lottery
 
             _lotteryResultrepository = lotteryResultrepository;
             _lotteryInforepository = repository;
+            _unitOfWorkManager = unitOfWorkManager;
         }
 
         public async Task<PagedResultDto<StatisticsWinItemDto>> GetStatisticsWinItem()
@@ -201,12 +205,38 @@ namespace DF.Telegram.Lottery
             }
         }
 
+        [Authorize(TelegramPermissions.Lottery.Create)]
         public async Task<LotteryDto> CreateLotteryBatch(List<CreateUpdateLotteryDto> dtos)
         {
             Check.NotNullOrEmpty(dtos, nameof(dtos));
             List<LotteryInfo> info = ObjectMapper.Map<List<CreateUpdateLotteryDto>, List<LotteryInfo>>(dtos);
-            await _lotteryInforepository.InsertManyAsync(info);
-            return ObjectMapper.Map<LotteryInfo, LotteryDto>(info[0]);
+            LotteryInfo? startInfo = (await _lotteryInforepository.GetQueryableAsync()).OrderByDescending(item => item.Id).FirstOrDefault();
+
+            using (var uom = _unitOfWorkManager.Begin(true, true))
+            {
+                try
+                {
+                    await _lotteryInforepository.InsertManyAsync(info);
+                    await uom.CompleteAsync();
+                }
+                catch (System.Exception)
+                {
+                    await uom.RollbackAsync();
+                    throw;
+                }
+
+            }
+
+            LotteryInfo endInfo = (await _lotteryInforepository.GetQueryableAsync()).OrderByDescending(item => item.Id).First();
+
+            if (startInfo == null || startInfo.Id < endInfo.Id)
+            {
+                return ObjectMapper.Map<LotteryInfo, LotteryDto>(endInfo);
+            }
+            else 
+            {
+                throw new System.Exception("添加数据失败!");
+            }
         }
     }
 }

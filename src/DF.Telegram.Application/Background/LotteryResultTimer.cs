@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Quartz;
+using Quartz.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -40,6 +41,7 @@ namespace DF.Telegram.Background
 
         public override async Task Execute(IJobExecutionContext context)
         {
+            Logger.LogInformation("开始任务......");
             List<LotteryResult> result = await _lotteryResultRepository.GetListAsync(item => item.Code == "2013001");
 
             if (result == null || result.Count <= 0)
@@ -63,6 +65,8 @@ namespace DF.Telegram.Background
                     await GetCurrentLotteryResult(dayStart, 0);
                 }
             }
+
+            Logger.LogInformation("任务结束......");
         }
 
         private async Task GetCurrentLotteryResult(string dayStart, int pageNo)
@@ -118,6 +122,16 @@ namespace DF.Telegram.Background
                 dto = new LotteryInputDto();
             }
 
+            try
+            {
+                Logger.LogInformation($"获取到数据：{dto.Total}");
+            }
+            catch (Exception)
+            {
+
+                Logger.LogInformation($"获取到数据失败");
+            }
+            
             return dto;
 
         }
