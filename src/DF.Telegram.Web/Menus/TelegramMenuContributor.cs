@@ -1,6 +1,5 @@
 ﻿using System.Threading.Tasks;
 using DF.Telegram.Localization;
-using DF.Telegram.MultiTenancy;
 using DF.Telegram.Permissions;
 using Volo.Abp.Identity.Web.Navigation;
 using Volo.Abp.SettingManagement.Web.Navigation;

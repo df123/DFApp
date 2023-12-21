@@ -7,7 +7,6 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using DF.Telegram.EntityFrameworkCore;
 using DF.Telegram.Localization;
-using DF.Telegram.MultiTenancy;
 using DF.Telegram.Web.Menus;
 using Microsoft.OpenApi.Models;
 using OpenIddict.Validation.AspNetCore;

@@ -41,11 +41,11 @@ namespace DF.Telegram.Lottery
             _unitOfWorkManager = unitOfWorkManager;
         }
 
-        public async Task<PagedResultDto<StatisticsWinItemDto>> GetStatisticsWinItem()
+        public async Task<PagedResultDto<StatisticsWinItemDto>> GetStatisticsWinItem(string? purchasedPeriod, string? winningPeriod)
         {
             PagedResultDto<StatisticsWinItemDto> pagedResultDto = new PagedResultDto<StatisticsWinItemDto>();
-            List<LotteryResult> lotteryResults = await _lotteryResultrepository.GetListAsync();
-            List<LotteryInfo> info = await _lotteryInforepository.GetListAsync();
+            List<LotteryResult> lotteryResults = await GetLotteryResultData(purchasedPeriod, winningPeriod);
+            List<LotteryInfo> info = await GetLotteryInfoData(purchasedPeriod, winningPeriod);
 
             var infoGroup = info.GroupBy(item => item.IndexNo);
 
@@ -108,10 +108,10 @@ namespace DF.Telegram.Lottery
             return pagedResultDto;
         }
 
-        public async Task<List<StatisticsWinDto>> GetStatisticsWin()
+        public async Task<List<StatisticsWinDto>> GetStatisticsWin(string? purchasedPeriod, string? winningPeriod)
         {
-            List<LotteryResult> lotteryResults = await _lotteryResultrepository.GetListAsync();
-            List<LotteryInfo> info = await _lotteryInforepository.GetListAsync();
+            List<LotteryResult> lotteryResults = await GetLotteryResultData(purchasedPeriod, winningPeriod);
+            List<LotteryInfo> info = await GetLotteryInfoData(purchasedPeriod, winningPeriod);
 
             var infoGroup = info.GroupBy(item => item.IndexNo);
 
@@ -166,6 +166,39 @@ namespace DF.Telegram.Lottery
             return results;
         }
 
+        private async Task<List<LotteryResult>> GetLotteryResultData(string? purchasedPeriod, string? winningPeriod)
+        {
+            List<LotteryResult> lotteryResults;
+
+            if (!string.IsNullOrWhiteSpace(winningPeriod))
+            {
+                lotteryResults = await _lotteryResultrepository.GetListAsync(x => x.Code == winningPeriod);
+            }
+            else
+            {
+                lotteryResults = await _lotteryResultrepository.GetListAsync();
+            }
+
+            return lotteryResults;
+        }
+
+        private async Task<List<LotteryInfo>> GetLotteryInfoData(string? purchasedPeriod, string? winningPeriod)
+        {
+            List<LotteryInfo> info;
+
+            if (!string.IsNullOrWhiteSpace(purchasedPeriod) && int.TryParse(purchasedPeriod, out int purchasedPeriodInt))
+            {
+                info = await _lotteryInforepository.GetListAsync(x => x.IndexNo == purchasedPeriodInt);
+            }
+            else
+            {
+                info = await _lotteryInforepository.GetListAsync();
+            }
+
+            return info;
+        }
+
+
         private string JudgeWin(int redWinCounts, bool blueWin)
         {
             if (blueWin)
@@ -205,6 +238,7 @@ namespace DF.Telegram.Lottery
             }
         }
 
+
         [Authorize(TelegramPermissions.Lottery.Create)]
         public async Task<LotteryDto> CreateLotteryBatch(List<CreateUpdateLotteryDto> dtos)
         {
@@ -233,10 +267,12 @@ namespace DF.Telegram.Lottery
             {
                 return ObjectMapper.Map<LotteryInfo, LotteryDto>(endInfo);
             }
-            else 
+            else
             {
                 throw new System.Exception("添加数据失败!");
             }
         }
+
+
     }
 }
