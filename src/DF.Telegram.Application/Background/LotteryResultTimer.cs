@@ -1,18 +1,17 @@
 ﻿using DF.Telegram.Lottery;
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Quartz;
-using Quartz.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Linq.Dynamic.Core;
 using System.Net.Http;
-using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
 using Volo.Abp.BackgroundWorkers.Quartz;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp.ObjectMapping;
+using Volo.Abp.Uow;
 
 namespace DF.Telegram.Background
 {
@@ -21,9 +20,11 @@ namespace DF.Telegram.Background
         private readonly IRepository<LotteryResult, long> _lotteryResultRepository;
         private readonly IObjectMapper _mapper;
         private readonly IHttpClientFactory _httpClientFactory;
+        private readonly IUnitOfWorkManager _unitOfWorkManager;
         public LotteryResultTimer(IRepository<LotteryResult, long> lotteryResultRepository
             , IObjectMapper mapper
-            , IHttpClientFactory httpClientFactory)
+            , IHttpClientFactory httpClientFactory
+            , IUnitOfWorkManager unitOfWorkManager)
         {
             JobDetail = JobBuilder
                 .Create<LotteryResultTimer>()
@@ -37,6 +38,7 @@ namespace DF.Telegram.Background
             _lotteryResultRepository = lotteryResultRepository;
             _mapper = mapper;
             _httpClientFactory = httpClientFactory;
+            _unitOfWorkManager = unitOfWorkManager;
         }
 
         public override async Task Execute(IJobExecutionContext context)
@@ -60,9 +62,12 @@ namespace DF.Telegram.Background
                 List<LotteryResult> result1 = await _lotteryResultRepository.GetListAsync(item => item.Date != null && item.Date.StartsWith(day));
                 if (result1 == null || result1.Count <= 0)
                 {
-                    LotteryResult lotteryResult = await _lotteryResultRepository.LastOrDefaultAsync();
-                    string dayStart = (lotteryResult.Date!.Split('('))[0];
-                    await GetCurrentLotteryResult(dayStart, 0);
+                    using(var uom = _unitOfWorkManager.Begin())
+                    {
+                        LotteryResult lotteryResult = (await _lotteryResultRepository.GetQueryableAsync()).OrderByDescending(x => x.Code).First();
+                        string dayStart = (lotteryResult.Date!.Split('('))[0];
+                        await GetCurrentLotteryResult(dayStart, 0);
+                    }
                 }
             }
 
