@@ -14,7 +14,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.AspNetCore.Mvc.ViewFeatures" Version="2.2.0" />
     <PackageReference Include="Volo.Abp.Account.Application" Version="8.0.0" />
     <PackageReference Include="Volo.Abp.Identity.Application" Version="8.0.0" />
     <PackageReference Include="Volo.Abp.PermissionManagement.Application" Version="8.0.0" />

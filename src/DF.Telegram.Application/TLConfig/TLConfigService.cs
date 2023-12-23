@@ -1,9 +1,6 @@
 using DF.Telegram.Helper;
 using DF.Telegram.Queue;
-using Microsoft.AspNetCore.Mvc;
-using System.Threading;
 using Volo.Abp.Application.Services;
-using Volo.Abp.DependencyInjection;
 
 namespace DF.Telegram.TLConfig
 {
