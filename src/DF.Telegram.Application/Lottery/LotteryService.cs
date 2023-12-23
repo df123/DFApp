@@ -1,6 +1,7 @@
 ﻿using DF.Telegram.Lottery.Statistics;
 using DF.Telegram.Permissions;
 using Microsoft.AspNetCore.Authorization;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Dynamic.Core;
@@ -271,6 +272,89 @@ namespace DF.Telegram.Lottery
             {
                 throw new System.Exception("添加数据失败!");
             }
+        }
+
+        [Authorize(TelegramPermissions.Lottery.Create)]
+        public async Task<List<LotteryDto>> CalculateCombination(LotteryCombinationDto dto)
+        {
+            Check.NotNull(dto.Reds, nameof(dto.Reds));
+            Check.NotNull(dto.Blues, nameof(dto.Blues));
+
+            if (dto.Blues.Count <= 0 || dto.Reds.Count <= 0 || dto.Period <= 2013000)
+            {
+                throw new ArgumentException(nameof(dto));
+            }
+
+            LotteryInfo? infoGroupId = (await _lotteryInforepository.GetQueryableAsync()).Where(x => x.IndexNo == dto.Period).OrderByDescending(x => x.GroupId).FirstOrDefault();
+
+            int groupId = 0;
+            if (infoGroupId != null)
+            {
+                groupId = infoGroupId.GroupId + 1;
+            }
+
+            List<LotteryInfo> infos = new List<LotteryInfo>();
+
+            for (int m = 0; m < dto.Blues.Count; m++)
+            {
+                for (var i = 0; i < dto.Reds.Count; i++)
+                {
+
+                    infos.Add(new LotteryInfo()
+                    {
+                        IndexNo = dto.Period,
+                        Number = dto.Blues[m],
+                        ColorType = "1",
+                        GroupId = groupId
+                    });
+
+                    for (int j = 0, n = i; j < 6; j++)
+                    {
+
+                        int indexRed = 0;
+                        if ((n + j) >= dto.Reds.Count)
+                        {
+                            indexRed = (n + j) - dto.Reds.Count;
+                        }
+                        else
+                        {
+                            indexRed = n + j;
+                        }
+
+                        infos.Add(new LotteryInfo()
+                        {
+                            IndexNo = dto.Period,
+                            Number = dto.Reds[indexRed],
+                            ColorType = "0",
+                            GroupId = groupId
+                        });
+                    }
+
+                    groupId++;
+                }
+            }
+
+            if (infos.Count > 0)
+            {
+                using (var uom = _unitOfWorkManager.Begin(true, true))
+                {
+                    try
+                    {
+                        await _lotteryInforepository.InsertManyAsync(infos);
+                        await uom.CompleteAsync();
+                    }
+                    catch (Exception)
+                    {
+                        await uom.RollbackAsync();
+                        throw;
+                    }
+                }
+            }
+
+            List<LotteryInfo> returnInfos = await _lotteryInforepository.GetListAsync(x => x.IndexNo == dto.Period && x.GroupId >= (infoGroupId == null ? 0 : infoGroupId.GroupId));
+
+            return ObjectMapper.Map<List<LotteryInfo>, List<LotteryDto>>(returnInfos);
+
         }
 
 
