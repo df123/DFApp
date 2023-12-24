@@ -12,7 +12,8 @@ module.exports = {
     entry: {
         MediaChart: './src/Media/Chart/main.ts',
         MediaExternalLink: './src/Media/ExternalLink/main.ts',
-        LotteryStatistics: './src/Lottery/Statistics/main.ts'
+        LotteryStatistics: './src/Lottery/Statistics/main.ts',
+        LotterySpecifyPeriod: './src/Lottery/SpecifyPeriod/main.ts',
     },
     output: {
         filename: '[name].entry.js',
