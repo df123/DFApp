@@ -56,6 +56,12 @@
     "Permission:DynamicIPIP": "地址记录表",
     "Permission:DynamicIPIP.Delete": "删除",
 
+
+    "Menu:Lottery": "彩票",
+    "Menu:LotteryStatistics": "彩票分析",
+    "Menu:LotteryStatisticsItem": "彩票条目分析",
+    "Menu:LotterySpecifyPeriod": "彩票指定条目",
+
     "LotteryTitle": "彩票",
     "Permission:LotteryTelegaram": "彩票",
     "Permission:Lottery": "彩票分析",
@@ -77,7 +83,12 @@
     "Lottery:LotteryStatisticsItem:WinCode": "中奖期号",
     "Lottery:LotteryStatisticsItem:BuyNumber": "购买号码",
     "Lottery:LotteryStatisticsItem:WinNumber": "中奖号码",
-    "Lottery:LotteryStatisticsItem:WinAmout": "中奖金额"
+    "Lottery:LotteryStatisticsItem:WinAmout": "中奖金额",
+
+    "Lottery:LotterySpecifyPeriodTitle": "指定期号统计"
+
+
+
 
   }
 }
