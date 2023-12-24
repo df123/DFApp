@@ -1,0 +1,19 @@
+﻿@page
+@using DF.Telegram.Localization;
+@using Microsoft.Extensions.Localization;
+@model DF.Telegram.Web.Pages.Lottery.SpecifyPeriod.IndexModel
+@inject IStringLocalizer<TelegramResource> L
+@section scripts{
+    @* LotterySpecifyPeriod *@
+<abp-script src="/dist/LotterySpecifyPeriod.entry.js"></abp-script>
+    @* LotterySpecifyPeriod *@
+}
+<abp-card>
+    <abp-card-header>
+        <abp-card-title>@L["Lottery:LotterySpecifyPeriodTitle"]</abp-card-title>
+    </abp-card-header>
+    <abp-card-body>
+        <div id="app"></div>
+    </abp-card-body>
+</abp-card>
+
