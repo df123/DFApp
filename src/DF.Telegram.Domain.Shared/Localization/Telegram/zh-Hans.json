@@ -61,6 +61,7 @@
     "Menu:LotteryStatistics": "彩票分析",
     "Menu:LotteryStatisticsItem": "彩票条目分析",
     "Menu:LotterySpecifyPeriod": "彩票指定条目",
+    "Menu:LotteryResult": "开奖号码",
 
     "LotteryTitle": "彩票",
     "Permission:LotteryTelegaram": "彩票",
@@ -85,7 +86,14 @@
     "Lottery:LotteryStatisticsItem:WinNumber": "中奖号码",
     "Lottery:LotteryStatisticsItem:WinAmout": "中奖金额",
 
-    "Lottery:LotterySpecifyPeriodTitle": "指定期号统计"
+    "Lottery:LotterySpecifyPeriodTitle": "指定期号统计",
+
+
+    "Lottery:LotteryResult": "开奖号码",
+    "Lottery:LotteryPeriod": "期号",
+    "Lottery:LotteryBlue": "蓝球",
+    "Lottery:LotteryRed": "红球",
+    "Lottery:LotteryCode": "开奖日期"
 
 
 

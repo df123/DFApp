@@ -68,6 +68,7 @@ public class TelegramMenuContributor : IMenuContributor
             lotteryFirst.AddItem(new ApplicationMenuItem(TelegramMenus.Home, l["Menu:LotteryStatistics"], "~/Lottery/Statistics", icon: "fas fa-baseball-ball", order: 2));
             lotteryFirst.AddItem(new ApplicationMenuItem(TelegramMenus.Home, l["Menu:LotteryStatisticsItem"], "~/Lottery/StatisticsItem", icon: "fas fa-baseball-ball", order: 3));
             lotteryFirst.AddItem(new ApplicationMenuItem(TelegramMenus.Home, l["Menu:LotterySpecifyPeriod"], "~/Lottery/SpecifyPeriod", icon: "fas fa-baseball-ball", order: 3));
+            lotteryFirst.AddItem(new ApplicationMenuItem(TelegramMenus.Home, l["Menu:LotteryResult"], "~/Lottery/Result", icon: "fas fa-baseball-ball", order: 4));
 
             context.Menu.Items.Insert(1, lotteryFirst);
 

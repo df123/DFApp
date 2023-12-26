@@ -1,11 +1,14 @@
 ﻿using DF.Telegram.Lottery.Statistics;
 using DF.Telegram.Permissions;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Dynamic.Core;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using System.Xml.Schema;
 using Volo.Abp;
 using Volo.Abp.Application.Dtos;
 using Volo.Abp.Application.Services;
@@ -23,12 +26,14 @@ namespace DF.Telegram.Lottery
         CreateUpdateLotteryDto>, ILotteryService
     {
         private readonly IRepository<LotteryResult, long> _lotteryResultrepository;
+        private readonly IRepository<LotteryPrizegrades, long> _lotteryPrizegradesRepository;
         private readonly IRepository<LotteryInfo, long> _lotteryInforepository;
         private readonly IUnitOfWorkManager _unitOfWorkManager;
 
         public LotteryService(
             IRepository<LotteryInfo, long> repository
             , IRepository<LotteryResult, long> lotteryResultrepository
+            , IRepository<LotteryPrizegrades, long> lotteryPrizegradesRepository
             , IUnitOfWorkManager unitOfWorkManager) : base(repository)
         {
             GetPolicyName = TelegramPermissions.Lottery.Default;
@@ -40,13 +45,14 @@ namespace DF.Telegram.Lottery
             _lotteryResultrepository = lotteryResultrepository;
             _lotteryInforepository = repository;
             _unitOfWorkManager = unitOfWorkManager;
+            _lotteryPrizegradesRepository = lotteryPrizegradesRepository;
         }
 
         public async Task<PagedResultDto<StatisticsWinItemDto>> GetStatisticsWinItem(string? purchasedPeriod, string? winningPeriod)
         {
             PagedResultDto<StatisticsWinItemDto> pagedResultDto = new PagedResultDto<StatisticsWinItemDto>();
-            List<LotteryResult> lotteryResults = await GetLotteryResultData(purchasedPeriod, winningPeriod);
-            List<LotteryInfo> info = await GetLotteryInfoData(purchasedPeriod, winningPeriod);
+            List<LotteryResult> lotteryResults = await GetLotteryResultData(winningPeriod);
+            List<LotteryInfo> info = await GetLotteryInfoData(purchasedPeriod);
 
             var infoGroup = info.GroupBy(item => item.IndexNo);
 
@@ -92,7 +98,7 @@ namespace DF.Telegram.Lottery
                             }
                         }
 
-                        int winMoney = int.Parse(JudgeWin(redWin, lotteryResultItem.Blue == winDto.BuyLottery.Blue));
+                        int winMoney = int.Parse(await JudgeWin(redWin, lotteryResultItem.Blue == winDto.BuyLottery.Blue, lotteryResultItem.Code));
                         if (winMoney > 0)
                         {
                             winDto.WinAmount += winMoney;
@@ -111,8 +117,8 @@ namespace DF.Telegram.Lottery
 
         public async Task<List<StatisticsWinDto>> GetStatisticsWin(string? purchasedPeriod, string? winningPeriod)
         {
-            List<LotteryResult> lotteryResults = await GetLotteryResultData(purchasedPeriod, winningPeriod);
-            List<LotteryInfo> info = await GetLotteryInfoData(purchasedPeriod, winningPeriod);
+            List<LotteryResult> lotteryResults = await GetLotteryResultData(winningPeriod);
+            List<LotteryInfo> info = await GetLotteryInfoData(purchasedPeriod);
 
             var infoGroup = info.GroupBy(item => item.IndexNo);
 
@@ -155,7 +161,7 @@ namespace DF.Telegram.Lottery
 
                         LotteryInfo blueLotteryInfo = lotteryNumbers.First(x => x.ColorType == "1");
 
-                        int winMoney = int.Parse(JudgeWin(redWin, lotteryResultItem.Blue == blueLotteryInfo.Number));
+                        int winMoney = int.Parse(await JudgeWin(redWin, lotteryResultItem.Blue == blueLotteryInfo.Number, lotteryResultItem.Code));
                         if (winMoney > 0)
                         {
                             winDto.WinAmount += winMoney;
@@ -167,7 +173,7 @@ namespace DF.Telegram.Lottery
             return results;
         }
 
-        private async Task<List<LotteryResult>> GetLotteryResultData(string? purchasedPeriod, string? winningPeriod)
+        private async Task<List<LotteryResult>> GetLotteryResultData(string? winningPeriod)
         {
             List<LotteryResult> lotteryResults;
 
@@ -183,7 +189,7 @@ namespace DF.Telegram.Lottery
             return lotteryResults;
         }
 
-        private async Task<List<LotteryInfo>> GetLotteryInfoData(string? purchasedPeriod, string? winningPeriod)
+        private async Task<List<LotteryInfo>> GetLotteryInfoData(string? purchasedPeriod)
         {
             List<LotteryInfo> info;
 
@@ -200,13 +206,19 @@ namespace DF.Telegram.Lottery
         }
 
 
-        private string JudgeWin(int redWinCounts, bool blueWin)
+        private async Task<string> JudgeWin(int redWinCounts, bool blueWin, string winningPeriod)
         {
+
             if (blueWin)
             {
                 switch (redWinCounts)
                 {
                     case 6:
+                        string result = await GetActualAmount(winningPeriod, 1);
+                        if (result != string.Empty)
+                        {
+                            return result;
+                        }
                         return "5000000";
                     case 5:
                         return "3000";
@@ -228,6 +240,11 @@ namespace DF.Telegram.Lottery
                 switch (redWinCounts)
                 {
                     case 6:
+                        string result = await GetActualAmount(winningPeriod, 2);
+                        if (result != string.Empty)
+                        {
+                            return result;
+                        }
                         return "100000";
                     case 5:
                         return "200";
@@ -237,6 +254,50 @@ namespace DF.Telegram.Lottery
                         return "-2";
                 }
             }
+        }
+
+        private async Task<string> GetActualAmount(string winningPeriod, int prize)
+        {
+            Check.NotNullOrWhiteSpace(winningPeriod, nameof(winningPeriod));
+
+            LotteryResult result = await _lotteryResultrepository.GetAsync(x => x.Code == winningPeriod);
+            result.Prizegrades = await _lotteryPrizegradesRepository.GetListAsync(x => x.LotteryResultId == result.Id);
+
+            if (result != null && result.Prizegrades != null && result.Prizegrades.Count > 0)
+            {
+                LotteryPrizegrades prizegrades = result.Prizegrades.First(x => x.Type == prize);
+                if (prizegrades != null && prizegrades.TypeMoney != null)
+                {
+                    if (int.TryParse(prizegrades.TypeMoney, out _))
+                    {
+                        return prizegrades.TypeMoney;
+                    }
+                    else
+                    {
+                        int sum = 0;
+
+                        MatchCollection matchs = Regex.Matches(prizegrades.TypeMoney, @"\d+");
+
+                        foreach (Match match in matchs)
+                        {
+                            if (match.Success)
+                            {
+                                sum += int.Parse(match.Value);
+                            }
+                        }
+
+                        if (sum == 0)
+                        {
+                            return "-100000000";
+                        }
+
+                        return sum.ToString();
+                    }
+
+
+                }
+            }
+            return string.Empty;
         }
 
 

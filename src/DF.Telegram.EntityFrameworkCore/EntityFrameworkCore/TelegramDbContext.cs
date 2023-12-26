@@ -115,6 +115,9 @@ public class TelegramDbContext :
             .WithOne(e => e.Result)
             .HasForeignKey(e => e.LotteryResultId);
             b.ConfigureByConvention();
+
+            b.HasIndex(e => e.Code)
+            .IsUnique();
         });
 
         builder.Entity<LotteryPrizegrades>(b =>
@@ -126,4 +129,14 @@ public class TelegramDbContext :
         builder.ConfigureBlobStoring();
         builder.ConfigureCmsKit();
     }
+
+    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+    {
+#if DEBUG
+        optionsBuilder.LogTo(System.Console.WriteLine, Microsoft.Extensions.Logging.LogLevel.Information)
+            .EnableSensitiveDataLogging();
+#endif
+        base.OnConfiguring(optionsBuilder);
+    }
+
 }
