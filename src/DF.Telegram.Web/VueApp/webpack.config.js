@@ -19,12 +19,12 @@ module.exports = {
         filename: '[name].entry.js',
         path: path.resolve(__dirname, '..', 'wwwroot', 'dist')
     },
-    //optimization: {
-    //    splitChunks: {
-    //        chunks: 'all',
-    //        maxSize: 393216
-    //    },
-    //},
+    optimization: {
+       splitChunks: {
+           chunks: 'all',
+           maxSize: 393216
+       },
+    },
     // devtool: 'source-map',
     // mode: 'development',
     mode: 'production',
