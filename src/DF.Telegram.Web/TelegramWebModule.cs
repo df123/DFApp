@@ -175,6 +175,7 @@ namespace DF.Telegram.Web;
     {
         Configure<AbpBundlingOptions>(options =>
         {
+            options.Mode = BundlingMode.Bundle;
             options.StyleBundles.Configure(
                 LeptonXLiteThemeBundles.Styles.Global,
                 bundle =>
