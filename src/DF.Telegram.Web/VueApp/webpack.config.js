@@ -25,9 +25,9 @@ module.exports = {
            maxSize: 393216
        },
     },
-    devtool: 'source-map',
-    mode: 'development',
-    // mode: 'production',
+    // devtool: 'source-map',
+    // mode: 'development',
+    mode: 'production',
     module: {
         rules: [
             {
