@@ -77,6 +77,7 @@ namespace DF.Telegram.Background
                         await UpdatePrizegrades();
                         LotteryResult lotteryResult = (await _resultReadOnly.GetQueryableAsync()).OrderByDescending(x => x.Code).First();
                         string dayStart = (lotteryResult.Date!.Split('('))[0];
+                        dayStart = DateTime.Parse(dayStart).AddDays(1).ToString("yyyy-MM-dd");
                         await GetCurrentLotteryResult(dayStart, 0);
                         await uom.CompleteAsync();
                     }
