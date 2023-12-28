@@ -26,6 +26,9 @@ public class TelegramPermissionDefinitionProvider : PermissionDefinitionProvider
         lotteryPermission.AddChild(TelegramPermissions.Lottery.Edit, L("Permission:Lottery.Edit"));
         lotteryPermission.AddChild(TelegramPermissions.Lottery.Delete, L("Permission:Lottery.Delete"));
 
+        var queueGroup = context.AddGroup(TelegramPermissions.QueueLog.Default, L("Permission:QueueLogTelegaram"));
+        var queuePermission = queueGroup.AddPermission(TelegramPermissions.QueueLog.Default, L("Permission:QueueLog"));
+
     }
 
     private static LocalizableString L(string name)

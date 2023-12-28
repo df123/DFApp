@@ -36,11 +36,11 @@ public class TelegramMenuContributor : IMenuContributor
 
         if (await context.IsGrantedAsync(TelegramPermissions.Medias.Default))
         {
-            var mediaFirst = new ApplicationMenuItem(TelegramMenus.Home, l["Menu:Media"], "~/Media", icon: "fas fa-play", order: 1);
+            var mediaFirst = new ApplicationMenuItem(TelegramMenus.Media, l["Menu:Media"], "~/Media", icon: "fas fa-play", order: 1);
 
-            mediaFirst.AddItem(new ApplicationMenuItem(TelegramMenus.Home, l["Menu:Media"], "~/Media", icon: "fas fa-play", order: 1));
-            mediaFirst.AddItem(new ApplicationMenuItem(TelegramMenus.Home, l["Menu:Media:ExternalLink"], "~/Media/ExternalLink", icon: "fas fa-link", order: 2));
-            mediaFirst.AddItem(new ApplicationMenuItem(TelegramMenus.Home, l["Menu:Media:Chart"], "~/Media/Chart", icon: "fas fa-chart-bar", order: 3));
+            mediaFirst.AddItem(new ApplicationMenuItem(TelegramMenus.Media, l["Menu:Media"], "~/Media", icon: "fas fa-play", order: 1));
+            mediaFirst.AddItem(new ApplicationMenuItem(TelegramMenus.Media, l["Menu:Media:ExternalLink"], "~/Media/ExternalLink", icon: "fas fa-link", order: 2));
+            mediaFirst.AddItem(new ApplicationMenuItem(TelegramMenus.Media, l["Menu:Media:Chart"], "~/Media/Chart", icon: "fas fa-chart-bar", order: 3));
 
             context.Menu.Items.Insert(1, mediaFirst);
         }
@@ -50,7 +50,7 @@ public class TelegramMenuContributor : IMenuContributor
             context.Menu.Items.Insert(
                 1,
                 new ApplicationMenuItem(
-                    TelegramMenus.Home,
+                    TelegramMenus.DynamicIP,
                     l["Menu:DynamicIP"],
                     "~/DynamicIP",
                     icon: "fas fa-map",
@@ -62,16 +62,30 @@ public class TelegramMenuContributor : IMenuContributor
         if (await context.IsGrantedAsync(TelegramPermissions.Lottery.Default))
         {
 
-            var lotteryFirst = new ApplicationMenuItem(TelegramMenus.Home, l["Menu:Lottery"], "~/Lottery", icon: "fas fa-baseball-ball", order: 3);
+            var lotteryFirst = new ApplicationMenuItem(TelegramMenus.Lottery, l["Menu:Lottery"], "~/Lottery", icon: "fas fa-baseball-ball", order: 3);
 
-            lotteryFirst.AddItem(new ApplicationMenuItem(TelegramMenus.Home, l["Menu:Lottery"], "~/Lottery", icon: "fas fa-baseball-ball", order: 1));
-            lotteryFirst.AddItem(new ApplicationMenuItem(TelegramMenus.Home, l["Menu:LotteryStatistics"], "~/Lottery/Statistics", icon: "fas fa-baseball-ball", order: 2));
-            lotteryFirst.AddItem(new ApplicationMenuItem(TelegramMenus.Home, l["Menu:LotteryStatisticsItem"], "~/Lottery/StatisticsItem", icon: "fas fa-baseball-ball", order: 3));
-            lotteryFirst.AddItem(new ApplicationMenuItem(TelegramMenus.Home, l["Menu:LotterySpecifyPeriod"], "~/Lottery/SpecifyPeriod", icon: "fas fa-baseball-ball", order: 3));
-            lotteryFirst.AddItem(new ApplicationMenuItem(TelegramMenus.Home, l["Menu:LotteryResult"], "~/Lottery/Result", icon: "fas fa-baseball-ball", order: 4));
+            lotteryFirst.AddItem(new ApplicationMenuItem(TelegramMenus.Lottery, l["Menu:Lottery"], "~/Lottery", icon: "fas fa-baseball-ball", order: 1));
+            lotteryFirst.AddItem(new ApplicationMenuItem(TelegramMenus.Lottery, l["Menu:LotteryStatistics"], "~/Lottery/Statistics", icon: "fas fa-baseball-ball", order: 2));
+            lotteryFirst.AddItem(new ApplicationMenuItem(TelegramMenus.Lottery, l["Menu:LotteryStatisticsItem"], "~/Lottery/StatisticsItem", icon: "fas fa-baseball-ball", order: 3));
+            lotteryFirst.AddItem(new ApplicationMenuItem(TelegramMenus.Lottery, l["Menu:LotterySpecifyPeriod"], "~/Lottery/SpecifyPeriod", icon: "fas fa-baseball-ball", order: 3));
+            lotteryFirst.AddItem(new ApplicationMenuItem(TelegramMenus.Lottery, l["Menu:LotteryResult"], "~/Lottery/Result", icon: "fas fa-baseball-ball", order: 4));
 
             context.Menu.Items.Insert(1, lotteryFirst);
 
+        }
+
+        if (await context.IsGrantedAsync(TelegramPermissions.QueueLog.Default))
+        {
+            context.Menu.Items.Insert(
+                1,
+                new ApplicationMenuItem(
+                    TelegramMenus.QueueLog,
+                    l["Menu:QueueLog"],
+                    "~/QueueSink",
+                    icon: "fas fa-book",
+                    order: 4
+                )
+            );
         }
 
 

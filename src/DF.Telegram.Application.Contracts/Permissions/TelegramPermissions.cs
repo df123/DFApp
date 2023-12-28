@@ -30,5 +30,9 @@ public static class TelegramPermissions
         public const string Delete = Default + ".Delete";
     }
 
+    public static class QueueLog
+    {
+        public const string Default = GroupName + ".QueueLog";
+    }
 
 }

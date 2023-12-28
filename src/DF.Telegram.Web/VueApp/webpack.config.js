@@ -14,16 +14,17 @@ module.exports = {
         MediaExternalLink: './src/Media/ExternalLink/main.ts',
         LotteryStatistics: './src/Lottery/Statistics/main.ts',
         LotterySpecifyPeriod: './src/Lottery/SpecifyPeriod/main.ts',
+        QueueSink: './src/QueueSink/Log/main.ts',
     },
     output: {
         filename: '[name].entry.js',
         path: path.resolve(__dirname, '..', 'wwwroot', 'dist')
     },
     optimization: {
-       splitChunks: {
-           chunks: 'all',
-           maxSize: 393216
-       },
+        splitChunks: {
+            chunks: 'all',
+            maxSize: 393216
+        },
     },
     // devtool: 'source-map',
     // mode: 'development',
@@ -68,11 +69,16 @@ module.exports = {
         //     filename: "[name].entry.css"
         // })
         AutoImport({
-            resolvers: [ElementPlusResolver()],
+            resolvers: [
+                ElementPlusResolver(),
+            ],
         }),
         Components({
-            resolvers: [ElementPlusResolver()],
+            resolvers: [
+                ElementPlusResolver()
+            ],
         }),
+
         new AbpRazorWebpackPlugin({ path: 'dist', htmlpath: '../Pages' })
     ]
 };

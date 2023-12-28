@@ -93,9 +93,13 @@
     "Lottery:LotteryPeriod": "期号",
     "Lottery:LotteryBlue": "蓝球",
     "Lottery:LotteryRed": "红球",
-    "Lottery:LotteryCode": "开奖日期"
+    "Lottery:LotteryCode": "开奖日期",
 
+    "Permission:QueueLogTelegaram": "队列日志",
+    "Permission:QueueLog": "日志",
 
+    "Lottery:QueueLogTitle": "日志",
+    "Menu:QueueLog": "日志"
 
 
   }
