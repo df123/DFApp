@@ -1,0 +1,18 @@
+﻿@page
+@using DFApp.Web.Pages.Media
+@using DFApp.Localization
+@using Microsoft.Extensions.Localization
+@model IndexModel
+@inject IStringLocalizer<DFAppResource> L
+@section scripts{
+    <abp-script src="/Pages/Media/Index.js"></abp-script>
+}
+
+<abp-card>
+    <abp-card-header>
+        <abp-card-title>@L["MediaTitle"]</abp-card-title>
+    </abp-card-header>
+    <abp-card-body>
+        <abp-table striped-rows="true" id="MediasTable"></abp-table>
+    </abp-card-body>
+</abp-card>

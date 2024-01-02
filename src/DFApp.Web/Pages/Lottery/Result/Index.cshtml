@@ -1,0 +1,18 @@
+﻿@page
+@using DFApp.Localization;
+@using Microsoft.Extensions.Localization;
+@model DFApp.Web.Pages.Lottery.Result.IndexModel
+
+@inject IStringLocalizer<DFAppResource> L
+@section scripts{
+    <abp-script src="/Pages/Lottery/Result/Index.js"></abp-script>
+}
+
+<abp-card>
+    <abp-card-header>
+        <abp-card-title>@L["Lottery:LotteryResult"]</abp-card-title>
+    </abp-card-header>
+    <abp-card-body>
+        <abp-table striped-rows="true" id="LotteryResultTable"></abp-table>
+    </abp-card-body>
+</abp-card>
