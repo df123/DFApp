@@ -14,7 +14,7 @@ module.exports = {
         MediaExternalLink: './src/Media/ExternalLink/main.ts',
         LotteryStatistics: './src/Lottery/Statistics/main.ts',
         LotterySpecifyPeriod: './src/Lottery/SpecifyPeriod/main.ts',
-        QueueSink: './src/QueueSink/Log/main.ts',
+        QueueSink: './src/QueueSink/QueueLog/main.ts',
     },
     output: {
         filename: '[name].entry.js',
