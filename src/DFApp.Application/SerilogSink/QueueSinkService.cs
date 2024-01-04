@@ -9,7 +9,7 @@ using Volo.Abp.Application.Services;
 
 namespace DFApp.SerilogSink
 {
-    [Authorize(DFAppPermissions.QueueLog.Default)]
+    [Authorize(DFAppPermissions.LogSink.QueueSink)]
     public class QueueSinkService : ApplicationService, IQueueSink
     {
         public List<string> GetLogs()

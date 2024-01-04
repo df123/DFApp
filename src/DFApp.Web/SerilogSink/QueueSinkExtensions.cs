@@ -8,10 +8,9 @@ namespace DFApp.Web.SerilogSink
     public static class QueueSinkExtensions
     {
         public static LoggerConfiguration QueueSink(
-                 this LoggerSinkConfiguration loggerConfiguration,
-                 IFormatProvider formatProvider = null)
+                 this LoggerSinkConfiguration loggerConfiguration)
         {
-            return loggerConfiguration.Sink(new QueueSink(formatProvider, QueueSinkData.Queue));
+            return loggerConfiguration.Sink(new QueueSink(QueueSinkData.Queue));
         }
     }
 }

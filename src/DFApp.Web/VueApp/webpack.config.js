@@ -14,7 +14,8 @@ module.exports = {
         MediaExternalLink: './src/Media/ExternalLink/main.ts',
         LotteryStatistics: './src/Lottery/Statistics/main.ts',
         LotterySpecifyPeriod: './src/Lottery/SpecifyPeriod/main.ts',
-        QueueSink: './src/QueueSink/QueueLog/main.ts',
+        QueueSink: './src/LogSink/QueueSink/main.ts',
+        SignalRSink: './src/LogSink/SignalRSink/main.ts',
     },
     output: {
         filename: '[name].entry.js',
@@ -23,7 +24,7 @@ module.exports = {
     optimization: {
         splitChunks: {
             chunks: 'all',
-            maxSize: 393216
+            // maxSize: 393216
         },
     },
     // devtool: 'source-map',

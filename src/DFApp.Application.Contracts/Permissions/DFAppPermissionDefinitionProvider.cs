@@ -26,8 +26,10 @@ public class DFAppPermissionDefinitionProvider : PermissionDefinitionProvider
         lotteryPermission.AddChild(DFAppPermissions.Lottery.Edit, L("Permission:Lottery.Edit"));
         lotteryPermission.AddChild(DFAppPermissions.Lottery.Delete, L("Permission:Lottery.Delete"));
 
-        var queueGroup = context.AddGroup(DFAppPermissions.QueueLog.Default, L("Permission:QueueLogTelegaram"));
-        var queuePermission = queueGroup.AddPermission(DFAppPermissions.QueueLog.Default, L("Permission:QueueLog"));
+        var logSinkGroup = context.AddGroup(DFAppPermissions.LogSink.Default, L("Permission:LogSinkTelegaram"));
+        var logSinkPermission = logSinkGroup.AddPermission(DFAppPermissions.LogSink.Default, L("Permission:LogSinkTelegaram"));
+        logSinkPermission.AddChild(DFAppPermissions.LogSink.SignalRSink, L("Permission:SignalRSink"));
+        logSinkPermission.AddChild(DFAppPermissions.LogSink.QueueSink, L("Permission:QueueSink"));
     }
 
     private static LocalizableString L(string name)
