@@ -48,7 +48,7 @@ public class DFAppMenuContributor : IMenuContributor
         if (await context.IsGrantedAsync(DFAppPermissions.DynamicIP.Default))
         {
             context.Menu.Items.Insert(
-                1,
+                2,
                 new ApplicationMenuItem(
                     DFAppMenus.DynamicIP,
                     l["Menu:DynamicIP"],
@@ -70,22 +70,36 @@ public class DFAppMenuContributor : IMenuContributor
             lotteryFirst.AddItem(new ApplicationMenuItem(DFAppMenus.Lottery, l["Menu:LotterySpecifyPeriod"], "~/Lottery/SpecifyPeriod", icon: "fas fa-baseball-ball", order: 3));
             lotteryFirst.AddItem(new ApplicationMenuItem(DFAppMenus.Lottery, l["Menu:LotteryResult"], "~/Lottery/Result", icon: "fas fa-baseball-ball", order: 4));
 
-            context.Menu.Items.Insert(1, lotteryFirst);
+            context.Menu.Items.Insert(3, lotteryFirst);
 
         }
 
-        if (await context.IsGrantedAsync(DFAppPermissions.QueueLog.Default))
+        if (await context.IsGrantedAsync(DFAppPermissions.LogSink.Default))
         {
-            context.Menu.Items.Insert(
-                1,
+            var logSinkFirst = new ApplicationMenuItem(
+                DFAppMenus.LogSink
+                , l["Menu:LogSink"]
+                , "~/LogSink", icon: "fas fa-book"
+                , order: 4);
+
+            logSinkFirst.AddItem(
                 new ApplicationMenuItem(
-                    DFAppMenus.QueueLog,
-                    l["Menu:QueueLog"],
-                    "~/QueueSink",
-                    icon: "fas fa-book",
-                    order: 4
-                )
-            );
+                    DFAppMenus.LogSink
+                    , l["Menu:SignalRSink"]
+                    , "~/LogSink/SignalRSink"
+                    , icon: "fas fa-book"
+                    , order: 1));
+
+            logSinkFirst.AddItem(
+                new ApplicationMenuItem(
+                    DFAppMenus.LogSink
+                    , l["Menu:QueueSink"]
+                    , "~/LogSink/QueueSink"
+                    , icon: "fas fa-book"
+                    , order: 2));
+
+            context.Menu.Items.Insert(4, logSinkFirst);
+
         }
 
 

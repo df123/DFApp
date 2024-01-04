@@ -27,8 +27,10 @@ public static class DFAppPermissions
         public const string Delete = Default + ".Delete";
     }
 
-    public static class QueueLog
+    public static class LogSink
     {
-        public const string Default = GroupName + ".QueueLog";
+        public const string Default = GroupName + ".LogSink";
+        public const string QueueSink = Default + ".QueueSink";
+        public const string SignalRSink = Default + ".SignalRSink";
     }
 }

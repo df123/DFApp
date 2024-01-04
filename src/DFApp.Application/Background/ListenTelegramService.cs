@@ -72,7 +72,7 @@ namespace DFApp.Background
             if (arg is Updates)
             {
                 Dictionary<long, ChatBase> chats = ((Updates)arg).Chats;
-                title = chats.First().Value.Title;
+                title = $"{chats.First().Value.Title}:{chats.First().Value.ID}";
                 foreach (var chat in chats.Values)
                 {
                     Logger.LogDebug($"Title:{chat.Title},ID:{chat.ID},IsActive:{chat.IsActive},IsChannel:{chat.IsChannel},IsGroup:{chat.IsGroup}");
@@ -187,7 +187,7 @@ namespace DFApp.Background
                     }
                     await IsUpperLimit();
                     DeleteTempFiles(savePathPrefix);
-                    string title = PathHelper.RemoveInvalidPath(mediaInfo.Title!);
+                    string title = PathHelper.RemoveInvalidPath(PathHelper.SplitStringAndGetValueAtPosition(mediaInfo.Title,":",1));
                     string titleDirectoy = Path.Combine(savePathPrefix, title);
                     if (!Directory.Exists(titleDirectoy))
                     {
@@ -255,7 +255,7 @@ namespace DFApp.Background
                     }
                     DeleteTempFiles(savePathPrefix);
                     int slash = document.mime_type.IndexOf('/');
-                    string title = PathHelper.RemoveInvalidPath(mediaInfo.Title!);
+                    string title = PathHelper.RemoveInvalidPath(PathHelper.SplitStringAndGetValueAtPosition(mediaInfo.Title, ":", 1));
                     string fileName = Path.Combine(savePathPrefix, $"{document.id}{title}.{document.mime_type[(slash + 1)..]}");
                     string fileNameTemp = $"{fileName}.temp";
                     using var fileStream = File.Create(fileNameTemp);

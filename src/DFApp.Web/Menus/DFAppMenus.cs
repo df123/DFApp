@@ -7,7 +7,7 @@ public class DFAppMenus
     public const string Media = Prefix + ".Media";
     public const string DynamicIP = Prefix + ".DynamicIP";
     public const string Lottery = Prefix + ".Lottery";
-    public const string QueueLog = Prefix + ".QueueLog";
+    public const string LogSink = Prefix + ".LogSink";
 
     //Add your menu items here...
 

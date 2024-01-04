@@ -1,0 +1,22 @@
+﻿@page
+@model DFApp.Web.Pages.LogSink.SignalRSink.IndexModel
+@using DFApp.Localization;
+@using Microsoft.Extensions.Localization;
+@inject IStringLocalizer<DFAppResource> L
+@section scripts {
+    <abp-script-bundle name="SignalRSink">
+        @* SignalRSink *@
+<abp-script src="/dist/562.entry.js"></abp-script>
+<abp-script src="/dist/368.entry.js"></abp-script>
+<abp-script src="/dist/SignalRSink.entry.js"></abp-script>
+        @* SignalRSink *@
+    </abp-script-bundle>
+}
+<abp-card>
+    <abp-card-header>
+        <abp-card-title>@L["Lottery:SignalRTitle"]</abp-card-title>
+    </abp-card-header>
+    <abp-card-body>
+        <div id="app"></div>
+    </abp-card-body>
+</abp-card>

@@ -1,8 +1,11 @@
 <template>
     <div>
         <el-row>
-            <el-input v-model="searchInput" class="w-50 m-2" placeholder="搜索日志" :prefix-icon="Search" @input="searchLog" />
-            <el-button :icon="Refresh" circle @click="refreshClick" />
+            <div class="tool-flex">
+                <el-input v-model="searchInput" class="w-50 m-2" placeholder="搜索日志" :prefix-icon="Search"
+                    @input="searchLog" />
+                <el-button :icon="Refresh" circle @click="refreshClick" />
+            </div>
         </el-row>
         <el-row>
             <ul v-infinite-scroll="load" class="infinite-list" style="overflow: auto">
@@ -28,7 +31,6 @@ const searchInput = ref('')
 
 onMounted(async () => {
 
-    // logString.value = countString.value = await dF.telegram.serilogSink.queueSink.getLogs() as string[];
     await refreshClick();
 
 });
@@ -56,7 +58,7 @@ function searchLog(strIn) {
 
 }
 
-async function refreshClick(){
+async function refreshClick() {
     logString.value = countString.value = await dFApp.serilogSink.queueSink.getLogs() as string[];
 }
 
@@ -68,18 +70,25 @@ async function refreshClick(){
     padding: 0;
     margin: 0;
     list-style: none;
+    background: #000000;
 }
 
 .infinite-list .infinite-list-item {
     display: flex;
     align-items: center;
-    justify-content: center;
-    background: var(--el-color-primary-light-9);
+    justify-content: flex-start;
     margin: 10px;
-    color: var(--el-color-primary);
+    color: #FFFFFF;
 }
 
 .infinite-list .infinite-list-item+.list-item {
     margin-top: 10px;
+}
+
+.tool-flex {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    width: 100%;
 }
 </style>

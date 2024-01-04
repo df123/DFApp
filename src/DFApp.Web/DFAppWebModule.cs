@@ -46,6 +46,8 @@ using Volo.CmsKit.Web;
 using Volo.Abp.Imaging;
 using Volo.Abp.BackgroundWorkers.Quartz;
 using DFApp.Background;
+using Volo.Abp.AspNetCore.SignalR;
+using DFApp.Web.SignalRHub;
 
 namespace DFApp.Web;
 
@@ -67,7 +69,8 @@ namespace DFApp.Web;
 [DependsOn(typeof(CmsKitWebModule))]
 [DependsOn(typeof(AbpImagingAbstractionsModule))]
 [DependsOn(typeof(AbpImagingImageSharpModule))]
-public class DFAppWebModule : AbpModule
+[DependsOn(typeof(AbpAspNetCoreSignalRModule))]
+    public class DFAppWebModule : AbpModule
 {
     public override void PreConfigureServices(ServiceConfigurationContext context)
     {
@@ -169,6 +172,8 @@ public class DFAppWebModule : AbpModule
         });
 
         context.Services.AddHttpClient();
+        context.Services.AddSingleton<SinkHub>();
+
     }
 
     private void ConfigureAuthentication(ServiceConfigurationContext context)
