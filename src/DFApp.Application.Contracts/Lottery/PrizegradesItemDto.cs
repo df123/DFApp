@@ -8,7 +8,7 @@ namespace DFApp.Lottery
     public class PrizegradesItemDto
     {
         [JsonPropertyName("type")]
-        public int Type { get; set; }
+        public string? Type { get; set; }
 
         [JsonPropertyName("typenum")]
         public string? TypeNum { get; set; }

@@ -48,11 +48,11 @@ namespace DFApp.Lottery
             _lotteryPrizegradesRepository = lotteryPrizegradesRepository;
         }
 
-        public async Task<PagedResultDto<StatisticsWinItemDto>> GetStatisticsWinItem(string? purchasedPeriod, string? winningPeriod)
+        public async Task<PagedResultDto<StatisticsWinItemDto>> GetStatisticsWinItem(string? purchasedPeriod, string? winningPeriod, string lotteryType)
         {
             PagedResultDto<StatisticsWinItemDto> pagedResultDto = new PagedResultDto<StatisticsWinItemDto>();
-            List<LotteryResult> lotteryResults = await GetLotteryResultData(winningPeriod);
-            List<LotteryInfo> info = await GetLotteryInfoData(purchasedPeriod);
+            List<LotteryResult> lotteryResults = await GetLotteryResultData(winningPeriod, lotteryType);
+            List<LotteryInfo> info = await GetLotteryInfoData(purchasedPeriod, lotteryType);
 
             var infoGroup = info.GroupBy(item => item.IndexNo);
 
@@ -115,10 +115,10 @@ namespace DFApp.Lottery
             return pagedResultDto;
         }
 
-        public async Task<List<StatisticsWinDto>> GetStatisticsWin(string? purchasedPeriod, string? winningPeriod)
+        public async Task<List<StatisticsWinDto>> GetStatisticsWin(string? purchasedPeriod, string? winningPeriod, string lotteryType)
         {
-            List<LotteryResult> lotteryResults = await GetLotteryResultData(winningPeriod);
-            List<LotteryInfo> info = await GetLotteryInfoData(purchasedPeriod);
+            List<LotteryResult> lotteryResults = await GetLotteryResultData(winningPeriod, lotteryType);
+            List<LotteryInfo> info = await GetLotteryInfoData(purchasedPeriod, lotteryType);
 
             var infoGroup = info.GroupBy(item => item.IndexNo);
 
@@ -173,33 +173,39 @@ namespace DFApp.Lottery
             return results;
         }
 
-        private async Task<List<LotteryResult>> GetLotteryResultData(string? winningPeriod)
+        private async Task<List<LotteryResult>> GetLotteryResultData(string? winningPeriod, string lotteryType)
         {
+            Check.NotNullOrWhiteSpace(lotteryType, nameof(lotteryType));
+
             List<LotteryResult> lotteryResults;
 
             if (!string.IsNullOrWhiteSpace(winningPeriod))
             {
-                lotteryResults = await _lotteryResultrepository.GetListAsync(x => x.Code == winningPeriod);
+                lotteryResults = await _lotteryResultrepository.GetListAsync(x => x.Code == winningPeriod && x.Name == lotteryType);
             }
             else
             {
-                lotteryResults = await _lotteryResultrepository.GetListAsync();
+                lotteryResults = await _lotteryResultrepository.GetListAsync(x => x.Name == lotteryType);
             }
 
             return lotteryResults;
         }
 
-        private async Task<List<LotteryInfo>> GetLotteryInfoData(string? purchasedPeriod)
+        private async Task<List<LotteryInfo>> GetLotteryInfoData(string? purchasedPeriod, string lotteryType)
         {
+            Check.NotNullOrWhiteSpace(lotteryType, nameof(lotteryType));
+
             List<LotteryInfo> info;
 
             if (!string.IsNullOrWhiteSpace(purchasedPeriod) && int.TryParse(purchasedPeriod, out int purchasedPeriodInt))
             {
-                info = await _lotteryInforepository.GetListAsync(x => x.IndexNo == purchasedPeriodInt);
+
+
+                info = await _lotteryInforepository.GetListAsync(x => x.IndexNo == purchasedPeriodInt && x.LotteryType == lotteryType);
             }
             else
             {
-                info = await _lotteryInforepository.GetListAsync();
+                info = await _lotteryInforepository.GetListAsync(x => x.LotteryType == lotteryType);
             }
 
             return info;
@@ -265,7 +271,7 @@ namespace DFApp.Lottery
 
             if (result != null && result.Prizegrades != null && result.Prizegrades.Count > 0)
             {
-                LotteryPrizegrades prizegrades = result.Prizegrades.First(x => x.Type == prize);
+                LotteryPrizegrades prizegrades = result.Prizegrades.First(x => x.Type.Contains(prize.ToString(), StringComparison.OrdinalIgnoreCase));
                 if (prizegrades != null && prizegrades.TypeMoney != null)
                 {
                     if (int.TryParse(prizegrades.TypeMoney, out _))

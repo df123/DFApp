@@ -41,6 +41,10 @@ $(function () {
                     data: "code"
                 },
                 {
+                    title: l('Lottery:LotteryName'),
+                    data: "name"
+                },
+                {
                     title: l('Lottery:LotteryBlue'),
                     data: "blue"
                 },

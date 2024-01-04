@@ -91,6 +91,7 @@
 
     "Lottery:LotteryResult": "开奖号码",
     "Lottery:LotteryPeriod": "期号",
+    "Lottery:LotteryName": "名称",
     "Lottery:LotteryBlue": "蓝球",
     "Lottery:LotteryRed": "红球",
     "Lottery:LotteryCode": "开奖日期",

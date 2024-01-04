@@ -3,6 +3,7 @@ using System;
 using DFApp.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Volo.Abp.EntityFrameworkCore;
 
@@ -11,9 +12,11 @@ using Volo.Abp.EntityFrameworkCore;
 namespace DFApp.Migrations
 {
     [DbContext(typeof(DFAppDbContext))]
-    partial class DFAppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20240104123307_UpdateLottery")]
+    partial class UpdateLottery
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -121,11 +124,11 @@ namespace DFApp.Migrations
                         .HasColumnType("TEXT")
                         .HasColumnName("LastModifierId");
 
-                    b.Property<string>("LotteryType")
-                        .HasColumnType("TEXT");
-
                     b.Property<string>("Number")
                         .HasColumnType("TEXT");
+
+                    b.Property<int>("lotteryType")
+                        .HasColumnType("INTEGER");
 
                     b.HasKey("Id");
 
@@ -284,7 +287,7 @@ namespace DFApp.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("Code", "Name")
+                    b.HasIndex("Code")
                         .IsUnique();
 
                     b.ToTable("AppLotteryResult", (string)null);

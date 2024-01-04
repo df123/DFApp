@@ -307,7 +307,7 @@ public class DFAppWebModule : AbpModule
         app.UseAbpSerilogEnrichers();
         app.UseConfiguredEndpoints();
 
-        await context.AddBackgroundWorkerAsync<ListenTelegramService>();
+        //await context.AddBackgroundWorkerAsync<ListenTelegramService>();
 
     }
 }

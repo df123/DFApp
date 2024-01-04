@@ -15,8 +15,8 @@ namespace DFApp.Lottery
         CreateUpdateLotteryDto>
     {
         Task<LotteryDto> CreateLotteryBatch(List<CreateUpdateLotteryDto> dtos);
-        Task<List<StatisticsWinDto>> GetStatisticsWin(string? purchasedPeriod, string? winningPeriod);
-        Task<PagedResultDto<StatisticsWinItemDto>> GetStatisticsWinItem(string? purchasedPeriod, string? winningPeriod);
+        Task<List<StatisticsWinDto>> GetStatisticsWin(string? purchasedPeriod, string? winningPeriod,string lotteryType);
+        Task<PagedResultDto<StatisticsWinItemDto>> GetStatisticsWinItem(string? purchasedPeriod, string? winningPeriod, string lotteryType);
         Task<List<LotteryDto>> CalculateCombination(LotteryCombinationDto dto);
     }
 
