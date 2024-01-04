@@ -312,7 +312,7 @@ namespace DFApp.Web;
         app.UseAbpSerilogEnrichers();
         app.UseConfiguredEndpoints();
 
-        //await context.AddBackgroundWorkerAsync<ListenTelegramService>();
+        await context.AddBackgroundWorkerAsync<ListenTelegramService>();
 
     }
 }
