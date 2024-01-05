@@ -53,8 +53,8 @@ namespace DFApp.Background
 
         public override async Task Execute(IJobExecutionContext context)
         {
-            //await StartWork("双色球", "ssq", "2013001");
-            await StartWork("快乐8", "kl8", "2020001");
+            await StartWork(LotteryConst.SSQ, LotteryConst.SSQ_ENG, LotteryConst.SSQ_START_CODE);
+            await StartWork(LotteryConst.KL8, LotteryConst.KL8_ENG, LotteryConst.KL8_STRAT_CODE);
         }
 
         private async Task StartWork(string lotteryType, string lotteryTypeEng, string code)
@@ -65,7 +65,7 @@ namespace DFApp.Background
             if (result == null || result.Count <= 0)
             {
                 string dayStart, dayEnd;
-                dayStart = "2013-01-01";
+                dayStart = "2013-01-01";//KL8的开始时间是2020年小于2013年所有可以直接用2013
                 dayEnd = DateTime.Now.ToString("yyyy-MM-dd");
                 await GetAllLotteryResults(dayStart, dayEnd, 1, lotteryTypeEng);
             }
