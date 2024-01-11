@@ -21,6 +21,12 @@
                 @TempData["Msg"]
             </div>
         }
+        else if(TempData.ContainsKey("MsgFail")){
+            <div class="alert alert-danger">
+                @TempData["MsgFail"]
+            </div>
+        }
+
         <abp-row>
             <abp-column>
                 @*                 <h3>Upload File</h3>

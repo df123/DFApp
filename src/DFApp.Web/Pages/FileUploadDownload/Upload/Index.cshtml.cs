@@ -104,7 +104,8 @@ namespace DFApp.Web.Pages.FileUploadDownload.Upload
 
             if (UploadFileDto.File.Length > _fileSizeLimit)
             {
-                throw new UserFriendlyException("大小超过限制");
+                TempData["MsgFail"] = "大小超过限制";
+                return Page();
             }
 
             using (var memoryStream = new MemoryStream())
