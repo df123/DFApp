@@ -1,0 +1,23 @@
+﻿@page
+@model DFApp.Web.Pages.Lottery.BatchCreate.IndexModel
+@using DFApp.Localization;
+@using Microsoft.Extensions.Localization;
+
+@inject IStringLocalizer<DFAppResource> L
+@section scripts {
+    <abp-script-bundle name="LotterySpecifyPeriod">
+        @* LotteryBatchCreate *@
+<abp-script src="/dist/562.entry.js"></abp-script>
+<abp-script src="/dist/LotteryBatchCreate.entry.js"></abp-script>
+        @* LotteryBatchCreate *@
+    </abp-script-bundle>
+}
+
+<abp-card>
+    <abp-card-header>
+        <abp-card-title>@L["Lottery:BatchCreateTitle"]</abp-card-title>
+    </abp-card-header>
+    <abp-card-body>
+        <div id="app"></div>
+    </abp-card-body>
+</abp-card>

@@ -1,4 +1,6 @@
-﻿using DFApp.Lottery.Statistics;
+﻿using DFApp.Lottery.BatchCreate;
+using DFApp.Lottery.Consts;
+using DFApp.Lottery.Statistics;
 using DFApp.Permissions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.Logging;
@@ -109,7 +111,6 @@ namespace DFApp.Lottery
                             winMoney = await GetActualAmount(lotteryResultItem.Code, lotteryType, 10, redWin);
                         }
 
-                        //int winMoney = await JudgeWin(redWin, lotteryResultItem.Blue == winDto.BuyLottery.Blue, lotteryResultItem.Code);
                         if (winMoney > 0)
                         {
                             winDto.WinAmount += winMoney;
@@ -128,6 +129,11 @@ namespace DFApp.Lottery
 
         public async Task<List<StatisticsWinDto>> GetStatisticsWin(string? purchasedPeriod, string? winningPeriod, string lotteryType)
         {
+            if (true)
+            {
+
+            }
+
             List<LotteryResult> lotteryResults = await GetLotteryResultData(winningPeriod, lotteryType);
             List<LotteryInfo> info = await GetLotteryInfoData(purchasedPeriod, lotteryType);
 
@@ -319,7 +325,24 @@ namespace DFApp.Lottery
         {
             Check.NotNullOrEmpty(dtos, nameof(dtos));
             List<LotteryInfo> info = ObjectMapper.Map<List<CreateUpdateLotteryDto>, List<LotteryInfo>>(dtos);
-            LotteryInfo? startInfo = (await _lotteryInforepository.GetQueryableAsync()).OrderByDescending(item => item.Id).FirstOrDefault();
+            LotteryInfo? startInfo = (await _lotteryInforepository.GetQueryableAsync())
+                .Where(x => x.LotteryType == dtos[0].LotteryType && x.IndexNo == dtos[0].IndexNo)
+                .OrderByDescending(item => item.Id)
+                .ThenByDescending(item => item.GroupId)
+                .FirstOrDefault();
+
+            int groupId = startInfo != null ? startInfo.GroupId + 1 : 0;
+
+            var tempGroups = info.GroupBy(x => x.GroupId);
+
+            foreach (var item in tempGroups)
+            {
+                foreach (var item2 in item)
+                {
+                    item2.GroupId = groupId;
+                }
+                groupId++;
+            }
 
             using (var uom = _unitOfWorkManager.Begin(true, true))
             {
@@ -431,6 +454,21 @@ namespace DFApp.Lottery
 
         }
 
+        public List<ConstsDto> GetLotteryConst()
+        {
+            List<ConstsDto> constsDtos = new List<ConstsDto>();
+            constsDtos.Add(new ConstsDto()
+            {
+                LotteryType = LotteryConst.SSQ,
+                LotteryTypeEng = LotteryConst.SSQ_ENG
+            });
+            constsDtos.Add(new ConstsDto()
+            {
+                LotteryType = LotteryConst.KL8,
+                LotteryTypeEng = LotteryConst.KL8_ENG
+            });
+            return constsDtos;
+        }
 
     }
 }

@@ -188,6 +188,15 @@ namespace DFApp.Web;
         {
             options.Conventions.AuthorizePage("/Media/Index", DFAppPermissions.Medias.Default);
             options.Conventions.AuthorizePage("/Media/EditModal", DFAppPermissions.Medias.Edit);
+            options.Conventions.AuthorizePage("/DynamicIP/Index", DFAppPermissions.DynamicIP.Default);
+            options.Conventions.AuthorizePage("/LogSink/QueueSink/Index", DFAppPermissions.LogSink.Default);
+            options.Conventions.AuthorizePage("/LogSink/SignalRSink/Index", DFAppPermissions.LogSink.Default);
+            options.Conventions.AuthorizePage("/Lottery/Index", DFAppPermissions.Lottery.Default);
+            options.Conventions.AuthorizePage("/Lottery/Result/Index", DFAppPermissions.Lottery.Default);
+            options.Conventions.AuthorizePage("/Lottery/SpecifyPeriod/Index", DFAppPermissions.Lottery.Default);
+            options.Conventions.AuthorizePage("/Lottery/Statistics/Index", DFAppPermissions.Lottery.Default);
+            options.Conventions.AuthorizePage("/Lottery/StatisticsItem/Index", DFAppPermissions.Lottery.Default);
+            options.Conventions.AuthorizePage("/Lottery/BatchCreate/Index", DFAppPermissions.Lottery.Default);
         });
 
     }
