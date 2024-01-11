@@ -188,6 +188,11 @@ namespace DFApp.Web;
         {
             options.Conventions.AuthorizePage("/Media/Index", DFAppPermissions.Medias.Default);
             options.Conventions.AuthorizePage("/Media/EditModal", DFAppPermissions.Medias.Edit);
+
+            options.Conventions.AuthorizeFolder("/Bookkeeping/Category", DFAppPermissions.BookkeepingCategory.Default);
+            options.Conventions.AuthorizeFolder("/Bookkeeping/Expenditure", DFAppPermissions.BookkeepingExpenditure.Default);
+            options.Conventions.AuthorizeFolder("/FileUploadDownload", DFAppPermissions.FileUploadDownload.Default);
+
         });
 
     }
@@ -266,7 +271,7 @@ namespace DFApp.Web;
         );
     }
 
-    public async override void OnApplicationInitialization(ApplicationInitializationContext context)
+    public override void OnApplicationInitialization(ApplicationInitializationContext context)
     {
         var app = context.GetApplicationBuilder();
         var env = context.GetEnvironment();
@@ -312,7 +317,8 @@ namespace DFApp.Web;
         app.UseAbpSerilogEnrichers();
         app.UseConfiguredEndpoints();
 
-        await context.AddBackgroundWorkerAsync<ListenTelegramService>();
+
+        //await context.AddBackgroundWorkerAsync<ListenTelegramService>();
 
     }
 }

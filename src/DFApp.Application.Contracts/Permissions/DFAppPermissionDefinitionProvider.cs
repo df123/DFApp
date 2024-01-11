@@ -30,6 +30,24 @@ public class DFAppPermissionDefinitionProvider : PermissionDefinitionProvider
         var logSinkPermission = logSinkGroup.AddPermission(DFAppPermissions.LogSink.Default, L("Permission:LogSinkTelegaram"));
         logSinkPermission.AddChild(DFAppPermissions.LogSink.SignalRSink, L("Permission:SignalRSink"));
         logSinkPermission.AddChild(DFAppPermissions.LogSink.QueueSink, L("Permission:QueueSink"));
+
+
+        var bookkeepingGroup = context.AddGroup(DFAppPermissions.Bookkeeping.Default, L("Permisssion:Bookkeeping"));
+        var bookkeepingPermission = bookkeepingGroup.AddPermission(DFAppPermissions.Bookkeeping.Default, L("Permisssion:Bookkeeping"));
+        var bookkeepingCategoryPermission = bookkeepingPermission.AddChild(DFAppPermissions.BookkeepingCategory.Default, L("Permisssion:BookkeepingCategory"));
+        bookkeepingCategoryPermission.AddChild(DFAppPermissions.BookkeepingCategory.Create, L("Permisssion:BookkeepingCategory:Create"));
+        bookkeepingCategoryPermission.AddChild(DFAppPermissions.BookkeepingCategory.Delete, L("Permisssion:BookkeepingCategory:Delete"));
+        bookkeepingCategoryPermission.AddChild(DFAppPermissions.BookkeepingCategory.Edit, L("Permisssion:BookkeepingCategory:Modify"));
+        var bookkeepingExpenditurePermission = bookkeepingPermission.AddChild(DFAppPermissions.BookkeepingExpenditure.Default, L("Permisssion:BookkeepingExpenditure"));
+        bookkeepingExpenditurePermission.AddChild(DFAppPermissions.BookkeepingExpenditure.Create, L("Permisssion:BookkeepingExpenditure:Create"));
+        bookkeepingExpenditurePermission.AddChild(DFAppPermissions.BookkeepingExpenditure.Delete, L("Permisssion:BookkeepingExpenditure:Delete"));
+        bookkeepingExpenditurePermission.AddChild(DFAppPermissions.BookkeepingExpenditure.Edit, L("Permisssion:BookkeepingExpenditure:Modify"));
+
+        var fileUploadDownloadGroup = context.AddGroup(DFAppPermissions.FileUploadDownload.Default, L("Permission:FileUploadDownload"));
+        var fileUploaddownloadPermission = fileUploadDownloadGroup.AddPermission(DFAppPermissions.FileUploadDownload.Default, L("Permission:FileUploadDownload"));
+        fileUploaddownloadPermission.AddChild(DFAppPermissions.FileUploadDownload.Upload, L("Permission:FileUploadDownload:Upload"));
+        fileUploaddownloadPermission.AddChild(DFAppPermissions.FileUploadDownload.Download, L("Permission:FileUploadDownload:Download"));
+
     }
 
     private static LocalizableString L(string name)

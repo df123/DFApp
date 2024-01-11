@@ -1,0 +1,51 @@
+﻿@page
+@using DFApp.Web.Pages.FileUploadDownload.Upload
+@using DFApp.Localization
+@using Microsoft.Extensions.Localization
+@using Volo.Abp.AspNetCore.Mvc.UI.Bootstrap.TagHelpers.Modal
+@model IndexModel
+@inject IStringLocalizer<DFAppResource> L
+@section scripts {
+    <abp-script src="/Pages/FileUploadDownload/Upload/Index.js"></abp-script>
+}
+
+<abp-card>
+    <abp-card-header>
+        <abp-card-title>@L["FileUploadDownload:Upload:Title"]</abp-card-title>
+    </abp-card-header>
+    <abp-card-body>
+
+        @if (TempData.ContainsKey("Msg"))
+        {
+            <div class="alert alert-success">
+                @TempData["Msg"]
+            </div>
+        }
+        <abp-row>
+            <abp-column>
+                @*                 <h3>Upload File</h3>
+                <hr /> *@
+                <form method="post" enctype="multipart/form-data">
+                    <abp-input asp-for="UploadFileDto.Name"></abp-input>
+
+                    <abp-input asp-for="UploadFileDto.File"></abp-input>
+
+                    <input type="submit" class="btn btn-info" />
+                </form>
+            </abp-column>
+
+            @*             <abp-column style="border-left: 1px dotted gray">
+            <h3>Download File</h3>
+            <hr />
+            <form id="DownloadFile">
+            <div class="form-group">
+            <label for="fileName">Filename</label><span> * </span>
+            <input type="text" id="fileName" name="fileName" class="form-control ">
+            </div>
+
+            <input type="submit" class="btn btn-info" />
+            </form>
+            </abp-column> *@
+        </abp-row>
+    </abp-card-body>
+</abp-card>

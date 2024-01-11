@@ -18,6 +18,12 @@ using Volo.Abp.TenantManagement;
 using Volo.Abp.TenantManagement.EntityFrameworkCore;
 using Volo.CmsKit.EntityFrameworkCore;
 using Volo.Abp.BlobStoring.Database.EntityFrameworkCore;
+using DFApp.DataFilters;
+using System;
+using Volo.Abp.Users;
+using DFApp.Bookkeeping;
+using Microsoft.EntityFrameworkCore.Metadata;
+using System.Linq.Expressions;
 
 namespace DFApp.EntityFrameworkCore;
 
@@ -30,6 +36,12 @@ public class DFAppDbContext :
     ITenantManagementDbContext
 {
     /* Add DbSet properties for your Aggregate Roots / Entities here. */
+
+    protected bool CreatorIdFilterEnabled => DataFilter?.IsEnabled<ICreatorId>() ?? false;
+
+    private ICurrentUser _currentUser => LazyServiceProvider.LazyGetRequiredService<ICurrentUser>();
+
+    private Guid? _currentUserId => _currentUser?.Id;
 
     #region Entities from the modules
 
@@ -72,6 +84,9 @@ public class DFAppDbContext :
 
     public DbSet<LotteryResult> LotteryResults { get; set; }
     public DbSet<LotteryPrizegrades> LotteryPrizegrades { get; set; }
+
+    public DbSet<BookkeepingCategory> BookkeepingCategories { get; set; }
+    public DbSet<BookkeepingExpenditure> bookkeepingExpenditures { get; set; }
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
@@ -124,8 +139,31 @@ public class DFAppDbContext :
             b.ConfigureByConvention();
         });
         builder.ConfigureCmsKit();
-            builder.ConfigureBlobStoring();
-        }
+        builder.ConfigureBlobStoring();
+
+
+        builder.Entity<BookkeepingExpenditure>(b =>
+        {
+            b.ToTable(DFAppConsts.DbTablePrefix + "BookkeepingExpenditure", DFAppConsts.DbSchema);
+
+            b.ConfigureByConvention();
+        });
+
+        builder.Entity<BookkeepingCategory>(b =>
+        {
+            b.ToTable(DFAppConsts.DbTablePrefix + "BookkeepingCategory", DFAppConsts.DbSchema);
+
+            b.HasMany(e => e.Expenditures)
+            .WithOne(e => e.Category)
+            .HasForeignKey(e => e.CategoryId);
+
+            b.HasIndex(e => new { e.Category, e.CreatorId })
+            .IsUnique();
+
+            b.ConfigureByConvention();
+        });
+
+    }
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
@@ -135,5 +173,36 @@ public class DFAppDbContext :
 #endif
         base.OnConfiguring(optionsBuilder);
     }
+
+
+    protected override bool ShouldFilterEntity<TEntity>(IMutableEntityType entityType)
+    {
+        if (typeof(ICreatorId).IsAssignableFrom(typeof(TEntity)))
+        {
+            return true;
+        }
+
+        return base.ShouldFilterEntity<TEntity>(entityType);
+    }
+
+    protected override Expression<Func<TEntity, bool>>? CreateFilterExpression<TEntity>()
+    {
+        var expression = base.CreateFilterExpression<TEntity>();
+
+        if (typeof(ICreatorId).IsAssignableFrom(typeof(TEntity)))
+        {
+            Expression<Func<TEntity, bool>> creatorIdFilter =
+                e => !CreatorIdFilterEnabled
+                || (_currentUserId != null && (EF.Property<Guid>(e, "CreatorId") == _currentUserId));
+
+            expression = expression == null
+                ? creatorIdFilter
+                : QueryFilterExpressionHelper.CombineExpressions(expression, creatorIdFilter);
+        }
+
+        return expression;
+
+    }
+
 
 }

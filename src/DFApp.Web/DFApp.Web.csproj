@@ -23,6 +23,16 @@
 	</ItemGroup>
 
 	<ItemGroup>
+	  <None Include="Pages\Bookkeeping\Category\CreateModal.cshtml" />
+	  <None Include="Pages\Bookkeeping\Category\EditModal.cshtml" />
+	  <None Include="Pages\Bookkeeping\Category\Index.cshtml" />
+	  <None Include="Pages\Bookkeeping\Expenditure\CreateModal.cshtml" />
+	  <None Include="Pages\Bookkeeping\Expenditure\EditModal.cshtml" />
+	  <None Include="Pages\Bookkeeping\Expenditure\Index.cshtml" />
+	  <None Include="Pages\FileUploadDownload\Upload\Index.cshtml" />
+	</ItemGroup>
+
+	<ItemGroup>
 		<None Update="Pages\**\*.js">
 			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
 		</None>

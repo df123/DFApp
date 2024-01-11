@@ -103,7 +103,42 @@
     "Permission:SignalRSink": "实时日志",
     "Permission:QueueSink": "缓存日志",
     "Lottery:SignalRTitle": "实时日志",
-    "Lottery:QueueSinkTitle": "缓存日志"
+    "Lottery:QueueSinkTitle": "缓存日志",
+
+
+
+    "Menu:Bookkeeping": "记账",
+    "Menu:BookkeepingCategory": "类型",
+    "Menu:BookkeepingExpenditure": "开支",
+    "Permisssion:Bookkeeping": "记账权限",
+    "Permisssion:BookkeepingCategory": "类型权限",
+    "Permisssion:BookkeepingCategory:Create": "创建",
+    "Permisssion:BookkeepingCategory:Delete": "删除",
+    "Permisssion:BookkeepingCategory:Modify": "修改",
+    "Permisssion:BookkeepingExpenditure": "开支权限",
+    "Permisssion:BookkeepingExpenditure:Create": "创建",
+    "Permisssion:BookkeepingExpenditure:Delete": "删除",
+    "Permisssion:BookkeepingExpenditure:Modify": "修改",
+    "BookkeepingCategory:Title": "类型",
+    "BookkeepingCategory:Modal:Create:Title": "新增类型",
+    "BookkeepingCategory:Modal:Update:Title": "更新类型",
+    "BookkeepingCategory:Column:Id": "ID",
+    "BookkeepingCategory:Column:Category": "类型",
+    "BookkeepingExpenditure:Title": "开支",
+    "BookkeepingExpenditure:Modal:Create:Title": "新增开支",
+    "BookkeepingExpenditure:Modal:Update:Title": "更新开支",
+    "BookkeepingExpenditure:Column:Id": "ID",
+    "BookkeepingExpenditure:Column:ExpenditureDate": "时间",
+    "BookkeepingExpenditure:Column:Expenditure": "金额",
+    "BookkeepingExpenditure:Column:Category": "类型",
+
+    "Menu:FileUploadDownload": "文件传输",
+    "Menu:FileUploadDownload:Upload": "上传文件",
+    "Menu:FileUploadDownload:Download": "下载文件",
+    "Permission:FileUploadDownload": "文件传输",
+    "Permission:FileUploadDownload:Upload": "上传文件",
+    "Permission:FileUploadDownload:Download": "下载文件",
+    "FileUploadDownload:Upload:Title": "上传文件"
 
 
 

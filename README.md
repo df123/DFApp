@@ -70,3 +70,10 @@ You can see the following resources to learn more about your solution and the AB
 * [Web Application Development Tutorial](https://docs.abp.io/en/abp/latest/Tutorials/Part-1)
 * [Application Startup Template Structure](https://docs.abp.io/en/abp/latest/Startup-Templates/Application)
 * [LeptonX Lite MVC UI](https://docs.abp.io/en/abp/latest/Themes/LeptonXLite/AspNetCore)
+
+
+### 使用到的文章和代码
+
+感谢这些作者的分享
+
+* [File Upload/Download with BLOB Storage System in ASP.NET Core & ABP Framework](https://community.abp.io/posts/file-uploaddownload-with-blob-storage-system-in-asp.net-core-abp-framework-d01cbe12)

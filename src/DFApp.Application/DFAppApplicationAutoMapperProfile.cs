@@ -1,7 +1,11 @@
 ﻿using AutoMapper;
+using DFApp.Bookkeeping.Category;
+using DFApp.Bookkeeping.Expenditure.Lookup;
+using DFApp.Bookkeeping.Expenditure;
 using DFApp.IP;
 using DFApp.Lottery;
 using DFApp.Media;
+using DFApp.Bookkeeping;
 
 namespace DFApp;
 
@@ -35,5 +39,15 @@ public class DFAppApplicationAutoMapperProfile : Profile
 
         CreateMap<ResultItemDto, LotteryResult>();
         CreateMap<PrizegradesItemDto, LotteryPrizegrades>();
+
+        CreateMap<BookkeepingCategory, BookkeepingCategoryDto>();
+        CreateMap<BookkeepingCategoryDto, BookkeepingCategory>();
+        CreateMap<CreateUpdateBookkeepingCategoryDto, BookkeepingCategory>();
+        CreateMap<BookkeepingCategory, BookkeepingCategoryLookupDto>().ForMember(x => x.CategoryId, x => x.MapFrom(y => y.Id));
+
+        CreateMap<BookkeepingExpenditure, BookkeepingExpenditureDto>();
+        CreateMap<BookkeepingExpenditureDto, BookkeepingExpenditure>();
+        CreateMap<CreateUpdateBookkeepingExpenditureDto, BookkeepingExpenditure>();
+
     }
 }

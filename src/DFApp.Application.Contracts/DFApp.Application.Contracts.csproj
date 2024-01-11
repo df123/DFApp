@@ -23,4 +23,8 @@
     <PackageReference Include="Volo.CmsKit.Application.Contracts" Version="8.0.0" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Bookkeeping\Expenditure\Analysis\" />
+  </ItemGroup>
+
 </Project>

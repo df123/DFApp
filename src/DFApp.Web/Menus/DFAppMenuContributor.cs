@@ -42,13 +42,12 @@ public class DFAppMenuContributor : IMenuContributor
             mediaFirst.AddItem(new ApplicationMenuItem(DFAppMenus.Media, l["Menu:Media:ExternalLink"], "~/Media/ExternalLink", icon: "fas fa-link", order: 2));
             mediaFirst.AddItem(new ApplicationMenuItem(DFAppMenus.Media, l["Menu:Media:Chart"], "~/Media/Chart", icon: "fas fa-chart-bar", order: 3));
 
-            context.Menu.Items.Insert(1, mediaFirst);
+            context.Menu.AddItem(mediaFirst);
         }
 
         if (await context.IsGrantedAsync(DFAppPermissions.DynamicIP.Default))
         {
-            context.Menu.Items.Insert(
-                2,
+            context.Menu.AddItem(
                 new ApplicationMenuItem(
                     DFAppMenus.DynamicIP,
                     l["Menu:DynamicIP"],
@@ -70,7 +69,7 @@ public class DFAppMenuContributor : IMenuContributor
             lotteryFirst.AddItem(new ApplicationMenuItem(DFAppMenus.Lottery, l["Menu:LotterySpecifyPeriod"], "~/Lottery/SpecifyPeriod", icon: "fas fa-baseball-ball", order: 3));
             lotteryFirst.AddItem(new ApplicationMenuItem(DFAppMenus.Lottery, l["Menu:LotteryResult"], "~/Lottery/Result", icon: "fas fa-baseball-ball", order: 4));
 
-            context.Menu.Items.Insert(3, lotteryFirst);
+            context.Menu.AddItem(lotteryFirst);
 
         }
 
@@ -98,7 +97,65 @@ public class DFAppMenuContributor : IMenuContributor
                     , icon: "fas fa-book"
                     , order: 2));
 
-            context.Menu.Items.Insert(4, logSinkFirst);
+            context.Menu.AddItem(logSinkFirst);
+
+        }
+
+
+        if (await context.IsGrantedAsync(DFAppPermissions.FileUploadDownload.Default))
+        {
+
+            var fileUploadDownloadFirst = new ApplicationMenuItem(
+                DFAppMenus.FileUploadDownload
+                , l["Menu:FileUploadDownload"]
+                , "~/FileUploadDownload"
+                , icon: "fas fa-file"
+                , order: 5);
+
+            if (await context.IsGrantedAsync(DFAppPermissions.FileUploadDownload.Upload))
+            {
+                fileUploadDownloadFirst.AddItem(new ApplicationMenuItem(
+                    DFAppMenus.Bookkeeping
+                    , l["Menu:FileUploadDownload:Upload"]
+                    , "~/FileUploadDownload/Upload"
+                    , icon: "fas fa-file"
+                    , order: 1));
+            }
+
+            context.Menu.AddItem(fileUploadDownloadFirst);
+        }
+
+        if (await context.IsGrantedAsync(DFAppPermissions.Bookkeeping.Default))
+        {
+
+            var bookkeepingFirst = new ApplicationMenuItem(
+                DFAppMenus.Bookkeeping
+                , l["Menu:Bookkeeping"]
+                , "~/Bookkeeping"
+                , icon: "fas fa-receipt"
+                , order: 6);
+
+            if (await context.IsGrantedAsync(DFAppPermissions.BookkeepingCategory.Default))
+            {
+                bookkeepingFirst.AddItem(new ApplicationMenuItem(
+                    DFAppMenus.Bookkeeping
+                    , l["Menu:BookkeepingCategory"]
+                    , "~/Bookkeeping/Category"
+                    , icon: "fas fa-receipt"
+                    , order: 1));
+            }
+
+            if (await context.IsGrantedAsync(DFAppPermissions.BookkeepingExpenditure.Default))
+            {
+                bookkeepingFirst.AddItem(new ApplicationMenuItem(
+                    DFAppMenus.Bookkeeping
+                    , l["Menu:BookkeepingExpenditure"]
+                    , "~/Bookkeeping/Expenditure"
+                    , icon: "fas fa-receipt"
+                    , order: 2));
+            }
+
+            context.Menu.AddItem(bookkeepingFirst);
 
         }
 

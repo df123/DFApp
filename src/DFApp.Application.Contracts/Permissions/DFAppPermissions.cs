@@ -33,4 +33,33 @@ public static class DFAppPermissions
         public const string QueueSink = Default + ".QueueSink";
         public const string SignalRSink = Default + ".SignalRSink";
     }
+
+    public static class Bookkeeping
+    {
+        public const string Default = GroupName + ".Bookkeeping";
+    }
+
+    public static class BookkeepingCategory
+    {
+        public const string Default = Bookkeeping.Default + ".Category";
+        public const string Create = Default + ".Create";
+        public const string Edit = Default + ".Edit";
+        public const string Delete = Default + ".Delete";
+    }
+
+    public static class BookkeepingExpenditure
+    {
+        public const string Default = Bookkeeping.Default + ".Expenditure";
+        public const string Create = Default + ".Create";
+        public const string Edit = Default + ".Edit";
+        public const string Delete = Default + ".Delete";
+    }
+
+    public static class FileUploadDownload
+    {
+        public const string Default = GroupName + ".FileUploadDownload";
+        public const string Upload = Default + ".Upload";
+        public const string Download = Default + ".Download";
+    }
+
 }
