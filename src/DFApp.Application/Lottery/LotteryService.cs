@@ -470,5 +470,9 @@ namespace DFApp.Lottery
             return constsDtos;
         }
 
+        public async Task<PagedResultDto<StatisticsWinItemDto>> GetStatisticsWinItemInputDto(StatisticsInputDto dto)
+        {
+            return await this.GetStatisticsWinItem(dto.PurchasedPeriod, dto.WinningPeriod, dto.LotteryType);
+        }
     }
 }
