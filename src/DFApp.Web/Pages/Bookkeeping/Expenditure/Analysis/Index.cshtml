@@ -1,0 +1,25 @@
+﻿@page
+@using DFApp.Localization
+@using DFApp.Permissions
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.Extensions.Localization
+@inject IStringLocalizer<DFAppResource> L
+@inject IAuthorizationService AuthorizationService
+@model DFApp.Web.Pages.Bookkeeping.Expenditure.Analysis.IndexModel
+@section scripts {
+    <abp-script-bundle name="ExpenditureAnalysis">
+        @* ExpenditureAnalysis *@
+<abp-script src="/dist/562.entry.js"></abp-script>
+<abp-script src="/dist/739.entry.js"></abp-script>
+<abp-script src="/dist/ExpenditureAnalysis.entry.js"></abp-script>
+        @* ExpenditureAnalysis *@
+    </abp-script-bundle>
+}
+<abp-card>
+    <abp-card-header>
+        <abp-card-title>@L["BookkeepingExpenditure:Analysis:Title"]</abp-card-title>
+    </abp-card-header>
+    <abp-card-body>
+        <div id="app"></div>
+    </abp-card-body>
+</abp-card>

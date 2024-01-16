@@ -1,4 +1,5 @@
-﻿using DFApp.Bookkeeping.Expenditure.Lookup;
+﻿using DFApp.Bookkeeping.Expenditure.Analysis;
+using DFApp.Bookkeeping.Expenditure.Lookup;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -15,5 +16,8 @@ namespace DFApp.Bookkeeping.Expenditure
         , CreateUpdateBookkeepingExpenditureDto>
     {
         Task<List<BookkeepingCategoryLookupDto>> GetCategoryLookupDto();
+
+        Task<ChartJSDto> GetChartJSDto(DateTime start, DateTime end, bool compare, CompareType compareType, NumberType numberType);
+
     }
 }

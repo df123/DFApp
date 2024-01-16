@@ -56,7 +56,7 @@ $(function () {
                 },
                 {
                     title: l('BookkeepingExpenditure:Column:Category'),
-                    data: "category"
+                    data: "category.category"
                 },
                 {
                     title: l('MediaCreationTime'),

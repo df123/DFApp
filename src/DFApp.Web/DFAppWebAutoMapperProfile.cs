@@ -18,5 +18,8 @@ public class DFAppWebAutoMapperProfile : Profile
         CreateMap<Pages.Bookkeeping.Expenditure.CreateModalModel.CreateExpenditureViewModel, CreateUpdateBookkeepingExpenditureDto>();
         CreateMap<BookkeepingExpenditureDto, CreateUpdateBookkeepingExpenditureDto>();
 
+        CreateMap<Pages.Bookkeeping.Expenditure.EditModalModel.UpdateExpenditureViewModel, CreateUpdateBookkeepingExpenditureDto>();
+        CreateMap<BookkeepingExpenditureDto, Pages.Bookkeeping.Expenditure.EditModalModel.UpdateExpenditureViewModel>();
+
     }
 }

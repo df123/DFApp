@@ -155,6 +155,16 @@ public class DFAppMenuContributor : IMenuContributor
                     , order: 2));
             }
 
+            if (await context.IsGrantedAsync(DFAppPermissions.BookkeepingExpenditure.Analysis))
+            {
+                bookkeepingFirst.AddItem(new ApplicationMenuItem(
+                    DFAppMenus.Bookkeeping
+                    , l["Menu:BookkeepingExpenditure:Analysis"]
+                    , "~/Bookkeeping/Expenditure/Analysis"
+                    , icon: "fas fa-receipt"
+                    , order: 3));
+            }
+
             context.Menu.AddItem(bookkeepingFirst);
 
         }
