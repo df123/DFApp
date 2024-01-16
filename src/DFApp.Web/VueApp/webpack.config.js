@@ -16,6 +16,7 @@ module.exports = {
         LotterySpecifyPeriod: './src/Lottery/SpecifyPeriod/main.ts',
         QueueSink: './src/LogSink/QueueSink/main.ts',
         SignalRSink: './src/LogSink/SignalRSink/main.ts',
+        ExpenditureAnalysis: './src/Expenditure/Analysis/main.ts'
     },
     output: {
         filename: '[name].entry.js',

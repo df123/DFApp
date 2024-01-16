@@ -42,6 +42,7 @@ public class DFAppPermissionDefinitionProvider : PermissionDefinitionProvider
         bookkeepingExpenditurePermission.AddChild(DFAppPermissions.BookkeepingExpenditure.Create, L("Permisssion:BookkeepingExpenditure:Create"));
         bookkeepingExpenditurePermission.AddChild(DFAppPermissions.BookkeepingExpenditure.Delete, L("Permisssion:BookkeepingExpenditure:Delete"));
         bookkeepingExpenditurePermission.AddChild(DFAppPermissions.BookkeepingExpenditure.Edit, L("Permisssion:BookkeepingExpenditure:Modify"));
+        bookkeepingExpenditurePermission.AddChild(DFAppPermissions.BookkeepingExpenditure.Analysis, L("Permisssion:BookkeepingExpenditure:Analysis"));
 
         var fileUploadDownloadGroup = context.AddGroup(DFAppPermissions.FileUploadDownload.Default, L("Permission:FileUploadDownload"));
         var fileUploaddownloadPermission = fileUploadDownloadGroup.AddPermission(DFAppPermissions.FileUploadDownload.Default, L("Permission:FileUploadDownload"));

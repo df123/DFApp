@@ -9,6 +9,5 @@ namespace DFApp.Bookkeeping
 {
     public interface IBookkeepingExpenditureRepository : IRepository<BookkeepingExpenditure, long>
     {
-
     }
 }

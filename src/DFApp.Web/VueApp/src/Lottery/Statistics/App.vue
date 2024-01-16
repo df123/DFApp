@@ -1,7 +1,9 @@
 <template>
-    <div>
-        <canvas id="chart"></canvas>
-    </div>
+    <el-row>
+        <div>
+            <canvas id="chart"></canvas>
+        </div>
+    </el-row>
 </template>
 
 <script setup lang="ts">
@@ -10,6 +12,7 @@ import { Chart } from 'chart.js/auto'
 import { StatisticsWinDto } from '../Dto/StatisticsWinDto'
 
 const l: Function = abp.localization.getResource('DFApp') as Function;
+
 
 onMounted(async () => {
     let dto: StatisticsWinDto[] = await dFApp.lottery.lottery.getStatisticsWin() as StatisticsWinDto;

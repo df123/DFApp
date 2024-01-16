@@ -1,7 +1,14 @@
 using DFApp.Bookkeeping.Expenditure;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
+using Microsoft.AspNetCore.Mvc.Rendering;
+using System;
+using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
+using System.ComponentModel;
+using System.Linq;
 using System.Threading.Tasks;
+using Volo.Abp.AspNetCore.Mvc.UI.Bootstrap.TagHelpers.Form;
 
 namespace DFApp.Web.Pages.Bookkeeping.Expenditure
 {
@@ -12,7 +19,9 @@ namespace DFApp.Web.Pages.Bookkeeping.Expenditure
         public long Id { get; set; }
 
         [BindProperty]
-        public CreateUpdateBookkeepingExpenditureDto ExpenditureDto { get; set; }
+        public UpdateExpenditureViewModel ExpenditureDto { get; set; }
+
+        public List<SelectListItem> Categorys { get; set; }
 
         private readonly IBookkeepingExpenditureService _bookkeepingExpenditureService;
 
@@ -20,20 +29,38 @@ namespace DFApp.Web.Pages.Bookkeeping.Expenditure
         {
             _bookkeepingExpenditureService = bookkeepingExpenditureService;
         }
-        
+
         public async Task OnGetAsync()
         {
             var ex = await _bookkeepingExpenditureService.GetAsync(Id);
-            ExpenditureDto = ObjectMapper.Map<BookkeepingExpenditureDto,CreateUpdateBookkeepingExpenditureDto>(ex);
+            ExpenditureDto = ObjectMapper.Map<BookkeepingExpenditureDto, UpdateExpenditureViewModel>(ex);
+
+            Categorys = (await _bookkeepingExpenditureService.GetCategoryLookupDto())
+                .Select(x => new SelectListItem(x.Category, x.CategoryId.ToString()))
+                .ToList();
+
         }
 
         public async Task<IActionResult> OnPostAsync()
         {
-            await _bookkeepingExpenditureService.UpdateAsync(Id, ExpenditureDto);
+            await _bookkeepingExpenditureService.UpdateAsync(Id, ObjectMapper.Map<UpdateExpenditureViewModel, CreateUpdateBookkeepingExpenditureDto>(ExpenditureDto));
             return NoContent();
         }
 
+        public class UpdateExpenditureViewModel
+        {
+            [Required]
+            [DataType(DataType.Date)]
+            public DateTime ExpenditureDate { get; set; }
 
+            [Required]
+            public decimal Expenditure { get; set; }
+
+            [Required]
+            [SelectItems(nameof(Categorys))]
+            [DisplayName("Category")]
+            public long CategoryId { get; set; }
+        }
 
     }
 }
