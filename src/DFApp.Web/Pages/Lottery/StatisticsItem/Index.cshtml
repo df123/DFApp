@@ -12,7 +12,18 @@
 
 <abp-card>
     <abp-card-header>
-        <abp-card-title>@L["Lottery:LotteryStatisticsTitle"]</abp-card-title>
+        <abp-row>
+            <abp-column size-md="_6">
+                <abp-card-title>@L["Lottery:LotteryStatisticsTitle"]</abp-card-title>
+            </abp-column>
+            <abp-column size-md="_6" class="text-end">
+                <select id="lotteryType" class="form-control">
+                    <option value="双色球">双色球</option>
+                    <option value="快乐8">快乐8</option>
+                </select>
+            </abp-column>
+        </abp-row>
+
     </abp-card-header>
     <abp-card-body>
         <abp-table striped-rows="true" id="LotteryStatisticsItemTable"></abp-table>

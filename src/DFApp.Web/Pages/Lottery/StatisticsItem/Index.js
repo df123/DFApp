@@ -5,7 +5,7 @@ $(function () {
         return {
             purchasedPeriod: undefined,
             winningPeriod: undefined,
-            lotteryType: '快乐8'
+            lotteryType: $('#lotteryType').val()
         };
     };
 
@@ -40,5 +40,9 @@ $(function () {
             ]
         })
     );
+
+    $("#lotteryType").change(function (e) {
+        dataTable.ajax.reloadEx();
+    });
 
 });
