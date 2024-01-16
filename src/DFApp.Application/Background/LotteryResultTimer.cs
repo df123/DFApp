@@ -40,7 +40,7 @@ namespace DFApp.Background
             Trigger = TriggerBuilder
                 .Create()
                 .WithIdentity(nameof(LotteryResultTimer))
-                .WithCronSchedule("30 08 21 * * ?")
+                .WithCronSchedule("0 0 23 * * ?")
                 .Build();
             _lotteryResultRepository = lotteryResultRepository;
             _mapper = mapper;
