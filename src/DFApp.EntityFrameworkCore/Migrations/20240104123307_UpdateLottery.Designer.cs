@@ -3,6 +3,7 @@ using System;
 using DFApp.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Volo.Abp.EntityFrameworkCore;
 
@@ -11,122 +12,16 @@ using Volo.Abp.EntityFrameworkCore;
 namespace DFApp.Migrations
 {
     [DbContext(typeof(DFAppDbContext))]
-    partial class DFAppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20240104123307_UpdateLottery")]
+    partial class UpdateLottery
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
                 .HasAnnotation("_Abp_DatabaseProvider", EfCoreDatabaseProvider.Sqlite)
                 .HasAnnotation("ProductVersion", "8.0.0");
-
-            modelBuilder.Entity("DFApp.Bookkeeping.BookkeepingCategory", b =>
-                {
-                    b.Property<long>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("INTEGER");
-
-                    b.Property<string>("Category")
-                        .IsRequired()
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("ConcurrencyStamp")
-                        .IsConcurrencyToken()
-                        .IsRequired()
-                        .HasMaxLength(40)
-                        .HasColumnType("TEXT")
-                        .HasColumnName("ConcurrencyStamp");
-
-                    b.Property<DateTime>("CreationTime")
-                        .HasColumnType("TEXT")
-                        .HasColumnName("CreationTime");
-
-                    b.Property<Guid?>("CreatorId")
-                        .HasColumnType("TEXT")
-                        .HasColumnName("CreatorId");
-
-                    b.Property<string>("ExtraProperties")
-                        .IsRequired()
-                        .HasColumnType("TEXT")
-                        .HasColumnName("ExtraProperties");
-
-                    b.Property<bool>("IsDeleted")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("INTEGER")
-                        .HasDefaultValue(false)
-                        .HasColumnName("IsDeleted");
-
-                    b.Property<DateTime?>("LastModificationTime")
-                        .HasColumnType("TEXT")
-                        .HasColumnName("LastModificationTime");
-
-                    b.Property<Guid?>("LastModifierId")
-                        .HasColumnType("TEXT")
-                        .HasColumnName("LastModifierId");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("Category", "CreatorId")
-                        .IsUnique();
-
-                    b.ToTable("AppBookkeepingCategory", (string)null);
-                });
-
-            modelBuilder.Entity("DFApp.Bookkeeping.BookkeepingExpenditure", b =>
-                {
-                    b.Property<long>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("INTEGER");
-
-                    b.Property<long>("CategoryId")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<string>("ConcurrencyStamp")
-                        .IsConcurrencyToken()
-                        .IsRequired()
-                        .HasMaxLength(40)
-                        .HasColumnType("TEXT")
-                        .HasColumnName("ConcurrencyStamp");
-
-                    b.Property<DateTime>("CreationTime")
-                        .HasColumnType("TEXT")
-                        .HasColumnName("CreationTime");
-
-                    b.Property<Guid?>("CreatorId")
-                        .HasColumnType("TEXT")
-                        .HasColumnName("CreatorId");
-
-                    b.Property<decimal>("Expenditure")
-                        .HasColumnType("TEXT");
-
-                    b.Property<DateTime>("ExpenditureDate")
-                        .HasColumnType("Date");
-
-                    b.Property<string>("ExtraProperties")
-                        .IsRequired()
-                        .HasColumnType("TEXT")
-                        .HasColumnName("ExtraProperties");
-
-                    b.Property<bool>("IsDeleted")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("INTEGER")
-                        .HasDefaultValue(false)
-                        .HasColumnName("IsDeleted");
-
-                    b.Property<DateTime?>("LastModificationTime")
-                        .HasColumnType("TEXT")
-                        .HasColumnName("LastModificationTime");
-
-                    b.Property<Guid?>("LastModifierId")
-                        .HasColumnType("TEXT")
-                        .HasColumnName("LastModifierId");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("CategoryId");
-
-                    b.ToTable("AppBookkeepingExpenditure", (string)null);
-                });
 
             modelBuilder.Entity("DFApp.IP.DynamicIP", b =>
                 {
@@ -229,11 +124,11 @@ namespace DFApp.Migrations
                         .HasColumnType("TEXT")
                         .HasColumnName("LastModifierId");
 
-                    b.Property<string>("LotteryType")
-                        .HasColumnType("TEXT");
-
                     b.Property<string>("Number")
                         .HasColumnType("TEXT");
+
+                    b.Property<int>("lotteryType")
+                        .HasColumnType("INTEGER");
 
                     b.HasKey("Id");
 
@@ -392,7 +287,7 @@ namespace DFApp.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("Code", "Name")
+                    b.HasIndex("Code")
                         .IsUnique();
 
                     b.ToTable("AppLotteryResult", (string)null);
@@ -3097,17 +2992,6 @@ namespace DFApp.Migrations
                     b.ToTable("CmsUsers", (string)null);
                 });
 
-            modelBuilder.Entity("DFApp.Bookkeeping.BookkeepingExpenditure", b =>
-                {
-                    b.HasOne("DFApp.Bookkeeping.BookkeepingCategory", "Category")
-                        .WithMany("Expenditures")
-                        .HasForeignKey("CategoryId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Category");
-                });
-
             modelBuilder.Entity("DFApp.Lottery.LotteryPrizegrades", b =>
                 {
                     b.HasOne("DFApp.Lottery.LotteryResult", "Result")
@@ -3279,11 +3163,6 @@ namespace DFApp.Migrations
                         .IsRequired();
 
                     b.Navigation("Author");
-                });
-
-            modelBuilder.Entity("DFApp.Bookkeeping.BookkeepingCategory", b =>
-                {
-                    b.Navigation("Expenditures");
                 });
 
             modelBuilder.Entity("DFApp.Lottery.LotteryResult", b =>

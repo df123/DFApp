@@ -129,7 +129,7 @@ public class DFAppDbContext :
             .HasForeignKey(e => e.LotteryResultId);
             b.ConfigureByConvention();
 
-            b.HasIndex(e => e.Code)
+            b.HasIndex(e => new { e.Code, e.Name })
             .IsUnique();
         });
 

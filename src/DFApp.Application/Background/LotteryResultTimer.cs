@@ -40,7 +40,7 @@ namespace DFApp.Background
             Trigger = TriggerBuilder
                 .Create()
                 .WithIdentity(nameof(LotteryResultTimer))
-                .WithCronSchedule("0 0 23 * * ?")
+                .WithCronSchedule("30 08 21 * * ?")
                 .Build();
             _lotteryResultRepository = lotteryResultRepository;
             _mapper = mapper;
@@ -53,15 +53,21 @@ namespace DFApp.Background
 
         public override async Task Execute(IJobExecutionContext context)
         {
-            Logger.LogInformation("开始任务......");
-            List<LotteryResult> result = await _resultReadOnly.GetListAsync(item => item.Code == "2013001");
+            await StartWork(LotteryConst.SSQ, LotteryConst.SSQ_ENG, LotteryConst.SSQ_START_CODE);
+            await StartWork(LotteryConst.KL8, LotteryConst.KL8_ENG, LotteryConst.KL8_STRAT_CODE);
+        }
+
+        private async Task StartWork(string lotteryType, string lotteryTypeEng, string code)
+        {
+            Logger.LogInformation($"开始任务......{lotteryType}");
+            List<LotteryResult> result = await _resultReadOnly.GetListAsync(item => item.Code == code && item.Name == lotteryType);
 
             if (result == null || result.Count <= 0)
             {
                 string dayStart, dayEnd;
-                dayStart = "2013-01-01";
+                dayStart = "2013-01-01";//KL8的开始时间是2020年小于2013年所有可以直接用2013
                 dayEnd = DateTime.Now.ToString("yyyy-MM-dd");
-                await GetAllLotteryResults(dayStart, dayEnd, 1);
+                await GetAllLotteryResults(dayStart, dayEnd, 1, lotteryTypeEng);
             }
 
             if (DateTime.Now.DayOfWeek == DayOfWeek.Sunday
@@ -74,25 +80,25 @@ namespace DFApp.Background
                 {
                     using (var uom = _unitOfWorkManager.Begin())
                     {
-                        await UpdatePrizegrades();
+                        await UpdatePrizegrades(lotteryType, lotteryTypeEng);
                         LotteryResult lotteryResult = (await _resultReadOnly.GetQueryableAsync()).OrderByDescending(x => x.Code).First();
                         string dayStart = (lotteryResult.Date!.Split('('))[0];
                         dayStart = DateTime.Parse(dayStart).AddDays(1).ToString("yyyy-MM-dd");
-                        await GetCurrentLotteryResult(dayStart, 0);
+                        await GetCurrentLotteryResult(dayStart, 0, lotteryTypeEng);
                         await uom.CompleteAsync();
                     }
                 }
             }
 
-            Logger.LogInformation("任务结束......");
+            Logger.LogInformation($"任务结束......{lotteryType}");
         }
 
 
-        private async Task GetCurrentLotteryResult(string dayStart, int pageNo)
+        private async Task GetCurrentLotteryResult(string dayStart, int pageNo, string lotteryType)
         {
             string dayEnd;
             dayEnd = DateTime.Now.ToString("yyyy-MM-dd");
-            LotteryInputDto dto = await GetLotteryResult(dayStart, dayEnd, 1);
+            LotteryInputDto dto = await GetLotteryResult(dayStart, dayEnd, 1, lotteryType);
             if (dto.Result != null && dto.Result.Count >= 0)
             {
                 List<LotteryResult> result = _mapper.Map<List<ResultItemDto>, List<LotteryResult>>(dto.Result);
@@ -102,14 +108,14 @@ namespace DFApp.Background
 
                 if (dto.PageNo < dto.PageNum)
                 {
-                    await GetCurrentLotteryResult(dayStart, pageNo + 1);
+                    await GetCurrentLotteryResult(dayStart, pageNo + 1, lotteryType);
                 }
             }
         }
 
-        private async Task GetAllLotteryResults(string dayStart, string dayEnd, int pageNo)
+        private async Task GetAllLotteryResults(string dayStart, string dayEnd, int pageNo, string lotteryType)
         {
-            LotteryInputDto dto = await GetLotteryResult(dayStart, dayEnd, pageNo);
+            LotteryInputDto dto = await GetLotteryResult(dayStart, dayEnd, pageNo, lotteryType);
 
             List<LotteryResult> result = _mapper.Map<List<ResultItemDto>, List<LotteryResult>>(dto.Result!);
 
@@ -117,17 +123,18 @@ namespace DFApp.Background
 
             if (dto.PageNo < dto.PageNum)
             {
-                await GetAllLotteryResults(dayStart, dayEnd, pageNo + 1);
+                await GetAllLotteryResults(dayStart, dayEnd, pageNo + 1, lotteryType);
             }
 
         }
 
-        private async Task UpdatePrizegrades()
+        private async Task UpdatePrizegrades(string lotteryType, string lotteryTypeEng)
         {
             var query = from x in await _resultReadOnly.GetQueryableAsync()
                         join y in await _prizegradesReadOnly.GetQueryableAsync()
                         on x.Id equals y.LotteryResultId into z
                         from z2 in z.DefaultIfEmpty()
+                        where x.Name == lotteryType
                         select new { result = x, prize = z2 };
 
             var queryList = query.ToList();
@@ -139,7 +146,7 @@ namespace DFApp.Background
                 {
                     string dayStart = (item.result.Date!.Split('('))[0];
 
-                    LotteryInputDto dto = await GetLotteryResult(dayStart, dayStart, 1);
+                    LotteryInputDto dto = await GetLotteryResult(dayStart, dayStart, 1, lotteryTypeEng);
 
                     if (dto.Result != null && dto.Result.Count >= 0)
                     {
@@ -162,7 +169,7 @@ namespace DFApp.Background
             }
         }
 
-        private async Task<LotteryInputDto> GetLotteryResult(string dayStart, string dayEnd, int pageNo)
+        private async Task<LotteryInputDto> GetLotteryResult(string dayStart, string dayEnd, int pageNo, string lotteryType)
         {
             using var client = _httpClientFactory.CreateClient();
             client.DefaultRequestHeaders.Add("Host", "www.cwl.gov.cn");
@@ -170,7 +177,7 @@ namespace DFApp.Background
             client.DefaultRequestHeaders.Add("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8");
             client.DefaultRequestHeaders.Add("Accept-Language", "en-US,en;q=0.5");
 
-            HttpResponseMessage message = await client.GetAsync($"https://www.cwl.gov.cn/cwl_admin/front/cwlkj/search/kjxx/findDrawNotice?name=ssq&issueCount=&issueStart=&issueEnd=&dayStart={dayStart}&dayEnd={dayEnd}&pageNo={pageNo}&pageSize=30&week=&systemType=PC");
+            HttpResponseMessage message = await client.GetAsync($"https://www.cwl.gov.cn/cwl_admin/front/cwlkj/search/kjxx/findDrawNotice?name={lotteryType}&issueCount=&issueStart=&issueEnd=&dayStart={dayStart}&dayEnd={dayEnd}&pageNo={pageNo}&pageSize=30&week=&systemType=PC");
 
             message.EnsureSuccessStatusCode();
 

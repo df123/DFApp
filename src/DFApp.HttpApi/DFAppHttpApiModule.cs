@@ -9,6 +9,7 @@ using Volo.Abp.PermissionManagement.HttpApi;
 using Volo.Abp.SettingManagement;
 using Volo.Abp.TenantManagement;
 using Volo.CmsKit;
+using Volo.Abp.Imaging;
 
 namespace DFApp;
 
@@ -22,7 +23,9 @@ namespace DFApp;
     typeof(AbpSettingManagementHttpApiModule)
     )]
 [DependsOn(typeof(CmsKitHttpApiModule))]
-    public class DFAppHttpApiModule : AbpModule
+[DependsOn(typeof(AbpImagingAbstractionsModule))]
+[DependsOn(typeof(AbpImagingImageSharpModule))]
+public class DFAppHttpApiModule : AbpModule
 {
     public override void ConfigureServices(ServiceConfigurationContext context)
     {

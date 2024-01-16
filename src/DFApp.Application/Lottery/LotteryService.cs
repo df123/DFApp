@@ -1,4 +1,6 @@
-﻿using DFApp.Lottery.Statistics;
+﻿using DFApp.Lottery.BatchCreate;
+using DFApp.Lottery.Consts;
+using DFApp.Lottery.Statistics;
 using DFApp.Permissions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.Logging;
@@ -48,11 +50,11 @@ namespace DFApp.Lottery
             _lotteryPrizegradesRepository = lotteryPrizegradesRepository;
         }
 
-        public async Task<PagedResultDto<StatisticsWinItemDto>> GetStatisticsWinItem(string? purchasedPeriod, string? winningPeriod)
+        public async Task<PagedResultDto<StatisticsWinItemDto>> GetStatisticsWinItem(string? purchasedPeriod, string? winningPeriod, string lotteryType)
         {
             PagedResultDto<StatisticsWinItemDto> pagedResultDto = new PagedResultDto<StatisticsWinItemDto>();
-            List<LotteryResult> lotteryResults = await GetLotteryResultData(winningPeriod);
-            List<LotteryInfo> info = await GetLotteryInfoData(purchasedPeriod);
+            List<LotteryResult> lotteryResults = await GetLotteryResultData(winningPeriod, lotteryType);
+            List<LotteryInfo> info = await GetLotteryInfoData(purchasedPeriod, lotteryType);
 
             var infoGroup = info.GroupBy(item => item.IndexNo);
 
@@ -79,8 +81,8 @@ namespace DFApp.Lottery
 
                         winDto.BuyLottery.Reds.AddRange((lotteryNumbers.Where(x => x.ColorType != "1").Select(x => x.Number).ToArray())!);
                         winDto.WinLottery.Reds.AddRange(reds);
-                        winDto.BuyLottery.Blue = lotteryNumbers.First(x => x.ColorType == "1").Number!;
-                        winDto.WinLottery.Blue = lotteryResultItem.Blue!;
+                        winDto.BuyLottery.Blue = lotteryNumbers.FirstOrDefault(x => x.ColorType == "1")?.Number;
+                        winDto.WinLottery.Blue = lotteryResultItem.Blue;
 
                         foreach (string red in reds)
                         {
@@ -98,7 +100,17 @@ namespace DFApp.Lottery
                             }
                         }
 
-                        int winMoney = int.Parse(await JudgeWin(redWin, lotteryResultItem.Blue == winDto.BuyLottery.Blue, lotteryResultItem.Code));
+                        int winMoney = -2;
+                        if (lotteryType == LotteryConst.SSQ)
+                        {
+                            LotteryInfo blueLotteryInfo = lotteryNumbers.First(x => x.ColorType == "1");
+                            winMoney = await JudgeWin(redWin, lotteryResultItem.Blue == blueLotteryInfo.Number, lotteryResultItem.Code);
+                        }
+                        else
+                        {
+                            winMoney = await GetActualAmount(lotteryResultItem.Code, lotteryType, 10, redWin);
+                        }
+
                         if (winMoney > 0)
                         {
                             winDto.WinAmount += winMoney;
@@ -115,10 +127,15 @@ namespace DFApp.Lottery
             return pagedResultDto;
         }
 
-        public async Task<List<StatisticsWinDto>> GetStatisticsWin(string? purchasedPeriod, string? winningPeriod)
+        public async Task<List<StatisticsWinDto>> GetStatisticsWin(string? purchasedPeriod, string? winningPeriod, string lotteryType)
         {
-            List<LotteryResult> lotteryResults = await GetLotteryResultData(winningPeriod);
-            List<LotteryInfo> info = await GetLotteryInfoData(purchasedPeriod);
+            if (true)
+            {
+
+            }
+
+            List<LotteryResult> lotteryResults = await GetLotteryResultData(winningPeriod, lotteryType);
+            List<LotteryInfo> info = await GetLotteryInfoData(purchasedPeriod, lotteryType);
 
             var infoGroup = info.GroupBy(item => item.IndexNo);
 
@@ -126,13 +143,14 @@ namespace DFApp.Lottery
 
             foreach (var item in infoGroup)
             {
+
+                List<LotteryInfo> tempList = item.OrderBy(o => o.Id).ToList();
+                var groupIdList = tempList.GroupBy(x => x.GroupId);
+
                 StatisticsWinDto winDto = new StatisticsWinDto();
                 winDto.Code = item.Key.ToString();
-                winDto.BuyAmount = item.Where(v => v.ColorType == "1").Count() * 2 * lotteryResults.Count;
+                winDto.BuyAmount = groupIdList.Count() * 2 * lotteryResults.Count;
                 winDto.WinAmount = 0;
-                List<LotteryInfo> tempList = item.OrderBy(o => o.Id).ToList();
-
-                var groupIdList = tempList.GroupBy(x => x.GroupId);
 
                 foreach (var groupId in groupIdList)
                 {
@@ -159,9 +177,17 @@ namespace DFApp.Lottery
                             }
                         }
 
-                        LotteryInfo blueLotteryInfo = lotteryNumbers.First(x => x.ColorType == "1");
+                        int winMoney = -2;
+                        if (lotteryType == LotteryConst.SSQ)
+                        {
+                            LotteryInfo blueLotteryInfo = lotteryNumbers.First(x => x.ColorType == "1");
+                            winMoney = await JudgeWin(redWin, lotteryResultItem.Blue == blueLotteryInfo.Number, lotteryResultItem.Code);
+                        }
+                        else
+                        {
+                            winMoney = await GetActualAmount(lotteryResultItem.Code, lotteryType, 10, redWin);
+                        }
 
-                        int winMoney = int.Parse(await JudgeWin(redWin, lotteryResultItem.Blue == blueLotteryInfo.Number, lotteryResultItem.Code));
                         if (winMoney > 0)
                         {
                             winDto.WinAmount += winMoney;
@@ -173,66 +199,62 @@ namespace DFApp.Lottery
             return results;
         }
 
-        private async Task<List<LotteryResult>> GetLotteryResultData(string? winningPeriod)
+        private async Task<List<LotteryResult>> GetLotteryResultData(string? winningPeriod, string lotteryType)
         {
+            Check.NotNullOrWhiteSpace(lotteryType, nameof(lotteryType));
+
             List<LotteryResult> lotteryResults;
 
             if (!string.IsNullOrWhiteSpace(winningPeriod))
             {
-                lotteryResults = await _lotteryResultrepository.GetListAsync(x => x.Code == winningPeriod);
+                lotteryResults = await _lotteryResultrepository.GetListAsync(x => x.Code == winningPeriod && x.Name == lotteryType);
             }
             else
             {
-                lotteryResults = await _lotteryResultrepository.GetListAsync();
+                lotteryResults = await _lotteryResultrepository.GetListAsync(x => x.Name == lotteryType);
             }
 
             return lotteryResults;
         }
 
-        private async Task<List<LotteryInfo>> GetLotteryInfoData(string? purchasedPeriod)
+        private async Task<List<LotteryInfo>> GetLotteryInfoData(string? purchasedPeriod, string lotteryType)
         {
+            Check.NotNullOrWhiteSpace(lotteryType, nameof(lotteryType));
+
             List<LotteryInfo> info;
 
             if (!string.IsNullOrWhiteSpace(purchasedPeriod) && int.TryParse(purchasedPeriod, out int purchasedPeriodInt))
             {
-                info = await _lotteryInforepository.GetListAsync(x => x.IndexNo == purchasedPeriodInt);
+
+
+                info = await _lotteryInforepository.GetListAsync(x => x.IndexNo == purchasedPeriodInt && x.LotteryType == lotteryType);
             }
             else
             {
-                info = await _lotteryInforepository.GetListAsync();
+                info = await _lotteryInforepository.GetListAsync(x => x.LotteryType == lotteryType);
             }
 
             return info;
         }
 
-
-        private async Task<string> JudgeWin(int redWinCounts, bool blueWin, string winningPeriod)
+        private async Task<int> JudgeWin(int redWinCounts, bool blueWin, string winningPeriod)
         {
-
             if (blueWin)
             {
                 switch (redWinCounts)
                 {
                     case 6:
-                        string result = await GetActualAmount(winningPeriod, 1);
-                        if (result != string.Empty)
-                        {
-                            return result;
-                        }
-                        return "5000000";
+                        return await GetActualAmount(winningPeriod, LotteryConst.SSQ, 0, 1);
                     case 5:
-                        return "3000";
+                        return 3000;
                     case 4:
-                        return "200";
+                        return 200;
                     case 3:
-                        return "10";
+                        return 10;
                     case 0:
                     case 1:
                     case 2:
-                        return "5";
-                    default:
-                        return "-2";
-
+                        return 5;
                 }
             }
             else
@@ -240,37 +262,40 @@ namespace DFApp.Lottery
                 switch (redWinCounts)
                 {
                     case 6:
-                        string result = await GetActualAmount(winningPeriod, 2);
-                        if (result != string.Empty)
-                        {
-                            return result;
-                        }
-                        return "100000";
+                        return await GetActualAmount(winningPeriod, LotteryConst.SSQ, 0, 2);
                     case 5:
-                        return "200";
+                        return 200;
                     case 4:
-                        return "10";
-                    default:
-                        return "-2";
+                        return 10;
                 }
             }
+            return 0;
         }
 
-        private async Task<string> GetActualAmount(string winningPeriod, int prize)
+        private async Task<int> GetActualAmount(string winningPeriod, string lotteryType, int selectedCount, int prize)
         {
             Check.NotNullOrWhiteSpace(winningPeriod, nameof(winningPeriod));
 
-            LotteryResult result = await _lotteryResultrepository.GetAsync(x => x.Code == winningPeriod);
+            LotteryResult result = await _lotteryResultrepository.GetAsync(x => x.Code == winningPeriod && x.Name == lotteryType);
             result.Prizegrades = await _lotteryPrizegradesRepository.GetListAsync(x => x.LotteryResultId == result.Id);
 
             if (result != null && result.Prizegrades != null && result.Prizegrades.Count > 0)
             {
-                LotteryPrizegrades prizegrades = result.Prizegrades.First(x => x.Type == prize);
+                string xType = string.Empty;
+                if (LotteryConst.SSQ == lotteryType)
+                {
+                    xType = prize.ToString();
+                }
+                else
+                {
+                    xType = $"x{selectedCount}z{prize}";
+                }
+                LotteryPrizegrades? prizegrades = result.Prizegrades.FirstOrDefault(x => x.Type == xType);
                 if (prizegrades != null && prizegrades.TypeMoney != null)
                 {
-                    if (int.TryParse(prizegrades.TypeMoney, out _))
+                    if (int.TryParse(prizegrades.TypeMoney, out int typeMoney))
                     {
-                        return prizegrades.TypeMoney;
+                        return typeMoney;
                     }
                     else
                     {
@@ -286,27 +311,38 @@ namespace DFApp.Lottery
                             }
                         }
 
-                        if (sum == 0)
-                        {
-                            return "-100000000";
-                        }
-
-                        return sum.ToString();
+                        return sum;
                     }
 
 
                 }
             }
-            return string.Empty;
+            return 0;
         }
-
 
         [Authorize(DFAppPermissions.Lottery.Create)]
         public async Task<LotteryDto> CreateLotteryBatch(List<CreateUpdateLotteryDto> dtos)
         {
             Check.NotNullOrEmpty(dtos, nameof(dtos));
             List<LotteryInfo> info = ObjectMapper.Map<List<CreateUpdateLotteryDto>, List<LotteryInfo>>(dtos);
-            LotteryInfo? startInfo = (await _lotteryInforepository.GetQueryableAsync()).OrderByDescending(item => item.Id).FirstOrDefault();
+            LotteryInfo? startInfo = (await _lotteryInforepository.GetQueryableAsync())
+                .Where(x => x.LotteryType == dtos[0].LotteryType && x.IndexNo == dtos[0].IndexNo)
+                .OrderByDescending(item => item.Id)
+                .ThenByDescending(item => item.GroupId)
+                .FirstOrDefault();
+
+            int groupId = startInfo != null ? startInfo.GroupId + 1 : 0;
+
+            var tempGroups = info.GroupBy(x => x.GroupId);
+
+            foreach (var item in tempGroups)
+            {
+                foreach (var item2 in item)
+                {
+                    item2.GroupId = groupId;
+                }
+                groupId++;
+            }
 
             using (var uom = _unitOfWorkManager.Begin(true, true))
             {
@@ -418,6 +454,25 @@ namespace DFApp.Lottery
 
         }
 
+        public List<ConstsDto> GetLotteryConst()
+        {
+            List<ConstsDto> constsDtos = new List<ConstsDto>();
+            constsDtos.Add(new ConstsDto()
+            {
+                LotteryType = LotteryConst.SSQ,
+                LotteryTypeEng = LotteryConst.SSQ_ENG
+            });
+            constsDtos.Add(new ConstsDto()
+            {
+                LotteryType = LotteryConst.KL8,
+                LotteryTypeEng = LotteryConst.KL8_ENG
+            });
+            return constsDtos;
+        }
 
+        public async Task<PagedResultDto<StatisticsWinItemDto>> GetStatisticsWinItemInputDto(StatisticsInputDto dto)
+        {
+            return await this.GetStatisticsWinItem(dto.PurchasedPeriod, dto.WinningPeriod, dto.LotteryType);
+        }
     }
 }

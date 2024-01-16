@@ -14,6 +14,7 @@ module.exports = {
         MediaExternalLink: './src/Media/ExternalLink/main.ts',
         LotteryStatistics: './src/Lottery/Statistics/main.ts',
         LotterySpecifyPeriod: './src/Lottery/SpecifyPeriod/main.ts',
+        LotteryBatchCreate:'./src/Lottery/LotteryBatchCreate/main.ts',
         QueueSink: './src/LogSink/QueueSink/main.ts',
         SignalRSink: './src/LogSink/SignalRSink/main.ts',
         ExpenditureAnalysis: './src/Expenditure/Analysis/main.ts'

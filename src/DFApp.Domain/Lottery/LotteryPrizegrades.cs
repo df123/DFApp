@@ -9,7 +9,7 @@ namespace DFApp.Lottery
     public class LotteryPrizegrades : AuditedAggregateRoot<long>, ISoftDelete
     {
         public long LotteryResultId { get; set; }   
-        public int Type { get; set; }
+        public string? Type { get; set; }
 
         public string? TypeNum { get; set; }
 
