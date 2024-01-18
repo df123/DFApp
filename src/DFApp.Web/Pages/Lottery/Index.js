@@ -49,12 +49,25 @@ $(function () {
                     data: "indexNo"
                 },
                 {
+                    title: l('LotteryType'),
+                    data: "lotteryType"
+                },
+                {
                     title: l('LotteryNumber'),
                     data: "number"
                 },
                 {
                     title: l('LotteryColorType'),
-                    data: "colorType"
+                    data: "colorType",
+                    render: function (data, type) {
+                        if (data == '0') {
+                            return '红球';
+                        }
+                        else {
+                            return '蓝球';
+                        }
+                        return data;
+                    }
                 },
                 {
                     title: l('LotteryGroupId'),

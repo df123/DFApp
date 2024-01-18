@@ -29,8 +29,8 @@ module.exports = {
         },
     },
     // devtool: 'source-map',
-    // mode: 'development',
-    mode: 'production',
+    mode: 'development',
+    // mode: 'production',
     module: {
         rules: [
             {
