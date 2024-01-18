@@ -1,4 +1,5 @@
-﻿using System;
+﻿using DFApp.CustomJsonConverter;
+using System;
 using System.Collections.Generic;
 using System.Text;
 using System.Text.Json.Serialization;
@@ -7,7 +8,9 @@ namespace DFApp.Lottery
 {
     public class PrizegradesItemDto
     {
+
         [JsonPropertyName("type")]
+        [JsonConverter(typeof(IntToStringConverter))]
         public string? Type { get; set; }
 
         [JsonPropertyName("typenum")]

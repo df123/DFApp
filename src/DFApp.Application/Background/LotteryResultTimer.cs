@@ -72,7 +72,8 @@ namespace DFApp.Background
 
             if (DateTime.Now.DayOfWeek == DayOfWeek.Sunday
                 || DateTime.Now.DayOfWeek == DayOfWeek.Thursday
-                || DateTime.Now.DayOfWeek == DayOfWeek.Tuesday)
+                || DateTime.Now.DayOfWeek == DayOfWeek.Tuesday
+                || lotteryType == LotteryConst.KL8)
             {
                 string day = DateTime.Now.ToString("yyyy-MM-dd");
                 List<LotteryResult> result1 = await _resultReadOnly.GetListAsync(item => item.Date != null && item.Date.StartsWith(day));
