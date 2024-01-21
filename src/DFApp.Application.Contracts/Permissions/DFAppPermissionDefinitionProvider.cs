@@ -49,6 +49,12 @@ public class DFAppPermissionDefinitionProvider : PermissionDefinitionProvider
         fileUploaddownloadPermission.AddChild(DFAppPermissions.FileUploadDownload.Upload, L("Permission:FileUploadDownload:Upload"));
         fileUploaddownloadPermission.AddChild(DFAppPermissions.FileUploadDownload.Download, L("Permission:FileUploadDownload:Download"));
 
+        var configurationInfoGroup = context.AddGroup(DFAppPermissions.ConfigurationInfo.Default, L("Permisssion:ConfigurationInfo"));
+        var configurationInfoPermission = configurationInfoGroup.AddPermission(DFAppPermissions.ConfigurationInfo.Default, L("Permisssion:ConfigurationInfo"));
+        configurationInfoPermission.AddChild(DFAppPermissions.ConfigurationInfo.Create, L("Permisssion:ConfigurationInfo:Create"));
+        configurationInfoPermission.AddChild(DFAppPermissions.ConfigurationInfo.Delete, L("Permisssion:ConfigurationInfo:Delete"));
+        configurationInfoPermission.AddChild(DFAppPermissions.ConfigurationInfo.Edit, L("Permisssion:ConfigurationInfo:Modify"));
+
     }
 
     private static LocalizableString L(string name)

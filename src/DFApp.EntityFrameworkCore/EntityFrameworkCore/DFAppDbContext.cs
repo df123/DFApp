@@ -24,6 +24,7 @@ using Volo.Abp.Users;
 using DFApp.Bookkeeping;
 using Microsoft.EntityFrameworkCore.Metadata;
 using System.Linq.Expressions;
+using DFApp.Configuration;
 
 namespace DFApp.EntityFrameworkCore;
 
@@ -87,6 +88,8 @@ public class DFAppDbContext :
 
     public DbSet<BookkeepingCategory> BookkeepingCategories { get; set; }
     public DbSet<BookkeepingExpenditure> bookkeepingExpenditures { get; set; }
+
+    public DbSet<ConfigurationInfo> ConfigurationInfos { get; set; }
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
@@ -158,6 +161,16 @@ public class DFAppDbContext :
             .HasForeignKey(e => e.CategoryId);
 
             b.HasIndex(e => new { e.Category, e.CreatorId })
+            .IsUnique();
+
+            b.ConfigureByConvention();
+        });
+
+        builder.Entity<ConfigurationInfo>(b =>
+        {
+            b.ToTable(DFAppConsts.DbTablePrefix + "ConfigurationInfo", DFAppConsts.DbSchema);
+
+            b.HasIndex(e => new { e.ModuleName, e.ConfigurationName })
             .IsUnique();
 
             b.ConfigureByConvention();

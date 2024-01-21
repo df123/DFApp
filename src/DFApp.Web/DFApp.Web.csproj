@@ -17,9 +17,13 @@
 
 	<ItemGroup>
 		<Compile Remove="Logs\**" />
+		<Compile Remove="VueApp\**" />
 		<Content Remove="Logs\**" />
+		<Content Remove="VueApp\**" />
 		<EmbeddedResource Remove="Logs\**" />
+		<EmbeddedResource Remove="VueApp\**" />
 		<None Remove="Logs\**" />
+		<None Remove="VueApp\**" />
 	</ItemGroup>
 
 	<ItemGroup>

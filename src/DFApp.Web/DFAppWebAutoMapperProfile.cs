@@ -1,6 +1,7 @@
 ﻿using AutoMapper;
 using DFApp.Bookkeeping.Category;
 using DFApp.Bookkeeping.Expenditure;
+using DFApp.Configuration;
 using DFApp.Media;
 
 namespace DFApp.Web;
@@ -20,6 +21,9 @@ public class DFAppWebAutoMapperProfile : Profile
 
         CreateMap<Pages.Bookkeeping.Expenditure.EditModalModel.UpdateExpenditureViewModel, CreateUpdateBookkeepingExpenditureDto>();
         CreateMap<BookkeepingExpenditureDto, Pages.Bookkeeping.Expenditure.EditModalModel.UpdateExpenditureViewModel>();
+
+        CreateMap<Pages.Configuration.CreateModalModel.CreateConfigurationInfoViewModel, CreateUpdateConfigurationInfoDto>();
+        CreateMap<ConfigurationInfoDto, CreateUpdateConfigurationInfoDto>();
 
     }
 }

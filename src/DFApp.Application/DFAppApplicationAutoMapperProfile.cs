@@ -6,6 +6,7 @@ using DFApp.IP;
 using DFApp.Lottery;
 using DFApp.Media;
 using DFApp.Bookkeeping;
+using DFApp.Configuration;
 
 namespace DFApp;
 
@@ -48,6 +49,10 @@ public class DFAppApplicationAutoMapperProfile : Profile
         CreateMap<BookkeepingExpenditure, BookkeepingExpenditureDto>();
         CreateMap<BookkeepingExpenditureDto, BookkeepingExpenditure>();
         CreateMap<CreateUpdateBookkeepingExpenditureDto, BookkeepingExpenditure>();
+
+        CreateMap<ConfigurationInfo,ConfigurationInfoDto>();
+        CreateMap<ConfigurationInfoDto,ConfigurationInfo>();
+        CreateMap<CreateUpdateConfigurationInfoDto,ConfigurationInfo>();
 
     }
 }

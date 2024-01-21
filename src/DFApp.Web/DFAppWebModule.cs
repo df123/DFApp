@@ -280,7 +280,7 @@ namespace DFApp.Web;
         );
     }
 
-    public override async void OnApplicationInitialization(ApplicationInitializationContext context)
+    public override void OnApplicationInitialization(ApplicationInitializationContext context)
     {
         var app = context.GetApplicationBuilder();
         var env = context.GetEnvironment();
@@ -327,7 +327,7 @@ namespace DFApp.Web;
         app.UseConfiguredEndpoints();
 
 
-        await context.AddBackgroundWorkerAsync<ListenTelegramService>();
+        //await context.AddBackgroundWorkerAsync<ListenTelegramService>();
 
     }
 }

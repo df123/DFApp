@@ -63,4 +63,12 @@ public static class DFAppPermissions
         public const string Download = Default + ".Download";
     }
 
+    public static class ConfigurationInfo
+    {
+        public const string Default = GroupName + ".ConfigurationInfo";
+        public const string Create = Default + ".Create";
+        public const string Edit = Default + ".Edit";
+        public const string Delete = Default + ".Delete";
+    }
+
 }

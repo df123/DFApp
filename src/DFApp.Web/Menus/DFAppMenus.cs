@@ -10,6 +10,14 @@ public class DFAppMenus
     public const string LogSink = Prefix + ".LogSink";
     public const string Bookkeeping = Prefix + ".Bookkeeping";
     public const string FileUploadDownload = Prefix + ".FileUploadDownload";
+
+    public static class ConfigurationInfo
+    {
+        public const string Default = Prefix + ".ConfigurationInfo";
+        public const string Create = Default + ".Create";
+        public const string Edit = Default + ".Edit";
+    }
+
     //Add your menu items here...
 
 }

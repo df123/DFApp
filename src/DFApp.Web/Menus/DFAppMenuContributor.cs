@@ -176,6 +176,19 @@ public class DFAppMenuContributor : IMenuContributor
 
         }
 
+        if (await context.IsGrantedAsync(DFAppPermissions.ConfigurationInfo.Default))
+        {
+
+            var configurationInfoFirst = new ApplicationMenuItem(
+                DFAppMenus.ConfigurationInfo.Default
+                , l["Menu:ConfigurationInfo"]
+                , "~/Configuration"
+                , icon: "fas fa-hammer"
+                , order: 7);
+
+            context.Menu.AddItem(configurationInfoFirst);
+
+        }
 
 
         administration.TryRemoveMenuItem(TenantManagementMenuNames.GroupName);
