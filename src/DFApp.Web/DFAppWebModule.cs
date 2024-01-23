@@ -280,7 +280,7 @@ namespace DFApp.Web;
         );
     }
 
-    public override void OnApplicationInitialization(ApplicationInitializationContext context)
+    public async override void OnApplicationInitialization(ApplicationInitializationContext context)
     {
         var app = context.GetApplicationBuilder();
         var env = context.GetEnvironment();
