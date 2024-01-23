@@ -327,7 +327,7 @@ namespace DFApp.Web;
         app.UseConfiguredEndpoints();
 
 
-        //await context.AddBackgroundWorkerAsync<ListenTelegramService>();
+        await context.AddBackgroundWorkerAsync<ListenTelegramService>();
 
     }
 }
