@@ -129,6 +129,16 @@ public class DFAppMenuContributor : IMenuContributor
                     , order: 1));
             }
 
+            if (await context.IsGrantedAsync(DFAppPermissions.FileUploadDownload.Download))
+            {
+                fileUploadDownloadFirst.AddItem(new ApplicationMenuItem(
+                    DFAppMenus.Bookkeeping
+                    , l["Menu:FileUploadDownload:Download"]
+                    , "~/FileUploadDownload/FileList"
+                    , icon: "fas fa-file"
+                    , order: 2));
+            }
+
             context.Menu.AddItem(fileUploadDownloadFirst);
         }
 

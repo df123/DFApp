@@ -17,7 +17,8 @@ module.exports = {
         LotteryBatchCreate:'./src/Lottery/LotteryBatchCreate/main.ts',
         QueueSink: './src/LogSink/QueueSink/main.ts',
         SignalRSink: './src/LogSink/SignalRSink/main.ts',
-        ExpenditureAnalysis: './src/Expenditure/Analysis/main.ts'
+        ExpenditureAnalysis: './src/Expenditure/Analysis/main.ts',
+        FileUpload:'./src/FileUpDownload/Upload/main.ts'
     },
     output: {
         filename: '[name].entry.js',

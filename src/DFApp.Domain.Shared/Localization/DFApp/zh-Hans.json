@@ -146,7 +146,14 @@
     "Permission:FileUploadDownload": "文件传输",
     "Permission:FileUploadDownload:Upload": "上传文件",
     "Permission:FileUploadDownload:Download": "下载文件",
+    "Permission:FileUploadDownload:Delete": "删除",
     "FileUploadDownload:Upload:Title": "上传文件",
+    "FileUploadDownload:FileList:Title": "文件列表",
+    "FileUploadDownload:Column:Id": "ID",
+    "FileUploadDownload:Column:FileName": "文件名",
+    "FileUploadDownload:Column:Path": "路径",
+    "FileUploadDownload:Column:Sha1": "SHA1",
+    "FileUploadDownload:Column:FileSize": "文件大小",
 
 
     "Menu:ConfigurationInfo": "配置",

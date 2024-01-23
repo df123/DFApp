@@ -61,6 +61,7 @@ public static class DFAppPermissions
         public const string Default = GroupName + ".FileUploadDownload";
         public const string Upload = Default + ".Upload";
         public const string Download = Default + ".Download";
+        public const string Delete = Default + ".Delete";
     }
 
     public static class ConfigurationInfo
@@ -70,5 +71,6 @@ public static class DFAppPermissions
         public const string Edit = Default + ".Edit";
         public const string Delete = Default + ".Delete";
     }
+
 
 }

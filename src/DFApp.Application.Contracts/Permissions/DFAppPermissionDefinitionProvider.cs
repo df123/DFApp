@@ -43,17 +43,19 @@ public class DFAppPermissionDefinitionProvider : PermissionDefinitionProvider
         bookkeepingExpenditurePermission.AddChild(DFAppPermissions.BookkeepingExpenditure.Delete, L("Permisssion:BookkeepingExpenditure:Delete"));
         bookkeepingExpenditurePermission.AddChild(DFAppPermissions.BookkeepingExpenditure.Edit, L("Permisssion:BookkeepingExpenditure:Modify"));
         bookkeepingExpenditurePermission.AddChild(DFAppPermissions.BookkeepingExpenditure.Analysis, L("Permisssion:BookkeepingExpenditure:Analysis"));
-
         var fileUploadDownloadGroup = context.AddGroup(DFAppPermissions.FileUploadDownload.Default, L("Permission:FileUploadDownload"));
         var fileUploaddownloadPermission = fileUploadDownloadGroup.AddPermission(DFAppPermissions.FileUploadDownload.Default, L("Permission:FileUploadDownload"));
         fileUploaddownloadPermission.AddChild(DFAppPermissions.FileUploadDownload.Upload, L("Permission:FileUploadDownload:Upload"));
         fileUploaddownloadPermission.AddChild(DFAppPermissions.FileUploadDownload.Download, L("Permission:FileUploadDownload:Download"));
+        fileUploaddownloadPermission.AddChild(DFAppPermissions.FileUploadDownload.Delete, L("Permission:FileUploadDownload:Delete"));
 
         var configurationInfoGroup = context.AddGroup(DFAppPermissions.ConfigurationInfo.Default, L("Permisssion:ConfigurationInfo"));
         var configurationInfoPermission = configurationInfoGroup.AddPermission(DFAppPermissions.ConfigurationInfo.Default, L("Permisssion:ConfigurationInfo"));
         configurationInfoPermission.AddChild(DFAppPermissions.ConfigurationInfo.Create, L("Permisssion:ConfigurationInfo:Create"));
         configurationInfoPermission.AddChild(DFAppPermissions.ConfigurationInfo.Delete, L("Permisssion:ConfigurationInfo:Delete"));
         configurationInfoPermission.AddChild(DFAppPermissions.ConfigurationInfo.Edit, L("Permisssion:ConfigurationInfo:Modify"));
+
+        
 
     }
 

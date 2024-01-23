@@ -11,6 +11,7 @@
     "@element-plus/icons-vue": "^2.3.1",
     "@microsoft/signalr": "^8.0.0",
     "chart.js": "^4.4.0",
+    "crypto-js": "^4.2.0",
     "element-plus": "^2.3.12",
     "vue": "^3.2.36"
   },

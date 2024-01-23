@@ -24,6 +24,7 @@ using Volo.Abp.Users;
 using DFApp.Bookkeeping;
 using Microsoft.EntityFrameworkCore.Metadata;
 using System.Linq.Expressions;
+using DFApp.FileUploadDownload;
 using DFApp.Configuration;
 
 namespace DFApp.EntityFrameworkCore;
@@ -88,8 +89,8 @@ public class DFAppDbContext :
 
     public DbSet<BookkeepingCategory> BookkeepingCategories { get; set; }
     public DbSet<BookkeepingExpenditure> bookkeepingExpenditures { get; set; }
-
     public DbSet<ConfigurationInfo> ConfigurationInfos { get; set; }
+    public DbSet<FileUploadInfo> FileUploadInfos { get; set; }
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
@@ -171,6 +172,16 @@ public class DFAppDbContext :
             b.ToTable(DFAppConsts.DbTablePrefix + "ConfigurationInfo", DFAppConsts.DbSchema);
 
             b.HasIndex(e => new { e.ModuleName, e.ConfigurationName })
+            .IsUnique();
+
+            b.ConfigureByConvention();
+        });
+
+        builder.Entity<FileUploadInfo>(b =>
+        {
+            b.ToTable(DFAppConsts.DbTablePrefix + "FileUploadInfo", DFAppConsts.DbSchema);
+
+            b.HasIndex(e => e.Sha1)
             .IsUnique();
 
             b.ConfigureByConvention();
