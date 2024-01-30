@@ -53,12 +53,14 @@ namespace DFApp.Background
 
         public override Task StartAsync(CancellationToken cancellationToken = default)
         {
-            _executeTask = StartWork();
+            //_executeTask = StartWork();
 
-            if (_executeTask.IsCompleted)
-            {
-                return _executeTask;
-            }
+            //if (_executeTask.IsCompleted)
+            //{
+            //    return _executeTask;
+            //}
+
+            Task.Run(StartWork, StoppingToken);
 
             return Task.CompletedTask;
 
