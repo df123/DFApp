@@ -47,7 +47,7 @@ namespace DFApp.Background
             _queueGenerate = _queueManagement.GetQueue<int>(QueueGenerate);
             _queueMove = _queueManagement.GetQueue<long>(QueueMove);
             _stopwatch = Stopwatch.StartNew();
-            _moduleName = "DFApp.Media.MediaInfoService";
+            _moduleName = "DFApp.Background.MediaBackgroudService";
 
         }
 
@@ -215,7 +215,6 @@ namespace DFApp.Background
         {
             string v = await _configurationInfoRepository.GetConfigurationInfoValue(configurationName, _moduleName);
             return v;
-
         }
 
     }

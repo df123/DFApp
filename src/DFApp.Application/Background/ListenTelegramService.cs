@@ -1,4 +1,5 @@
-﻿using DFApp.Helper;
+﻿using DFApp.Configuration;
+using DFApp.Helper;
 using DFApp.Media;
 using DFApp.Queue;
 using Microsoft.Extensions.Logging;
@@ -21,31 +22,31 @@ namespace DFApp.Background
         private readonly IQueueBase<DocumentQueueModel> _documentQueue;
         private readonly IQueueBase<PhotoQueueModel> _photoQueue;
         private readonly IMediaRepository _mediaInfoRepository;
+        private readonly IConfigurationInfoRepository _configurationInfoRepository;
+        private readonly string _moduleName;
         public ListenTelegramService(
         WTelegram.Client client,
         IQueueBase<DocumentQueueModel> documentQueue,
         IQueueBase<PhotoQueueModel> photoQueue,
-        IMediaRepository mediaInfoRepository)
+        IMediaRepository mediaInfoRepository,
+        IConfigurationInfoRepository configurationInfoRepository)
         {
             this._client = client;
             this._mediaInfoRepository = mediaInfoRepository;
             WTelegram.Helpers.Log = (lvl, str) => Logger.Log((LogLevel)lvl, str);
             _documentQueue = documentQueue;
             _photoQueue = photoQueue;
-            Directory.CreateDirectory(AppsettingsHelper.app("RunConfig", "SaveVideoPathPrefix"));
-            Directory.CreateDirectory(AppsettingsHelper.app("RunConfig", "SavePhotoPathPrefix"));
-
+            _moduleName = "DFApp.Background.ListenTelegramService";
+            _configurationInfoRepository = configurationInfoRepository;
+            Directory.CreateDirectory(GetConfigurationInfo("SaveVideoPathPrefix").Result);
+            Directory.CreateDirectory(GetConfigurationInfo("SavePhotoPathPrefix").Result);
         }
 
         public override Task StartAsync(CancellationToken cancellationToken = default)
         {
-
-            //Task.Run(StartWork, StoppingToken);
-
             _ = StartWork();
 
             return Task.CompletedTask;
-
         }
 
         public async Task StartWork()
@@ -53,8 +54,8 @@ namespace DFApp.Background
             Logger.LogInformation("Start listening for messages");
             TL.User user = await _client.LoginUserIfNeeded();
             _client.OnUpdate += ClientUpdate;
-            var mediaTask = DownloadMedia(AppsettingsHelper.app("RunConfig", "SaveVideoPathPrefix"), _documentQueue, StoppingToken);
-            var photoTask = DownloadPhoto(AppsettingsHelper.app("RunConfig", "SavePhotoPathPrefix"), _photoQueue, StoppingToken);
+            var mediaTask = DownloadMedia(await GetConfigurationInfo("SaveVideoPathPrefix"), _documentQueue, StoppingToken);
+            var photoTask = DownloadPhoto(await GetConfigurationInfo("SavePhotoPathPrefix"), _photoQueue, StoppingToken);
             await mediaTask;
             await photoTask;
         }
@@ -372,6 +373,13 @@ namespace DFApp.Background
             {
                 Logger.LogError($"Directory {path} does not exist.");
             }
+        }
+
+
+        private async Task<string> GetConfigurationInfo(string configurationName)
+        {
+            string v = await _configurationInfoRepository.GetConfigurationInfoValue(configurationName, _moduleName);
+            return v;
         }
 
     }
