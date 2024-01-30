@@ -1,0 +1,21 @@
+﻿@page
+@using DFApp.Localization
+@using Microsoft.Extensions.Localization
+@model DFApp.Web.Pages.TG.Login.IndexModel
+@inject IStringLocalizer<DFAppResource> L
+@section scripts {
+    <abp-script-bundle name="MediaChart">
+        @* TGLogin *@
+<abp-script src="/dist/250.entry.js"></abp-script>
+<abp-script src="/dist/TGLogin.entry.js"></abp-script>
+        @* TGLogin *@
+    </abp-script-bundle>
+}
+<abp-card>
+    <abp-card-header>
+        <abp-card-title>@L["Media:ChartTitle"]</abp-card-title>
+    </abp-card-header>
+    <abp-card-body>
+        <div id="app"></div>
+    </abp-card-body>
+</abp-card>

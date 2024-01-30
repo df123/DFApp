@@ -2,44 +2,72 @@
 using DFApp.Helper;
 using DFApp.Media;
 using DFApp.Queue;
+using DFApp.TLConfig;
 using Microsoft.Extensions.Logging;
+using Starksoft.Net.Proxy;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using TL;
 using Volo.Abp.BackgroundWorkers;
-using Volo.Abp.ObjectMapping;
+using WTelegram;
 
 namespace DFApp.Background
 {
-    public class ListenTelegramService : BackgroundWorkerBase
+    public class ListenTelegramService : BackgroundWorkerBase, IDisposable
     {
         private readonly WTelegram.Client _client;
+        public WTelegram.Client TGClinet { get { return _client; } }
+        public User User => TGClinet.User;
+
+        public string ConfigNeeded { get; set; } = "connecting";
+
         private readonly IQueueBase<DocumentQueueModel> _documentQueue;
         private readonly IQueueBase<PhotoQueueModel> _photoQueue;
         private readonly IMediaRepository _mediaInfoRepository;
         private readonly IConfigurationInfoRepository _configurationInfoRepository;
         private readonly string _moduleName;
         public ListenTelegramService(
-        WTelegram.Client client,
         IQueueBase<DocumentQueueModel> documentQueue,
         IQueueBase<PhotoQueueModel> photoQueue,
         IMediaRepository mediaInfoRepository,
         IConfigurationInfoRepository configurationInfoRepository)
         {
-            this._client = client;
             this._mediaInfoRepository = mediaInfoRepository;
-            WTelegram.Helpers.Log = (lvl, str) => Logger.Log((LogLevel)lvl, str);
             _documentQueue = documentQueue;
             _photoQueue = photoQueue;
             _moduleName = "DFApp.Background.ListenTelegramService";
             _configurationInfoRepository = configurationInfoRepository;
             Directory.CreateDirectory(GetConfigurationInfo("SaveVideoPathPrefix").Result);
             Directory.CreateDirectory(GetConfigurationInfo("SavePhotoPathPrefix").Result);
+
+            _client = new WTelegram.Client(what =>
+            {
+                switch (what)
+                {
+                    case "api_id":
+                    case "session_pathname":
+                    case "api_hash": return GetConfigurationInfo(what).Result;
+                    default: return null;
+                }
+            });
+
+            if (bool.Parse(GetConfigurationInfo("EnableProxy").Result))
+            {
+                _client.TcpHandler = async (address, port) =>
+                {
+                    var proxy = new Socks5ProxyClient(
+                        await GetConfigurationInfo("ProxyHost"),
+                    int.Parse(await GetConfigurationInfo("ProxyPort")));
+                    return proxy.CreateConnection(address, port);
+                };
+            }
+            _client.PingInterval = 300;
+            _client.MaxAutoReconnects = int.MaxValue;
+
         }
 
         public override Task StartAsync(CancellationToken cancellationToken = default)
@@ -49,10 +77,16 @@ namespace DFApp.Background
             return Task.CompletedTask;
         }
 
+        public async Task<string> DoLogin(string loginInfo)
+        {
+            return ConfigNeeded = await TGClinet.Login(loginInfo);
+        }
+
         public async Task StartWork()
         {
             Logger.LogInformation("Start listening for messages");
-            TL.User user = await _client.LoginUserIfNeeded();
+            WTelegram.Helpers.Log = (lvl, str) => Logger.Log((LogLevel)lvl, str);
+            ConfigNeeded = await DoLogin(await GetConfigurationInfo("phone_number"));
             _client.OnUpdate += ClientUpdate;
             var mediaTask = DownloadMedia(await GetConfigurationInfo("SaveVideoPathPrefix"), _documentQueue, StoppingToken);
             var photoTask = DownloadPhoto(await GetConfigurationInfo("SavePhotoPathPrefix"), _photoQueue, StoppingToken);
@@ -382,5 +416,9 @@ namespace DFApp.Background
             return v;
         }
 
+        public void Dispose()
+        {
+            TGClinet.Dispose();
+        }
     }
 }

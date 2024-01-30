@@ -10,6 +10,7 @@ public class DFAppMenus
         public const string Default = Prefix + ".Media";
         public const string ExternalLink = Default + ".ExternalLink";
         public const string Chart = Default + ".Chart";
+        public const string Login = Default + ".Login";
     }
 
     public const string DynamicIP = Prefix + ".DynamicIP";
@@ -28,3 +29,4 @@ public class DFAppMenus
     //Add your menu items here...
 
 }
+

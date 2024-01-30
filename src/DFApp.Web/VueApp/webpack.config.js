@@ -18,7 +18,8 @@ module.exports = {
         QueueSink: './src/LogSink/QueueSink/main.ts',
         SignalRSink: './src/LogSink/SignalRSink/main.ts',
         ExpenditureAnalysis: './src/Expenditure/Analysis/main.ts',
-        FileUpload:'./src/FileUpDownload/Upload/main.ts'
+        FileUpload:'./src/FileUpDownload/Upload/main.ts',
+        TGLogin:'./src/TG/Login/main.ts'
     },
     output: {
         filename: '[name].entry.js',

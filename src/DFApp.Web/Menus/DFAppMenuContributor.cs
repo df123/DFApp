@@ -41,6 +41,13 @@ public class DFAppMenuContributor : IMenuContributor
             mediaFirst.AddItem(new ApplicationMenuItem(DFAppMenus.Media.Default, l["Menu:Media"], "~/TG/Media", icon: "fas fa-play", order: 1));
             mediaFirst.AddItem(new ApplicationMenuItem(DFAppMenus.Media.ExternalLink, l["Menu:Media:ExternalLink"], "~/TG/Media/ExternalLink", icon: "fas fa-link", order: 2));
             mediaFirst.AddItem(new ApplicationMenuItem(DFAppMenus.Media.Chart, l["Menu:Media:Chart"], "~/TG/Media/Chart", icon: "fas fa-chart-bar", order: 3));
+            mediaFirst.AddItem(
+                new ApplicationMenuItem(
+                    DFAppMenus.Media.Login
+                    , l["Menu:Media:Login"]
+                    , "~/TG/Login"
+                    , icon: "fas fa-chart-bar"
+                    , order: 4));
 
             context.Menu.AddItem(mediaFirst);
         }
@@ -199,6 +206,15 @@ public class DFAppMenuContributor : IMenuContributor
             context.Menu.AddItem(configurationInfoFirst);
 
         }
+
+        //var tgLoginFirst = new ApplicationMenuItem(
+        //        DFAppMenus.ConfigurationInfo.Default
+        //        , l["Menu:ConfigurationInfo"]
+        //        , "~/TG/Login"
+        //        , icon: "fas fa-hammer"
+        //        , order: 8);
+
+        //context.Menu.AddItem(tgLoginFirst);
 
 
         administration.TryRemoveMenuItem(TenantManagementMenuNames.GroupName);

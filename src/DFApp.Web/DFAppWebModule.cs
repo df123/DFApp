@@ -133,43 +133,6 @@ namespace DFApp.Web;
         context.Services.AddSingleton<IQueueBase<PhotoQueueModel>, QueueBase<PhotoQueueModel>>();
         context.Services.AddSingleton(new AppsettingsHelper(context.Services.GetConfiguration()));
 
-        context.Services.AddSingleton<WTelegram.Client>(m =>
-        {
-#nullable disable
-            IQueueBase<string> queueBase = m.GetService<IQueueBase<string>>();
-            WTelegram.Client client = new WTelegram.Client(what =>
-            {
-                m.GetService<TLConfigService>();
-                string[] sections = new string[] { "Telegram", what };
-                switch (what)
-                {
-                    case "session_pathname":
-                    case "api_id":
-                    case "api_hash":
-                    case "phone_number": return AppsettingsHelper.app(sections);
-                    case "verification_code":
-                        return queueBase.GetItemAsync(default).Result;
-                    default: return null;
-                }
-            });
-#nullable restore
-            if (bool.Parse(AppsettingsHelper.app(new string[] { "RunConfig", "Proxy", "EnableProxy" })))
-            {
-#pragma warning disable CS1998
-                client.TcpHandler = async (address, port) =>
-                {
-                    var proxy = new Socks5ProxyClient(
-                        AppsettingsHelper.app(new string[] { "RunConfig", "Proxy", "ProxyHost" }),
-                    int.Parse(AppsettingsHelper.app(new string[] { "RunConfig", "Proxy", "ProxyPort" })));
-                    return proxy.CreateConnection(address, port);
-                };
-#pragma warning restore CS1998
-            }
-            client.PingInterval = 300;
-            client.MaxAutoReconnects = int.MaxValue;
-            return client;
-        });
-
         context.Services.AddHttpClient();
         context.Services.AddSingleton<SinkHub>();
 
@@ -196,7 +159,7 @@ namespace DFApp.Web;
             options.Conventions.AuthorizePage("/Lottery/Statistics/Index", DFAppPermissions.Lottery.Default);
             options.Conventions.AuthorizePage("/Lottery/StatisticsItem/Index", DFAppPermissions.Lottery.Default);
             options.Conventions.AuthorizePage("/Lottery/BatchCreate/Index", DFAppPermissions.Lottery.Default);
-
+            options.Conventions.AuthorizeFolder("/TG", DFAppPermissions.Medias.Default);
             options.Conventions.AuthorizeFolder("/Bookkeeping/Category", DFAppPermissions.BookkeepingCategory.Default);
             options.Conventions.AuthorizeFolder("/Bookkeeping/Expenditure", DFAppPermissions.BookkeepingExpenditure.Default);
             options.Conventions.AuthorizeFolder("/FileUploadDownload", DFAppPermissions.FileUploadDownload.Default);
@@ -326,7 +289,7 @@ namespace DFApp.Web;
         app.UseConfiguredEndpoints();
 
 
-        await context.AddBackgroundWorkerAsync<ListenTelegramService>();
+        //await context.AddBackgroundWorkerAsync<ListenTelegramService>();
         await context.AddBackgroundWorkerAsync<MediaBackgroudService>();
 
     }
