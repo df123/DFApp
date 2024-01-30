@@ -19,7 +19,7 @@ namespace DFApp.Background
 {
     public class ListenTelegramService : BackgroundWorkerBase, IDisposable
     {
-        private readonly WTelegram.Client _client;
+        private WTelegram.Client _client;
         public WTelegram.Client TGClinet { get { return _client; } }
         public User User => TGClinet.User;
 
@@ -41,6 +41,28 @@ namespace DFApp.Background
             _photoQueue = photoQueue;
             _moduleName = "DFApp.Background.ListenTelegramService";
             _configurationInfoRepository = configurationInfoRepository;
+
+        }
+
+        public override Task StartAsync(CancellationToken cancellationToken = default)
+        {
+            _ = StartWork();
+
+            //Task.Run(StartWork, StoppingToken);
+
+            return Task.CompletedTask;
+        }
+
+        public async Task<string> DoLogin(string loginInfo)
+        {
+            return ConfigNeeded = await TGClinet.Login(loginInfo);
+        }
+
+        public async Task StartWork()
+        {
+            Logger.LogInformation("Start listening for messages");
+            WTelegram.Helpers.Log = (lvl, str) => Logger.Log((LogLevel)lvl, str);
+
             Directory.CreateDirectory(GetConfigurationInfo("SaveVideoPathPrefix").Result);
             Directory.CreateDirectory(GetConfigurationInfo("SavePhotoPathPrefix").Result);
 
@@ -68,26 +90,6 @@ namespace DFApp.Background
             _client.PingInterval = 300;
             _client.MaxAutoReconnects = int.MaxValue;
 
-        }
-
-        public override Task StartAsync(CancellationToken cancellationToken = default)
-        {
-            //_ = StartWork();
-
-            Task.Run(StartWork, StoppingToken);
-
-            return Task.CompletedTask;
-        }
-
-        public async Task<string> DoLogin(string loginInfo)
-        {
-            return ConfigNeeded = await TGClinet.Login(loginInfo);
-        }
-
-        public async Task StartWork()
-        {
-            Logger.LogInformation("Start listening for messages");
-            WTelegram.Helpers.Log = (lvl, str) => Logger.Log((LogLevel)lvl, str);
             ConfigNeeded = await DoLogin(await GetConfigurationInfo("phone_number"));
             _client.OnUpdate += ClientUpdate;
             var mediaTask = DownloadMedia(await GetConfigurationInfo("SaveVideoPathPrefix"), _documentQueue, StoppingToken);
