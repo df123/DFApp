@@ -127,12 +127,11 @@ namespace DFApp.Web;
         ConfigureAutoApiControllers();
         ConfigureSwaggerServices(context.Services);
 
+        context.Services.AddSingleton<IQueueManagement, QueueManagement>();
         context.Services.AddSingleton<IQueueBase<string>, QueueBase<string>>();
         context.Services.AddSingleton<IQueueBase<DocumentQueueModel>, QueueBase<DocumentQueueModel>>();
         context.Services.AddSingleton<IQueueBase<PhotoQueueModel>, QueueBase<PhotoQueueModel>>();
-        context.Services.AddSingleton<List<MediaInfoDto[]>>();
         context.Services.AddSingleton(new AppsettingsHelper(context.Services.GetConfiguration()));
-        context.Services.AddSingleton(new HashHelper());
 
         context.Services.AddSingleton<WTelegram.Client>(m =>
         {
@@ -327,7 +326,8 @@ namespace DFApp.Web;
         app.UseConfiguredEndpoints();
 
 
-        await context.AddBackgroundWorkerAsync<ListenTelegramService>();
+        //await context.AddBackgroundWorkerAsync<ListenTelegramService>();
+        await context.AddBackgroundWorkerAsync<MediaBackgroudService>();
 
     }
 }

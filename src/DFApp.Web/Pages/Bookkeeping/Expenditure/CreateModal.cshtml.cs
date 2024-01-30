@@ -1,4 +1,4 @@
-using DFApp.Bookkeeping.Expenditure;
+﻿using DFApp.Bookkeeping.Expenditure;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.AspNetCore.Mvc.Rendering;
@@ -48,14 +48,16 @@ namespace DFApp.Web.Pages.Bookkeeping.Expenditure
         {
             [Required]
             [DataType(DataType.Date)]
+            [DisplayName("日期")]
             public DateTime ExpenditureDate { get; set; }
 
             [Required]
+            [DisplayName("支出金额")]
             public decimal Expenditure { get; set; }
 
             [Required]
             [SelectItems(nameof(Categorys))]
-            [DisplayName("Category")]
+            [DisplayName("类别")]
             public long CategoryId { get; set; }
         }
 

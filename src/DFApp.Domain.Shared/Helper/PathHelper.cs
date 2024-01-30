@@ -1,6 +1,7 @@
 ﻿
 using System;
 using System.IO;
+using System.Linq;
 using System.Text.RegularExpressions;
 
 namespace DFApp.Helper
@@ -38,6 +39,13 @@ namespace DFApp.Helper
                 return Guid.NewGuid().ToString();
             }
             return strs[position];
+        }
+
+
+        public static string[] GetFilesSortedByPathLength(string[] filePaths)
+        {
+            Array.Sort(filePaths, (x, y) => x.Length.CompareTo(y.Length));
+            return filePaths.Reverse().ToArray();
         }
 
     }

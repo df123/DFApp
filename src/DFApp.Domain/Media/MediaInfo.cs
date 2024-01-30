@@ -13,6 +13,8 @@ namespace DFApp.Media
         public string? ValueSHA1 { get; set; }
         public string? MimeType { get; set; }
         public string? Title { get; set; }
+        public bool IsExternalLinkGenerated { get; set; }
+        public bool IsFileDeleted { get; set; }
         public bool IsDeleted { get; set; }
     }
 }

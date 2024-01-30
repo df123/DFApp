@@ -26,6 +26,8 @@ namespace DFApp.Controllers
         private readonly IFileUploadInfoService _fileInfoService;
         private readonly FileExtensionContentTypeProvider _typeProvider;
         private readonly IConfigurationInfoService _configurationInfoService;
+        private readonly string _moduleName;
+
         public FileUpDownloadController(IFileUploadInfoService fileUploadInfoService,
             IConfigurationInfoService configurationInfoService)
         {
@@ -34,6 +36,7 @@ namespace DFApp.Controllers
             _typeProvider = new FileExtensionContentTypeProvider();
             _typeProvider.Mappings[".iso"] = "application/octet-stream";
             _configurationInfoService = configurationInfoService;
+            _moduleName = "DFApp.Controllers.FileUpDownloadController";
         }
 
         [HttpPost("upload")]
@@ -65,12 +68,13 @@ namespace DFApp.Controllers
                     return BadRequest("上传失败：SHA1不相同");
                 }
 
+                string prefix = await GetConfigurationValue("SaveUplouadFilePath");
+
                 dto.FileSize = memoryStream.Length;
                 dto.FileName = file.FileName;
-                dto.Path = $"{AppsettingsHelper.app("RunConfig", "SaveUplouadFilePath")}/{file.FileName}";
+                dto.Path = Path.Combine(prefix, file.FileName);
 
-                System.IO.File.WriteAllBytes($"{AppsettingsHelper.app("RunConfig", "SaveUplouadFilePath")}/{file.FileName}", memoryStream.ToArray());
-                //System.IO.File.WriteAllBytes($"{file.FileName}", memoryStream.ToArray());
+                System.IO.File.WriteAllBytes(dto.Path, memoryStream.ToArray());
 
                 await _fileInfoService.CreateAsync(dto);
             }
@@ -106,6 +110,10 @@ namespace DFApp.Controllers
             return fileStreamReult;
         }
 
+        private async Task<string> GetConfigurationValue(string configurationName)
+        {
+            return await _configurationInfoService.GetConfigurationInfoValue(configurationName, _moduleName);
+        }
 
     }
 }

@@ -1,3 +1,5 @@
+using System;
+
 namespace DFApp.Helper
 {
     public class StorageUnitConversionHelper
@@ -16,5 +18,20 @@ namespace DFApp.Helper
         {
             return sizes / 1024d;
         }
+
+        public static string ConvertDataUnit(double data)
+        {
+            string[] units = { "B", "KB", "MB", "GB", "TB" };
+            int index = 0;
+
+            while (data >= 1024 && index < units.Length - 1)
+            {
+                data /= 1024;
+                index++;
+            }
+
+            return Math.Round(data, 2) + " " + units[index];
+        }
+
     }
 }

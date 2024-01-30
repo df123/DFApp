@@ -4,7 +4,14 @@ public class DFAppMenus
 {
     private const string Prefix = "DFApp";
     public const string Home = Prefix + ".Home";
-    public const string Media = Prefix + ".Media";
+
+    public static class Media
+    {
+        public const string Default = Prefix + ".Media";
+        public const string ExternalLink = Default + ".ExternalLink";
+        public const string Chart = Default + ".Chart";
+    }
+
     public const string DynamicIP = Prefix + ".DynamicIP";
     public const string Lottery = Prefix + ".Lottery";
     public const string LogSink = Prefix + ".LogSink";

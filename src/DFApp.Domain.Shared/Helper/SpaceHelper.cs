@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using TL;
 
 namespace DFApp.Helper
 {
@@ -45,6 +46,18 @@ namespace DFApp.Helper
                 if (System.IO.File.Exists(path + ".temp"))
                 {
                     System.IO.File.Delete(path + ".temp");
+                }
+            }
+        }
+
+        public static void DeleteDirectory(string path)
+        {
+            if ((!string.IsNullOrEmpty(path)) && (!string.IsNullOrWhiteSpace(path)))
+            {
+                if (System.IO.Directory.Exists(path))
+                {
+                    
+                    System.IO.Directory.Delete(path);
                 }
             }
         }

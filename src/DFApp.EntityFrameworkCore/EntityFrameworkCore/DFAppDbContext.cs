@@ -92,6 +92,8 @@ public class DFAppDbContext :
     public DbSet<ConfigurationInfo> ConfigurationInfos { get; set; }
     public DbSet<FileUploadInfo> FileUploadInfos { get; set; }
 
+    public DbSet<MediaExternalLink> MediaExternalLinks { get; set; }
+
     protected override void OnModelCreating(ModelBuilder builder)
     {
         base.OnModelCreating(builder);
@@ -183,6 +185,13 @@ public class DFAppDbContext :
 
             b.HasIndex(e => e.Sha1)
             .IsUnique();
+
+            b.ConfigureByConvention();
+        });
+
+        builder.Entity<MediaExternalLink>(b =>
+        {
+            b.ToTable(DFAppConsts.DbTablePrefix + "MediaExternalLink", DFAppConsts.DbSchema);
 
             b.ConfigureByConvention();
         });

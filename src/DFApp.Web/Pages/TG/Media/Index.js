@@ -52,6 +52,14 @@ $(function () {
                     data: "id"
                 },
                 {
+                    title: l('IsExternalLinkGenerated'),
+                    data: "isExternalLinkGenerated"
+                },
+                {
+                    title: l('IsFileDeleted'),
+                    data: "isFileDeleted"
+                },
+                {
                     title: l('MediaAccessHash'),
                     data: "accessHash"
                 },

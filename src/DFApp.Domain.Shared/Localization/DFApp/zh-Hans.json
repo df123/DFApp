@@ -26,6 +26,8 @@
     "MediaTitle": "媒体管理",
     "SuccessfullyDeleted": "删除成功！",
     "MediaId": "数据库自增编号",
+    "IsExternalLinkGenerated": "是否生成连接",
+    "IsFileDeleted": "是否删除文件",
     "MediaAccessHash": "Telegram Access Hash",
     "MediaTId": "Telegram编号",
     "MediaSize": "大小",
@@ -39,11 +41,64 @@
     "MediaLastModificationTime": "修改时间",
     "MediaLastModifierId": "修改人编号",
 
-    "Media:ExternalLinkTitle": "媒体外部下载管理",
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    "TG:Media:ExternalLink:Title": "媒体外部下载",
+    "TG:Media:ExternalLink:Button:Title": "媒体外部下载",
+    "TG:Media:ExternalLink:Button:Remove": "移除文件",
+    "TG:Media:ExternalLink:Button:Link": "查看连接",
+    "TG:Media:ExternalLink:Button:Copy": "复制",
+    "TG:Media:ExternalLink:Button:Delete": "删除",
+    "TG:Media:ExternalLink:Button:New": "获取外链",
     "Media:ExternalLinkTitle:GetLink": "获取连接",
     "Media:ExternalLinkTitle:Copy": "复制",
     "Media:ExternalLinkTitle:Move": "移除",
-    "Media:ExternalLinkTitle:CopySuccessMesage": "复制成功！",
+    "TG:Media:ExternalLink:CopySuccessMesage": "复制成功！",
+    "TG:Media:ExternalLink:DeletionConfirmationMessage": "您确定要删除吗 '{0}'?",
+    "TG:Media:ExternalLink:RemoveConfirmationMessage": "您确定要移除文件吗 '{0}'?",
+    "TG:Media:ExternalLink:SuccessfullyDeleted": "删除成功！",
+    "TG:Media:ExternalLink:SuccessfullyRemove": "删除文件成功！",
+    "TG:Media:ExternalLink:SuccessfullyAdd": "添加外链任务成功！",
+    "TG:Media:ExternalLink:Column:ID": "ID",
+    "TG:Media:ExternalLink:Column:Name": "名称",
+    "TG:Media:ExternalLink:Column:Size": "大小",
+    "TG:Media:ExternalLink:Column:TimeConsumed": "消耗时间",
+    "TG:Media:ExternalLink:Column:IsRemove": "是否移除",
+    "TG:Media:ExternalLink:Column:CreationTime": "创建时间",
+    "TG:Media:ExternalLink:Column:lastModificationTime": "修改时间",
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
     "Media:ChartTitle": "媒体图表",
 
@@ -167,7 +222,8 @@
     "ConfigurationInfo:Column:Id": "ID",
     "ConfigurationInfo:Column:MoudleName": "模块名称",
     "ConfigurationInfo:Column:ConfigurationName": "配置名称",
-    "ConfigurationInfo:Column:ConfigurationValue": "配置值"
+    "ConfigurationInfo:Column:ConfigurationValue": "配置值",
+    "ConfigurationInfo:Column:Remark": "备注"
 
 
 

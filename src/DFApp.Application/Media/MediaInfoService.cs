@@ -1,4 +1,5 @@
 ﻿using DFApp.Background;
+using DFApp.Configuration;
 using DFApp.Helper;
 using DFApp.Permissions;
 using DFApp.Queue;
@@ -31,12 +32,15 @@ namespace DFApp.Media
         private readonly IMediaRepository _mediaInfoRepository;
         private readonly IQueueBase<DocumentQueueModel> _documentQueue;
         private readonly IQueueBase<PhotoQueueModel> _photoQueue;
-        private readonly List<MediaInfoDto[]> _mediaQueue;
+        private readonly IConfigurationInfoRepository _configurationInfoRepository;
+        private readonly IQueueManagement _queueManagement;
+        private readonly string _moduleName;
 
         public MediaInfoService(IMediaRepository repository,
             IQueueBase<DocumentQueueModel> documentQueue,
             IQueueBase<PhotoQueueModel> photoQueue,
-            List<MediaInfoDto[]> mediaQueue) : base(repository)
+            IConfigurationInfoRepository configurationInfoRepository,
+            IQueueManagement queueManagement) : base(repository)
         {
             _mediaInfoRepository = repository;
             _documentQueue = documentQueue;
@@ -46,13 +50,15 @@ namespace DFApp.Media
             CreatePolicyName = DFAppPermissions.Medias.Create;
             UpdatePolicyName = DFAppPermissions.Medias.Edit;
             DeletePolicyName = DFAppPermissions.Medias.Delete;
-            _mediaQueue = mediaQueue;
+            _configurationInfoRepository = configurationInfoRepository;
+            _moduleName = "DFApp.Media.MediaInfoService";
+            _queueManagement = queueManagement;
         }
 
         public async Task<MediaInfoDto[]> GetByAccessHashID(MediaInfoDto downloadInfo)
         {
             return ObjectMapper.Map<MediaInfo[], MediaInfoDto[]>(
-                await _mediaInfoRepository.GetByAccessHashID(downloadInfo.AccessHash, downloadInfo.TID,downloadInfo.Size));
+                await _mediaInfoRepository.GetByAccessHashID(downloadInfo.AccessHash, downloadInfo.TID, downloadInfo.Size));
         }
 
         public async Task<MediaInfoDto[]> GetByValueSHA1(MediaInfoDto mediaInfoDto)
@@ -85,92 +91,33 @@ namespace DFApp.Media
 
         public async Task<List<string>> GetExternalLinkListDownload()
         {
-            string returnDownloadUrlPrefix = AppsettingsHelper.app(new string[] { "RunConfig", "ReturnDownloadUrlPrefix" });
+            string returnDownloadUrlPrefix = await GetConfigurationInfo("ReturnDownloadUrlPrefix");
             Check.NotNullOrWhiteSpace(returnDownloadUrlPrefix, nameof(returnDownloadUrlPrefix));
 
             var temp = await _mediaInfoRepository.GetMediaNotReturn();
 
             if (temp != null && temp.Length > 0)
             {
-                _mediaQueue.Add(ObjectMapper.Map<MediaInfo[], MediaInfoDto[]>(temp));
+                //_mediaQueue.Add(ObjectMapper.Map<MediaInfo[], MediaInfoDto[]>(temp));
                 return temp.Select(x => returnDownloadUrlPrefix + x.SavePath.Replace("./Telegram/", string.Empty).Replace("\\", "/")).ToList();
             }
             return new List<string>();
         }
 
-        public async Task<string> GetExternalLinkDownload()
+        public string GetExternalLinkDownload()
         {
-            string returnDownloadUrlPrefix = AppsettingsHelper.app(new string[] { "RunConfig", "ReturnDownloadUrlPrefix" });
-            Check.NotNullOrWhiteSpace(returnDownloadUrlPrefix, nameof(returnDownloadUrlPrefix));
-
-            string photoSavePath = AppsettingsHelper.app("RunConfig", "SavePhotoPathPrefix");
-            Check.NotNullOrWhiteSpace(photoSavePath, nameof(photoSavePath));
-
-            var temp = await _mediaInfoRepository.GetMediaNotReturn();
-
-            string zipPhotoName = $"{DateTime.Now.ToString("yyyyMMddHHmmss")}.zip";
-            string zipPhotoPathName = Path.Combine(Path.GetDirectoryName(photoSavePath)!, zipPhotoName);
-
-            ZipFile.CreateFromDirectory(photoSavePath, zipPhotoPathName);
-
-            StringBuilder stringBuilder = new StringBuilder();
-            if (File.Exists(zipPhotoPathName))
-            {
-                stringBuilder.AppendLine(Path.Combine(returnDownloadUrlPrefix, zipPhotoName));
-                _mediaQueue.Add(new MediaInfoDto[] {new MediaInfoDto() { SavePath=zipPhotoPathName} });
-            }
-            foreach (var mediaInfo in temp)
-            {
-                if (mediaInfo.SavePath == null || Path.GetExtension(mediaInfo.SavePath).Equals(".jpg", StringComparison.OrdinalIgnoreCase))
-                {
-                    continue;
-                }
-                stringBuilder.AppendLine($"{returnDownloadUrlPrefix}{mediaInfo.SavePath.Replace("../Telegram/", string.Empty).Replace("\\", "/")}");
-            }
-
-            if (temp != null && temp.Length > 0)
-            {
-                _mediaQueue.Add(ObjectMapper.Map<MediaInfo[], MediaInfoDto[]>(temp));
-
-                return stringBuilder.ToString();
-            }
+            _queueManagement.AddQueueValue<int>(MediaBackgroudService.QueueGenerate, 0);
             return string.Empty;
         }
 
-        public async Task<string> MoveDownloaded()
+        public string MoveDownloaded(long id)
         {
-            try
+            if (id > 0)
             {
-                if (_mediaQueue != null)
-                {
-                    Logger.LogInformation("Retrieve local to start deletion");
-                    foreach (var item in _mediaQueue)
-                    {
-                        if (item != null && item.Length > 0)
-                        {
-                            var ids = item.Select(x => x.Id).ToList();
-                            _documentQueue.Clear();
-                            await _mediaInfoRepository.DeleteManyAsync(ids);
-                            foreach (var item2 in item)
-                            {
-                                SpaceHelper.DeleteFile(item2.SavePath);
-                            }
-                        }
-                    }
-                    Logger.LogInformation("Fetch Local Delete Complete");
-                    return "Success";
-                }
-                else
-                {
-                    return "None to be deleted";
-                }
-
+                return "ID要大于0";
             }
-            catch (Exception ex)
-            {
-                Logger.LogException(ex);
-                return ex.Message;
-            }
+            _queueManagement.AddQueueValue<long>(MediaBackgroudService.QueueMove, id);
+            return string.Empty;
         }
 
         public async Task<ChartDataDto> GetChartData()
@@ -194,5 +141,13 @@ namespace DFApp.Media
             }
             return dto;
         }
+
+        private async Task<string> GetConfigurationInfo(string configurationName)
+        {
+            string v = await _configurationInfoRepository.GetConfigurationInfoValue(configurationName, _moduleName);
+            return v;
+
+        }
+
     }
 }

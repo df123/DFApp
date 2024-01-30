@@ -10,5 +10,6 @@ namespace DFApp.Configuration
         public string ModuleName { get; set; }
         public string ConfigurationName { get; set; }
         public string ConfigurationValue { get; set; }
+        public string Remark { get; set; }
     }
 }

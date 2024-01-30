@@ -23,7 +23,7 @@ namespace DFApp.Media
 
         Task<List<string>> GetExternalLinkListDownload();
 
-        Task<string> GetExternalLinkDownload();
+        string GetExternalLinkDownload();
 
         Task<ChartDataDto> GetChartData();
 

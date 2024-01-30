@@ -58,6 +58,10 @@ $(function () {
                     data: "configurationValue"
                 },
                 {
+                    title: l('ConfigurationInfo:Column:Remark'),
+                    data: "remark"
+                },
+                {
                     title: l('MediaCreationTime'),
                     data: "creationTime",
                     dataFormat: "datetime"

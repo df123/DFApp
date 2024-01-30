@@ -14,7 +14,7 @@ namespace DFApp.Configuration
         public string ModuleName { get; set; }
         public string ConfigurationName { get; set; }
         public string ConfigurationValue { get; set; }
-
-        public bool IsDeleted {get;set;}
+        public string Remark { get; set; }
+        public bool IsDeleted { get; set; }
     }
 }

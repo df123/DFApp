@@ -37,21 +37,15 @@ namespace DFApp.Background
 
         }
 
-        public async override Task StartAsync(CancellationToken cancellationToken = default)
+        public override Task StartAsync(CancellationToken cancellationToken = default)
         {
 
-            Task.Run(StartWork, StoppingToken);
+            //Task.Run(StartWork, StoppingToken);
 
-        }
+            _ = StartWork();
 
-        public override async Task<Task> StopAsync(CancellationToken cancellationToken = default)
-        {
-            if (StoppingToken.CanBeCanceled)
-            {
-                Logger.LogInformation("Turn off listening to messages");
-                await StoppingTokenSource.CancelAsync();
-            }
             return Task.CompletedTask;
+
         }
 
         public async Task StartWork()
@@ -187,7 +181,7 @@ namespace DFApp.Background
                     }
                     await IsUpperLimit();
                     DeleteTempFiles(savePathPrefix);
-                    string title = PathHelper.RemoveInvalidPath(PathHelper.SplitStringAndGetValueAtPosition(mediaInfo.Title,":",1));
+                    string title = PathHelper.RemoveInvalidPath(PathHelper.SplitStringAndGetValueAtPosition(mediaInfo.Title, ":", 1));
                     string titleDirectoy = Path.Combine(savePathPrefix, title);
                     if (!Directory.Exists(titleDirectoy))
                     {

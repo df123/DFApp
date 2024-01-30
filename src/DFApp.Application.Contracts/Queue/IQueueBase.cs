@@ -3,13 +3,18 @@ using System.Threading.Tasks;
 
 namespace DFApp.Queue
 {
-    public interface IQueueBase<T>
+    public interface IQueueBase<T> : IQueueBase
     {
-        public int GetConcurrentQueueCount();
-        public int GetSemaphoreSlimCount();
         public void AddItem(T model);
         public Task<T?> GetItemAsync(CancellationToken cancellationToken);
         public T[] GetArray();
+    }
+
+    public interface IQueueBase
+    {
+        public int GetConcurrentQueueCount();
+        public int GetSemaphoreSlimCount();
         public void Clear();
     }
+
 }

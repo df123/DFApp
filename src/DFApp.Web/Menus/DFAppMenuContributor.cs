@@ -36,11 +36,11 @@ public class DFAppMenuContributor : IMenuContributor
 
         if (await context.IsGrantedAsync(DFAppPermissions.Medias.Default))
         {
-            var mediaFirst = new ApplicationMenuItem(DFAppMenus.Media, l["Menu:Media"], "~/Media", icon: "fas fa-play", order: 1);
+            var mediaFirst = new ApplicationMenuItem(DFAppMenus.Media.Default, l["Menu:Media"], "~/TG/Media", icon: "fas fa-play", order: 1);
 
-            mediaFirst.AddItem(new ApplicationMenuItem(DFAppMenus.Media, l["Menu:Media"], "~/Media", icon: "fas fa-play", order: 1));
-            mediaFirst.AddItem(new ApplicationMenuItem(DFAppMenus.Media, l["Menu:Media:ExternalLink"], "~/Media/ExternalLink", icon: "fas fa-link", order: 2));
-            mediaFirst.AddItem(new ApplicationMenuItem(DFAppMenus.Media, l["Menu:Media:Chart"], "~/Media/Chart", icon: "fas fa-chart-bar", order: 3));
+            mediaFirst.AddItem(new ApplicationMenuItem(DFAppMenus.Media.Default, l["Menu:Media"], "~/TG/Media", icon: "fas fa-play", order: 1));
+            mediaFirst.AddItem(new ApplicationMenuItem(DFAppMenus.Media.ExternalLink, l["Menu:Media:ExternalLink"], "~/TG/Media/ExternalLink", icon: "fas fa-link", order: 2));
+            mediaFirst.AddItem(new ApplicationMenuItem(DFAppMenus.Media.Chart, l["Menu:Media:Chart"], "~/TG/Media/Chart", icon: "fas fa-chart-bar", order: 3));
 
             context.Menu.AddItem(mediaFirst);
         }

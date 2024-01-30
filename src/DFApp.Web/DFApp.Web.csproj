@@ -79,4 +79,9 @@
 		<PackageReference Include="Volo.Abp.SettingManagement.Web" Version="8.0.0" />
 	</ItemGroup>
 
+	<ItemGroup>
+	  <Folder Include="Pages\TG\Login\" />
+	  <Folder Include="Pages\TG\Management\" />
+	</ItemGroup>
+
 </Project>

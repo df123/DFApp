@@ -8,6 +8,7 @@ using DFApp.Media;
 using DFApp.Bookkeeping;
 using DFApp.FileUploadDownload;
 using DFApp.Configuration;
+using DFApp.Media.ExternalLink;
 
 namespace DFApp;
 
@@ -53,11 +54,15 @@ public class DFAppApplicationAutoMapperProfile : Profile
 
         CreateMap<ConfigurationInfo, ConfigurationInfoDto>();
         CreateMap<ConfigurationInfoDto, ConfigurationInfo>();
-        CreateMap<CreateUpdateConfigurationInfoDto, ConfigurationInfo>();
+        CreateMap<CreateUpdateConfigurationInfoDto, ConfigurationInfo>()
+            .ForMember(dest => dest.ModuleName, opt => opt.MapFrom(src => src.ModuleName ?? string.Empty))
+            .ForMember(dest => dest.Remark, opt => opt.MapFrom(src => src.Remark ?? string.Empty));
 
         CreateMap<FileUploadInfo, FileUploadInfoDto>();
         CreateMap<CreateUpdateFileUploadInfoDto, FileUploadInfo>();
 
+        CreateMap<MediaExternalLink, ExternalLinkDto>();
+        CreateMap<CreateUpdateExternalLinkDto, MediaExternalLink>();
 
     }
 }

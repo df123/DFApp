@@ -14,10 +14,12 @@ namespace DFApp.Configuration
         , CreateUpdateConfigurationInfoDto>, IConfigurationInfoService
     {
         private readonly IDataFilter _dataFilter;
-        public ConfigurationInfoService(IRepository<ConfigurationInfo, long> repository
-            , IDataFilter dataFilter) : base(repository)
+        private readonly IConfigurationInfoRepository _configurationInfoRepository;
+        public ConfigurationInfoService(IConfigurationInfoRepository configurationInfoRepository
+            , IDataFilter dataFilter) : base(configurationInfoRepository)
         {
             _dataFilter = dataFilter;
+            _configurationInfoRepository = configurationInfoRepository;
         }
 
         public override async Task<ConfigurationInfoDto> CreateAsync(CreateUpdateConfigurationInfoDto input)
@@ -43,5 +45,9 @@ namespace DFApp.Configuration
             return await base.CreateAsync(input);
         }
 
+        public async Task<string> GetConfigurationInfoValue(string configurationName, string moduleName)
+        {
+            return await _configurationInfoRepository.GetConfigurationInfoValue(configurationName, moduleName);
+        }
     }
 }

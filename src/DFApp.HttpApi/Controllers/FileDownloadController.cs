@@ -24,20 +24,16 @@ namespace DFApp.Web.Controller
         private readonly IObjectMapper _objectMapper;
         private readonly IImageResizer _imageResizer;
         private readonly FileExtensionContentTypeProvider _typeProvider;
-        private readonly IQueueBase<MediaInfoDto[]> _mediaQueue;
 
         public FileDownloadController(IMediaInfoService mediaInfoService,
             IObjectMapper objectMapper,
-            IImageResizer imageResizer,
-            IQueueBase<MediaInfoDto[]> mediaQueue)
+            IImageResizer imageResizer)
         {
             _mediaInfoService = mediaInfoService;
             _objectMapper = objectMapper;
             _imageResizer = imageResizer;
             _typeProvider = new FileExtensionContentTypeProvider();
             _typeProvider.Mappings[".iso"] = "application/octet-stream";
-
-            _mediaQueue = mediaQueue;
         }
 
         [HttpGet("thumbnail")]
@@ -121,9 +117,9 @@ namespace DFApp.Web.Controller
 
         [HttpGet("ExternalLinkDownload")]
         [Authorize(DFAppPermissions.Medias.Download)]
-        public async Task<IActionResult> GetExternalLinkDownload()
+        public IActionResult GetExternalLinkDownload()
         {      
-            return Ok(await _mediaInfoService.GetExternalLinkDownload());
+            return Ok(_mediaInfoService.GetExternalLinkDownload());
         }
 
     }

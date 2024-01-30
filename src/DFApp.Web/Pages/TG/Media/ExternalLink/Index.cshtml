@@ -1,0 +1,31 @@
+﻿@page
+@using DFApp.Permissions
+@using DFApp.Web.Pages.Media.ExternalLink
+@using DFApp.Localization
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.Extensions.Localization
+@model IndexModel
+@inject IStringLocalizer<DFAppResource> L
+@inject IAuthorizationService AuthorizationService
+@section scripts {
+    <abp-script src="/Pages/TG/Media/ExternalLink/Index.js"></abp-script>
+}
+
+<abp-card>
+    <abp-card-header>
+        <abp-row>
+            <abp-column size-md="_6">
+                <abp-card-title>@L["TG:Media:ExternalLink:Title"]</abp-card-title>
+            </abp-column>
+            <abp-column size-md="_6" class="text-end">
+                <abp-button id="NewExternalLinkButton"
+                            text="@L["TG:Media:ExternalLink:Button:New"].Value"
+                            icon="plus"
+                            button-type="Primary" />
+            </abp-column>
+        </abp-row>
+    </abp-card-header>
+    <abp-card-body>
+        <abp-table striped-rows="true" id="ExternalLinkTable"></abp-table>
+    </abp-card-body>
+</abp-card>
