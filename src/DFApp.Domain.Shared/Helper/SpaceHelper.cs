@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Linq;
 using TL;
 
 namespace DFApp.Helper
@@ -52,13 +53,12 @@ namespace DFApp.Helper
 
         public static void DeleteDirectory(string path)
         {
-            if ((!string.IsNullOrEmpty(path)) && (!string.IsNullOrWhiteSpace(path)))
+            if ((!string.IsNullOrEmpty(path))
+                && (!string.IsNullOrWhiteSpace(path))
+                && System.IO.Directory.Exists(path)
+                && (!Directory.EnumerateFileSystemEntries(path).Any()))
             {
-                if (System.IO.Directory.Exists(path))
-                {
-                    
-                    System.IO.Directory.Delete(path);
-                }
+                System.IO.Directory.Delete(path);
             }
         }
 
