@@ -116,6 +116,7 @@ namespace DFApp.Background
                             if (!string.IsNullOrWhiteSpace(mediaInfo.SavePath))
                             {
                                 archive.CreateEntryFromFile(mediaInfo.SavePath, Path.GetFileName(mediaInfo.SavePath));
+                                mediaInfo.IsExternalLinkGenerated = true;
                                 size += mediaInfo.Size;
                             }
 
@@ -187,7 +188,10 @@ namespace DFApp.Background
                             {
                                 item.IsFileDeleted = true;
                                 SpaceHelper.DeleteFile(item.SavePath!);
-                                directorys.Add(item.SavePath.Replace(Path.GetFileName(item.SavePath), string.Empty));
+                                if (!item.MimeType!.Contains("zip"))
+                                {
+                                    directorys.Add(item.SavePath.Replace(Path.GetFileName(item.SavePath), string.Empty));
+                                }
                             }
                         }
 
