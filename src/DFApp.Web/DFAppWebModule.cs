@@ -281,7 +281,7 @@ public class DFAppWebModule : AbpModule
         app.UseConfiguredEndpoints();
 
 
-        //await context.AddDFAppBackgroundWorkerAsync<ListenTelegramService>();
+        await context.AddDFAppBackgroundWorkerAsync<ListenTelegramService>();
         await context.AddDFAppBackgroundWorkerAsync<MediaBackgroudService>();
 
     }
