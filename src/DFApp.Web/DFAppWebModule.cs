@@ -29,15 +29,10 @@ using Volo.Abp.Swashbuckle;
 using Volo.Abp.TenantManagement.Web;
 using Volo.Abp.OpenIddict;
 using Volo.Abp.UI.Navigation.Urls;
-using Volo.Abp.UI;
 using Volo.Abp.UI.Navigation;
 using Volo.Abp.VirtualFileSystem;
 using DFApp.Queue;
-using System.Collections.Generic;
-using DFApp.Media;
 using DFApp.Helper;
-using DFApp.TLConfig;
-using Starksoft.Net.Proxy;
 using Volo.Abp.BackgroundWorkers;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Mvc.RazorPages;
@@ -48,6 +43,7 @@ using Volo.Abp.BackgroundWorkers.Quartz;
 using DFApp.Background;
 using Volo.Abp.AspNetCore.SignalR;
 using DFApp.Web.SignalRHub;
+using DFApp.Web.Extensions;
 
 namespace DFApp.Web;
 
@@ -70,7 +66,7 @@ namespace DFApp.Web;
 [DependsOn(typeof(AbpImagingAbstractionsModule))]
 [DependsOn(typeof(AbpImagingImageSharpModule))]
 [DependsOn(typeof(AbpAspNetCoreSignalRModule))]
-    public class DFAppWebModule : AbpModule
+public class DFAppWebModule : AbpModule
 {
     public override void PreConfigureServices(ServiceConfigurationContext context)
     {
@@ -128,11 +124,8 @@ namespace DFApp.Web;
         ConfigureSwaggerServices(context.Services);
 
         context.Services.AddSingleton<IQueueManagement, QueueManagement>();
-        context.Services.AddSingleton<IQueueBase<string>, QueueBase<string>>();
-        context.Services.AddSingleton<IQueueBase<DocumentQueueModel>, QueueBase<DocumentQueueModel>>();
-        context.Services.AddSingleton<IQueueBase<PhotoQueueModel>, QueueBase<PhotoQueueModel>>();
+        context.Services.AddSingleton<IDFAppBackgroundWorkerManagement, DFAppBackgroundWorkerManagement>();
         context.Services.AddSingleton(new AppsettingsHelper(context.Services.GetConfiguration()));
-
         context.Services.AddHttpClient();
         context.Services.AddSingleton<SinkHub>();
 
@@ -148,8 +141,6 @@ namespace DFApp.Web;
 
         Configure<RazorPagesOptions>(options =>
         {
-            options.Conventions.AuthorizePage("/Media/Index", DFAppPermissions.Medias.Default);
-            options.Conventions.AuthorizePage("/Media/EditModal", DFAppPermissions.Medias.Edit);
             options.Conventions.AuthorizePage("/DynamicIP/Index", DFAppPermissions.DynamicIP.Default);
             options.Conventions.AuthorizePage("/LogSink/QueueSink/Index", DFAppPermissions.LogSink.Default);
             options.Conventions.AuthorizePage("/LogSink/SignalRSink/Index", DFAppPermissions.LogSink.Default);
@@ -163,6 +154,7 @@ namespace DFApp.Web;
             options.Conventions.AuthorizeFolder("/Bookkeeping/Category", DFAppPermissions.BookkeepingCategory.Default);
             options.Conventions.AuthorizeFolder("/Bookkeeping/Expenditure", DFAppPermissions.BookkeepingExpenditure.Default);
             options.Conventions.AuthorizeFolder("/FileUploadDownload", DFAppPermissions.FileUploadDownload.Default);
+            options.Conventions.AuthorizeFolder("/Management/Background", DFAppPermissions.ManagementBackground.Default);
 
         });
 
@@ -289,8 +281,8 @@ namespace DFApp.Web;
         app.UseConfiguredEndpoints();
 
 
-        await context.AddBackgroundWorkerAsync<ListenTelegramService>();
-        await context.AddBackgroundWorkerAsync<MediaBackgroudService>();
+        //await context.AddDFAppBackgroundWorkerAsync<ListenTelegramService>();
+        await context.AddDFAppBackgroundWorkerAsync<MediaBackgroudService>();
 
     }
 }

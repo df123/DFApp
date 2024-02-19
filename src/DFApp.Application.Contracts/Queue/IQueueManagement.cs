@@ -9,7 +9,7 @@ namespace DFApp.Queue
 {
     public interface IQueueManagement
     {
-        IQueueBase<T> AddQueue<T>(string queueName);//, IDFAppBackgroundWorkerBase backgroundWorker);
+        IQueueBase<T> AddQueue<T>(string queueName);
 
         void AddQueueValue<T>(string queueName, T queueValue);
 

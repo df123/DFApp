@@ -13,16 +13,12 @@ namespace DFApp.Queue
     public class QueueManagement : IQueueManagement
     {
         private readonly ConcurrentDictionary<string, IQueueBase> _dicQueue;
-
-        //private readonly ConcurrentDictionary<string, IDFAppBackgroundWorkerBase> _dicBackgroudWorker;
-
         public QueueManagement()
         {
             _dicQueue = new ConcurrentDictionary<string, IQueueBase>();
-            //_dicBackgroudWorker = new ConcurrentDictionary<string, IDFAppBackgroundWorkerBase>();
         }
 
-        public IQueueBase<T> AddQueue<T>(string queueName)//, IDFAppBackgroundWorkerBase backgroundWorker)
+        public IQueueBase<T> AddQueue<T>(string queueName)
         {
 
             if (_dicQueue.ContainsKey(queueName))
@@ -32,8 +28,6 @@ namespace DFApp.Queue
 
             IQueueBase<T> queue = new QueueBase<T>();
             _dicQueue.TryAdd(queueName, queue);
-
-            //_dicBackgroudWorker.TryAdd(queueName, backgroundWorker);
 
             return queue;
         }
@@ -55,9 +49,6 @@ namespace DFApp.Queue
             }
 
             queue.AddItem(queueValue);
-
-            //_ = RunBackgroud(queueName);
-
         }
 
         public IQueueBase<T> GetQueue<T>(string queueName)
@@ -77,18 +68,5 @@ namespace DFApp.Queue
             return queue;
 
         }
-
-        //private async Task RunBackgroud(string queueName)
-        //{
-        //    IDFAppBackgroundWorkerBase workerBase = _dicBackgroudWorker[queueName];
-
-        //    if (workerBase.ExecuteTask!.IsCompleted)
-        //    {
-        //        await workerBase.StartAsync(default);
-        //    }
-
-        //}
-
-
     }
 }

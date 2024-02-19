@@ -12,90 +12,126 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using TL;
-using Volo.Abp.BackgroundWorkers;
-using WTelegram;
 
 namespace DFApp.Background
 {
-    public class ListenTelegramService : BackgroundWorkerBase, IDisposable
+    public class ListenTelegramService : DFAppBackgroundWorkerBase, IDisposable
     {
-        private WTelegram.Client _client;
-        public WTelegram.Client TGClinet { get { return _client; } }
-        public User User => TGClinet.User;
+        private WTelegram.Client? _client;
+        public WTelegram.Client? TGClinet { get { return _client; } }
+        public User? User => TGClinet?.User;
 
         public string ConfigNeeded { get; set; } = "connecting";
 
+        private readonly IQueueManagement _queueManagement;
         private readonly IQueueBase<DocumentQueueModel> _documentQueue;
         private readonly IQueueBase<PhotoQueueModel> _photoQueue;
         private readonly IMediaRepository _mediaInfoRepository;
-        private readonly IConfigurationInfoRepository _configurationInfoRepository;
-        private readonly string _moduleName;
+
+
         public ListenTelegramService(
-        IQueueBase<DocumentQueueModel> documentQueue,
-        IQueueBase<PhotoQueueModel> photoQueue,
-        IMediaRepository mediaInfoRepository,
-        IConfigurationInfoRepository configurationInfoRepository)
+        IQueueManagement queueManagement
+        , IMediaRepository mediaInfoRepository
+        , IConfigurationInfoRepository configurationInfoRepository)
+            : base(ListenTelegramConst.ModuleName, configurationInfoRepository)
         {
             this._mediaInfoRepository = mediaInfoRepository;
-            _documentQueue = documentQueue;
-            _photoQueue = photoQueue;
-            _moduleName = "DFApp.Background.ListenTelegramService";
-            _configurationInfoRepository = configurationInfoRepository;
-
+            _queueManagement = queueManagement;
+            _documentQueue = _queueManagement.AddQueue<DocumentQueueModel>(ListenTelegramConst.DocumentQueue);
+            _photoQueue = _queueManagement.AddQueue<PhotoQueueModel>(ListenTelegramConst.PhotoQueue);
         }
 
         public override Task StartAsync(CancellationToken cancellationToken = default)
         {
-            _ = StartWork();
+            _executeTask = StartWork();
 
-            //Task.Run(StartWork, StoppingToken);
+            if (_executeTask.IsCompleted)
+            {
+                return _executeTask;
+            }
+            
+            return base.StartAsync(StoppingToken);
+        }
 
-            return Task.CompletedTask;
+        public override async Task RestartAsync(CancellationToken cancellationToken = default)
+        {
+            await base.RestartAsync(StoppingToken);
+            _documentQueue.ResetSignal();
+            _photoQueue.ResetSignal();
+            await StartAsync(StoppingToken);
         }
 
         public async Task<string> DoLogin(string loginInfo)
         {
-            return ConfigNeeded = await TGClinet.Login(loginInfo);
+            if (TGClinet != null)
+            {
+                return ConfigNeeded = await TGClinet.Login(loginInfo);
+            }
+            else
+            {
+                return "start";
+            }
         }
 
         public async Task StartWork()
         {
-            Logger.LogInformation("Start listening for messages");
-            WTelegram.Helpers.Log = (lvl, str) => Logger.Log((LogLevel)lvl, str);
-
-            Directory.CreateDirectory(GetConfigurationInfo("SaveVideoPathPrefix").Result);
-            Directory.CreateDirectory(GetConfigurationInfo("SavePhotoPathPrefix").Result);
-
-            _client = new WTelegram.Client(what =>
+            try
             {
-                switch (what)
+                Logger.LogInformation("Start listening for messages");
+
+                Directory.CreateDirectory(await GetConfigurationInfo("SaveVideoPathPrefix"));
+                Directory.CreateDirectory(await GetConfigurationInfo("SavePhotoPathPrefix"));
+
+                if (_client != null)
                 {
-                    case "api_id":
-                    case "session_pathname":
-                    case "api_hash": return GetConfigurationInfo(what).Result;
-                    default: return null;
+                    _client.Dispose();
                 }
-            });
-
-            if (bool.Parse(GetConfigurationInfo("EnableProxy").Result))
-            {
-                _client.TcpHandler = async (address, port) =>
+                else
                 {
-                    var proxy = new Socks5ProxyClient(
-                        await GetConfigurationInfo("ProxyHost"),
-                    int.Parse(await GetConfigurationInfo("ProxyPort")));
-                    return proxy.CreateConnection(address, port);
-                };
-            }
-            _client.PingInterval = 300;
-            _client.MaxAutoReconnects = int.MaxValue;
+                    WTelegram.Helpers.Log = (lvl, str) => Logger.Log((LogLevel)lvl, str);
+                    _client = new WTelegram.Client(what =>
+                    {
+                        switch (what)
+                        {
+                            case "api_id":
+                            case "session_pathname":
+                            case "api_hash": return GetConfigurationInfo(what).Result;
+                            default: return null;
+                        }
+                    });
 
-            ConfigNeeded = await DoLogin(await GetConfigurationInfo("phone_number"));
-            _client.OnUpdate += ClientUpdate;
-            var mediaTask = DownloadMedia(await GetConfigurationInfo("SaveVideoPathPrefix"), _documentQueue, StoppingToken);
-            var photoTask = DownloadPhoto(await GetConfigurationInfo("SavePhotoPathPrefix"), _photoQueue, StoppingToken);
-            await mediaTask;
-            await photoTask;
+                    _client.PingInterval = 300;
+                    _client.MaxAutoReconnects = int.MaxValue;
+
+                    _client.OnUpdate += ClientUpdate;
+
+                }
+
+                if (bool.Parse(GetConfigurationInfo("EnableProxy").Result))
+                {
+                    _client.TcpHandler = async (address, port) =>
+                    {
+                        var proxy = new Socks5ProxyClient(
+                            await GetConfigurationInfo("ProxyHost"),
+                        int.Parse(await GetConfigurationInfo("ProxyPort")));
+                        return proxy.CreateConnection(address, port);
+                    };
+                }
+
+                ConfigNeeded = await DoLogin(await GetConfigurationInfo("phone_number"));
+
+                var mediaTask = DownloadMedia(await GetConfigurationInfo("SaveVideoPathPrefix"), _documentQueue, StoppingToken);
+                var photoTask = DownloadPhoto(await GetConfigurationInfo("SavePhotoPathPrefix"), _photoQueue, StoppingToken);
+                await mediaTask;
+                await photoTask;
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex.Message);
+                _hasError = true;
+                ErrorCount++;
+                ErrorDescription = ex.Message;
+            }
         }
 
         async Task ClientUpdate(IObject arg)
@@ -228,7 +264,7 @@ namespace DFApp.Background
                     }
                     string fileName = Path.Combine(titleDirectoy, $"{photo.id}.jpg");
                     using var fileStream = File.Create(fileName);
-                    var type = await _client.DownloadFileAsync(photo, fileStream);
+                    var type = await _client!.DownloadFileAsync(photo, fileStream);
                     string valueSHA1 = HashHelper.CalculationHash(fileStream);
                     fileStream.Close();
 
@@ -292,7 +328,7 @@ namespace DFApp.Background
                     string fileName = Path.Combine(savePathPrefix, $"{document.id}{title}.{document.mime_type[(slash + 1)..]}");
                     string fileNameTemp = $"{fileName}.temp";
                     using var fileStream = File.Create(fileNameTemp);
-                    await _client.DownloadFileAsync(document, fileStream);
+                    await _client!.DownloadFileAsync(document, fileStream);
                     string valueSHA1 = HashHelper.CalculationHash(fileStream);
                     fileStream.Close();
                     File.Move(fileNameTemp, fileName, true);
@@ -414,15 +450,11 @@ namespace DFApp.Background
         }
 
 
-        private async Task<string> GetConfigurationInfo(string configurationName)
-        {
-            string v = await _configurationInfoRepository.GetConfigurationInfoValue(configurationName, _moduleName);
-            return v;
-        }
+
 
         public void Dispose()
         {
-            TGClinet.Dispose();
+            TGClinet?.Dispose();
         }
     }
 }

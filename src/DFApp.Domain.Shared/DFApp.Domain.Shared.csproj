@@ -35,4 +35,8 @@
 		<PackageReference Include="Microsoft.Extensions.FileProviders.Embedded" Version="8.0.0" />
 	</ItemGroup>
 
+	<ItemGroup>
+	  <Folder Include="TG\Login\" />
+	</ItemGroup>
+
 </Project>

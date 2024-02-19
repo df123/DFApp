@@ -26,6 +26,11 @@ public class DFAppMenus
         public const string Edit = Default + ".Edit";
     }
 
+    public static class ManagementBackground
+    {
+        public const string Default = Prefix + ".ManagementBackground";
+    }
+
     //Add your menu items here...
 
 }

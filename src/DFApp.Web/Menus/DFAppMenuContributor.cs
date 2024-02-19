@@ -36,15 +36,41 @@ public class DFAppMenuContributor : IMenuContributor
 
         if (await context.IsGrantedAsync(DFAppPermissions.Medias.Default))
         {
-            var mediaFirst = new ApplicationMenuItem(DFAppMenus.Media.Default, l["Menu:Media"], "~/TG/Media", icon: "fas fa-play", order: 1);
+            var mediaFirst = new ApplicationMenuItem(
+                DFAppMenus.Media.Default
+                , l["Menu:TG:Media"]
+                , "~/TG"
+                , icon: "fas fa-play"
+                , order: 1);
 
-            mediaFirst.AddItem(new ApplicationMenuItem(DFAppMenus.Media.Default, l["Menu:Media"], "~/TG/Media", icon: "fas fa-play", order: 1));
-            mediaFirst.AddItem(new ApplicationMenuItem(DFAppMenus.Media.ExternalLink, l["Menu:Media:ExternalLink"], "~/TG/Media/ExternalLink", icon: "fas fa-link", order: 2));
-            mediaFirst.AddItem(new ApplicationMenuItem(DFAppMenus.Media.Chart, l["Menu:Media:Chart"], "~/TG/Media/Chart", icon: "fas fa-chart-bar", order: 3));
+            mediaFirst.AddItem(
+                new ApplicationMenuItem(
+                    DFAppMenus.Media.Default
+                    , l["Menu:TG:Media"]
+                    , "~/TG/Media"
+                    , icon: "fas fa-play"
+                    , order: 1));
+
+            mediaFirst.AddItem(
+                new ApplicationMenuItem(
+                    DFAppMenus.Media.ExternalLink
+                    , l["Menu:TG:Media:ExternalLink"]
+                    , "~/TG/Media/ExternalLink"
+                    , icon: "fas fa-link"
+                    , order: 2));
+
+            mediaFirst.AddItem(
+                new ApplicationMenuItem(
+                    DFAppMenus.Media.Chart
+                    , l["Menu:TG:Media:Chart"]
+                    , "~/TG/Media/Chart"
+                    , icon: "fas fa-chart-bar"
+                    , order: 3));
+
             mediaFirst.AddItem(
                 new ApplicationMenuItem(
                     DFAppMenus.Media.Login
-                    , l["Menu:Media:Login"]
+                    , l["Menu:TG:Media:Login"]
                     , "~/TG/Login"
                     , icon: "fas fa-chart-bar"
                     , order: 4));
@@ -215,6 +241,20 @@ public class DFAppMenuContributor : IMenuContributor
         //        , order: 8);
 
         //context.Menu.AddItem(tgLoginFirst);
+
+        if (await context.IsGrantedAsync(DFAppPermissions.ManagementBackground.Default))
+        {
+
+            var configurationInfoFirst = new ApplicationMenuItem(
+                DFAppMenus.ManagementBackground.Default
+                , l["Menu:ManagementBackground"]
+                , "~/Management/Background"
+                , icon: "fas fa-hammer"
+                , order: 9);
+
+            context.Menu.AddItem(configurationInfoFirst);
+
+        }
 
 
         administration.TryRemoveMenuItem(TenantManagementMenuNames.GroupName);

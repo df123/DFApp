@@ -8,6 +8,7 @@ namespace DFApp.Queue
         public void AddItem(T model);
         public Task<T?> GetItemAsync(CancellationToken cancellationToken);
         public T[] GetArray();
+        public bool ResetSignal();
     }
 
     public interface IQueueBase

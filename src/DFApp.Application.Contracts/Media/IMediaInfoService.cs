@@ -21,10 +21,6 @@ namespace DFApp.Media
 
         QueueCountDto GetQueueCount();
 
-        Task<List<string>> GetExternalLinkListDownload();
-
-        string GetExternalLinkDownload();
-
         Task<ChartDataDto> GetChartData();
 
     }

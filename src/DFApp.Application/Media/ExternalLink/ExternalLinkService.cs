@@ -1,9 +1,5 @@
-﻿using DFApp.Helper;
+﻿using DFApp.Background;
 using DFApp.Queue;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 using Volo.Abp;
 using Volo.Abp.Application.Dtos;
@@ -19,19 +15,16 @@ namespace DFApp.Media.ExternalLink
         , CreateUpdateExternalLinkDto>, IExternalLinkService
     {
 
-        private readonly IMediaRepository _mediaRepository;
         private readonly IQueueManagement _queueManagement;
         private readonly IQueueBase<int> _queueGenerate;
         private readonly IQueueBase<long> _queueMove;
 
         public ExternalLinkService(IRepository<MediaExternalLink, long> repository
-            , IMediaRepository mediaRepository
             , IQueueManagement queueManagement) : base(repository)
         {
-            _mediaRepository = mediaRepository;
             _queueManagement = queueManagement;
-            _queueGenerate = _queueManagement.GetQueue<int>(Background.MediaBackgroudService.QueueGenerate);
-            _queueMove = _queueManagement.GetQueue<long>(Background.MediaBackgroudService.QueueMove);
+            _queueGenerate = _queueManagement.GetQueue<int>(MediaBackgroudConst.QueueGenerate);
+            _queueMove = _queueManagement.GetQueue<long>(MediaBackgroudConst.QueueMove);
         }
 
         public override Task<ExternalLinkDto> CreateAsync(CreateUpdateExternalLinkDto input)
@@ -46,6 +39,11 @@ namespace DFApp.Media.ExternalLink
 
         public override async Task DeleteAsync(long id)
         {
+            if (id <= 0)
+            {
+                throw new UserFriendlyException("ID要大于0");
+            }
+
             MediaExternalLink mediaExternalLink = await ReadOnlyRepository.FirstAsync(x => x.Id == id);
             if (!mediaExternalLink.IsRemove)
             {
@@ -63,25 +61,10 @@ namespace DFApp.Media.ExternalLink
 
         public Task<bool> RemoveFileAsync(long id)
         {
-            //MediaExternalLink mediaExternalLink = await Repository.GetAsync(x => x.Id == id);
-
-            //string[] ids = mediaExternalLink.MediaIds.Split(',');
-
-            //long[] lids = ids.Select(x => long.Parse(x)).ToArray();
-
-            //List<MediaInfo> mediaInfos = await _mediaRepository.GetListAsync(x => lids.Contains(x.Id));
-
-            //foreach (var item in mediaInfos)
-            //{
-            //    if (!string.IsNullOrWhiteSpace(item.SavePath))
-            //    {
-            //        SpaceHelper.DeleteFile(item.SavePath);
-            //    }
-            //    item.IsFileDeleted = true;
-            //}
-            //mediaExternalLink.IsRemove = true;
-            //await Repository.UpdateAsync(mediaExternalLink);
-            //await _mediaRepository.UpdateManyAsync(mediaInfos);
+            if (id <= 0)
+            {
+                throw new UserFriendlyException("ID要大于0");
+            }
             _queueMove.AddItem(id);
             return Task.FromResult(true);
 

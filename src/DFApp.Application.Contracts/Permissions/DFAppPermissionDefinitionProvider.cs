@@ -55,7 +55,12 @@ public class DFAppPermissionDefinitionProvider : PermissionDefinitionProvider
         configurationInfoPermission.AddChild(DFAppPermissions.ConfigurationInfo.Delete, L("Permisssion:ConfigurationInfo:Delete"));
         configurationInfoPermission.AddChild(DFAppPermissions.ConfigurationInfo.Edit, L("Permisssion:ConfigurationInfo:Modify"));
 
-        
+
+        var managementBackgroundGroup = context.AddGroup(DFAppPermissions.ManagementBackground.Default, L("Permisssion:ManagementBackground"));
+        var managementBackgroundPermission = managementBackgroundGroup.AddPermission(DFAppPermissions.ManagementBackground.Default, L("Permisssion:ManagementBackground"));
+        managementBackgroundPermission.AddChild(DFAppPermissions.ManagementBackground.Restart, L("Permisssion:ManagementBackground:Restart"));
+        managementBackgroundPermission.AddChild(DFAppPermissions.ManagementBackground.Stop, L("Permisssion:ManagementBackground:Stop"));
+
 
     }
 

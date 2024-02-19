@@ -114,13 +114,5 @@ namespace DFApp.Web.Controller
             return fileStreamReult;
         }
 
-
-        [HttpGet("ExternalLinkDownload")]
-        [Authorize(DFAppPermissions.Medias.Download)]
-        public IActionResult GetExternalLinkDownload()
-        {      
-            return Ok(_mediaInfoService.GetExternalLinkDownload());
-        }
-
     }
 }

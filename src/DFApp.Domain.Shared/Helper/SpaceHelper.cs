@@ -77,5 +77,19 @@ namespace DFApp.Helper
                 DeleteTempFiles(subdirectory);
             }
         }
+
+        public static void DeleteEmptyFolders(string parentFolder)
+        {
+            string[] folders = Directory.GetDirectories(parentFolder);
+            foreach (string folder in folders)
+            {
+                DeleteEmptyFolders(folder);
+                if (Directory.GetFiles(folder).Length == 0 && Directory.GetDirectories(folder).Length == 0)
+                {
+                    Directory.Delete(folder);
+                }
+            }
+        }
+
     }
 }

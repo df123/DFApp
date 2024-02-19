@@ -37,14 +37,13 @@ namespace DFApp.Media
         private readonly string _moduleName;
 
         public MediaInfoService(IMediaRepository repository,
-            IQueueBase<DocumentQueueModel> documentQueue,
-            IQueueBase<PhotoQueueModel> photoQueue,
             IConfigurationInfoRepository configurationInfoRepository,
             IQueueManagement queueManagement) : base(repository)
         {
             _mediaInfoRepository = repository;
-            _documentQueue = documentQueue;
-            _photoQueue = photoQueue;
+            _queueManagement = queueManagement;
+            _documentQueue = _queueManagement.AddQueue<DocumentQueueModel>(ListenTelegramConst.DocumentQueue);
+            _photoQueue = _queueManagement.AddQueue<PhotoQueueModel>(ListenTelegramConst.PhotoQueue);
             GetPolicyName = DFAppPermissions.Medias.Default;
             GetListPolicyName = DFAppPermissions.Medias.Default;
             CreatePolicyName = DFAppPermissions.Medias.Create;
@@ -52,7 +51,7 @@ namespace DFApp.Media
             DeletePolicyName = DFAppPermissions.Medias.Delete;
             _configurationInfoRepository = configurationInfoRepository;
             _moduleName = "DFApp.Media.MediaInfoService";
-            _queueManagement = queueManagement;
+            
         }
 
         public async Task<MediaInfoDto[]> GetByAccessHashID(MediaInfoDto downloadInfo)
@@ -87,37 +86,6 @@ namespace DFApp.Media
         public async Task<MediaInfoDto[]> GetMediaNotReturn()
         {
             return ObjectMapper.Map<MediaInfo[], MediaInfoDto[]>(await _mediaInfoRepository.GetMediaNotReturn());
-        }
-
-        public async Task<List<string>> GetExternalLinkListDownload()
-        {
-            string returnDownloadUrlPrefix = await GetConfigurationInfo("ReturnDownloadUrlPrefix");
-            Check.NotNullOrWhiteSpace(returnDownloadUrlPrefix, nameof(returnDownloadUrlPrefix));
-
-            var temp = await _mediaInfoRepository.GetMediaNotReturn();
-
-            if (temp != null && temp.Length > 0)
-            {
-                //_mediaQueue.Add(ObjectMapper.Map<MediaInfo[], MediaInfoDto[]>(temp));
-                return temp.Select(x => returnDownloadUrlPrefix + x.SavePath.Replace("./Telegram/", string.Empty).Replace("\\", "/")).ToList();
-            }
-            return new List<string>();
-        }
-
-        public string GetExternalLinkDownload()
-        {
-            _queueManagement.AddQueueValue<int>(MediaBackgroudService.QueueGenerate, 0);
-            return string.Empty;
-        }
-
-        public string MoveDownloaded(long id)
-        {
-            if (id > 0)
-            {
-                return "ID要大于0";
-            }
-            _queueManagement.AddQueueValue<long>(MediaBackgroudService.QueueMove, id);
-            return string.Empty;
         }
 
         public async Task<ChartDataDto> GetChartData()

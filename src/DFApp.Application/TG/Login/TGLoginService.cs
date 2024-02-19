@@ -19,6 +19,7 @@ namespace DFApp.TG.Login
             switch (WT.ConfigNeeded)
             {
                 case "connecting": return "WTelegram is connecting...";
+                case "start": return "please start WTelegram background";
                 case null: return $"Connected as {WT.User} Get all chats";
                 default: return $@"Enter {WT.ConfigNeeded}: ";
             }
@@ -31,6 +32,7 @@ namespace DFApp.TG.Login
 
         public async Task<object> Chats()
         {
+            if (WT.TGClinet == null) throw new Exception("please start WTelegram background");
             if (WT.User == null) throw new Exception("Complete the login first");
             var chats = await WT.TGClinet.Messages_GetAllChats();
             return chats.chats;

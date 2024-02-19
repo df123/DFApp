@@ -8,7 +8,7 @@ namespace DFApp.Queue
     public class QueueBase<T> : IQueueBase<T>
     {
         private readonly ConcurrentQueue<T> _receiveItems;
-        private readonly SemaphoreSlim _signal;
+        private SemaphoreSlim _signal;
 
         public QueueBase()
         {
@@ -54,11 +54,21 @@ namespace DFApp.Queue
 
         public void Clear()
         {
+            if (_receiveItems.Count <= 0)
+            {
+                return;
+            }
             _receiveItems.Clear();
             while (_receiveItems.Count <= 0 && _signal.CurrentCount > 0)
             {
                 _signal.Wait();
             }
+        }
+
+        public bool ResetSignal()
+        {
+            _signal = new SemaphoreSlim(_receiveItems.Count);
+            return true;
         }
     }
 }
