@@ -23,7 +23,15 @@ namespace DFApp.Queue
 
             if (_dicQueue.ContainsKey(queueName))
             {
-                throw new Exception("有相同名称的Queue");
+                IQueueBase<T>? queueBase = _dicQueue[queueName] as IQueueBase<T>;
+                if (queueBase == null)
+                {
+                    throw new Exception("相同名称，不同类型");
+                }
+                else
+                {
+                    return queueBase;
+                }
             }
 
             IQueueBase<T> queue = new QueueBase<T>();
