@@ -21,7 +21,7 @@ namespace DFApp.Background
         public WTelegram.Client? TGClinet { get { return _client; } }
         public User? User => TGClinet?.User;
 
-        public string ConfigNeeded { get; set; } = "connecting";
+        public string ConfigNeeded { get; set; } = "start";
 
         private readonly IQueueManagement _queueManagement;
         private readonly IQueueBase<DocumentQueueModel> _documentQueue;

@@ -4,7 +4,7 @@
 @model DFApp.Web.Pages.TG.Login.IndexModel
 @inject IStringLocalizer<DFAppResource> L
 @section scripts {
-    <abp-script-bundle name="MediaChart">
+    <abp-script-bundle name="TGLogin">
         @* TGLogin *@
 <abp-script src="/dist/250.entry.js"></abp-script>
 <abp-script src="/dist/TGLogin.entry.js"></abp-script>
@@ -13,7 +13,7 @@
 }
 <abp-card>
     <abp-card-header>
-        <abp-card-title>@L["TG:Media:Chart:Title"]</abp-card-title>
+        <abp-card-title>@L["TG:Media:Chart:Login"]</abp-card-title>
     </abp-card-header>
     <abp-card-body>
         <div id="app"></div>

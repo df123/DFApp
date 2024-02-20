@@ -72,7 +72,7 @@ public class DFAppMenuContributor : IMenuContributor
                     DFAppMenus.Media.Login
                     , l["Menu:TG:Media:Login"]
                     , "~/TG/Login"
-                    , icon: "fas fa-chart-bar"
+                    , icon: "fas fa-door-open"
                     , order: 4));
 
             context.Menu.AddItem(mediaFirst);
@@ -233,15 +233,6 @@ public class DFAppMenuContributor : IMenuContributor
 
         }
 
-        //var tgLoginFirst = new ApplicationMenuItem(
-        //        DFAppMenus.ConfigurationInfo.Default
-        //        , l["Menu:ConfigurationInfo"]
-        //        , "~/TG/Login"
-        //        , icon: "fas fa-hammer"
-        //        , order: 8);
-
-        //context.Menu.AddItem(tgLoginFirst);
-
         if (await context.IsGrantedAsync(DFAppPermissions.ManagementBackground.Default))
         {
 
@@ -249,8 +240,8 @@ public class DFAppMenuContributor : IMenuContributor
                 DFAppMenus.ManagementBackground.Default
                 , l["Menu:ManagementBackground"]
                 , "~/Management/Background"
-                , icon: "fas fa-hammer"
-                , order: 9);
+                , icon: "fas fa-toolbox"
+                , order: 8);
 
             context.Menu.AddItem(configurationInfoFirst);
 
