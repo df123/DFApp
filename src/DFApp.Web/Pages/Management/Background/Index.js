@@ -3,7 +3,7 @@ $(function () {
 
     var dataTable = $('#ManagementBackgroundTable').DataTable(
         abp.libs.datatables.normalizeConfiguration({
-            serverSide: true,
+            serverSide: false,
             paging: true,
             order: [[1, "desc"]],
             scrollX: true,

@@ -58,7 +58,10 @@ $(function () {
                 },
                 {
                     title: l('FileUploadDownload:Column:FileSize'),
-                    data: "fileSize"
+                    data: "fileSize",
+                    render: function (data, type) {
+                        return convertBytes(data);
+                    }
                 },
                 {
                     title: l('MediaCreationTime'),

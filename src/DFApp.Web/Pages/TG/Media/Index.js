@@ -69,7 +69,10 @@ $(function () {
                 },
                 {
                     title: l('MediaSize'),
-                    data: "size"
+                    data: "size",
+                    render: function (data, type) {
+                        return convertBytes(data);
+                    }
                 },
                 {
                     title: l('MediaMimeType'),

@@ -5,7 +5,7 @@ $(function () {
         abp.libs.datatables.normalizeConfiguration({
             serverSide: true,
             paging: true,
-            order: [[2, "desc"]],
+            order: [[7, "desc"],[2, "desc"]],
             scrollX: true,
             ajax: abp.libs.datatables.createAjax(dFApp.lottery.lotteryResult.getList),
             columnDefs: [

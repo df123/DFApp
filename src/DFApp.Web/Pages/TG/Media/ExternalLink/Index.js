@@ -66,7 +66,10 @@ $(function () {
                 },
                 {
                     title: l('TG:Media:ExternalLink:Column:Size'),
-                    data: "size"
+                    data: "size",
+                    render: function (data, type) {
+                        return convertBytes(data);
+                    }
                 },
                 {
                     title: l('TG:Media:ExternalLink:Column:TimeConsumed'),

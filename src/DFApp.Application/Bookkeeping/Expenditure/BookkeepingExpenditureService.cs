@@ -40,6 +40,10 @@ namespace DFApp.Bookkeeping.Expenditure
 
         public override async Task<PagedResultDto<BookkeepingExpenditureDto>> GetListAsync(PagedAndSortedResultRequestDto input)
         {
+            if (input.SkipCount == 0 && input.Sorting == null)
+            {
+                input.MaxResultCount = await ReadOnlyRepository.CountAsync();
+            }
             var categorys = await _categoryRepository.GetListAsync();
             return await base.GetListAsync(input);
         }

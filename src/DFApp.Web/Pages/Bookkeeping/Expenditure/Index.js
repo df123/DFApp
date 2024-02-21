@@ -1,11 +1,11 @@
-$(function () {
+﻿$(function () {
     var l = abp.localization.getResource('DFApp');
     var editModal = new abp.ModalManager(abp.appPath + 'Bookkeeping/Expenditure/EditModal');
     var createModal = new abp.ModalManager(abp.appPath + 'Bookkeeping/Expenditure/CreateModal');
 
     var dataTable = $('#ExpenditureTable').DataTable(
         abp.libs.datatables.normalizeConfiguration({
-            serverSide: true,
+            serverSide: false,
             paging: true,
             order: [[1, "desc"]],
             scrollX: true,
@@ -68,7 +68,38 @@ $(function () {
                     data: "lastModificationTime",
                     dataFormat: "datetime"
                 }
-            ]
+            ],
+            footerCallback: function (row, data, start, end, display) {
+
+                let api = this.api();
+
+
+                // Remove the formatting to get integer data for summation
+                let intVal = function (i) {
+                    return typeof i === 'string'
+                        ? i.replace(/[\$,]/g, '') * 1
+                        : typeof i === 'number'
+                            ? i
+                            : 0;
+                };
+
+                // Total over all pages
+                total = api
+                    .column(3)
+                    .data()
+                    .reduce((a, b) => intVal(a) + intVal(b), 0);
+
+                // Total over this page
+                pageTotal = api
+                    .column(3, { page: 'current' })
+                    .data()
+                    .reduce((a, b) => intVal(a) + intVal(b), 0);
+
+                // Update footer
+
+                api.column(3).footer().innerHTML =
+                    '￥' + pageTotal + ' ( ￥' + total + ' total)';
+            },
         })
     );
 
