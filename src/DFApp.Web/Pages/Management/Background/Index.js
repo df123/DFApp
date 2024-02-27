@@ -21,7 +21,7 @@ $(function () {
                                         return l('Management:Background:Msg:Stop', data.record.id);
                                     },
                                     action: function (data) {
-                                        dFApp.management.managementBackground.restartService(data.record.moduleName)
+                                        dFApp.management.managementBackground.stopService(data.record.moduleName)
                                             .then(function () {
                                                 abp.notify.info(l('Management:Background:Msg:StopSuccess'));
                                                 dataTable.ajax.reload();
@@ -35,7 +35,7 @@ $(function () {
                                         return l('Management:Background:Msg:Restart', data.record.id);
                                     },
                                     action: function (data) {
-                                        dFApp.management.managementBackground.stopService(data.record.moduleName)                                            
+                                        dFApp.management.managementBackground.restartService(data.record.moduleName)                                            
                                             .then(function () {
                                                 abp.notify.info(l('Management:Background:Msg:RestartSuccess'));
                                                 dataTable.ajax.reload();

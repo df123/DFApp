@@ -83,8 +83,11 @@ namespace DFApp.Background
         public virtual Task StopAsync(CancellationToken cancellationToken = default)
         {
             Logger.LogDebug("Stopped background worker: " + ToString());
-            StoppingTokenSource.Cancel();
-            StoppingTokenSource.Dispose();
+            if (StoppingTokenSource != null && !StoppingTokenSource.IsCancellationRequested)
+            {
+                StoppingTokenSource?.Cancel();
+                StoppingTokenSource?.Dispose();
+            }
             return Task.CompletedTask;
         }
     }
