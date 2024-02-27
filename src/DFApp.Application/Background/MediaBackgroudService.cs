@@ -78,10 +78,11 @@ namespace DFApp.Background
             }
             catch (Exception ex)
             {
-                Logger.LogError(ex.Message);
+                string msg = "MediaBackgroudService:" + ex.Message + ":" + ex.StackTrace;
+                Logger.LogError(msg);
                 _hasError = true;
                 ErrorCount++;
-                ErrorDescription = ex.Message;
+                ErrorDescription = msg;
             }
         }
 
@@ -124,7 +125,7 @@ namespace DFApp.Background
                 {
                     if (mediaInfo.SavePath == null || zipType.Contains(mediaInfo.MimeType!))
                     {
-                        if (!string.IsNullOrWhiteSpace(mediaInfo.SavePath))
+                        if (!string.IsNullOrWhiteSpace(mediaInfo.SavePath) && File.Exists(mediaInfo.SavePath))
                         {
                             archive.CreateEntryFromFile(mediaInfo.SavePath, Path.GetFileName(mediaInfo.SavePath));
                             mediaInfo.IsExternalLinkGenerated = true;
