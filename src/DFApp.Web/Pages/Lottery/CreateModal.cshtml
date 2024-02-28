@@ -1,0 +1,23 @@
+﻿@page
+@using DFApp.Localization
+@using Microsoft.Extensions.Localization
+@using Volo.Abp.AspNetCore.Mvc.UI.Bootstrap.TagHelpers.Modal
+@model DFApp.Web.Pages.Lottery.CreateModalModel
+@inject IStringLocalizer<DFAppResource> L
+@section scripts {
+    <abp-script-bundle name="LotterySpecifyPeriod">
+        @* LotteryBatchCreate *@
+<abp-script src="/dist/963.entry.js"></abp-script>
+<abp-script src="/dist/LotteryBatchCreate.entry.js"></abp-script>
+        @* LotteryBatchCreate *@
+    </abp-script-bundle>
+}
+
+<abp-modal>
+    <abp-modal-header title="@L["LotteryBuy:Modal:Create:Title"].Value"></abp-modal-header>
+    <abp-modal-body>
+        <div id="app"></div>
+        @* <abp-form-content /> *@
+    </abp-modal-body>
+    <abp-modal-footer buttons="@(AbpModalButtons.None)"></abp-modal-footer>
+</abp-modal>

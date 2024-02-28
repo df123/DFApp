@@ -1,16 +1,32 @@
 ﻿@page
 @using DFApp.Localization;
+@using Microsoft.AspNetCore.Authorization
 @using Microsoft.Extensions.Localization;
+@using DFApp.Permissions
 @model DFApp.Web.Pages.Lottery.IndexModel
 
 @inject IStringLocalizer<DFAppResource> L
+@inject IAuthorizationService AuthorizationService
 @section scripts{
     <abp-script src="/Pages/Lottery/Index.js"></abp-script>
 }
 
 <abp-card>
     <abp-card-header>
-        <abp-card-title>@L["LotteryTitle"]</abp-card-title>
+        <abp-row>
+            <abp-column size-md="_6">
+                <abp-card-title>@L["LotteryBuy:Title"]</abp-card-title>
+            </abp-column>
+            <abp-column size-md="_6" class="text-end">
+                @if (await AuthorizationService.IsGrantedAsync(DFAppPermissions.Lottery.Create))
+                {
+                    <abp-button id="NewButton"
+                                text="@L["LotteryBuy:Button:Add"].Value"
+                                icon="plus"
+                                button-type="Primary" />
+                }
+            </abp-column>
+        </abp-row>
     </abp-card-header>
     <abp-card-body>
         <abp-table striped-rows="true" id="LotteryTable"></abp-table>

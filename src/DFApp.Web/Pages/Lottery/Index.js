@@ -1,6 +1,7 @@
 $(function () {
     var l = abp.localization.getResource('DFApp');
     var editModal = new abp.ModalManager(abp.appPath + 'Lottery/EditModal');
+    var createModal = new abp.ModalManager(abp.appPath + 'Lottery/CreateModal');
 
     var dataTable = $('#LotteryTable').DataTable(
         abp.libs.datatables.normalizeConfiguration({
@@ -90,5 +91,15 @@ $(function () {
     editModal.onResult(function () {
         dataTable.ajax.reload();
     });
+
+    createModal.onResult(function () {
+        dataTable.ajax.reload();
+    });
+
+    $('#NewButton').click(function (e) {
+        e.preventDefault();
+        createModal.open();
+    });
+
 
 });

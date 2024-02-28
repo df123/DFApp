@@ -79,18 +79,20 @@
 
 
     "Menu:Lottery": "彩票",
-    "Menu:LotteryStatistics": "彩票分析",
-    "Menu:LotteryStatisticsItem": "彩票条目分析",
+    "Menu:LotteryBuy": "自购彩票",
+    "Menu:LotteryStatistics": "条形图",
+    "Menu:LotteryStatisticsItem": "中奖详细",
     "Menu:LotterySpecifyPeriod": "彩票指定条目",
     "Menu:LotteryResult": "开奖号码",
-    "Menu:LotteryBatchCreate": "批量添加",
-
-    "LotteryTitle": "彩票",
+    "Menu:LotteryBatchCreate": "手动添加",
     "Permission:LotteryTelegaram": "彩票",
     "Permission:Lottery": "彩票分析",
     "Permission:Lottery.Create": "添加彩票",
     "Permission:Lottery.Edit": "修改彩票",
     "Permission:Lottery.Delete": "删除彩票",
+    "LotteryBuy:Title": "自购彩票",
+    "LotteryBuy:Button:Add": "添加",
+    "LotteryBuy:Modal:Create:Title": "添加",
     "LotteryId": "Id",
     "LotteryIndexNo": "期号",
     "LotteryNumber": "号码",
@@ -99,25 +101,20 @@
     "LotteryGroupId": "同期组号",
     "LotteryCreationTime": "创建时间",
     "LotteryLastModificationTime": "最后修改时间",
-
     "Lottery:LotteryStatisticsTitle": "彩票分析",
-
     "Lottery:LotteryStatisticsItemTitle": "中奖条目",
     "Lottery:LotteryStatisticsItem:Code": "购买期号",
     "Lottery:LotteryStatisticsItem:WinCode": "中奖期号",
     "Lottery:LotteryStatisticsItem:BuyNumber": "购买号码",
     "Lottery:LotteryStatisticsItem:WinNumber": "中奖号码",
     "Lottery:LotteryStatisticsItem:WinAmout": "中奖金额",
-
     "Lottery:LotterySpecifyPeriodTitle": "指定期号统计",
-
     "Lottery:LotteryResult": "开奖号码",
     "Lottery:LotteryPeriod": "期号",
     "Lottery:LotteryName": "名称",
     "Lottery:LotteryBlue": "蓝球",
     "Lottery:LotteryRed": "红球",
     "Lottery:LotteryCode": "开奖日期",
-
     "Lottery:BatchCreateTitle": "批量添加",
 
 

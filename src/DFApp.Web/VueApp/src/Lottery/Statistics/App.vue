@@ -1,7 +1,7 @@
 <template>
     <div>
         <el-row>
-            <div class="botton-area">
+            <div class="select-area">
                 <el-select v-model="lotteryTypeValue" class="m-2" placeholder="彩票类型" @change="lotteryTypeChange">
                     <el-option v-for="item in lotteryTypeItems" :key="item.value" :label="item.label" :value="item.value" />
                 </el-select>
@@ -96,6 +96,10 @@ async function chartStatistics() {
 <style scoped>
 button {
     font-weight: bold;
+}
+
+.select-area{
+    width: 10%;
 }
 
 .chart-height {
