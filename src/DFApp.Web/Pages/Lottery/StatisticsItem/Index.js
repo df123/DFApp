@@ -3,8 +3,8 @@ $(function () {
 
     var getFilter = function () {
         return {
-            purchasedPeriod: undefined,
-            winningPeriod: undefined,
+            purchasedPeriod: $('#purchasedPeriod').val(),
+            winningPeriod: $('#winningPeriod').val(),
             lotteryType: $('#lotteryType').val()
         };
     };
@@ -43,6 +43,18 @@ $(function () {
 
     $("#lotteryType").change(function (e) {
         dataTable.ajax.reloadEx();
+    });
+
+    $("#purchasedPeriod").keyup(function (e) {
+        if (e.key === 'Enter') {
+            dataTable.ajax.reloadEx();
+        }
+    });
+
+    $("#winningPeriod").keyup(function (e) {
+        if (e.key === 'Enter') {
+            dataTable.ajax.reloadEx();
+        }
     });
 
 });

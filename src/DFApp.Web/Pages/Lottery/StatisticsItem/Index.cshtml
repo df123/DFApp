@@ -16,11 +16,21 @@
             <abp-column size-md="_6">
                 <abp-card-title>@L["Lottery:LotteryStatisticsTitle"]</abp-card-title>
             </abp-column>
-            <abp-column size-md="_6" class="text-end">
+            <abp-column size-md="_2" >
                 <select id="lotteryType" class="form-control">
                     <option value="双色球">双色球</option>
                     <option value="快乐8">快乐8</option>
                 </select>
+            </abp-column>
+            <abp-column size-md="_2" >
+                <div class="mb-3">
+                    <input type="text" id="purchasedPeriod" placeholder="购买期号" class="form-control form-control">
+                </div>
+            </abp-column>
+            <abp-column size-md="_2" >
+                <div class="mb-3">
+                    <input type="text" id="winningPeriod" placeholder="开奖期号" class="form-control form-control">
+                </div>
             </abp-column>
         </abp-row>
 

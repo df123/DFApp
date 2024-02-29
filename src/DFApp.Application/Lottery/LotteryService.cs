@@ -129,11 +129,6 @@ namespace DFApp.Lottery
 
         public async Task<List<StatisticsWinDto>> GetStatisticsWin(string? purchasedPeriod, string? winningPeriod, string lotteryType)
         {
-            if (true)
-            {
-
-            }
-
             List<LotteryResult> lotteryResults = await GetLotteryResultData(winningPeriod, lotteryType);
             List<LotteryInfo> info = await GetLotteryInfoData(purchasedPeriod, lotteryType);
 
@@ -402,6 +397,7 @@ namespace DFApp.Lottery
                         IndexNo = dto.Period,
                         Number = dto.Blues[m],
                         ColorType = "1",
+                        LotteryType = LotteryConst.SSQ,
                         GroupId = groupId
                     });
 
@@ -423,11 +419,18 @@ namespace DFApp.Lottery
                             IndexNo = dto.Period,
                             Number = dto.Reds[indexRed],
                             ColorType = "0",
+                            LotteryType = LotteryConst.SSQ,
                             GroupId = groupId
                         });
                     }
 
                     groupId++;
+
+                    if (dto.Reds.Count <= 6)
+                    {
+                        break;
+                    }
+
                 }
             }
 
@@ -472,6 +475,16 @@ namespace DFApp.Lottery
 
         public async Task<PagedResultDto<StatisticsWinItemDto>> GetStatisticsWinItemInputDto(StatisticsInputDto dto)
         {
+            if (!string.IsNullOrWhiteSpace(dto.PurchasedPeriod) && string.IsNullOrWhiteSpace(dto.WinningPeriod))
+            {
+                dto.WinningPeriod = dto.PurchasedPeriod;
+            }
+
+            if (!string.IsNullOrWhiteSpace(dto.WinningPeriod) && string.IsNullOrWhiteSpace(dto.PurchasedPeriod))
+            {
+                dto.PurchasedPeriod = dto.WinningPeriod;
+            }
+
             return await this.GetStatisticsWinItem(dto.PurchasedPeriod, dto.WinningPeriod, dto.LotteryType);
         }
     }

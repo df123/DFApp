@@ -5,9 +5,11 @@
                 <el-select v-model="lotteryTypeValue" class="m-2" placeholder="彩票类型" @change="lotteryTypeChange">
                     <el-option v-for="item in lotteryTypeItems" :key="item.value" :label="item.label" :value="item.value" />
                 </el-select>
+                <el-input v-model="purchasedPeriod" placeholder="购买期号" @change="inputChange" />
+                <el-input v-model="winningPeriod" placeholder="开奖期号" @change="inputChange" />
             </div>
         </el-row>
-        <el-row class="chart-height" >
+        <el-row class="chart-height">
             <canvas id="chart"></canvas>
         </el-row>
     </div>
@@ -23,6 +25,9 @@ const l: Function = abp.localization.getResource('DFApp') as Function;
 
 const lotteryTypeValue = ref('kl8');
 const lotteryTypeItems = ref([]);
+const purchasedPeriod = ref(undefined);
+const winningPeriod = ref(undefined);
+
 
 const chart = ref(undefined);
 
@@ -40,15 +45,30 @@ onMounted(async () => {
 
 });
 
-async function lotteryTypeChange(e) {
-    console.log(e);
+async function lotteryTypeChange() {
+    await chartStatistics();
+}
+
+async function inputChange() {
+
+    if (isValidString(purchasedPeriod.value) && (!isValidString(winningPeriod.value))) {
+        winningPeriod.value = purchasedPeriod.value;
+    }
+
+    if (isValidString(winningPeriod.value) && (!isValidString(purchasedPeriod.value))) {
+        purchasedPeriod.value = winningPeriod.value;
+    }
+
     await chartStatistics();
 }
 
 async function chartStatistics() {
     let lotteryType = lotteryTypeItems.value.find(item => item.value === lotteryTypeValue.value);
 
-    let dto: StatisticsWinDto[] = await dFApp.lottery.lottery.getStatisticsWin(undefined, undefined, lotteryType.label) as StatisticsWinDto;
+    let dto: StatisticsWinDto[] = await dFApp.lottery.lottery.getStatisticsWin(purchasedPeriod.value, winningPeriod.value, lotteryType.label) as StatisticsWinDto;
+    if (chart.value !== undefined && chart.value !== null) {
+        chart.value.destroy();
+    }
     if (dto && dto.length > 0) {
         let chartDataLabels: string[] = [];
         let chartDataBuy: number[] = [];
@@ -58,10 +78,6 @@ async function chartStatistics() {
             chartDataBuy.push(item.buyAmount);
             chartDataWin.push(item.winAmount);
         })
-
-        if(chart.value !== undefined && chart.value !== null){
-            chart.value.destroy();
-        }
 
         chart.value = new Chart('chart', {
             type: 'bar',
@@ -87,7 +103,16 @@ async function chartStatistics() {
             }
         })
 
-        
+
+    }
+}
+
+
+function isValidString(input: string | null | undefined): boolean {
+    if (input !== null && input !== undefined && input.trim() !== '') {
+        return true;
+    } else {
+        return false;
     }
 }
 
@@ -98,12 +123,13 @@ button {
     font-weight: bold;
 }
 
-.select-area{
-    width: 10%;
+.select-area {
+    display: flex;
+    align-items: center;
+    width: 100%;
 }
 
 .chart-height {
     height: 70vh;
 }
-
 </style>

@@ -29,6 +29,7 @@ import { ElMessage } from 'element-plus'
 import { LotteryDto } from '../Dto/LotteryDto'
 import { LotteryConstsDto } from '../Dto/LotteryConstsDto'
 import { CreateUpdateLotteryDto } from '../Dto/CreateUpdateLotteryDto'
+import { LotteryCombinationDto } from '../Dto/LotteryCombinationDto'
 
 const period = ref('');
 const reds = ref('');
@@ -80,11 +81,42 @@ async function groupImport() {
             groupId: 0
 
         });
+
+        if(tempStr.length > 6 || blues.value.split(',').length > 1){
+            await groupImportF();
+            return;
+        }
+        
     }
 
 
     let dtos: LotteryDto = await dFApp.lottery.lottery.createLotteryBatch(createDtos) as LotteryDto;
     if (dtos != undefined && dtos != null && dtos.id > 0) {
+        ElMessage({
+            message: '添加成功.',
+            type: 'success',
+            onClose: () => { location.reload(); },
+            duration: 1000
+        })
+    }
+}
+
+async function groupImportF() {
+
+    let combinationDto: LotteryCombinationDto = { period: 0, reds: [], blues: [] };
+
+    if (!(isValidString(period.value) && isValidString(reds.value) && isValidString(blues.value))) {
+        alert("输入有误");
+        return;
+    }
+    combinationDto.period = parseInt(period.value);
+    combinationDto.reds = reds.value.split(',');
+    combinationDto.blues = blues.value.split(',');
+
+    console.log(combinationDto);
+
+    let dtos: LotteryDto[] = await dFApp.lottery.lottery.calculateCombination(combinationDto) as LotteryDto[];
+    if (dtos != undefined && dtos != null && dtos.length > 0 && dtos[0].id > 0) {
         ElMessage({
             message: '添加成功.',
             type: 'success',
