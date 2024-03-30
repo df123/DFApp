@@ -1,4 +1,5 @@
-﻿using System.Threading.Tasks;
+﻿using System.Collections.Generic;
+using System.Threading.Tasks;
 using Volo.Abp;
 using Volo.Abp.Application.Dtos;
 using Volo.Abp.Application.Services;
@@ -49,5 +50,12 @@ namespace DFApp.Configuration
         {
             return await _configurationInfoRepository.GetConfigurationInfoValue(configurationName, moduleName);
         }
+
+        public async Task<List<ConfigurationInfoDto>> GetAllParametersInModule(string moduleName)
+        {
+            var datas = await _configurationInfoRepository.GetAllParametersInModule(moduleName);
+            return ObjectMapper.Map<List<ConfigurationInfo>, List<ConfigurationInfoDto>>(datas);
+        }
+
     }
 }

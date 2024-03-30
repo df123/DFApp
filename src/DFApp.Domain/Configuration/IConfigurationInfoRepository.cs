@@ -10,5 +10,8 @@ namespace DFApp.Configuration
     public interface IConfigurationInfoRepository : IRepository<ConfigurationInfo, long>
     {
         Task<string> GetConfigurationInfoValue(string configurationName, string moduleName);
+
+        Task<List<ConfigurationInfo>> GetAllParametersInModule(string moduleName);
+
     }
 }

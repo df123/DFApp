@@ -13,5 +13,6 @@ namespace DFApp.Configuration
         , CreateUpdateConfigurationInfoDto>
     {
         Task<string> GetConfigurationInfoValue(string configurationName, string moduleName);
+        Task<List<ConfigurationInfoDto>> GetAllParametersInModule(string moduleName);
     }
 }

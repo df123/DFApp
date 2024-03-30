@@ -31,12 +31,21 @@ namespace DFApp.Controllers
         public FileUpDownloadController(IFileUploadInfoService fileUploadInfoService,
             IConfigurationInfoService configurationInfoService)
         {
+            _moduleName = "DFApp.Controllers.FileUpDownloadController";
             _fileSizeLimit = 10 * 1024 * 1024;
             _fileInfoService = fileUploadInfoService;
-            _typeProvider = new FileExtensionContentTypeProvider();
-            _typeProvider.Mappings[".iso"] = "application/octet-stream";
             _configurationInfoService = configurationInfoService;
-            _moduleName = "DFApp.Controllers.FileUpDownloadController";
+
+            List<ConfigurationInfoDto> dtos = _configurationInfoService.GetAllParametersInModule(_moduleName + ".ContentType").Result;
+
+            _typeProvider = new FileExtensionContentTypeProvider();
+            if (dtos != null && dtos.Count > 0)
+            {
+                foreach (var dto in dtos)
+                {
+                    _typeProvider.Mappings[dto.ConfigurationName] = dto.ConfigurationValue;
+                }
+            }
         }
 
         [HttpPost("upload")]

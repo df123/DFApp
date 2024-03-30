@@ -18,6 +18,18 @@ namespace DFApp.Configuration
         {
         }
 
+        public async Task<List<ConfigurationInfo>> GetAllParametersInModule(string moduleName)
+        {
+            var dbSet = await GetDbSetAsync();
+            var infos = dbSet.Where(x => x.ModuleName == moduleName).ToList();
+            if (infos == null || infos.Count <= 0)
+            {
+                throw new UserFriendlyException("配置参数不存在");
+            }
+
+            return infos.ToList();
+        }
+
         public async Task<string> GetConfigurationInfoValue(string configurationName, string moduleName)
         {
 
