@@ -26,6 +26,7 @@ using Microsoft.EntityFrameworkCore.Metadata;
 using System.Linq.Expressions;
 using DFApp.FileUploadDownload;
 using DFApp.Configuration;
+using DFApp.Aria2.Response.TellStatus;
 
 namespace DFApp.EntityFrameworkCore;
 
@@ -93,6 +94,10 @@ public class DFAppDbContext :
     public DbSet<FileUploadInfo> FileUploadInfos { get; set; }
 
     public DbSet<MediaExternalLink> MediaExternalLinks { get; set; }
+
+    public DbSet<TellStatusResult> TellStatusResults { get; set; }
+    public DbSet<FilesItem> FilesItems { get; set; }
+    public DbSet<UrisItem> UrisItems { get; set; }
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
@@ -192,6 +197,35 @@ public class DFAppDbContext :
         builder.Entity<MediaExternalLink>(b =>
         {
             b.ToTable(DFAppConsts.DbTablePrefix + "MediaExternalLink", DFAppConsts.DbSchema);
+
+            b.ConfigureByConvention();
+        });
+
+        builder.Entity<TellStatusResult>(b =>
+        {
+            b.ToTable(DFAppConsts.DbTableAria2Prefix + "TellStatusResult", DFAppConsts.DbSchema);
+
+            b.ConfigureByConvention();
+        });
+
+        builder.Entity<FilesItem>(b =>
+        {
+            b.ToTable(DFAppConsts.DbTableAria2Prefix + "FilesItem", DFAppConsts.DbSchema);
+
+            b.HasOne(e => e.Result)
+            .WithMany(e => e.Files)
+            .HasForeignKey(e => e.ResultId);
+
+            b.ConfigureByConvention();
+        });
+
+        builder.Entity<UrisItem>(b =>
+        {
+            b.ToTable(DFAppConsts.DbTableAria2Prefix + "UrisItem", DFAppConsts.DbSchema);
+
+            b.HasOne(e => e.FilesItem)
+            .WithMany(e => e.Uris)
+            .HasForeignKey(e => e.FilesItemId);
 
             b.ConfigureByConvention();
         });
