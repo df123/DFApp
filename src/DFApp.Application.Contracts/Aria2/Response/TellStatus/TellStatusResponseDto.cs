@@ -7,9 +7,9 @@ using System.Threading.Tasks;
 
 namespace DFApp.Aria2.Response.TellStatus
 {
-    public class TellStatusResponseDto:Aria2Response
+    public class TellStatusResponseDto : Aria2ResponseDto
     {
         [JsonPropertyName("result")]
-        public Result Result { get; set; }
+        public TellStatusResultDto? Result { get; set; }
     }
 }

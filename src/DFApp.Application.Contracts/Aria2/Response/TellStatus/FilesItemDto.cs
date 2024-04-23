@@ -25,6 +25,6 @@ namespace DFApp.Aria2.Response.TellStatus
         public string Selected { get; set; }
 
         [JsonPropertyName("uris")]
-        public List<UrisItem> Uris { get; set; }
+        public List<UrisItemDto> Uris { get; set; }
     }
 }

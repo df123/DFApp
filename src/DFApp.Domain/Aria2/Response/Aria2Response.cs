@@ -7,9 +7,8 @@ using Volo.Abp.Domain.Entities.Auditing;
 
 namespace DFApp.Aria2.Response
 {
-    public class Aria2Response
+    public class Aria2Response : ResponseBase
     {
-        public string Id { get; set; }
 
         public string JSONRPC { get; set; }
 

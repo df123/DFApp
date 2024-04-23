@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace DFApp.Aria2.Notifications
 {
-    public class Aria2Notification
+    public class Aria2Notification: ResponseBase
     {
         public string JSONRPC { get; set; }
 

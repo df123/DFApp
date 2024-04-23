@@ -7,11 +7,8 @@ using System.Threading.Tasks;
 
 namespace DFApp.Aria2.Response
 {
-    public class Aria2ResponseDto
+    public class Aria2ResponseDto:ResponseBaseDto
     {
-        [JsonPropertyName("id")]
-        public string Id { get; set; }
-
         [JsonPropertyName("jsonrpc")]
         public string JSONRPC { get; set; }
 

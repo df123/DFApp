@@ -8,22 +8,22 @@ using Volo.Abp.Domain.Entities.Auditing;
 
 namespace DFApp.Aria2.Response.TellStatus
 {
-    public class FilesItem : CreationAuditedAggregateRoot<long>
+    public class FilesItem : CreationAuditedAggregateRoot<int>
     {
-        public string CompletedLength { get; set; }
+        public long CompletedLength { get; set; }
 
-        public string Index { get; set; }
+        public long Index { get; set; }
 
-        public string Length { get; set; }
+        public long Length { get; set; }
 
         public string Path { get; set; }
 
-        public string Selected { get; set; }
+        public bool Selected { get; set; }
 
         public List<UrisItem> Uris { get; set; }
 
 
         public TellStatusResult Result { get; set; }
-        public int ResultId { get; set; }
+        public long ResultId { get; set; }
     }
 }

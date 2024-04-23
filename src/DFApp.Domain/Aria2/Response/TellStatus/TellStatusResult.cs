@@ -9,15 +9,16 @@ namespace DFApp.Aria2.Response.TellStatus
 {
     public class TellStatusResult : CreationAuditedAggregateRoot<long>
     {
+
         public string Bitfield { get; set; }
 
-        public string CompletedLength { get; set; }
+        public long CompletedLength { get; set; }
 
-        public string Connections { get; set; }
+        public long Connections { get; set; }
 
         public string Dir { get; set; }
 
-        public string DownloadSpeed { get; set; }
+        public long DownloadSpeed { get; set; }
 
         public string ErrorCode { get; set; }
 
@@ -27,16 +28,17 @@ namespace DFApp.Aria2.Response.TellStatus
 
         public string GID { get; set; }
 
-        public string NumPieces { get; set; }
+        public long NumPieces { get; set; }
 
-        public string PieceLength { get; set; }
+        public long PieceLength { get; set; }
 
         public string Status { get; set; }
 
-        public string TotalLength { get; set; }
+        public long TotalLength { get; set; }
 
-        public string UploadLength { get; set; }
+        public long UploadLength { get; set; }
 
-        public string UploadSpeed { get; set; }
+        public long UploadSpeed { get; set; }
+
     }
 }
