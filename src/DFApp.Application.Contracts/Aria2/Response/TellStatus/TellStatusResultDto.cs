@@ -3,10 +3,11 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Volo.Abp.Application.Dtos;
 
 namespace DFApp.Aria2.Response.TellStatus
 {
-    public class TellStatusResultDto
+    public class TellStatusResultDto: CreationAuditedEntityDto<long>
     {
         /// <summary>
         /// 

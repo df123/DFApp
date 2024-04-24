@@ -69,13 +69,18 @@ public class DFAppApplicationAutoMapperProfile : Profile
         CreateMap<MediaExternalLink, ExternalLinkDto>();
         CreateMap<CreateUpdateExternalLinkDto, MediaExternalLink>();
 
-        CreateMap<Aria2NotificationDto,Aria2Notification>();
+        CreateMap<Aria2NotificationDto, Aria2Notification>();
         CreateMap<ParamsItemDto, ParamsItem>();
         CreateMap<Aria2Request, Aria2RequestDto>();
         CreateMap<ResponseBaseDto, ResponseBase>();
-        CreateMap<TellStatusResponseDto,TellStatusResponse>();
+        CreateMap<TellStatusResponseDto, TellStatusResponse>();
         CreateMap<TellStatusResultDto, TellStatusResult>();
         CreateMap<FilesItemDto, FilesItem>();
         CreateMap<UrisItemDto, UrisItem>();
+
+        CreateMap<TellStatusResult, TellStatusResultDto>();
+        CreateMap<FilesItem, FilesItemDto>();
+        CreateMap<UrisItem, UrisItemDto>();
+
     }
 }

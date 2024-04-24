@@ -8,7 +8,7 @@ using Volo.Abp.Domain.Repositories;
 
 namespace DFApp.Aria2.Repository.Response.TellStatus
 {
-    public interface ITellStatusResultRepository:IRepository<TellStatusResult>
+    public interface ITellStatusResultRepository:IRepository<TellStatusResult,long>
     {
     }
 }

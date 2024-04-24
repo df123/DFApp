@@ -10,10 +10,15 @@ using Volo.Abp.EntityFrameworkCore;
 
 namespace DFApp.Aria2.Response.TellStatus
 {
-    public class TellStatusResultRepository : EfCoreRepository<DFAppDbContext, TellStatusResult>, ITellStatusResultRepository
+    public class TellStatusResultRepository : EfCoreRepository<DFAppDbContext, TellStatusResult,long>, ITellStatusResultRepository
     {
         public TellStatusResultRepository(IDbContextProvider<DFAppDbContext> dbContextProvider) : base(dbContextProvider)
         {
+        }
+
+        public override async Task<IQueryable<TellStatusResult>> WithDetailsAsync()
+        {
+            return (await GetQueryableAsync()).IncludeSub();
         }
     }
 }
