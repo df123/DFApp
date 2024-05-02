@@ -1,4 +1,5 @@
-﻿using System.Threading.Tasks;
+﻿using System.Drawing;
+using System.Threading.Tasks;
 using DFApp.Localization;
 using DFApp.Permissions;
 using Volo.Abp.Identity.Web.Navigation;
@@ -133,7 +134,6 @@ public class DFAppMenuContributor : IMenuContributor
 
         }
 
-
         if (await context.IsGrantedAsync(DFAppPermissions.FileUploadDownload.Default))
         {
 
@@ -239,10 +239,18 @@ public class DFAppMenuContributor : IMenuContributor
 
         }
 
+        if(await context.IsGrantedAsync(DFAppPermissions.Aria2.Default))
+        {
+            var aria2First = new ApplicationMenuItem(
+                DFAppMenus.Aria2.Default
+                , l["Menu:Aria2"]
+                ,"~/Aria2"
+                , icon: "fas fa-toolbox"
+                , order: 9);
+            context.Menu.AddItem(aria2First);
+        }
 
         administration.TryRemoveMenuItem(TenantManagementMenuNames.GroupName);
-
-
         administration.SetSubItemOrder(IdentityMenuNames.GroupName, 2);
         administration.SetSubItemOrder(SettingManagementMenuNames.GroupName, 3);
 

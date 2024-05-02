@@ -18,6 +18,7 @@ using static Volo.Abp.ObjectExtending.IdentityModuleExtensionConsts;
 namespace DFApp.Aria2
 {
     public class Aria2Service : CrudAppService<TellStatusResult, TellStatusResultDto, long>
+        , IAria2Service
     {
 
 

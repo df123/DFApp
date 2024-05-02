@@ -31,6 +31,11 @@ public class DFAppMenus
         public const string Default = Prefix + ".ManagementBackground";
     }
 
+    public static class Aria2
+    {
+        public const string Default = Prefix + ".Aria2";
+    }
+
     //Add your menu items here...
 
 }
