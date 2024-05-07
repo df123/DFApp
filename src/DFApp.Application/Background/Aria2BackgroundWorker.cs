@@ -67,9 +67,10 @@ namespace DFApp.Background
                 var buffer = new byte[1024 * 4];
                 while (!StoppingToken.IsCancellationRequested)
                 {
-                    var result = await _clientWebSocket.ReceiveAsync(new ArraySegment<byte>(buffer), StoppingToken);
                     try
                     {
+                        Logger.LogInformation($"Aria2BackgroundWorker:Connect:while:{_clientWebSocket.State}");
+                        var result = await _clientWebSocket.ReceiveAsync(new ArraySegment<byte>(buffer), StoppingToken);
                         if (result.MessageType == WebSocketMessageType.Close)
                         {
                             break;
