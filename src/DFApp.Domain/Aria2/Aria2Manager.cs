@@ -44,6 +44,7 @@ namespace DFApp.Aria2
                     switch (res.Method)
                     {
                         case Aria2Consts.TellStatus:
+                            Logger.LogInformation("Aria2Manager:Aria2Consts.TellStatus");
                             TellStatusResponse? tellStatusResponse = response as TellStatusResponse;
                             if (tellStatusResponse != null)
                             {
