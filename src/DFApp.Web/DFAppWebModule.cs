@@ -73,6 +73,8 @@ public class DFAppWebModule : AbpModule
         var hostingEnvironment = context.Services.GetHostingEnvironment();
         var configuration = context.Services.GetConfiguration();
 
+        Quartz.Logging.LogProvider.IsDisabled = true;
+
         context.Services.PreConfigure<AbpMvcDataAnnotationsLocalizationOptions>(options =>
         {
             options.AddAssemblyResource(
@@ -155,6 +157,7 @@ public class DFAppWebModule : AbpModule
             options.Conventions.AuthorizeFolder("/Bookkeeping/Expenditure", DFAppPermissions.BookkeepingExpenditure.Default);
             options.Conventions.AuthorizeFolder("/FileUploadDownload", DFAppPermissions.FileUploadDownload.Default);
             options.Conventions.AuthorizeFolder("/Management/Background", DFAppPermissions.ManagementBackground.Default);
+            options.Conventions.AuthorizeFolder("/Aria2", DFAppPermissions.Aria2.Default);
 
         });
 
@@ -281,8 +284,10 @@ public class DFAppWebModule : AbpModule
         app.UseConfiguredEndpoints();
 
 
-        await context.AddDFAppBackgroundWorkerAsync<ListenTelegramService>();
+        //await context.AddDFAppBackgroundWorkerAsync<ListenTelegramService>();
+        await context.AddDFAppBackgroundWorkerAsync<Aria2BackgroundWorker>();
         await context.AddDFAppBackgroundWorkerAsync<MediaBackgroudService>();
+        
 
     }
 }

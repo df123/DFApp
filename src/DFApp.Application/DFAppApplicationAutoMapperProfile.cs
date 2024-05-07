@@ -9,6 +9,11 @@ using DFApp.Bookkeeping;
 using DFApp.FileUploadDownload;
 using DFApp.Configuration;
 using DFApp.Media.ExternalLink;
+using DFApp.Aria2.Notifications;
+using DFApp.Aria2.Request;
+using DFApp.Aria2;
+using DFApp.Aria2.Response.TellStatus;
+using DFApp.Aria2.Response;
 
 namespace DFApp;
 
@@ -63,6 +68,19 @@ public class DFAppApplicationAutoMapperProfile : Profile
 
         CreateMap<MediaExternalLink, ExternalLinkDto>();
         CreateMap<CreateUpdateExternalLinkDto, MediaExternalLink>();
+
+        CreateMap<Aria2NotificationDto, Aria2Notification>();
+        CreateMap<ParamsItemDto, ParamsItem>();
+        CreateMap<Aria2Request, Aria2RequestDto>();
+        CreateMap<ResponseBaseDto, ResponseBase>();
+        CreateMap<TellStatusResponseDto, TellStatusResponse>();
+        CreateMap<TellStatusResultDto, TellStatusResult>();
+        CreateMap<FilesItemDto, FilesItem>();
+        CreateMap<UrisItemDto, UrisItem>();
+
+        CreateMap<TellStatusResult, TellStatusResultDto>();
+        CreateMap<FilesItem, FilesItemDto>();
+        CreateMap<UrisItem, UrisItemDto>();
 
     }
 }
