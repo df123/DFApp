@@ -61,7 +61,7 @@ namespace DFApp.Background
                 throw new Exception("error");
             }
             await _clientWebSocket.ConnectAsync(new Uri(aria2ws), StoppingToken);
-
+            Logger.LogInformation("Aria2BackgroundWorker:Connect");
             var receiveTask = Task.Run(async () =>
             {
                 var buffer = new byte[1024 * 4];
