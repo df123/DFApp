@@ -68,43 +68,51 @@ namespace DFApp.Background
                 while (!StoppingToken.IsCancellationRequested)
                 {
                     var result = await _clientWebSocket.ReceiveAsync(new ArraySegment<byte>(buffer), StoppingToken);
-                    if (result.MessageType == WebSocketMessageType.Close)
+                    try
                     {
-                        break;
-                    }
-                    var message = Encoding.UTF8.GetString(buffer, 0, result.Count);
-                    ResponseBase? dto;
-                    if (message.Contains("\"id\":") && (!message.Contains("\"error\":")))
-                    {
-                        var data = JsonSerializer.Deserialize<TellStatusResponseDto>(message);
-                        dto = _mapper.Map<TellStatusResponseDto?,TellStatusResponse?>(data);
-                    }
-                    else if (message.Contains("method"))
-                    {
-                        dto = _mapper.Map<Aria2NotificationDto?,Aria2Notification?>(JsonSerializer.Deserialize<Aria2NotificationDto>(message));
-                    }
-                    else
-                    {
-                        continue;
-                    }
-
-                    if (dto != null)
-                    {
-                        var data = _manager.ProcessResponse(dto);
-
-                        if (data != null)
+                        if (result.MessageType == WebSocketMessageType.Close)
                         {
-                            _queueBase.AddItem(_mapper.Map<List<Aria2Request>, List<Aria2RequestDto>>(data));
-                            foreach (var item in data)
-                            {
-                                _responseDtos.Add(new Aria2ResponseDto()
-                                {
-                                    Id = item.Id
-                                });
-                            }
+                            break;
+                        }
+                        var message = Encoding.UTF8.GetString(buffer, 0, result.Count);
+                        ResponseBase? dto;
+                        if (message.Contains("\"id\":") && (!message.Contains("\"error\":")))
+                        {
+                            var data = JsonSerializer.Deserialize<TellStatusResponseDto>(message);
+                            dto = _mapper.Map<TellStatusResponseDto?, TellStatusResponse?>(data);
+                        }
+                        else if (message.Contains("method"))
+                        {
+                            dto = _mapper.Map<Aria2NotificationDto?, Aria2Notification?>(JsonSerializer.Deserialize<Aria2NotificationDto>(message));
+                        }
+                        else
+                        {
+                            continue;
+                        }
 
+                        if (dto != null)
+                        {
+                            var data = _manager.ProcessResponse(dto);
+
+                            if (data != null)
+                            {
+                                _queueBase.AddItem(_mapper.Map<List<Aria2Request>, List<Aria2RequestDto>>(data));
+                                foreach (var item in data)
+                                {
+                                    _responseDtos.Add(new Aria2ResponseDto()
+                                    {
+                                        Id = item.Id
+                                    });
+                                }
+
+                            }
                         }
                     }
+                    catch (Exception ex)
+                    {
+                        Logger.LogError($"Aria2BackgroundWorker:receiveTask:{ex.Message}");
+                    }
+
                 }
             });
 
@@ -113,13 +121,21 @@ namespace DFApp.Background
                 while (!StoppingToken.IsCancellationRequested)
                 {
                     var data = await _queueBase.GetItemAsync(StoppingToken);
-                    foreach (var item in data!)
+                    try
                     {
-                        string dto = JsonSerializer.Serialize(item);
-                        var buffer = Encoding.UTF8.GetBytes(dto);
-                        await _clientWebSocket.SendAsync(new ArraySegment<byte>(buffer), WebSocketMessageType.Text
-                            , true, StoppingToken);
+                        foreach (var item in data!)
+                        {
+                            string dto = JsonSerializer.Serialize(item);
+                            var buffer = Encoding.UTF8.GetBytes(dto);
+                            await _clientWebSocket.SendAsync(new ArraySegment<byte>(buffer), WebSocketMessageType.Text
+                                , true, StoppingToken);
+                        }
                     }
+                    catch (Exception ex)
+                    {
+                        Logger.LogError($"Aria2BackgroundWorker:sendTask:{ex.Message}");
+                    }
+
                 }
             });
 

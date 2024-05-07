@@ -60,6 +60,13 @@ $(function () {
                     }
                 },
                 {
+                    title: l('Aria2:Column:TotalLength'),
+                    data: "files",
+                    render: function (data, type) {
+                        return data[0].path;
+                    }
+                },
+                {
                     title: l('Aria2:Column:CreationTime'),
                     data: "creationTime",
                     dataFormat: "datetime"

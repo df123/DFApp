@@ -77,16 +77,19 @@ namespace DFApp.Aria2
                 throw new UserFriendlyException("ID要大于0");
             }
 
-            var data = await ReadOnlyRepository.FirstOrDefaultAsync(x => x.Id == id);
-            if (data != null && data.Files != null && data.Files.Count > 0)
+            if(await ReadOnlyRepository.AnyAsync(x => x.Id == id))
             {
-                foreach (var file in data.Files)
+                var data = await Repository.GetAsync(id);
+                if (data != null && data.Files != null && data.Files.Count > 0)
                 {
-                   SpaceHelper.DeleteFile(file.Path);
+                    foreach (var file in data.Files)
+                    {
+                        SpaceHelper.DeleteFile(file.Path);
+                    }
                 }
-            }
 
-            await base.DeleteAsync(id);
+                await base.DeleteAsync(id);
+            }
         }
 
     }
