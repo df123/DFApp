@@ -132,7 +132,7 @@ namespace DFApp.Background
                         {
                             string dto = JsonSerializer.Serialize(item);
                             var buffer = Encoding.UTF8.GetBytes(dto);
-                            if(_clientWebSocket.State == WebSocketState.Open)
+                            if(_clientWebSocket.State != WebSocketState.Open)
                             {
                                 return;
                             }
