@@ -55,6 +55,7 @@ namespace DFApp.Background
 
         public async Task StartWork()
         {
+            
             string aria2ws = await GetConfigurationInfo("aria2ws");
             if (string.IsNullOrWhiteSpace(aria2ws))
             {
@@ -63,11 +64,15 @@ namespace DFApp.Background
             await _clientWebSocket.ConnectAsync(new Uri(aria2ws), StoppingToken);
             var receiveTask = Task.Run(async () =>
             {
-                var buffer = new byte[1024 * 4];
+                var buffer = new byte[1024 * 1024 * 10];
                 while (!StoppingToken.IsCancellationRequested)
                 {
                     try
                     {
+                        if (_clientWebSocket.State != WebSocketState.Open)
+                        {
+                            return;
+                        }
                         var result = await _clientWebSocket.ReceiveAsync(new ArraySegment<byte>(buffer), StoppingToken);
                         if (result.MessageType == WebSocketMessageType.Close)
                         {
@@ -127,6 +132,10 @@ namespace DFApp.Background
                         {
                             string dto = JsonSerializer.Serialize(item);
                             var buffer = Encoding.UTF8.GetBytes(dto);
+                            if(_clientWebSocket.State == WebSocketState.Open)
+                            {
+                                return;
+                            }
                             await _clientWebSocket.SendAsync(new ArraySegment<byte>(buffer), WebSocketMessageType.Text
                                 , true, StoppingToken);
                         }
