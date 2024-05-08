@@ -55,6 +55,10 @@
                     data: "expenditure"
                 },
                 {
+                    title: l('BookkeepingExpenditure:Column:Remark'),
+                    data: "remark"
+                },
+                {
                     title: l('BookkeepingExpenditure:Column:Category'),
                     data: "category.category"
                 },

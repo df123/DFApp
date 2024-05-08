@@ -155,6 +155,7 @@
     "BookkeepingExpenditure:Column:ExpenditureDate": "时间",
     "BookkeepingExpenditure:Column:Expenditure": "金额",
     "BookkeepingExpenditure:Column:Category": "类型",
+    "BookkeepingExpenditure:Column:Remark": "备注",
     "BookkeepingExpenditure:Analysis:Title": "分析",
 
     "Menu:FileUploadDownload": "文件传输",

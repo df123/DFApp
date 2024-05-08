@@ -59,6 +59,10 @@ namespace DFApp.Web.Pages.Bookkeeping.Expenditure
             [SelectItems(nameof(Categorys))]
             [DisplayName("类别")]
             public long CategoryId { get; set; }
+
+            [DisplayName("备注")]
+            public string? Remark { get; set; }
+
         }
 
     }
