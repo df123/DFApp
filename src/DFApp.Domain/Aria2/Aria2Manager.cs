@@ -2,6 +2,7 @@
 using DFApp.Aria2.Repository.Response.TellStatus;
 using DFApp.Aria2.Request;
 using DFApp.Aria2.Response.TellStatus;
+using DFApp.Configuration;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
@@ -18,11 +19,14 @@ namespace DFApp.Aria2
     {
         private readonly ITellStatusResultRepository _resultRepository;
         private readonly List<Aria2Request> _requestsHistory;
+        private readonly IConfigurationInfoRepository _configurationInfoRepository;
 
-        public Aria2Manager(ITellStatusResultRepository tellStatusResultRepository)
+        public Aria2Manager(ITellStatusResultRepository tellStatusResultRepository
+            ,IConfigurationInfoRepository configurationInfoRepository)
         {
             _requestsHistory = new List<Aria2Request>();
             _resultRepository = tellStatusResultRepository;
+            _configurationInfoRepository = configurationInfoRepository;
         }
 
         public List<Aria2Request> ProcessResponse(ResponseBase? response)
@@ -44,7 +48,6 @@ namespace DFApp.Aria2
                     switch (res.Method)
                     {
                         case Aria2Consts.TellStatus:
-                            Logger.LogInformation("Aria2Manager:Aria2Consts.TellStatus");
                             TellStatusResponse? tellStatusResponse = response as TellStatusResponse;
                             if (tellStatusResponse != null)
                             {
@@ -95,10 +98,15 @@ namespace DFApp.Aria2
         public List<Aria2Request> DownloadCompleteHandler(List<ParamsItem> paramsItems)
         {
             List<Aria2Request> requests = new List<Aria2Request>();
+            string aria2secret = _configurationInfoRepository.GetConfigurationInfoValue("aria2secret", "DFApp.Aria2.Aria2Service").Result;
             foreach (var item in paramsItems)
             {
                 var request = new Aria2Request(Guid.NewGuid().ToString(), "");
                 request.Method = Aria2Consts.TellStatus;
+                if (!string.IsNullOrWhiteSpace(aria2secret))
+                {
+                    request.Params.Add($"token:{aria2secret}");
+                }
                 request.Params.Add(item.GID);
                 _requestsHistory.Add(request);
                 requests.Add(request);

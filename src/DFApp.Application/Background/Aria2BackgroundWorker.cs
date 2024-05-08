@@ -58,10 +58,9 @@ namespace DFApp.Background
             string aria2ws = await GetConfigurationInfo("aria2ws");
             if (string.IsNullOrWhiteSpace(aria2ws))
             {
-                throw new Exception("error");
+                throw new UserFriendlyException("aria2 ws连接不存在");
             }
             await _clientWebSocket.ConnectAsync(new Uri(aria2ws), StoppingToken);
-            Logger.LogInformation("Aria2BackgroundWorker:Connect");
             var receiveTask = Task.Run(async () =>
             {
                 var buffer = new byte[1024 * 4];
@@ -69,7 +68,6 @@ namespace DFApp.Background
                 {
                     try
                     {
-                        Logger.LogInformation($"Aria2BackgroundWorker:Connect:while:{_clientWebSocket.State}");
                         var result = await _clientWebSocket.ReceiveAsync(new ArraySegment<byte>(buffer), StoppingToken);
                         if (result.MessageType == WebSocketMessageType.Close)
                         {
