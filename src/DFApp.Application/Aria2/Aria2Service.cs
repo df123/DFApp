@@ -50,7 +50,7 @@ namespace DFApp.Aria2
             {
                 StringBuilder stringBuilder = new StringBuilder(64);
                 string reStr = await _configurationInfoRepository.GetConfigurationInfoValue("replaceString", "DFApp.Aria2.Aria2Service");
-                string retUrl = await _configurationInfoRepository.GetConfigurationInfoValue("ReturnDownloadUrlPrefix", "DFApp.Aria2.Aria2Service");
+                string retUrl = await _configurationInfoRepository.GetConfigurationInfoValue("Aria2BtDownloadUrlPrefix", "DFApp.Aria2.Aria2Service");
                 foreach (var file in data.Files)
                 {
                     stringBuilder.AppendLine(Path.Combine(retUrl, file.Path.Replace(reStr, string.Empty)));
