@@ -10,9 +10,9 @@ namespace DFApp.Aria2.Response.TellStatus
 {
     public class UrisItem : CreationAuditedAggregateRoot<short>
     {
-        public string Status { get; set; }
+        public string? Status { get; set; }
 
-        public string Uri { get; set; }
+        public string? Uri { get; set; }
 
         public FilesItem FilesItem { get; set; }
         public int FilesItemId { get; set; }

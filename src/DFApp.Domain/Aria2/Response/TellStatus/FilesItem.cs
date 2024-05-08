@@ -10,17 +10,17 @@ namespace DFApp.Aria2.Response.TellStatus
 {
     public class FilesItem : CreationAuditedAggregateRoot<int>
     {
-        public long CompletedLength { get; set; }
+        public long? CompletedLength { get; set; }
 
-        public long Index { get; set; }
+        public long? Index { get; set; }
 
-        public long Length { get; set; }
+        public long? Length { get; set; }
 
-        public string Path { get; set; }
+        public string? Path { get; set; }
 
-        public bool Selected { get; set; }
+        public bool? Selected { get; set; }
 
-        public List<UrisItem> Uris { get; set; }
+        public List<UrisItem>? Uris { get; set; }
 
 
         public TellStatusResult Result { get; set; }
