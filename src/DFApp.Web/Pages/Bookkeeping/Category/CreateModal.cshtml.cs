@@ -17,7 +17,7 @@ namespace DFApp.Web.Pages.Bookkeeping.Category
             _bookkeepingCategoryService = bookkeepingCategoryService;
         }
 
-        public async Task OnGetAsync()
+        public void OnGet()
         {
             Categorys = new CreateCategoryViewModel();
         }

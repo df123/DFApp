@@ -102,7 +102,7 @@ namespace DFApp.Background
                     _client.PingInterval = 300;
                     _client.MaxAutoReconnects = int.MaxValue;
 
-                    _client.OnUpdate += ClientUpdate;
+                    _client.OnUpdates += ClientUpdate;
 
                 }
 

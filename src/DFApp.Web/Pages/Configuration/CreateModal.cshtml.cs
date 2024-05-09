@@ -19,7 +19,7 @@ namespace DFApp.Web.Pages.Configuration
             _configurationInfoService = configurationInfoService;
         }
 
-        public async Task OnGetAsync()
+        public void OnGet()
         {
             ConfigurationInfoViewModel = new CreateConfigurationInfoViewModel();
         }
