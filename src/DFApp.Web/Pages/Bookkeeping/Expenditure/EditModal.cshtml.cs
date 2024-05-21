@@ -65,6 +65,11 @@ namespace DFApp.Web.Pages.Bookkeeping.Expenditure
 
             [DisplayName("备注")]
             public string? Remark { get; set; }
+
+            [Required]
+            [DisplayName("自用")]
+            public bool IsBelongToSelf { get; set; }
+
         }
 
     }

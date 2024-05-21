@@ -156,7 +156,8 @@ public class DFAppDbContext :
         builder.Entity<BookkeepingExpenditure>(b =>
         {
             b.ToTable(DFAppConsts.DbTablePrefix + "BookkeepingExpenditure", DFAppConsts.DbSchema);
-
+            b.Property(e => e.IsBelongToSelf)
+            .HasDefaultValue(true);
             b.ConfigureByConvention();
         });
 

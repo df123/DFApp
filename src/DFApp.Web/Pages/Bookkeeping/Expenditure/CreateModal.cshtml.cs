@@ -29,6 +29,7 @@ namespace DFApp.Web.Pages.Bookkeeping.Expenditure
         public async Task OnGetAsync()
         {
             Expenditures = new CreateExpenditureViewModel();
+            Expenditures.IsBelongToSelf = true;
             Categorys = (await _bookkeepingExpenditureService.GetCategoryLookupDto())
                 .Select(x => new SelectListItem(x.Category,x.CategoryId.ToString()))
                 .ToList();
@@ -62,6 +63,10 @@ namespace DFApp.Web.Pages.Bookkeeping.Expenditure
 
             [DisplayName("备注")]
             public string? Remark { get; set; }
+
+            [Required]
+            [DisplayName("自用")]
+            public bool IsBelongToSelf { get; set;}
 
         }
 

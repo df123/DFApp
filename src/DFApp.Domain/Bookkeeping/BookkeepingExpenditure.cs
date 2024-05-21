@@ -16,6 +16,7 @@ namespace DFApp.Bookkeeping
         public DateTime ExpenditureDate { get; set; }
         public decimal Expenditure { get; set; }
         public string? Remark { get; set; }
+        public bool IsBelongToSelf { get; set; }
         public BookkeepingCategory? Category { get; set; }
         public long CategoryId { get;set; }
         public bool IsDeleted { get; set; }
