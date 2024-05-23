@@ -4,6 +4,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
@@ -29,6 +30,11 @@ namespace DFApp.Bookkeeping.Expenditure
             _categoryRepository = categoryRepository;
         }
 
+        protected override async Task<IQueryable<BookkeepingExpenditure>> CreateFilteredQueryAsync(PagedAndSortedResultRequestDto input)
+        {
+            return await Repository.WithDetailsAsync();
+        }
+
         public async Task<List<BookkeepingCategoryLookupDto>> GetCategoryLookupDto()
         {
             var categorys = await _categoryRepository.GetListAsync();
@@ -38,20 +44,18 @@ namespace DFApp.Bookkeeping.Expenditure
             return result;
         }
 
-        public override async Task<PagedResultDto<BookkeepingExpenditureDto>> GetListAsync(PagedAndSortedResultRequestDto input)
+        public async Task<ChartJSDto> GetChartJSDto(DateTime start, DateTime end, bool compare
+            , CompareType compareType, NumberType numberType,bool? isBelongToSelf)
         {
-            if (input.SkipCount == 0 && input.Sorting == null)
-            {
-                input.MaxResultCount = await ReadOnlyRepository.CountAsync();
-            }
-            var categorys = await _categoryRepository.GetListAsync();
-            return await base.GetListAsync(input);
-        }
 
-        public async Task<ChartJSDto> GetChartJSDto(DateTime start, DateTime end, bool compare, CompareType compareType, NumberType numberType)
-        {
-            var categorys = await _categoryRepository.GetListAsync(true);
-            var expenditures = await ReadOnlyRepository.GetListAsync(x => x.ExpenditureDate >= start && x.ExpenditureDate <= end, true);
+            Expression<Func<BookkeepingExpenditure,bool>> expression = x => x.ExpenditureDate >= start && x.ExpenditureDate <= end;
+
+            if (isBelongToSelf.HasValue)
+            {
+                expression = expression.And(x => x.IsBelongToSelf == isBelongToSelf.Value);
+            }
+
+            var expenditures = await ReadOnlyRepository.GetListAsync(expression, true);
 
             ChartJSDto chartJSDto = new ChartJSDto();
             chartJSDto.Total = expenditures.Sum(x => x.Expenditure);
@@ -70,7 +74,15 @@ namespace DFApp.Bookkeeping.Expenditure
             {
                 DateTime startCompare = ManipulateDate(start, compareType);
                 DateTime endCompare = ManipulateDate(end, compareType);
-                var expendituresCompare = await ReadOnlyRepository.GetListAsync(x => x.ExpenditureDate >= startCompare && x.ExpenditureDate <= endCompare);
+
+                Expression<Func<BookkeepingExpenditure, bool>> expression2 = x => x.ExpenditureDate >= startCompare && x.ExpenditureDate <= endCompare;
+
+                if (isBelongToSelf.HasValue)
+                {
+                    expression2 = expression2.And(x => x.IsBelongToSelf == isBelongToSelf.Value);
+                }
+
+                var expendituresCompare = await ReadOnlyRepository.GetListAsync(expression2,true);
                 chartJSDto.CompareTotal = expendituresCompare.Sum(x => x.Expenditure);
                 ChartJSDatasetsItemDto chartJSDatasetsItemCompareDto = new ChartJSDatasetsItemDto();
                 chartJSDto.datasets.Add(chartJSDatasetsItemCompareDto);
@@ -152,13 +164,6 @@ namespace DFApp.Bookkeeping.Expenditure
             }
 
             return date;
-        }
-
-        private DateTime SetTimeZero(DateTime dateTime)
-        {
-            dateTime = dateTime.Date;
-            dateTime.AddHours(-12);
-            return dateTime;
         }
 
     }

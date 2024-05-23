@@ -14,5 +14,11 @@ namespace DFApp.Bookkeeping
         public EfCoreBookkeepingExpenditureRepository(IDbContextProvider<DFAppDbContext> dbContextProvider) : base(dbContextProvider)
         {
         }
+
+        public override async Task<IQueryable<BookkeepingExpenditure>> WithDetailsAsync()
+        {
+            return (await GetQueryableAsync()).IncludeSub();
+        }
+
     }
 }
