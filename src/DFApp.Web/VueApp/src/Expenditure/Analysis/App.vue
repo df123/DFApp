@@ -1,14 +1,11 @@
 <template>
-    <el-row>
+    <el-row class="hidden-md-and-down">
         <el-col :span="2">
-            <el-checkbox v-model="compareEnable" label="开启对比" @change="compareEnableChange" />
-        </el-col>
-        <el-col :span="2">
-            <el-select v-model="isBelongToSelf" class="m-2" placeholder="自用" @change="isBelongToSelfChange">
+            <el-select v-model="isBelongToSelf" class="m-2" @change="isBelongToSelfChange">
                 <el-option v-for="item in isBelongToSelfItem" :label="item.label" :value="item.value" />
             </el-select>
         </el-col>
-        <el-col :span="3" v-if="compareEnable">
+        <el-col :span="3">
             <el-select v-model="compareTypeValue" class="m-2" placeholder="对比模式" @change="compareTypeChange">
                 <el-option v-for="item in compareTypeItem" :key="item.value" :label="item.label" :value="item.value" />
             </el-select>
@@ -23,11 +20,44 @@
                 <el-option v-for="item in numberTypeItem" :key="item.value" :label="item.label" :value="item.value" />
             </el-select>
         </el-col>
-        <el-col :span="6">
-            <el-date-picker class="m-2" v-model="dateRagen" type="daterange" range-separator="To" start-placeholder="开始时间"
-                end-placeholder="结束时间" @change="dateChange" />
+        <el-col :span="8">
+            <el-date-picker class="m-2" v-model="dateRagen" type="daterange" range-separator="To"
+                start-placeholder="开始时间" end-placeholder="结束时间" @change="dateChange" />
         </el-col>
     </el-row>
+    <div class="hidden-md-and-up">
+        <el-row :gutter="5" style="margin-bottom: 5px;">
+            <el-col :span="12">
+                <el-select v-model="isBelongToSelf"  @change="isBelongToSelfChange">
+                    <el-option v-for="item in isBelongToSelfItem" :label="item.label" :value="item.value" />
+                </el-select>
+            </el-col>
+            <el-col :span="12">
+                <el-select v-model="compareTypeValue"  placeholder="对比模式" @change="compareTypeChange">
+                    <el-option v-for="item in compareTypeItem" :key="item.value" :label="item.label"
+                        :value="item.value" />
+                </el-select>
+            </el-col>
+        </el-row>
+        <el-row :gutter="5" style="margin-bottom: 5px;">
+            <el-col :span="12">
+                <el-select v-model="chartTypeItemValue" placeholder="图类型" @change="chartChange">
+                    <el-option v-for="item in chartTypeItem" :key="item.value" :label="item.label"
+                        :value="item.value" />
+                </el-select>
+            </el-col>
+            <el-col :span="12">
+                <el-select v-model="numberTypeValue"  placeholder="数字模式" @change="numberChange">
+                    <el-option v-for="item in numberTypeItem" :key="item.value" :label="item.label"
+                        :value="item.value" />
+                </el-select>
+            </el-col>
+        </el-row>
+        <el-row>
+            <el-date-picker v-model="dateRagen" type="daterange" range-separator="To"
+                start-placeholder="开始时间" end-placeholder="结束时间" @change="dateChange" />
+        </el-row>
+    </div>
     <div>
         <canvas id="chart"></canvas>
     </div>
@@ -65,38 +95,40 @@ const l: Function = abp.localization.getResource('DFApp') as Function;
 
 const dateRagen = ref([]);
 
-const compareEnable = ref(false);
-
-const isBelongToSelf = ref(true);
+const isBelongToSelf = ref('null');
 const isBelongToSelfItem = ref([
     {
-        label:'自用',
-        value:true
+        label: '自用',
+        value: 'true'
     },
     {
-        label:'非自用',
-        value:false
+        label: '非自用',
+        value: 'false'
     },
     {
-        label:'全部',
-        value:null
+        label: '全部',
+        value: 'null'
     }
 ]);
 
-const compareTypeValue = ref(1)
+const compareTypeValue = ref(0)
 
 const compareTypeItem = [
     {
-        label: '天',
+        label: '禁用',
         value: 0,
     },
     {
-        label: '月',
+        label: '天',
         value: 1,
     },
     {
-        label: '年',
+        label: '月',
         value: 2,
+    },
+    {
+        label: '年',
+        value: 3,
     }
 ]
 
@@ -132,8 +164,8 @@ const sumText = ref(0);
 const thanText = ref('');
 const differenceText = ref('');
 
-async function runChartDraw(){
-    await chartDraw(chartTypeItemValue.value, dateRagen.value, compareEnable.value, compareTypeValue.value, numberTypeValue.value,isBelongToSelf.value);
+async function runChartDraw() {
+    await chartDraw(chartTypeItemValue.value, dateRagen.value, compareTypeValue.value, numberTypeValue.value, isBelongToSelf.value);
 }
 
 onMounted(async () => {
@@ -149,11 +181,7 @@ async function chartChange(e: any) {
     await runChartDraw();
 }
 
-async function isBelongToSelfChange(e){
-    await runChartDraw();
-}
-
-async function compareEnableChange(e) {
+async function isBelongToSelfChange(e) {
     await runChartDraw();
 }
 
@@ -167,9 +195,14 @@ async function numberChange(e) {
     compareText();
 }
 
-async function chartDraw(chartTy, dateRa, compareEn, compareTyVa, numTyVa,isBelongToSe) {
+async function chartDraw(chartTy, dateRa, compareTyVa, numTyVa, isBelongToSe) {
+
+    if (isBelongToSe === 'null') {
+        isBelongToSe = null;
+    }
+
     let dto: ChartJSDto = await dFApp.bookkeeping.expenditure.bookkeepingExpenditure
-    .getChartJSDto(formatDate(dateRa[0]), formatDate(dateRa[1]), compareEn, compareTyVa, numTyVa,isBelongToSe) as ChartJSDto;
+        .getChartJSDto(formatDate(dateRa[0]), formatDate(dateRa[1]), compareTyVa, numTyVa, isBelongToSe) as ChartJSDto;
 
     if (chart.value !== undefined && chart.value !== null) {
         chart.value.destroy();

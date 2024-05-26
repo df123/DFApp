@@ -44,7 +44,7 @@ namespace DFApp.Bookkeeping.Expenditure
             return result;
         }
 
-        public async Task<ChartJSDto> GetChartJSDto(DateTime start, DateTime end, bool compare
+        public async Task<ChartJSDto> GetChartJSDto(DateTime start, DateTime end
             , CompareType compareType, NumberType numberType,bool? isBelongToSelf)
         {
 
@@ -70,7 +70,7 @@ namespace DFApp.Bookkeeping.Expenditure
                 , numberType
                 , false);
 
-            if (compare)
+            if (compareType != CompareType.None)
             {
                 DateTime startCompare = ManipulateDate(start, compareType);
                 DateTime endCompare = ManipulateDate(end, compareType);

@@ -6,6 +6,7 @@ namespace DFApp.Bookkeeping.Expenditure
 {
     public enum CompareType
     {
+        None,
         DAY,
         MONTH,
         YEAR

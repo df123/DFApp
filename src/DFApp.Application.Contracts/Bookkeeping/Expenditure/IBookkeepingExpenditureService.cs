@@ -19,7 +19,6 @@ namespace DFApp.Bookkeeping.Expenditure
 
         Task<ChartJSDto> GetChartJSDto(DateTime start
             , DateTime end
-            , bool compare
             , CompareType compareType
             , NumberType numberType
             , bool? isBelongToSelf);
