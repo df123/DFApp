@@ -5,7 +5,7 @@
 
     var dataTable = $('#ExpenditureTable').DataTable(
         abp.libs.datatables.normalizeConfiguration({
-            serverSide: false,
+            serverSide: true,
             paging: true,
             order: [[1, "desc"]],
             scrollX: true,
