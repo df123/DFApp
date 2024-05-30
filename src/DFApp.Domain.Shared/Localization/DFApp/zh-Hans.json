@@ -227,7 +227,9 @@
     "Aria2:DeletionConfirmationMessage": "您确定要删除吗 '{0}'?",
     "Aria2:RemoveConfirmationMessage": "您确定要移除文件吗 '{0}'?",
     "Aria2:SuccessfullyDeleted": "删除成功！",
-    "Aria2:CopySuccessMesage": "复制成功！"
+    "Aria2:CopySuccessMesage": "复制成功！",
+    "Aria2:LinkContent": "连接地址"
+
 
 
   }

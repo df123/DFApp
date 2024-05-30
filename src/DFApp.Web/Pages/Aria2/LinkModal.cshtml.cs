@@ -30,7 +30,7 @@ namespace DFApp.Web.Pages.Aria2
 
         public class ContentViewModel
         {
-            [DisplayName("¡¨Ω”µÿ÷∑")]
+            [DisplayName("Aria2:LinkContent")]
             [TextArea(Rows = 4)]
             public string Content { get; set; }
 
