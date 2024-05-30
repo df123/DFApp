@@ -1,20 +1,19 @@
 ﻿using DFApp.Bookkeeping.Expenditure.Analysis;
 using DFApp.Bookkeeping.Expenditure.Lookup;
+using DFApp.Permissions;
+using Microsoft.AspNetCore.Authorization;
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
-using System.Runtime.CompilerServices;
-using System.Text;
 using System.Threading.Tasks;
 using Volo.Abp.Application.Dtos;
 using Volo.Abp.Application.Services;
 using Volo.Abp.Domain.Repositories;
-using Volo.Abp.ObjectMapping;
 
 namespace DFApp.Bookkeeping.Expenditure
 {
+    [Authorize(DFAppPermissions.BookkeepingExpenditure.Default)]
     public class BookkeepingExpenditureService : CrudAppService<
         BookkeepingExpenditure
         , BookkeepingExpenditureDto
@@ -28,6 +27,11 @@ namespace DFApp.Bookkeeping.Expenditure
             , IRepository<BookkeepingExpenditure, long> repository) : base(repository)
         {
             _categoryRepository = categoryRepository;
+            GetPolicyName = DFAppPermissions.BookkeepingExpenditure.Default;
+            GetListPolicyName = DFAppPermissions.BookkeepingExpenditure.Default;
+            CreatePolicyName = DFAppPermissions.BookkeepingExpenditure.Create;
+            UpdatePolicyName = DFAppPermissions.BookkeepingExpenditure.Edit;
+            DeletePolicyName = DFAppPermissions.BookkeepingExpenditure.Delete;
         }
 
         protected override async Task<IQueryable<BookkeepingExpenditure>> CreateFilteredQueryAsync(PagedAndSortedResultRequestDto input)
@@ -44,6 +48,7 @@ namespace DFApp.Bookkeeping.Expenditure
             return result;
         }
 
+        [Authorize(DFAppPermissions.BookkeepingExpenditure.Analysis)]
         public async Task<ChartJSDto> GetChartJSDto(DateTime start, DateTime end
             , CompareType compareType, NumberType numberType,bool? isBelongToSelf)
         {

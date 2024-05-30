@@ -1,14 +1,12 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using DFApp.Permissions;
+using Microsoft.AspNetCore.Authorization;
 using Volo.Abp.Application.Dtos;
 using Volo.Abp.Application.Services;
 using Volo.Abp.Domain.Repositories;
 
 namespace DFApp.Lottery
 {
+    [Authorize(DFAppPermissions.Lottery.Default)]
     public class LotteryResultService : CrudAppService<
         LotteryResult
         , LotteryResultDto

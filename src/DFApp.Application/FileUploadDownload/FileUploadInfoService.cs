@@ -1,8 +1,5 @@
-﻿using DFApp.Helper;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
+﻿using DFApp.Permissions;
+using Microsoft.AspNetCore.Authorization;
 using System.Threading.Tasks;
 using Volo.Abp;
 using Volo.Abp.Application.Dtos;
@@ -12,6 +9,7 @@ using Volo.Abp.Domain.Repositories;
 
 namespace DFApp.FileUploadDownload
 {
+    [Authorize(DFAppPermissions.FileUploadDownload.Default)]
     public class FileUploadInfoService : CrudAppService<FileUploadInfo
         , FileUploadInfoDto
         , long
@@ -23,8 +21,14 @@ namespace DFApp.FileUploadDownload
             , IDataFilter<ISoftDelete> dataFilter) : base(repository)
         {
             _dataFilter = dataFilter;
+            GetPolicyName = DFAppPermissions.FileUploadDownload.Default;
+            GetListPolicyName = DFAppPermissions.FileUploadDownload.Default;
+            CreatePolicyName = DFAppPermissions.FileUploadDownload.Default;
+            UpdatePolicyName = DFAppPermissions.FileUploadDownload.Default;
+            DeletePolicyName = DFAppPermissions.FileUploadDownload.Delete;
         }
 
+        [Authorize(DFAppPermissions.FileUploadDownload.Default)]
         public override async Task<FileUploadInfoDto> CreateAsync(CreateUpdateFileUploadInfoDto input)
         {
             using (_dataFilter.Disable())
@@ -33,7 +37,7 @@ namespace DFApp.FileUploadDownload
                 {
                     var temp = await Repository.FindAsync(x => x.Sha1 == input.Sha1);
 
-                    temp.IsDeleted = false;
+                    temp!.IsDeleted = false;
                     temp.FileName = input.FileName;
                     temp.Path = input.Path;
                     return MapToGetOutputDto(await Repository.UpdateAsync(temp));

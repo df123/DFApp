@@ -1,5 +1,7 @@
 ﻿using DFApp.Background;
+using DFApp.Permissions;
 using DFApp.Queue;
+using Microsoft.AspNetCore.Authorization;
 using System.Threading.Tasks;
 using Volo.Abp;
 using Volo.Abp.Application.Dtos;
@@ -8,6 +10,7 @@ using Volo.Abp.Domain.Repositories;
 
 namespace DFApp.Media.ExternalLink
 {
+    [Authorize(DFAppPermissions.Medias.Default)]
     public class ExternalLinkService : CrudAppService<MediaExternalLink
         , ExternalLinkDto
         , long

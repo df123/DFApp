@@ -1,4 +1,6 @@
-﻿using System;
+﻿using DFApp.Permissions;
+using Microsoft.AspNetCore.Authorization;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -11,6 +13,7 @@ using Volo.Abp.Domain.Repositories;
 
 namespace DFApp.Bookkeeping.Category
 {
+    [Authorize(DFAppPermissions.BookkeepingCategory.Default)]
     public class BookkeepingCategoryService : CrudAppService<
         BookkeepingCategory
         , BookkeepingCategoryDto
@@ -27,6 +30,11 @@ namespace DFApp.Bookkeeping.Category
         {
             _dataFilter = dataFilter;
             _bookkeepingExpenditureRepository = bookkeepingExpenditureRepository;
+            GetPolicyName = DFAppPermissions.BookkeepingCategory.Default;
+            GetListPolicyName = DFAppPermissions.BookkeepingCategory.Default;
+            CreatePolicyName = DFAppPermissions.BookkeepingCategory.Create;
+            UpdatePolicyName = DFAppPermissions.BookkeepingCategory.Edit;
+            DeletePolicyName = DFAppPermissions.BookkeepingCategory.Delete;
         }
 
 
