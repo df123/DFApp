@@ -75,4 +75,13 @@ $(function () {
         })
     );
 
+    $('#DeleteAllButton').click(function (e) {
+
+        var result = confirm("Are you sure you want to proceed?");
+        if (result) {
+            dFApp.aria2.aria2.deleteAll();
+        }
+
+    })
+
 });

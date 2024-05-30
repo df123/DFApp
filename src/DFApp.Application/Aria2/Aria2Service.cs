@@ -2,6 +2,8 @@
 using DFApp.Aria2.Response.TellStatus;
 using DFApp.Configuration;
 using DFApp.Helper;
+using DFApp.Permissions;
+using Microsoft.AspNetCore.Authorization;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -12,11 +14,10 @@ using Volo.Abp;
 using Volo.Abp.Application.Dtos;
 using Volo.Abp.Application.Services;
 using Volo.Abp.Domain.Repositories;
-using Volo.Abp.ObjectMapping;
-using static Volo.Abp.ObjectExtending.IdentityModuleExtensionConsts;
 
 namespace DFApp.Aria2
 {
+    [Authorize(DFAppPermissions.Aria2.Default)]
     public class Aria2Service : CrudAppService<TellStatusResult, TellStatusResultDto, long>
         , IAria2Service
     {
@@ -27,10 +28,15 @@ namespace DFApp.Aria2
 
         public Aria2Service(ITellStatusResultRepository tellStatusResultRepository
             , IConfigurationInfoRepository configurationInfoRepository)
-            :base(tellStatusResultRepository)
+            : base(tellStatusResultRepository)
         {
             _tellStatusResultRepository = tellStatusResultRepository;
             _configurationInfoRepository = configurationInfoRepository;
+            GetPolicyName = DFAppPermissions.Aria2.Default;
+            GetListPolicyName = DFAppPermissions.Aria2.Default;
+            CreatePolicyName = DFAppPermissions.Aria2.Default;
+            UpdatePolicyName = DFAppPermissions.Aria2.Default;
+            DeletePolicyName = DFAppPermissions.Aria2.Delete;
         }
 
         protected override async Task<IQueryable<TellStatusResult>> CreateFilteredQueryAsync(PagedAndSortedResultRequestDto input)
@@ -38,6 +44,7 @@ namespace DFApp.Aria2
             return await ReadOnlyRepository.WithDetailsAsync();
         }
 
+        [Authorize(DFAppPermissions.Aria2.Link)]
         public async Task<string> GetExternalLink(long id)
         {
             if (id <= 0)
@@ -77,19 +84,30 @@ namespace DFApp.Aria2
                 throw new UserFriendlyException("ID要大于0");
             }
 
-            if(await ReadOnlyRepository.AnyAsync(x => x.Id == id))
+            if (await ReadOnlyRepository.AnyAsync(x => x.Id == id))
             {
                 var data = await Repository.GetAsync(id);
                 if (data != null && data.Files != null && data.Files.Count > 0)
                 {
                     foreach (var file in data.Files)
                     {
-                        SpaceHelper.DeleteFile(file.Path);
+                        SpaceHelper.DeleteFile(file.Path!);
                     }
                 }
 
                 await base.DeleteAsync(id);
             }
+        }
+
+        public async Task DeleteAllAsync()
+        {
+            var datas = await ReadOnlyRepository.GetListAsync();
+            foreach (var data in datas)
+            {
+                 await DeleteAsync(data.Id);
+            }
+            string reStr = await _configurationInfoRepository.GetConfigurationInfoValue("replaceString", "DFApp.Aria2.Aria2Service");
+            SpaceHelper.DeleteEmptyFolders(reStr);
         }
 
     }
