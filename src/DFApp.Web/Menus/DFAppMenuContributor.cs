@@ -245,7 +245,7 @@ public class DFAppMenuContributor : IMenuContributor
                 DFAppMenus.Aria2.Default
                 , l["Menu:Aria2"]
                 ,"~/Aria2"
-                , icon: "fas fa-toolbox"
+                , icon: "fas fa-download"
                 , order: 9);
             context.Menu.AddItem(aria2First);
         }
