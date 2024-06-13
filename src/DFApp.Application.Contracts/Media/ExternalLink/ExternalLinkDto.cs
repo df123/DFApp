@@ -12,6 +12,5 @@ namespace DFApp.Media.ExternalLink
         public string TimeConsumed { get; set; }
         public bool IsRemove { get; set; }
         public string LinkContent { get; set; }
-        public string MediaIds { get; set; }
     }
 }
