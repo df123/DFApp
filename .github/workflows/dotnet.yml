@@ -24,10 +24,10 @@ jobs:
     - name: Restore dependencies
       run: dotnet restore
     - name: Build
-      run: dotnet build -configuration Release --no-restore
+      run: dotnet build --no-restore
       
     - name: Publish project
-      run: dotnet publish --configuration Release --no-build --output ./publish
+      run: dotnet publish --output ./publish
 
     - name: Upload build artifact
       uses: actions/upload-artifact@v3
