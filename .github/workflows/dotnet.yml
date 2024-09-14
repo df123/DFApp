@@ -28,14 +28,14 @@ jobs:
 
     - name: Add repository directory to Git safe directory
       run: |
-        git config --global --add safe.directory /publish
+        git config --global --add safe.directory ./publish
       shell: bash
       
     - name: Publish project
-      run: dotnet publish --configuration Release --framework net8.0 --output /publish
+      run: dotnet publish --configuration Release --framework net8.0 --output ./publish
 
     - name: Upload build artifact
       uses: actions/upload-artifact@v3
       with:
         name: dotnet-build-artifacts
-        path: /publish
+        path: ./publish
