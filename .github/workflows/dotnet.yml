@@ -33,16 +33,9 @@ jobs:
 
     - name: Install dotnet-ef tool
       run: dotnet tool install --global dotnet-ef
-
-    - name: Generate database using EF
-      run: dotnet ef database update --project ./src/DFApp.EntityFrameworkCore/DFApp.EntityFrameworkCore.csproj
-
-    - name: Move generated database folder to ./publish
-      run: |
-        mv ./DFApp.db ./publish/DFApp.db
       
     - name: Publish project
-      run: dotnet publish --configuration Release --framework net8.0 --output ./publish
+      run: dotnet publish -r win-x64 -c Release /p:PublishSingleFile=true /p:IncludeAllContentForSelfExtract=true /p:SelfContained=false --framework net8.0 --output ./publish
 
     - name: Upload build artifact
       uses: actions/upload-artifact@v3
