@@ -35,7 +35,7 @@ jobs:
       run: dotnet tool install --global dotnet-ef
       
     - name: Publish project
-      run: dotnet publish -r win-x64 -c Release /p:PublishSingleFile=true /p:IncludeAllContentForSelfExtract=true /p:SelfContained=false --framework net8.0 --output ./publish
+      run: dotnet publish --configuration Release --framework net8.0 --output ./publish
 
     - name: Upload build artifact
       uses: actions/upload-artifact@v3
