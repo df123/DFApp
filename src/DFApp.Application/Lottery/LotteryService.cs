@@ -27,15 +27,15 @@ namespace DFApp.Lottery
         PagedAndSortedResultRequestDto,
         CreateUpdateLotteryDto>, ILotteryService
     {
-        private readonly IRepository<LotteryResult, long> _lotteryResultrepository;
-        private readonly IRepository<LotteryPrizegrades, long> _lotteryPrizegradesRepository;
+        private readonly IReadOnlyRepository<LotteryResult, long> _lotteryResultrepository;
+        private readonly IReadOnlyRepository<LotteryPrizegrades, long> _lotteryPrizegradesRepository;
         private readonly IRepository<LotteryInfo, long> _lotteryInforepository;
         private readonly IUnitOfWorkManager _unitOfWorkManager;
 
         public LotteryService(
             IRepository<LotteryInfo, long> repository
-            , IRepository<LotteryResult, long> lotteryResultrepository
-            , IRepository<LotteryPrizegrades, long> lotteryPrizegradesRepository
+            , IReadOnlyRepository<LotteryResult, long> lotteryResultrepository
+            , IReadOnlyRepository<LotteryPrizegrades, long> lotteryPrizegradesRepository
             , IUnitOfWorkManager unitOfWorkManager) : base(repository)
         {
             GetPolicyName = DFAppPermissions.Lottery.Default;
@@ -135,6 +135,8 @@ namespace DFApp.Lottery
             var infoGroup = info.GroupBy(item => item.IndexNo);
 
             List<StatisticsWinDto> results = new List<StatisticsWinDto>();
+
+            
 
             foreach (var item in infoGroup)
             {
@@ -271,7 +273,8 @@ namespace DFApp.Lottery
         {
             Check.NotNullOrWhiteSpace(winningPeriod, nameof(winningPeriod));
 
-            LotteryResult result = await _lotteryResultrepository.GetAsync(x => x.Code == winningPeriod && x.Name == lotteryType);
+            var lotteryResultQueryable = await _lotteryResultrepository.GetQueryableAsync();
+            LotteryResult result = lotteryResultQueryable.First(x => x.Code == winningPeriod && x.Name == lotteryType);
             result.Prizegrades = await _lotteryPrizegradesRepository.GetListAsync(x => x.LotteryResultId == result.Id);
 
             if (result != null && result.Prizegrades != null && result.Prizegrades.Count > 0)
