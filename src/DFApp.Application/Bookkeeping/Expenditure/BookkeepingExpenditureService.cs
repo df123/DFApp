@@ -113,12 +113,18 @@ namespace DFApp.Bookkeeping.Expenditure
             , NumberType numberType
             , bool isCompare)
         {
+
+            if(expenditureGroups == null)
+            { 
+                return;
+            }
+
             foreach (var item in expenditureGroups)
             {
                 var temp = item.FirstOrDefault();
                 if (temp != null)
                 {
-                    if (!chartJSDto.labels.Contains(temp.Category.Category))
+                    if (temp.Category != null && !chartJSDto.labels.Contains(temp.Category.Category))
                     {
                         chartJSDto.labels.Add(temp.Category.Category);
                     }
