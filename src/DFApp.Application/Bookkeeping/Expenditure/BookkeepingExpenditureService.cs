@@ -50,62 +50,52 @@ namespace DFApp.Bookkeeping.Expenditure
 
         [Authorize(DFAppPermissions.BookkeepingExpenditure.Analysis)]
         public async Task<ChartJSDto> GetChartJSDto(DateTime start, DateTime end
-            , CompareType compareType, NumberType numberType,bool? isBelongToSelf)
+            , CompareType compareType, NumberType numberType, bool? isBelongToSelf)
         {
-
-            Expression<Func<BookkeepingExpenditure,bool>> expression = x => x.ExpenditureDate >= start && x.ExpenditureDate <= end;
-
-            if (isBelongToSelf.HasValue)
-            {
-                expression = expression.And(x => x.IsBelongToSelf == isBelongToSelf.Value);
-            }
-
+            var expression = BuildExpression(start, end, isBelongToSelf);
             var expenditures = await ReadOnlyRepository.GetListAsync(expression, true);
 
-            ChartJSDto chartJSDto = new ChartJSDto();
-            chartJSDto.Total = expenditures.Sum(x => x.Expenditure);
-            ChartJSDatasetsItemDto chartJSDatasetsItemDto = new ChartJSDatasetsItemDto();
+            var chartJSDto = new ChartJSDto
+            {
+                Total = expenditures.Sum(x => x.Expenditure),
+                datasets = new List<ChartJSDatasetsItemDto>()
+            };
+
+            var chartJSDatasetsItemDto = new ChartJSDatasetsItemDto();
             chartJSDto.datasets.Add(chartJSDatasetsItemDto);
+
             var expenditureGroups = expenditures.GroupBy(x => x.CategoryId);
-            GetChartJSDatasetsItemDto(expenditureGroups
-                , chartJSDto
-                , chartJSDatasetsItemDto
-                , start
-                , end
-                , numberType
-                , false);
+            PopulateChartJSDatasetsItemDto(expenditureGroups, chartJSDto, chartJSDatasetsItemDto, start, end, numberType, false);
 
             if (compareType != CompareType.None)
             {
-                DateTime startCompare = ManipulateDate(start, compareType);
-                DateTime endCompare = ManipulateDate(end, compareType);
-
-                Expression<Func<BookkeepingExpenditure, bool>> expression2 = x => x.ExpenditureDate >= startCompare && x.ExpenditureDate <= endCompare;
-
-                if (isBelongToSelf.HasValue)
-                {
-                    expression2 = expression2.And(x => x.IsBelongToSelf == isBelongToSelf.Value);
-                }
-
-                var expendituresCompare = await ReadOnlyRepository.GetListAsync(expression2,true);
+                var (startCompare, endCompare) = ManipulateDateRange(start, end, compareType);
+                var expression2 = BuildExpression(startCompare, endCompare, isBelongToSelf);
+                var expendituresCompare = await ReadOnlyRepository.GetListAsync(expression2, true);
                 chartJSDto.CompareTotal = expendituresCompare.Sum(x => x.Expenditure);
-                ChartJSDatasetsItemDto chartJSDatasetsItemCompareDto = new ChartJSDatasetsItemDto();
+                var chartJSDatasetsItemCompareDto = new ChartJSDatasetsItemDto();
                 chartJSDto.datasets.Add(chartJSDatasetsItemCompareDto);
                 var expenditureCompareGroups = expendituresCompare.GroupBy(x => x.CategoryId);
-                GetChartJSDatasetsItemDto(expenditureCompareGroups
-                    , chartJSDto
-                    , chartJSDatasetsItemCompareDto
-                    , startCompare
-                    , endCompare
-                    , numberType
-                    , true);
+                PopulateChartJSDatasetsItemDto(expenditureCompareGroups, chartJSDto, chartJSDatasetsItemCompareDto, startCompare, endCompare, numberType, true);
                 chartJSDto.DifferenceTotal = chartJSDto.Total - chartJSDto.CompareTotal;
             }
 
             return chartJSDto;
         }
 
-        private void GetChartJSDatasetsItemDto(IEnumerable<IGrouping<long, BookkeepingExpenditure>>? expenditureGroups
+        private Expression<Func<BookkeepingExpenditure, bool>> BuildExpression(DateTime start, DateTime end, bool? isBelongToSelf)
+        {
+            Expression<Func<BookkeepingExpenditure, bool>> expression = x => x.ExpenditureDate >= start && x.ExpenditureDate <= end;
+
+            if (isBelongToSelf.HasValue)
+            {
+                expression = expression.And(x => x.IsBelongToSelf == isBelongToSelf.Value);
+            }
+
+            return expression;
+        }
+
+        private void PopulateChartJSDatasetsItemDto(IEnumerable<IGrouping<long, BookkeepingExpenditure>> expenditureGroups
             , ChartJSDto chartJSDto
             , ChartJSDatasetsItemDto chartJSDatasetsItemDto
             , DateTime start
@@ -113,69 +103,95 @@ namespace DFApp.Bookkeeping.Expenditure
             , NumberType numberType
             , bool isCompare)
         {
-
-            if(expenditureGroups == null)
-            { 
+            if (expenditureGroups == null)
+            {
                 return;
             }
+
+            // 初始化一个字典来存储每个类别的总和
+            var categorySums = new Dictionary<string, decimal>();
 
             foreach (var item in expenditureGroups)
             {
                 var temp = item.FirstOrDefault();
-                if (temp != null)
+                if (temp != null && temp.Category != null)
                 {
-                    if (temp.Category != null && !chartJSDto.labels.Contains(temp.Category.Category))
+                    var categoryName = temp.Category.Category;
+
+                    // 如果类别不在 chartJSDto.labels 中，则添加
+                    if (!chartJSDto.labels.Contains(categoryName))
                     {
-                        chartJSDto.labels.Add(temp.Category.Category);
+                        chartJSDto.labels.Add(categoryName);
+                    }
+
+                    // 计算该类别的总和
+                    var tempSum = item.Sum(x => x.Expenditure);
+                    tempSum = CalculatePercentage(tempSum, chartJSDto, numberType, isCompare);
+
+                    // 将总和添加到字典中
+                    if (categorySums.ContainsKey(categoryName))
+                    {
+                        categorySums[categoryName] += tempSum;
+                    }
+                    else
+                    {
+                        categorySums[categoryName] = tempSum;
                     }
                 }
+            }
 
-                decimal tempSum = item.Sum(x => x.Expenditure);
-
-                if (numberType == NumberType.PERCENTAGE && isCompare)
+            // 将字典中的值添加到 chartJSDatasetsItemDto.data 中
+            foreach (var label in chartJSDto.labels)
+            {
+                if (categorySums.ContainsKey(label))
                 {
-                    tempSum = Math.Round((tempSum / chartJSDto.CompareTotal),2) * 100;
-                }
-                else if(numberType == NumberType.PERCENTAGE)
-                {
-                    tempSum = Math.Round((tempSum / chartJSDto.Total), 2) * 100;
-                }
-
-                chartJSDatasetsItemDto.data.Add(tempSum);
-
-                if (start == end)
-                {
-                    chartJSDatasetsItemDto.label = start.ToString("yy/MM/dd");
+                    chartJSDatasetsItemDto.data.Add(categorySums[label]);
                 }
                 else
                 {
-                    chartJSDatasetsItemDto.label = $"{start.ToString("yy/MM/dd")}-{end.ToString("yy/MM/dd")}";
+                    chartJSDatasetsItemDto.data.Add(0); // 如果某个类别没有数据，则添加 0
                 }
             }
+
+            chartJSDatasetsItemDto.label = FormatDateRange(start, end);
+        }
+
+
+        private decimal CalculatePercentage(decimal tempSum, ChartJSDto chartJSDto, NumberType numberType, bool isCompare)
+        {
+            if (numberType == NumberType.PERCENTAGE)
+            {
+                var total = isCompare ? chartJSDto.CompareTotal : chartJSDto.Total;
+                tempSum = Math.Round((tempSum / total), 2) * 100;
+            }
+            return tempSum;
+        }
+
+        private string FormatDateRange(DateTime start, DateTime end)
+        {
+            return start == end ? start.ToString("yy/MM/dd") : $"{start.ToString("yy/MM/dd")}-{end.ToString("yy/MM/dd")}";
+        }
+
+        private (DateTime start, DateTime end) ManipulateDateRange(DateTime start, DateTime end, CompareType compareType)
+        {
+            var startCompare = ManipulateDate(start, compareType);
+            var endCompare = ManipulateDate(end, compareType);
+            return (startCompare, endCompare);
         }
 
         private DateTime ManipulateDate(DateTime dateTime, CompareType compareType)
         {
-            DateTime date = dateTime;
-
             switch (compareType)
             {
                 case CompareType.DAY:
-                    date = dateTime.AddDays(-1);
-                    break;
+                    return dateTime.AddDays(-1);
                 case CompareType.MONTH:
-                    date = dateTime.AddMonths(-1);
-                    break;
+                    return dateTime.AddMonths(-1);
                 case CompareType.YEAR:
-                    date = dateTime.AddYears(-1);
-                    break;
+                    return dateTime.AddYears(-1);
                 default:
-                    date = dateTime.AddMonths(-1);
-                    break;
+                    return dateTime.AddMonths(-1);
             }
-
-            return date;
         }
-
     }
 }
