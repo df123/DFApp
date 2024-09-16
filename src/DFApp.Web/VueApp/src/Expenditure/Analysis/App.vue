@@ -28,12 +28,12 @@
     <div class="hidden-md-and-up">
         <el-row :gutter="5" style="margin-bottom: 5px;">
             <el-col :span="12">
-                <el-select v-model="isBelongToSelf"  @change="isBelongToSelfChange">
+                <el-select v-model="isBelongToSelf" @change="isBelongToSelfChange">
                     <el-option v-for="item in isBelongToSelfItem" :label="item.label" :value="item.value" />
                 </el-select>
             </el-col>
             <el-col :span="12">
-                <el-select v-model="compareTypeValue"  placeholder="对比模式" @change="compareTypeChange">
+                <el-select v-model="compareTypeValue" placeholder="对比模式" @change="compareTypeChange">
                     <el-option v-for="item in compareTypeItem" :key="item.value" :label="item.label"
                         :value="item.value" />
                 </el-select>
@@ -47,15 +47,15 @@
                 </el-select>
             </el-col>
             <el-col :span="12">
-                <el-select v-model="numberTypeValue"  placeholder="数字模式" @change="numberChange">
+                <el-select v-model="numberTypeValue" placeholder="数字模式" @change="numberChange">
                     <el-option v-for="item in numberTypeItem" :key="item.value" :label="item.label"
                         :value="item.value" />
                 </el-select>
             </el-col>
         </el-row>
         <el-row>
-            <el-date-picker v-model="dateRagen" type="daterange" range-separator="To"
-                start-placeholder="开始时间" end-placeholder="结束时间" @change="dateChange" />
+            <el-date-picker v-model="dateRagen" type="daterange" range-separator="To" start-placeholder="开始时间"
+                end-placeholder="结束时间" @change="dateChange" />
         </el-row>
     </div>
     <div>
@@ -73,10 +73,16 @@
             <div class="statistic-footer">
                 <div class="footer-item">
                     <span>{{ thanText }}</span>
-                    <span class="green">
+                    <span v-if="parseFloat(differenceText) > 0" class="green">
                         {{ differenceText }}
                         <el-icon>
                             <CaretTop />
+                        </el-icon>
+                    </span>
+                    <span v-else-if="parseFloat(differenceText) < 0" class="red">
+                        {{ differenceText }}
+                        <el-icon>
+                            <CaretBottom />
                         </el-icon>
                     </span>
                 </div>
@@ -89,7 +95,7 @@
 import { onMounted, ref } from 'vue'
 import { Chart } from 'chart.js/auto'
 import { ChartJSDto } from '../Dto'
-import { CaretTop } from '@element-plus/icons-vue'
+import { CaretTop, CaretBottom } from '@element-plus/icons-vue'
 
 const l: Function = abp.localization.getResource('DFApp') as Function;
 
@@ -221,14 +227,17 @@ async function chartDraw(chartTy, dateRa, compareTyVa, numTyVa, isBelongToSe) {
 
 function compareText() {
     let tempCompareLable = compareTypeItem.find(x => x.value == compareTypeValue.value);
-    if (compareTypeValue.value === 0) {
-        thanText.value = "对比昨" + tempCompareLable.label;
+    if (compareTypeValue.value === 3) {
+        thanText.value = "对比去" + tempCompareLable.label;
     }
     else if (compareTypeValue.value === 1) {
-        thanText.value = "对比上" + tempCompareLable.label;
+        thanText.value = "对比昨" + tempCompareLable.label;
     }
     else if (compareTypeValue.value === 2) {
-        thanText.value = "对比去" + tempCompareLable.label;
+        thanText.value = "对比上" + tempCompareLable.label;
+    }
+    else{
+        thanText.value = "";
     }
 }
 
