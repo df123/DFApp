@@ -35,7 +35,7 @@ jobs:
       run: dotnet tool install --global dotnet-ef
 
     - name: Update database
-      run: dotnet ef database update --connection "Data Source=./publish/DFApp.db"
+      run: dotnet ef database update --connection "Data Source=./publish/DFApp.db" --project ./src/DFApp.EntityFrameworkCore/DFApp.EntityFrameworkCore.csproj
       
     - name: Publish project
       run: dotnet publish --configuration Release --framework net8.0 --output ./publish
