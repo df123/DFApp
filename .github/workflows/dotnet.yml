@@ -54,6 +54,9 @@ jobs:
         jq '.ConnectionStrings.Default = "/home/runner/work/DFApp/DFApp/publish/DFApp.db"' ./src/DFApp.Web/appsettings.json > ./src/DFApp.Web/appsettings.tmp.json
         mv ./src/DFApp.Web/appsettings.tmp.json ./src/DFApp.Web/appsettings.json
       shell: bash
+
+    - name: Update database
+      run: dotnet ef database update --connection "Data Source=/home/runner/work/DFApp/DFApp/publish/DFApp.db" --project ./src/DFApp.EntityFrameworkCore/DFApp.EntityFrameworkCore.csproj
     
     - name: Run DbMigrator
       run: dotnet run --project ./src/DFApp.DbMigrator
