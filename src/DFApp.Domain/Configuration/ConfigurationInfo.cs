@@ -11,10 +11,10 @@ namespace DFApp.Configuration
     public class ConfigurationInfo : AuditedAggregateRoot<long>, ISoftDelete
     {
 
-        public string ModuleName { get; set; }
-        public string ConfigurationName { get; set; }
-        public string ConfigurationValue { get; set; }
-        public string Remark { get; set; }
+        public required string ModuleName { get; set; } 
+        public required string ConfigurationName { get; set; } 
+        public required string ConfigurationValue { get; set; } 
+        public required string Remark { get; set; } 
         public bool IsDeleted { get; set; }
     }
 }
