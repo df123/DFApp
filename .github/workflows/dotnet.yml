@@ -55,6 +55,14 @@ jobs:
         mv ./src/DFApp.Web/appsettings.tmp.json ./src/DFApp.Web/appsettings.json
       shell: bash
 
+    - name: Print appsettings.json for DbMigrator
+      run: cat ./src/DFApp.DbMigrator/appsettings.json
+      shell: bash
+
+    - name: Print appsettings.json for DFApp.Web
+      run: cat ./src/DFApp.Web/appsettings.json
+      shell: bash
+
     - name: Update database
       run: dotnet ef database update --connection "Data Source=/home/runner/work/DFApp/DFApp/publish/DFApp.db" --project ./src/DFApp.EntityFrameworkCore/DFApp.EntityFrameworkCore.csproj
     
