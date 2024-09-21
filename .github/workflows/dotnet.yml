@@ -98,6 +98,16 @@ jobs:
         fi
       shell: bash
 
+    - name: Modify DFApp.db permissions to 777
+      run: |
+        if [ -f ./publish/DFApp.db ]; then
+          chmod 777 ./publish/DFApp.db
+          echo "DFApp.db permissions set to 777"
+        else
+          echo "DFApp.db does not exist"
+        fi
+      shell: bash
+
     - name: Run DbMigrator
       run: dotnet run --project ./src/DFApp.DbMigrator
       
