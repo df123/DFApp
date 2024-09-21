@@ -48,7 +48,13 @@ jobs:
         jq '.ConnectionStrings.Default = "/home/runner/work/DFApp/DFApp/publish/DFApp.db"' ./src/DFApp.DbMigrator/appsettings.json > ./src/DFApp.DbMigrator/appsettings.tmp.json
         mv ./src/DFApp.DbMigrator/appsettings.tmp.json ./src/DFApp.DbMigrator/appsettings.json
       shell: bash
-
+    
+    - name: Modify appsettings.json for DFApp.Web
+      run: |
+        jq '.ConnectionStrings.Default = "/home/runner/work/DFApp/DFApp/publish/DFApp.db"' ./src/DFApp.Web/appsettings.json > ./src/DFApp.Web/appsettings.tmp.json
+        mv ./src/DFApp.Web/appsettings.tmp.json ./src/DFApp.Web/appsettings.json
+      shell: bash
+    
     - name: Run DbMigrator
       run: dotnet run --project ./src/DFApp.DbMigrator
       
