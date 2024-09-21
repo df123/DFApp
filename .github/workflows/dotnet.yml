@@ -33,6 +33,12 @@ jobs:
 
     - name: Install dotnet-ef tool
       run: dotnet tool install --global dotnet-ef
+
+    - name: Create publish directory
+      run: mkdir -p ./publish
+
+    - name: Update database
+      run: dotnet ef database update --connection "Data Source=/home/runner/work/DFApp/DFApp/publish/DFApp.db" --project ./src/DFApp.EntityFrameworkCore/DFApp.EntityFrameworkCore.csproj
       
     - name: Publish project
       run: dotnet publish --configuration Release --framework net8.0 --output ./publish
