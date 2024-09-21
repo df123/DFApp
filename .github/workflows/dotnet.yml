@@ -38,7 +38,7 @@ jobs:
       run: mkdir -p ./publish
 
     - name: Update database
-      run: dotnet ef database update --connection "Data Source=./publish/DFApp.db" --project ./src/DFApp.EntityFrameworkCore/DFApp.EntityFrameworkCore.csproj
+      run: dotnet ef database update --connection "Data Source=/home/runner/work/DFApp/DFApp/publish/DFApp.db" --project ./src/DFApp.EntityFrameworkCore/DFApp.EntityFrameworkCore.csproj
       
     - name: Publish project
       run: dotnet publish --configuration Release --framework net8.0 --output ./publish
