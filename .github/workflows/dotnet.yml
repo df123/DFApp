@@ -65,7 +65,39 @@ jobs:
 
     - name: Update database
       run: dotnet ef database update --connection "Data Source=/home/runner/work/DFApp/DFApp/publish/DFApp.db" --project ./src/DFApp.EntityFrameworkCore/DFApp.EntityFrameworkCore.csproj
-    
+
+    - name: Check if DFApp.db exists
+      run: |
+        if [ -f ./publish/DFApp.db ]; then
+          echo "DFApp.db exists"
+        else
+          echo "DFApp.db does not exist"
+        fi
+      shell: bash
+
+    - name: Print DFApp.db permissions
+      run: |
+        if [ -f ./publish/DFApp.db ]; then
+          ls -l ./publish/DFApp.db
+        else
+          echo "DFApp.db does not exist"
+        fi
+      shell: bash
+
+    - name: Check if __EFMigrationsHistory table exists
+      run: |
+        if [ -f ./publish/DFApp.db ]; then
+          sqlite3 ./publish/DFApp.db ".tables" | grep __EFMigrationsHistory
+          if [ $? -eq 0 ]; then
+            echo "__EFMigrationsHistory table exists"
+          else
+            echo "__EFMigrationsHistory table does not exist"
+          fi
+        else
+          echo "DFApp.db does not exist"
+        fi
+      shell: bash
+
     - name: Run DbMigrator
       run: dotnet run --project ./src/DFApp.DbMigrator
       
