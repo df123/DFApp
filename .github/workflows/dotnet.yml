@@ -68,7 +68,7 @@ jobs:
 
     - name: Check if DFApp.db exists
       run: |
-        if [ -f ./publish/DFApp.db ]; then
+        if [ -f /home/runner/work/DFApp/DFApp/publish/DFApp.db ]; then
           echo "DFApp.db exists"
         else
           echo "DFApp.db does not exist"
@@ -77,8 +77,8 @@ jobs:
 
     - name: Print DFApp.db permissions
       run: |
-        if [ -f ./publish/DFApp.db ]; then
-          ls -l ./publish/DFApp.db
+        if [ -f /home/runner/work/DFApp/DFApp/publish/DFApp.db ]; then
+          ls -l /home/runner/work/DFApp/DFApp/publish/DFApp.db
         else
           echo "DFApp.db does not exist"
         fi
@@ -86,8 +86,8 @@ jobs:
 
     - name: Check if __EFMigrationsHistory table exists
       run: |
-        if [ -f ./publish/DFApp.db ]; then
-          sqlite3 ./publish/DFApp.db ".tables" | grep __EFMigrationsHistory
+        if [ -f /home/runner/work/DFApp/DFApp/publish/DFApp.db ]; then
+          sqlite3 /home/runner/work/DFApp/DFApp/publish/DFApp.db ".tables" | grep __EFMigrationsHistory
           if [ $? -eq 0 ]; then
             echo "__EFMigrationsHistory table exists"
           else
@@ -100,8 +100,8 @@ jobs:
 
     - name: Modify DFApp.db permissions to 777
       run: |
-        if [ -f ./publish/DFApp.db ]; then
-          chmod 777 ./publish/DFApp.db
+        if [ -f /home/runner/work/DFApp/DFApp/publish/DFApp.db ]; then
+          chmod 777 /home/runner/work/DFApp/DFApp/publish/DFApp.db
           echo "DFApp.db permissions set to 777"
         else
           echo "DFApp.db does not exist"
