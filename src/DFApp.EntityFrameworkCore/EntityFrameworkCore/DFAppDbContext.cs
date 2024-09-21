@@ -67,6 +67,7 @@ public class DFAppDbContext :
     public DbSet<IdentitySecurityLog> SecurityLogs { get; set; }
     public DbSet<IdentityLinkUser> LinkUsers { get; set; }
     public DbSet<IdentityUserDelegation> UserDelegations { get; set; }
+    public DbSet<IdentitySession> Sessions { get; set; }
 
     // Tenant Management
     public DbSet<Tenant> Tenants { get; set; }
@@ -253,9 +254,9 @@ public class DFAppDbContext :
         return base.ShouldFilterEntity<TEntity>(entityType);
     }
 
-    protected override Expression<Func<TEntity, bool>>? CreateFilterExpression<TEntity>()
+    protected override Expression<Func<TEntity, bool>>? CreateFilterExpression<TEntity>(ModelBuilder modelBuilder)
     {
-        var expression = base.CreateFilterExpression<TEntity>();
+        var expression = base.CreateFilterExpression<TEntity>(modelBuilder);
 
         if (typeof(ICreatorId).IsAssignableFrom(typeof(TEntity)))
         {

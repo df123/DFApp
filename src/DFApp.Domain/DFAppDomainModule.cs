@@ -39,7 +39,7 @@ namespace DFApp;
         Configure<AbpLocalizationOptions>(options =>
         {
             options.Languages.Add(new LanguageInfo("zh-Hans", "zh-Hans", "简体中文"));
-            options.Languages.Add(new LanguageInfo("en", "en", "English", "gb"));
+            options.Languages.Add(new LanguageInfo("en", "en", "English"));
 
         });
 
