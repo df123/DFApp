@@ -34,11 +34,26 @@ jobs:
     - name: Install dotnet-ef tool
       run: dotnet tool install --global dotnet-ef
 
+    - name: Install Abp Cli
+      run: dotnet tool install -g Volo.Abp.Cli
+
+    - name: Install abp libs
+      run: abp install-libs
+
     - name: Create publish directory
       run: mkdir -p ./publish
 
-    - name: Update database
-      run: dotnet ef database update --connection "Data Source=/home/runner/work/DFApp/DFApp/publish/DFApp.db" --project ./src/DFApp.EntityFrameworkCore/DFApp.EntityFrameworkCore.csproj
+    - name: Modify appsettings.json for DbMigrator
+      run: |
+        jq '.ConnectionStrings.Default = "Data Source=/home/runner/work/DFApp/DFApp/publish/DFApp.db"' ./src/DFApp.DbMigrator/appsettings.json > ./src/DFApp.DbMigrator/appsettings.tmp.json
+        mv ./src/DFApp.DbMigrator/appsettings.tmp.json ./src/DFApp.DbMigrator/appsettings.json
+      shell: bash
+
+    - name: Run DbMigrator
+      run: |
+        cd ./src/DFApp.DbMigrator/
+        dotnet run
+      shell: bash
       
     - name: Publish project
       run: dotnet publish --configuration Release --framework net8.0 --output ./publish
