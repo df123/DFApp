@@ -52,7 +52,10 @@
                 },
                 {
                     title: l('BookkeepingExpenditure:Column:IsBelongToSelf'),
-                    data: "isBelongToSelf"
+                    data: "isBelongToSelf",
+                    render: function (data, type, row) {
+                        return '<input type="checkbox" ' + (data ? 'checked' : '') + '>';
+                    }
                 },
                 {
                     title: l('BookkeepingExpenditure:Column:Category'),
