@@ -6,6 +6,7 @@
     var dataTable = $('#ExpenditureTable').DataTable(
         abp.libs.datatables.normalizeConfiguration({
             serverSide: true,
+            searching: true,
             paging: true,
             order: [[1, "desc"]],
             scrollX: true,
@@ -104,8 +105,9 @@
 
                 // Update footer
 
-                api.column(2).footer().innerHTML =
-                    '￥' + pageTotal + ' ( ￥' + total + ' total)';
+                api.column(3).footer().innerHTML =
+                    '￥' + pageTotal.toFixed(2) + ' ( ￥' + total.toFixed(2) + ' total)';
+
             },
         })
     );

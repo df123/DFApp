@@ -18,7 +18,7 @@ namespace DFApp.Bookkeeping.Expenditure
         BookkeepingExpenditure
         , BookkeepingExpenditureDto
         , long
-        , PagedAndSortedResultRequestDto
+        , FilterAndPagedAndSortedResultRequestDto
         , CreateUpdateBookkeepingExpenditureDto>, IBookkeepingExpenditureService
     {
         private readonly IRepository<BookkeepingCategory, long> _categoryRepository;
@@ -34,9 +34,18 @@ namespace DFApp.Bookkeeping.Expenditure
             DeletePolicyName = DFAppPermissions.BookkeepingExpenditure.Delete;
         }
 
-        protected override async Task<IQueryable<BookkeepingExpenditure>> CreateFilteredQueryAsync(PagedAndSortedResultRequestDto input)
+        protected override async Task<IQueryable<BookkeepingExpenditure>> CreateFilteredQueryAsync(FilterAndPagedAndSortedResultRequestDto input)
         {
-            return await Repository.WithDetailsAsync();
+            if(!string.IsNullOrWhiteSpace(input.Filter)){
+                var query = await Repository.WithDetailsAsync();
+                return query.Where(x => x.Category!.Category.Contains(input.Filter) 
+                || x.Remark!.Contains(input.Filter)
+                || x.Expenditure.ToString().Contains(input.Filter));
+            }
+            else{
+                return await Repository.WithDetailsAsync();
+            }
+            
         }
 
         public async Task<List<BookkeepingCategoryLookupDto>> GetCategoryLookupDto()
