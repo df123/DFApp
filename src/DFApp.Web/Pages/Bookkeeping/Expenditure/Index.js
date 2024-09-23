@@ -43,10 +43,6 @@
                     }
                 },
                 {
-                    title: l('BookkeepingExpenditure:Column:Id'),
-                    data: "id"
-                },
-                {
                     title: l('BookkeepingExpenditure:Column:ExpenditureDate'),
                     data: "expenditureDate",
                     dataFormat: "date"
@@ -57,7 +53,10 @@
                 },
                 {
                     title: l('BookkeepingExpenditure:Column:IsBelongToSelf'),
-                    data: "isBelongToSelf"
+                    data: "isBelongToSelf",
+                    render: function (data, type, row) {
+                        return '<input type="checkbox" ' + (data ? 'checked' : '') + '>';
+                    }
                 },
                 {
                     title: l('BookkeepingExpenditure:Column:Category'),
@@ -94,13 +93,13 @@
 
                 // Total over all pages
                 total = api
-                    .column(3)
+                    .column(2)
                     .data()
                     .reduce((a, b) => intVal(a) + intVal(b), 0);
 
                 // Total over this page
                 pageTotal = api
-                    .column(3, { page: 'current' })
+                    .column(2, { page: 'current' })
                     .data()
                     .reduce((a, b) => intVal(a) + intVal(b), 0);
 
@@ -108,6 +107,7 @@
 
                 api.column(3).footer().innerHTML =
                     '￥' + pageTotal.toFixed(2) + ' ( ￥' + total.toFixed(2) + ' total)';
+
             },
         })
     );
