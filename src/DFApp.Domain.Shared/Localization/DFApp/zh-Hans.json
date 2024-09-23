@@ -158,6 +158,7 @@
     "BookkeepingExpenditure:Column:Remark": "备注",
     "BookkeepingExpenditure:Column:IsBelongToSelf": "自用",
     "BookkeepingExpenditure:Analysis:Title": "分析",
+    "BookkeepingExpenditure:Button:Add": "添加",
 
     "Menu:FileUploadDownload": "文件传输",
     "Menu:FileUploadDownload:Upload": "上传文件",

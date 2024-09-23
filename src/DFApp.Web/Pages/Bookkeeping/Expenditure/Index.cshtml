@@ -20,7 +20,7 @@
                 @if (await AuthorizationService.IsGrantedAnyAsync(DFAppPermissions.BookkeepingExpenditure.Create))
                 {
                     <abp-button id="NewExpenditureButton"
-                                text="@L["NewBook"].Value"
+                                text="@L["BookkeepingExpenditure:Button:Add"].Value"
                                 icon="plus"
                                 button-type="Primary" />
                 }
@@ -32,7 +32,7 @@
         <abp-table striped-rows="true" id="ExpenditureTable">
             <tfoot>
                 <tr>
-                    <th colspan="3" style="text-align:right">Total:</th>
+                    <th colspan="2" style="text-align:right">Total:</th>
                     <th></th>
                 </tr>
             </tfoot>

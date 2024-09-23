@@ -42,10 +42,6 @@
                     }
                 },
                 {
-                    title: l('BookkeepingExpenditure:Column:Id'),
-                    data: "id"
-                },
-                {
                     title: l('BookkeepingExpenditure:Column:ExpenditureDate'),
                     data: "expenditureDate",
                     dataFormat: "date"
@@ -93,19 +89,19 @@
 
                 // Total over all pages
                 total = api
-                    .column(3)
+                    .column(2)
                     .data()
                     .reduce((a, b) => intVal(a) + intVal(b), 0);
 
                 // Total over this page
                 pageTotal = api
-                    .column(3, { page: 'current' })
+                    .column(2, { page: 'current' })
                     .data()
                     .reduce((a, b) => intVal(a) + intVal(b), 0);
 
                 // Update footer
 
-                api.column(3).footer().innerHTML =
+                api.column(2).footer().innerHTML =
                     '￥' + pageTotal + ' ( ￥' + total + ' total)';
             },
         })
