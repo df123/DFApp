@@ -105,7 +105,7 @@
 
                 // Update footer
 
-                api.column(3).footer().innerHTML =
+                api.column(2).footer().innerHTML =
                     '￥' + pageTotal.toFixed(2) + ' ( ￥' + total.toFixed(2) + ' total)';
 
             },
