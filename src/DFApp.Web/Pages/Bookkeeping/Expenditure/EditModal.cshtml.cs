@@ -19,9 +19,9 @@ namespace DFApp.Web.Pages.Bookkeeping.Expenditure
         public long Id { get; set; }
 
         [BindProperty]
-        public UpdateExpenditureViewModel ExpenditureDto { get; set; }
+        public UpdateExpenditureViewModel? ExpenditureDto { get; set; }
 
-        public List<SelectListItem> Categorys { get; set; }
+        public List<SelectListItem>? Categorys { get; set; }
 
         private readonly IBookkeepingExpenditureService _bookkeepingExpenditureService;
 
