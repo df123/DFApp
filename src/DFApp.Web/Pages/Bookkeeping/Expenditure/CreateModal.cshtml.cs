@@ -15,9 +15,9 @@ namespace DFApp.Web.Pages.Bookkeeping.Expenditure
     public class CreateModalModel : DFAppPageModel
     {
         [BindProperty]
-        public CreateExpenditureViewModel Expenditures { get; set; }
+        public CreateExpenditureViewModel? Expenditures { get; set; }
 
-        public List<SelectListItem> Categorys { get; set; }
+        public List<SelectListItem>? Categorys { get; set; }
 
         private readonly IBookkeepingExpenditureService _bookkeepingExpenditureService;
 
@@ -29,9 +29,9 @@ namespace DFApp.Web.Pages.Bookkeeping.Expenditure
         public async Task OnGetAsync()
         {
             Expenditures = new CreateExpenditureViewModel();
-            Expenditures.IsBelongToSelf = true;
+            
             Categorys = (await _bookkeepingExpenditureService.GetCategoryLookupDto())
-                .Select(x => new SelectListItem(x.Category,x.CategoryId.ToString()))
+                .Select(x => new SelectListItem(x.Category, x.CategoryId.ToString()))
                 .ToList();
         }
 
@@ -47,6 +47,13 @@ namespace DFApp.Web.Pages.Bookkeeping.Expenditure
 
         public class CreateExpenditureViewModel
         {
+
+            public CreateExpenditureViewModel()
+            {
+                ExpenditureDate = DateTime.Today; // 设置默认日期为今天
+                IsBelongToSelf = true;
+            }
+
             [Required]
             [DataType(DataType.Date)]
             [DisplayName("日期")]
@@ -66,7 +73,7 @@ namespace DFApp.Web.Pages.Bookkeeping.Expenditure
 
             [Required]
             [DisplayName("自用")]
-            public bool IsBelongToSelf { get; set;}
+            public bool IsBelongToSelf { get; set; }
 
         }
 
