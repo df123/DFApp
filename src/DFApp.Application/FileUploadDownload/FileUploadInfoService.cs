@@ -1,5 +1,7 @@
-﻿using DFApp.Permissions;
+﻿using DFApp.Configuration;
+using DFApp.Permissions;
 using Microsoft.AspNetCore.Authorization;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Volo.Abp;
 using Volo.Abp.Application.Dtos;
@@ -16,11 +18,19 @@ namespace DFApp.FileUploadDownload
         , PagedAndSortedResultRequestDto
         , CreateUpdateFileUploadInfoDto>, IFileUploadInfoService
     {
+        private readonly string _moduleName;
         private readonly IDataFilter<ISoftDelete> _dataFilter;
+        private readonly IConfigurationInfoRepository _configurationInfoRepository;
+        
         public FileUploadInfoService(IRepository<FileUploadInfo, long> repository
-            , IDataFilter<ISoftDelete> dataFilter) : base(repository)
+            , IDataFilter<ISoftDelete> dataFilter
+            , IConfigurationInfoRepository configurationInfoRepository) : base(repository)
         {
+            _moduleName = "DFApp.FileUploadDownload.FileUploadInfoService";
+
             _dataFilter = dataFilter;
+            _configurationInfoRepository = configurationInfoRepository;
+
             GetPolicyName = DFAppPermissions.FileUploadDownload.Default;
             GetListPolicyName = DFAppPermissions.FileUploadDownload.Default;
             CreatePolicyName = DFAppPermissions.FileUploadDownload.Default;
@@ -59,6 +69,22 @@ namespace DFApp.FileUploadDownload
 
             await base.DeleteAsync(id);
         }
+
+        public async Task<string> GetConfigurationValue(string configurationName)
+        {
+            var result = await _configurationInfoRepository.GetConfigurationInfoValue(configurationName, _moduleName);
+            return result;
+        }
+
+        public async Task<List<CustomFileTypeDto>> GetCustomFileTypeDtoAsync()
+        {
+            var data = await _configurationInfoRepository.GetAllParametersInModule(_moduleName + ".ContentType");
+
+            var result = ObjectMapper.Map<List<ConfigurationInfo>, List<CustomFileTypeDto>>(data);
+
+            return result;
+        }
+
 
 
     }

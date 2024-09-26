@@ -54,7 +54,7 @@ const handleSuccess: UploadProps['onSuccess'] = (res, files, uploadFiles) => {
 
 onMounted(() => {
 
-    uploadUrl.value = `${window.location.origin}/api/FileUpDownload/upload`;
+    uploadUrl.value = `${window.location.origin}/api/FileUploadInfo/upload`;
 
     uploadHeaders.value["Requestverificationtoken"] = getCookie("XSRF-TOKEN");
 })
