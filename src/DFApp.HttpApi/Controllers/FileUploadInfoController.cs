@@ -1,49 +1,51 @@
-﻿using DFApp.Configuration;
-using DFApp.FileUploadDownload;
+﻿using DFApp.FileUploadDownload;
 using DFApp.Helper;
 using DFApp.Permissions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.StaticFiles;
-using Microsoft.JSInterop.Infrastructure;
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 using Volo.Abp;
-using Volo.Abp.AspNetCore.Mvc;
 
 namespace DFApp.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class FileUpDownloadController : AbpControllerBase
+    public class FileUploadInfoController : DFAppController
     {
         private readonly long _fileSizeLimit;
         private readonly IFileUploadInfoService _fileInfoService;
         private readonly FileExtensionContentTypeProvider _typeProvider;
-        private readonly IConfigurationInfoService _configurationInfoService;
-        private readonly string _moduleName;
 
-        public FileUpDownloadController(IFileUploadInfoService fileUploadInfoService,
-            IConfigurationInfoService configurationInfoService)
+        public FileUploadInfoController(IFileUploadInfoService fileUploadInfoService)
         {
-            _moduleName = "DFApp.Controllers.FileUpDownloadController";
             _fileSizeLimit = 10 * 1024 * 1024;
             _fileInfoService = fileUploadInfoService;
-            _configurationInfoService = configurationInfoService;
-
-            List<ConfigurationInfoDto> dtos = _configurationInfoService.GetAllParametersInModule(_moduleName + ".ContentType").Result;
-
             _typeProvider = new FileExtensionContentTypeProvider();
+        }
+
+        private async Task SetCustomFileTypeDtoAsync()
+        {
+            List<CustomFileTypeDto> dtos = await _fileInfoService.GetCustomFileTypeDtoAsync();
+            
             if (dtos != null && dtos.Count > 0)
             {
                 foreach (var dto in dtos)
                 {
-                    _typeProvider.Mappings[dto.ConfigurationName] = dto.ConfigurationValue;
+                    if (dto.ConfigurationName == null || dto.ConfigurationValue == null)
+                    {
+                        continue;
+                    }
+
+                    if(!_typeProvider.Mappings.ContainsKey(dto.ConfigurationName))
+                    {
+                        _typeProvider.Mappings[dto.ConfigurationName] = dto.ConfigurationValue;
+                    }
+
                 }
             }
         }
@@ -72,12 +74,12 @@ namespace DFApp.Controllers
                 CreateUpdateFileUploadInfoDto dto = new CreateUpdateFileUploadInfoDto();
                 dto.Sha1 = HashHelper.CalculationHash(memoryStream);
 
-                if (!userAgent.Equals(dto.Sha1,StringComparison.OrdinalIgnoreCase))
+                if (!userAgent.Equals(dto.Sha1, StringComparison.OrdinalIgnoreCase))
                 {
                     return BadRequest("上传失败：SHA1不相同");
                 }
 
-                string prefix = await GetConfigurationValue("SaveUplouadFilePath");
+                string prefix = await _fileInfoService.GetConfigurationValue("SaveUplouadFilePath");
 
                 dto.FileSize = memoryStream.Length;
                 dto.FileName = file.FileName;
@@ -103,6 +105,8 @@ namespace DFApp.Controllers
 
             Check.NotNullOrWhiteSpace(dto.Path, nameof(dto.Path));
 
+            await SetCustomFileTypeDtoAsync();  
+
             _typeProvider.TryGetContentType(dto.Path, out var contentType);
             Check.NotNullOrWhiteSpace(contentType, nameof(contentType));
 
@@ -117,11 +121,6 @@ namespace DFApp.Controllers
             };
 
             return fileStreamReult;
-        }
-
-        private async Task<string> GetConfigurationValue(string configurationName)
-        {
-            return await _configurationInfoService.GetConfigurationInfoValue(configurationName, _moduleName);
         }
 
     }

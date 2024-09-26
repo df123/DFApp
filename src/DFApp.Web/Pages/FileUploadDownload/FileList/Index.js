@@ -34,7 +34,7 @@ $(function () {
                                     visible: abp.auth.isGranted('DFApp.FileUploadDownload.Download'),
                                     action: function (data) {
                                         console.log()
-                                        window.open(`${window.location.origin}/api/FileUpDownload?id=${data.record.id}`, '_blank');
+                                        window.open(`${window.location.origin}/api/FileUploadInfo?id=${data.record.id}`, '_blank');
                                     }
                                 },
                             ]

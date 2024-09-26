@@ -82,5 +82,7 @@ public class DFAppApplicationAutoMapperProfile : Profile
         CreateMap<FilesItem, FilesItemDto>();
         CreateMap<UrisItem, UrisItemDto>();
 
+        CreateMap<ConfigurationInfo, CustomFileTypeDto>();
+
     }
 }
