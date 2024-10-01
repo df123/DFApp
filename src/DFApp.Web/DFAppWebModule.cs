@@ -289,7 +289,6 @@ public class DFAppWebModule : AbpModule
 
         await context.AddDFAppBackgroundWorkerAsync<ListenTelegramService>();
         await context.AddDFAppBackgroundWorkerAsync<Aria2BackgroundWorker>();
-        await context.AddDFAppBackgroundWorkerAsync<MediaBackgroudService>();
         
 
     }
