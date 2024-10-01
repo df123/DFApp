@@ -291,10 +291,6 @@ namespace DFApp.Background
             {
                 try
                 {
-                    if (!await StartDownloadVideo())
-                    {
-                        continue;
-                    }
                     var model = await queue.GetItemAsync(stoppingToken);
                     if (model == null)
                     {
@@ -393,16 +389,6 @@ namespace DFApp.Background
         {
             long size = await _mediaInfoRepository.GetDownloadsSize();
             return StorageUnitConversionHelper.ByteToMB((double)(size));
-        }
-
-        public async Task<bool> StartDownloadVideo()
-        {
-            await Task.Delay(2000);
-            if (DateTime.Now >= DateTimeHelper.GetTomorrowAtZero().AddHours(-9) && DateTime.Now <= DateTimeHelper.GetTomorrowAtZero().AddHours(-7))
-            {
-                return true;
-            }
-            return false;
         }
 
         public async Task IsUpperLimit()
