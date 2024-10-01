@@ -44,7 +44,7 @@ namespace DFApp.Media
             DeletePolicyName = DFAppPermissions.Medias.Delete;
             _configurationInfoRepository = configurationInfoRepository;
             _moduleName = "DFApp.Media.MediaInfoService";
-            
+
         }
 
         public async Task<MediaInfoDto[]> GetByAccessHashID(MediaInfoDto downloadInfo)
@@ -55,6 +55,10 @@ namespace DFApp.Media
 
         public async Task<MediaInfoDto[]> GetByValueSHA1(MediaInfoDto mediaInfoDto)
         {
+            if (mediaInfoDto.ValueSHA1 == null)
+            {
+                throw new ArgumentNullException(nameof(mediaInfoDto.ValueSHA1), "ValueSHA1不能为null");
+            }
             return ObjectMapper.Map<MediaInfo[], MediaInfoDto[]>(
                 await _mediaInfoRepository.GetByValueSHA1(mediaInfoDto.ValueSHA1));
         }
