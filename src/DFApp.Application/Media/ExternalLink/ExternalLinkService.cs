@@ -76,11 +76,11 @@ namespace DFApp.Media.ExternalLink
                     var mediaInfoRepository = scope.ServiceProvider.GetRequiredService<IMediaRepository>();
                     var externalLinkRepository = scope.ServiceProvider.GetRequiredService<IRepository<MediaExternalLink>>();
 
-                    var returnDownloadUrlPrefix = await configurationInfoRepository.GetConfigurationInfoValue(MediaBackgroudConst.ModuleName, "ReturnDownloadUrlPrefix");
+                    var returnDownloadUrlPrefix = await configurationInfoRepository.GetConfigurationInfoValue("ReturnDownloadUrlPrefix", MediaBackgroudConst.ModuleName);
 
                     Check.NotNullOrWhiteSpace(returnDownloadUrlPrefix, nameof(returnDownloadUrlPrefix));
 
-                    string photoSavePath = await configurationInfoRepository.GetConfigurationInfoValue(MediaBackgroudConst.ModuleName, "SavePhotoPathPrefix");
+                    string photoSavePath = await configurationInfoRepository.GetConfigurationInfoValue("SavePhotoPathPrefix", MediaBackgroudConst.ModuleName);
                     Check.NotNullOrWhiteSpace(photoSavePath, nameof(photoSavePath));
 
                     var temp = await mediaInfoRepository.GetListAsync(x => (!x.IsFileDeleted) && (!x.IsExternalLinkGenerated));
@@ -103,8 +103,8 @@ namespace DFApp.Media.ExternalLink
                         stringBuilder.AppendLine(Path.Combine(returnDownloadUrlPrefix, zipPhotoName));
                     }
 
-                    string zipType = await configurationInfoRepository.GetConfigurationInfoValue(MediaBackgroudConst.ModuleName,"ZipType");
-                    string replaceUrlPrefix = await configurationInfoRepository.GetConfigurationInfoValue(MediaBackgroudConst.ModuleName,"ReplaceUrlPrefix");
+                    string zipType = await configurationInfoRepository.GetConfigurationInfoValue("ZipType", MediaBackgroudConst.ModuleName);
+                    string replaceUrlPrefix = await configurationInfoRepository.GetConfigurationInfoValue("ReplaceUrlPrefix", MediaBackgroudConst.ModuleName);
                     foreach (var mediaInfo in temp)
                     {
                         if (mediaInfo.SavePath == null || zipType.Contains(mediaInfo.MimeType!))
@@ -189,8 +189,8 @@ namespace DFApp.Media.ExternalLink
                         }
 
 
-                        var savePhotoPathPrefix = await configurationInfoRepository.GetConfigurationInfoValue(MediaBackgroudConst.ModuleName, "SavePhotoPathPrefix");
-                        var saveVideoPathPrefix = await configurationInfoRepository.GetConfigurationInfoValue(MediaBackgroudConst.ModuleName, "SaveVideoPathPrefix");
+                        var savePhotoPathPrefix = await configurationInfoRepository.GetConfigurationInfoValue("SavePhotoPathPrefix", MediaBackgroudConst.ModuleName);
+                        var saveVideoPathPrefix = await configurationInfoRepository.GetConfigurationInfoValue("SaveVideoPathPrefix", MediaBackgroudConst.ModuleName);
 
 
                         SpaceHelper.DeleteEmptyFolders(savePhotoPathPrefix);
