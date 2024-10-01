@@ -131,6 +131,9 @@ public class DFAppWebModule : AbpModule
         context.Services.AddHttpClient();
         context.Services.AddSingleton<SinkHub>();
 
+        context.Services.AddSingleton<IBackgroundTaskQueue, BackgroundTaskQueue>();
+        context.Services.AddHostedService<BackgroundQueueHostedService>();
+
     }
 
     private void ConfigureAuthentication(ServiceConfigurationContext context)
