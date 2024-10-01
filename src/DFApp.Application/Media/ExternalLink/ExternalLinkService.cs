@@ -1,7 +1,17 @@
 ﻿using DFApp.Background;
+using DFApp.Configuration;
+using DFApp.Helper;
 using DFApp.Permissions;
 using DFApp.Queue;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.Extensions.DependencyInjection;
+using System;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.IO;
+using System.IO.Compression;
+using System.Linq;
+using System.Text;
 using System.Threading.Tasks;
 using Volo.Abp;
 using Volo.Abp.Application.Dtos;
@@ -18,16 +28,12 @@ namespace DFApp.Media.ExternalLink
         , CreateUpdateExternalLinkDto>, IExternalLinkService
     {
 
-        private readonly IQueueManagement _queueManagement;
-        private readonly IQueueBase<int> _queueGenerate;
-        private readonly IQueueBase<long> _queueMove;
+        private readonly IBackgroundTaskQueue _backgroundTaskQueue;
 
         public ExternalLinkService(IRepository<MediaExternalLink, long> repository
-            , IQueueManagement queueManagement) : base(repository)
+            , IBackgroundTaskQueue backgroundTaskQueue) : base(repository)
         {
-            _queueManagement = queueManagement;
-            _queueGenerate = _queueManagement.GetQueue<int>(MediaBackgroudConst.QueueGenerate);
-            _queueMove = _queueManagement.GetQueue<long>(MediaBackgroudConst.QueueMove);
+            _backgroundTaskQueue = backgroundTaskQueue;
         }
 
         public override Task<ExternalLinkDto> CreateAsync(CreateUpdateExternalLinkDto input)
@@ -58,7 +64,95 @@ namespace DFApp.Media.ExternalLink
 
         public Task<bool> GetExternalLink()
         {
-            _queueGenerate.AddItem(1);
+            _backgroundTaskQueue.EnqueueTask(async (serviceScopeFactory, cancellationToken) =>
+            {
+                while (!cancellationToken.IsCancellationRequested)
+                {
+                    Stopwatch stopwatch = new Stopwatch();
+                    stopwatch.Start();
+
+                    using var scope = serviceScopeFactory.CreateScope();
+                    var configurationInfoRepository = scope.ServiceProvider.GetRequiredService<IConfigurationInfoRepository>();
+                    var mediaInfoRepository = scope.ServiceProvider.GetRequiredService<IMediaRepository>();
+                    var externalLinkRepository = scope.ServiceProvider.GetRequiredService<IRepository<MediaExternalLink>>();
+
+                    var returnDownloadUrlPrefix = await configurationInfoRepository.GetConfigurationInfoValue(MediaBackgroudConst.ModuleName, "ReturnDownloadUrlPrefix");
+
+                    Check.NotNullOrWhiteSpace(returnDownloadUrlPrefix, nameof(returnDownloadUrlPrefix));
+
+                    string photoSavePath = await configurationInfoRepository.GetConfigurationInfoValue(MediaBackgroudConst.ModuleName, "SavePhotoPathPrefix");
+                    Check.NotNullOrWhiteSpace(photoSavePath, nameof(photoSavePath));
+
+                    var temp = await mediaInfoRepository.GetListAsync(x => (!x.IsFileDeleted) && (!x.IsExternalLinkGenerated));
+
+                    if (temp == null || temp.Count <= 0)
+                    {
+                        return;
+                    }
+
+                    string datetimeName = DateTime.Now.ToString("yyyyMMddHHmmss");
+                    string zipPhotoName = $"{datetimeName}.zip";
+                    string zipPhotoPathName = Path.Combine(Path.GetDirectoryName(photoSavePath)!, zipPhotoName);
+
+                    using ZipArchive archive = ZipFile.Open(zipPhotoPathName, ZipArchiveMode.Create);
+                    long size = 0;
+
+                    StringBuilder stringBuilder = new StringBuilder();
+                    if (File.Exists(zipPhotoPathName))
+                    {
+                        stringBuilder.AppendLine(Path.Combine(returnDownloadUrlPrefix, zipPhotoName));
+                    }
+
+                    string zipType = await configurationInfoRepository.GetConfigurationInfoValue(MediaBackgroudConst.ModuleName,"ZipType");
+                    string replaceUrlPrefix = await configurationInfoRepository.GetConfigurationInfoValue(MediaBackgroudConst.ModuleName,"ReplaceUrlPrefix");
+                    foreach (var mediaInfo in temp)
+                    {
+                        if (mediaInfo.SavePath == null || zipType.Contains(mediaInfo.MimeType!))
+                        {
+                            if (!string.IsNullOrWhiteSpace(mediaInfo.SavePath) && File.Exists(mediaInfo.SavePath))
+                            {
+                                archive.CreateEntryFromFile(mediaInfo.SavePath, Path.GetFileName(mediaInfo.SavePath));
+                                mediaInfo.IsExternalLinkGenerated = true;
+                                size += mediaInfo.Size;
+                            }
+
+                            continue;
+                        }
+                        stringBuilder.AppendLine($"{Path.Combine(returnDownloadUrlPrefix, mediaInfo.SavePath.Replace(replaceUrlPrefix, string.Empty).Replace("\\", "/"))}");
+                        mediaInfo.IsExternalLinkGenerated = true;
+                    }
+
+                    if (File.Exists(zipPhotoPathName))
+                    {
+                        temp.Add(await mediaInfoRepository.InsertAsync(new MediaInfo()
+                        {
+                            AccessHash = Random.Shared.NextInt64(),
+                            TID = Random.Shared.NextInt64(),
+                            Size = size,
+                            SavePath = zipPhotoPathName,
+                            ValueSHA1 = HashHelper.CalculationHash(zipPhotoPathName),
+                            MimeType = "zip",
+                            IsExternalLinkGenerated = true
+                        }));
+                    }
+
+                    if (temp != null && temp.Count > 0)
+                    {
+                        await mediaInfoRepository.UpdateManyAsync(temp);
+                        stopwatch.Stop();
+                        await externalLinkRepository.InsertAsync(new MediaExternalLink()
+                        {
+                            Name = datetimeName,
+                            Size = size,
+                            TimeConsumed = stopwatch.ElapsedMilliseconds,
+                            IsRemove = false,
+                            LinkContent = stringBuilder.ToString(),
+                            MediaIds = string.Join(',', temp.Select(x => x.Id)),
+                        });
+                    }
+                }
+            });
+
             return Task.FromResult(true);
         }
 
@@ -68,7 +162,48 @@ namespace DFApp.Media.ExternalLink
             {
                 throw new UserFriendlyException("ID要大于0");
             }
-            _queueMove.AddItem(id);
+
+            _backgroundTaskQueue.EnqueueTask(async (serviceScopeFactory, cancellationToken) =>
+            {
+                while (!cancellationToken.IsCancellationRequested)
+                {
+                    using var scope = serviceScopeFactory.CreateScope();
+                    var externalLinkRepository = scope.ServiceProvider.GetRequiredService<IRepository<MediaExternalLink>>();
+                    var mediaInfoRepository = scope.ServiceProvider.GetRequiredService<IMediaRepository>();
+                    var configurationInfoRepository = scope.ServiceProvider.GetRequiredService<IConfigurationInfoRepository>();
+
+
+                    MediaExternalLink mediaExternalLink = await externalLinkRepository.GetAsync(x => x.Id == id);
+                    if (mediaExternalLink != null && (!mediaExternalLink.IsRemove) && (!string.IsNullOrWhiteSpace(mediaExternalLink.MediaIds)))
+                    {
+                        List<long> ids = (mediaExternalLink.MediaIds.Split(',')).Select(x => long.Parse(x)).ToList();
+                        List<MediaInfo> medias = await mediaInfoRepository.GetListAsync(x => ids.Contains(x.Id));
+
+                        foreach (var item in medias)
+                        {
+                            if (item != null && (!string.IsNullOrWhiteSpace(item.SavePath)))
+                            {
+                                item.IsFileDeleted = true;
+                                SpaceHelper.DeleteFile(item.SavePath!);
+                            }
+                        }
+
+
+                        var savePhotoPathPrefix = await configurationInfoRepository.GetConfigurationInfoValue(MediaBackgroudConst.ModuleName, "SavePhotoPathPrefix");
+                        var saveVideoPathPrefix = await configurationInfoRepository.GetConfigurationInfoValue(MediaBackgroudConst.ModuleName, "SaveVideoPathPrefix");
+
+
+                        SpaceHelper.DeleteEmptyFolders(savePhotoPathPrefix);
+                        SpaceHelper.DeleteEmptyFolders(saveVideoPathPrefix);
+
+                        mediaExternalLink.IsRemove = true;
+                        await externalLinkRepository.UpdateAsync(mediaExternalLink);
+                        await mediaInfoRepository.UpdateManyAsync(medias);
+
+                    }
+                }
+            });
+
             return Task.FromResult(true);
 
         }
