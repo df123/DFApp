@@ -160,6 +160,11 @@ namespace DFApp.Background
                 {
                     continue;
                 }
+
+                var ignoredMessages = await GetConfigurationInfo("IgnoredMessages");
+                if (ignoredMessages.Contains(message.message)){
+                    continue;
+                }
                 
                 if (message.media is MessageMediaDocument { document: Document document })
                 {
