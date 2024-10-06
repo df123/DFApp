@@ -124,13 +124,14 @@ namespace DFApp.Media.ExternalLink
                 {
                     temp.Add(await mediaInfoRepository.InsertAsync(new MediaInfo()
                     {
-                        AccessHash = Random.Shared.NextInt64(),
-                        TID = Random.Shared.NextInt64(),
+                        ChatId = Random.Shared.NextInt64(),
+                        ChatTitle = "zip",
                         Size = size,
                         SavePath = zipPhotoPathName,
-                        ValueSHA1 = HashHelper.CalculationHash(zipPhotoPathName),
+                        MD5 = HashHelper.CalculateMD5(zipPhotoPathName),
                         MimeType = "zip",
-                        IsExternalLinkGenerated = true
+                        IsExternalLinkGenerated = true,
+                        IsFileDeleted = false
                     }));
                 }
 

@@ -6,7 +6,7 @@ $(function () {
         abp.libs.datatables.normalizeConfiguration({
             serverSide: true,
             paging: true,
-            order: [[1, "desc"]],
+            order: [[6, "desc"]],
             scrollX: true,
             ajax: abp.libs.datatables.createAjax(dFApp.media.mediaInfo.getList),
             columnDefs: [
@@ -15,13 +15,6 @@ $(function () {
                     rowAction: {
                         items:
                             [
-                                {
-                                    text: l('Edit'),
-                                    visible: abp.auth.isGranted('DFApp.Medias.Edit'),
-                                    action: function (data) {
-                                        editModal.open({ id: data.record.id });
-                                    }
-                                },
                                 {
                                     text: l('Delete'),
                                     visible: abp.auth.isGranted('DFApp.Medias.Delete'),
@@ -36,69 +29,54 @@ $(function () {
                                                 dataTable.ajax.reload();
                                             });
                                     }
-                                },
-                                {
-                                    text: l('Button:Download'),
-                                    visible: abp.auth.isGranted('DFApp.Medias.Download'),
-                                    action: function (data) {
-                                        window.open('api/FileDownload?id=' + data.record.id, '_blank');
-                                    }
-                                },
+                                }
                             ]
                     }
                 },
                 {
-                    title: l('MediaId'),
-                    data: "id"
-                },
-                {
-                    title: l('IsExternalLinkGenerated'),
+                    title: l('Media:Column:IsExternalLinkGenerated'),
                     data: "isExternalLinkGenerated"
                 },
                 {
-                    title: l('IsFileDeleted'),
-                    data: "isFileDeleted"
-                },
-                {
-                    title: l('MediaAccessHash'),
-                    data: "accessHash"
-                },
-                {
-                    title: l('MediaTId'),
-                    data: "tid"
-                },
-                {
-                    title: l('MediaSize'),
+                    title: l('Media:Column:MediaSize'),
                     data: "size",
                     render: function (data, type) {
                         return convertBytes(data);
                     }
                 },
                 {
-                    title: l('MediaMimeType'),
-                    data: "mimeType"
-                },
-                {
-                    title: l('MediaSavePath'),
+                    title: l('Media:Column:MediaSavePath'),
                     data: "savePath"
                 },
                 {
-                    title: l('MediaValueSHA1'),
-                    data: "valueSHA1"
+                    title: l('Media:Column:MD5'),
+                    data: "mD5"
                 },
                 {
-                    title: l('MediaCreationTime'),
+                    title: l('Media:Column:MediaMimeType'),
+                    data: "mimeType"
+                },
+                {
+                    title: l('Media:Column:MediaCreationTime'),
                     data: "creationTime",
                     dataFormat: "datetime"
                 },
                 {
-                    title: l('MediaLastModificationTime'),
+                    title: l('Media:Column:MediaLastModificationTime'),
                     data: "lastModificationTime",
                     dataFormat: "datetime"
                 },
                 {
-                    title: l('MediaChatTitle'),
-                    data: "title"
+                    title: l('Media:Column:ChatId'),
+                    data: "chatId"
+                },
+                {
+                    title: l('Media:Column:ChatTitle'),
+                    data: "chatTitle"
+                },
+                {
+                    title: l('Media:Column:Message'),
+                    data: "message"
                 }
             ]
         })

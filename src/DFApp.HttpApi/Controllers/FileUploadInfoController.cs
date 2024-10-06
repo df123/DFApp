@@ -72,7 +72,7 @@ namespace DFApp.Controllers
                 await file.CopyToAsync(memoryStream);
 
                 CreateUpdateFileUploadInfoDto dto = new CreateUpdateFileUploadInfoDto();
-                dto.Sha1 = HashHelper.CalculationHash(memoryStream);
+                dto.Sha1 = HashHelper.CalculateHash(memoryStream);
 
                 if (!userAgent.Equals(dto.Sha1, StringComparison.OrdinalIgnoreCase))
                 {

@@ -11,6 +11,7 @@ using System.Threading.Tasks;
 using Volo.Abp;
 using Volo.Abp.Application.Dtos;
 using Volo.Abp.Application.Services;
+using Volo.Abp.Domain.Repositories;
 
 namespace DFApp.Media
 {
@@ -28,10 +29,12 @@ namespace DFApp.Media
         private readonly IConfigurationInfoRepository _configurationInfoRepository;
         private readonly IQueueManagement _queueManagement;
         private readonly string _moduleName;
+        private readonly IReadOnlyRepository<MediaInfo,long>  _mediaInfoReadOnlyRepository;
 
-        public MediaInfoService(IMediaRepository repository,
-            IConfigurationInfoRepository configurationInfoRepository,
-            IQueueManagement queueManagement) : base(repository)
+        public MediaInfoService(IMediaRepository repository
+        , IConfigurationInfoRepository configurationInfoRepository
+        , IQueueManagement queueManagement
+        , IReadOnlyRepository<MediaInfo,long>  mediaInfoReadOnlyRepository) : base(repository)
         {
             _mediaInfoRepository = repository;
             _queueManagement = queueManagement;
@@ -44,23 +47,8 @@ namespace DFApp.Media
             DeletePolicyName = DFAppPermissions.Medias.Delete;
             _configurationInfoRepository = configurationInfoRepository;
             _moduleName = "DFApp.Media.MediaInfoService";
+            _mediaInfoReadOnlyRepository = mediaInfoReadOnlyRepository;
 
-        }
-
-        public async Task<MediaInfoDto[]> GetByAccessHashID(MediaInfoDto downloadInfo)
-        {
-            return ObjectMapper.Map<MediaInfo[], MediaInfoDto[]>(
-                await _mediaInfoRepository.GetByAccessHashID(downloadInfo.AccessHash, downloadInfo.TID, downloadInfo.Size));
-        }
-
-        public async Task<MediaInfoDto[]> GetByValueSHA1(MediaInfoDto mediaInfoDto)
-        {
-            if (mediaInfoDto.ValueSHA1 == null)
-            {
-                throw new ArgumentNullException(nameof(mediaInfoDto.ValueSHA1), "ValueSHA1不能为null");
-            }
-            return ObjectMapper.Map<MediaInfo[], MediaInfoDto[]>(
-                await _mediaInfoRepository.GetByValueSHA1(mediaInfoDto.ValueSHA1));
         }
 
         public async Task<long> GetDownloadsSize()
@@ -87,8 +75,8 @@ namespace DFApp.Media
 
         public async Task<ChartDataDto> GetChartData()
         {
-            List<MediaInfo> lms = await _mediaInfoRepository.GetAllTitleNotNullContainSoftDelete();
-            var temp = lms.GroupBy(item => item.Title)
+            List<MediaInfo> lms = await _mediaInfoRepository.GetListAsync();
+            var temp = lms.GroupBy(item => item.ChatTitle)
                 .Select(item =>
                 new
                 {
