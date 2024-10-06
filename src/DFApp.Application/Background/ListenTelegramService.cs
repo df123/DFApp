@@ -144,13 +144,15 @@ namespace DFApp.Background
             var chats = updates.chats;
             long chatId = long.MaxValue;
             string chatTitle = "NoChatTitle";
-            if(chats.Count > 0){
+            if (chats.Count > 0)
+            {
                 chatId = chats.First().Value.ID;
                 chatTitle = chats.First().Value.Title;
             }
 
             var ignoredChatIds = await GetConfigurationInfo("IgnoredChatIds");
-            if (ignoredChatIds.Contains(chatId.ToString())){
+            if (ignoredChatIds.Contains(chatId.ToString()))
+            {
                 return;
             }
 
@@ -162,10 +164,21 @@ namespace DFApp.Background
                 }
 
                 var ignoredMessages = await GetConfigurationInfo("IgnoredMessages");
-                if (ignoredMessages.Contains(message.message)){
+                var ignoredMessagesArrays = ignoredMessages.Split(";");
+                bool isIgnored = false;
+                foreach (var ignoredMessage in ignoredMessagesArrays)
+                {
+                    if (message.message.Contains(ignoredMessage))
+                    {
+                        isIgnored = true;
+                        break;
+                    }
+                }
+                if (isIgnored)
+                {
                     continue;
                 }
-                
+
                 if (message.media is MessageMediaDocument { document: Document document })
                 {
                     int slash = document.mime_type.IndexOf('/');
@@ -367,7 +380,7 @@ namespace DFApp.Background
         {
 
 #if DEBUG
-return;
+            return;
 #endif
 
             long.TryParse(AppsettingsHelper.app("RunConfig", "Bandwidth"), out long bandwidth);
@@ -385,7 +398,7 @@ return;
         {
 
 #if DEBUG
-return false;
+            return false;
 #endif
 
             double availableFreeSpace = double.Parse(AppsettingsHelper.app("RunConfig", "AvailableFreeSpace"));
