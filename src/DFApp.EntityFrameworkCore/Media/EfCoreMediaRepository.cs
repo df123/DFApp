@@ -16,61 +16,18 @@ namespace DFApp.Media
 {
     public class EfCoreMediaRepository : EfCoreRepository<DFAppDbContext, MediaInfo, long>, IMediaRepository
     {
-        private readonly IDataFilter _dataFilter;
-        public EfCoreMediaRepository(IDbContextProvider<DFAppDbContext> dbContextProvider, IDataFilter dataFilter) : base(dbContextProvider)
+        public EfCoreMediaRepository(IDbContextProvider<DFAppDbContext> dbContextProvider) : base(dbContextProvider)
         {
-            _dataFilter = dataFilter;
-        }
-
-
-        public async Task<List<MediaInfo>> GetAllTitleNotNullContainSoftDelete()
-        {
-            using (_dataFilter.Disable<ISoftDelete>())
-            {
-                var dbSet = await GetDbSetAsync();
-                return await dbSet.Where(item => (!string.IsNullOrWhiteSpace(item.Title))).ToListAsync();
-            }
-        }
-
-
-        public async Task<MediaInfo[]> GetAllContainSoftDelete()
-        {
-            using (_dataFilter.Disable<ISoftDelete>())
-            {
-                var dbSet = await GetDbSetAsync();
-                return await dbSet.Where(item => true).ToArrayAsync();
-            }
-        }
-
-        public async Task<MediaInfo[]> GetByAccessHashID(long accessHash, long tId, long size)
-        {
-            using (_dataFilter.Disable<ISoftDelete>())
-            {
-                var dbSet = await GetDbSetAsync();
-                return await dbSet.Where(m => m.AccessHash == accessHash && m.TID == tId && m.Size == size).ToArrayAsync();
-            }
-        }
-
-        public async Task<MediaInfo[]> GetByValueSHA1([NotNull] string valueSHA1)
-        {
-            using (_dataFilter.Disable<ISoftDelete>())
-            {
-                var dbSet = await GetDbSetAsync();
-                return await dbSet.Where(m => m.ValueSHA1 == valueSHA1).ToArrayAsync();
-            }
         }
 
         public async Task<long> GetDownloadsSize()
         {
-            using (_dataFilter.Disable<ISoftDelete>())
-            {
-                DateTime todayAtZero = DateTimeHelper.GetTodayAtZero();
-                DateTime tomorrowAtZero = DateTimeHelper.GetTomorrowAtZero();
-                var dbSet = await GetDbSetAsync();
-                return await dbSet.Where(m =>
-                        m.LastModificationTime >= todayAtZero &&
-                        m.LastModificationTime < tomorrowAtZero).SumAsync(x => x.Size);
-            }
+            DateTime todayAtZero = DateTimeHelper.GetTodayAtZero();
+            DateTime tomorrowAtZero = DateTimeHelper.GetTomorrowAtZero();
+            var dbSet = await GetDbSetAsync();
+            return await dbSet.Where(m =>
+                    m.LastModificationTime >= todayAtZero &&
+                    m.LastModificationTime < tomorrowAtZero).SumAsync(x => x.Size);
         }
 
         public async Task<MediaInfo[]> GetMediaNotReturn()

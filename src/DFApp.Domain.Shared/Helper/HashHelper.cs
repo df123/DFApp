@@ -1,67 +1,72 @@
-using System.Text;
-using System.Security.Cryptography;
+using System;
 using System.IO;
+using System.Security.Cryptography;
+using System.Text;
 
 namespace DFApp.Helper
 {
-    public class HashHelper
+    public static class HashHelper
     {
-#nullable disable
-        private static StringBuilder _sb;
-        public static StringBuilder SB
-        {
-            get
-            {
-                return _sb ?? (_sb = new StringBuilder());
-            }
-        }
-        private static SHA1 _mySHA1;
+        private static readonly SHA1 _sha1 = SHA1.Create();
+        private static readonly MD5 _md5 = MD5.Create();
+        private static readonly StringBuilder _sb = new StringBuilder();
 
-        public static SHA1 SHA1P
+        public static string CalculateHash(string text)
         {
-            get
-            {
-                return _mySHA1 ?? (_mySHA1 = SHA1.Create());
-            }
-        }
+            if (string.IsNullOrEmpty(text))
+                throw new ArgumentNullException(nameof(text));
 
-#nullable restore
-
-        public HashHelper()
-        {
-            if (_sb == null)
-            {
-                _sb = new StringBuilder();
-            }
-            if (_mySHA1 == null)
-            {
-                _mySHA1 = SHA1.Create();
-            }
-        }
-
-        public static string CalculationHash(string text)
-        {
             byte[] inputBytes = Encoding.UTF8.GetBytes(text);
-            byte[] hashBytes = SHA1P.ComputeHash(inputBytes);
-            return PrintHash(hashBytes);
+            return ComputeHash(_sha1, inputBytes);
         }
 
-        public static string CalculationHash(Stream fileStream)
+        public static string CalculateHash(Stream fileStream)
         {
+            if (fileStream == null)
+                throw new ArgumentNullException(nameof(fileStream));
+
             fileStream.Position = 0;
-            byte[] hashValue = SHA1P.ComputeHash(fileStream);
-            return PrintHash(hashValue);
+            return ComputeHash(_sha1, fileStream);
         }
 
-        private static string PrintHash(byte[] array)
+        public static string CalculateMD5(string text)
         {
-            for (int i = 0; i < array.Length; i++)
+            if (string.IsNullOrEmpty(text))
+                throw new ArgumentNullException(nameof(text));
+
+            byte[] inputBytes = Encoding.UTF8.GetBytes(text);
+            return ComputeHash(_md5, inputBytes);
+        }
+
+        public static string CalculateMD5(Stream fileStream)
+        {
+            if (fileStream == null)
+                throw new ArgumentNullException(nameof(fileStream));
+
+            fileStream.Position = 0;
+            return ComputeHash(_md5, fileStream);
+        }
+
+        private static string ComputeHash(HashAlgorithm hashAlgorithm, byte[] inputBytes)
+        {
+            byte[] hashBytes = hashAlgorithm.ComputeHash(inputBytes);
+            return FormatHash(hashBytes);
+        }
+
+        private static string ComputeHash(HashAlgorithm hashAlgorithm, Stream inputStream)
+        {
+            byte[] hashBytes = hashAlgorithm.ComputeHash(inputStream);
+            return FormatHash(hashBytes);
+        }
+
+        private static string FormatHash(byte[] hashBytes)
+        {
+            _sb.Clear();
+            foreach (byte b in hashBytes)
             {
-                SB.Append($"{array[i]:X2}");
+                _sb.Append(b.ToString("X2"));
             }
-            string result = SB.ToString();
-            SB.Clear();
-            return result;
+            return _sb.ToString();
         }
     }
 }

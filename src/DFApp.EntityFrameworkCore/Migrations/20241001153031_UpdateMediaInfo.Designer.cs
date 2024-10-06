@@ -3,6 +3,7 @@ using System;
 using DFApp.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Volo.Abp.EntityFrameworkCore;
 
@@ -11,9 +12,11 @@ using Volo.Abp.EntityFrameworkCore;
 namespace DFApp.Migrations
 {
     [DbContext(typeof(DFAppDbContext))]
-    partial class DFAppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20241001153031_UpdateMediaInfo")]
+    partial class UpdateMediaInfo
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -795,6 +798,9 @@ namespace DFApp.Migrations
                         .HasColumnType("TEXT")
                         .HasColumnName("ExtraProperties");
 
+                    b.Property<string>("FileMessage")
+                        .HasColumnType("TEXT");
+
                     b.Property<bool>("IsExternalLinkGenerated")
                         .HasColumnType("INTEGER");
 
@@ -809,14 +815,11 @@ namespace DFApp.Migrations
                         .HasColumnType("TEXT")
                         .HasColumnName("LastModifierId");
 
-                    b.Property<string>("MD5")
+                    b.Property<string>("MimeType")
                         .IsRequired()
                         .HasColumnType("TEXT");
 
-                    b.Property<string>("Message")
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("MimeType")
+                    b.Property<string>("SHA256")
                         .IsRequired()
                         .HasColumnType("TEXT");
 

@@ -26,6 +26,7 @@ namespace DFApp.Background
         private readonly IQueueBase<DocumentQueueModel> _documentQueue;
         private readonly IQueueBase<PhotoQueueModel> _photoQueue;
         private readonly IMediaRepository _mediaInfoRepository;
+        public const long SpaceUpperLimitInBytes = 2048L * 1024L * 1024L; // 2 GB
 
 
         public ListenTelegramService(
@@ -48,7 +49,7 @@ namespace DFApp.Background
             {
                 return _executeTask;
             }
-            
+
             return base.StartAsync(StoppingToken);
         }
 
@@ -103,7 +104,6 @@ namespace DFApp.Background
                     _client.MaxAutoReconnects = int.MaxValue;
 
                     _client.OnUpdates += ClientUpdate;
-
                 }
 
                 if (bool.Parse(GetConfigurationInfo("EnableProxy").Result))
@@ -135,16 +135,17 @@ namespace DFApp.Background
 
         async Task ClientUpdate(IObject arg)
         {
-            if (arg is not Updates { updates: Update[] updateArray }) return;
-            string title = string.Empty;
-            if (arg is Updates)
-            {
-                Dictionary<long, ChatBase> chats = ((Updates)arg).Chats;
-                title = $"{chats.First().Value.Title}:{chats.First().Value.ID}";
-                foreach (var chat in chats.Values)
-                {
-                    Logger.LogDebug($"Title:{chat.Title},ID:{chat.ID},IsActive:{chat.IsActive},IsChannel:{chat.IsChannel},IsGroup:{chat.IsGroup}");
-                }
+            if (arg is not Updates) return;
+
+            Updates? updates = arg as Updates;
+            if (updates == null) return;
+
+            var updateArray = updates.UpdateList;
+            var chats = updates.chats;
+            long chatId = long.MaxValue;
+            string chatTitle = "NoChatTitle";
+            if(chats.Count > 0){
+                chatId = chats.First().Value.ID;
             }
 
             foreach (Update update in updateArray)
@@ -153,7 +154,7 @@ namespace DFApp.Background
                 {
                     continue;
                 }
-
+                
                 if (message.media is MessageMediaDocument { document: Document document })
                 {
                     int slash = document.mime_type.IndexOf('/');
@@ -166,13 +167,25 @@ namespace DFApp.Background
                     {
                         continue;
                     }
-                    MediaInfo? canAdd = await AddDownloadInfo(new MediaInfo()
+
+                    string titleDirectoy = Path.Combine(await GetConfigurationInfo("SaveVideoPathPrefix"), chatId.ToString());
+                    if (!Directory.Exists(titleDirectoy))
                     {
-                        AccessHash = document.access_hash,
-                        TID = document.id,
+                        Directory.CreateDirectory(titleDirectoy);
+                    }
+                    string fileName = Path.Combine(titleDirectoy, $"{document.id}.{document.mime_type[(slash + 1)..]}");
+
+                    MediaInfo canAdd = await _mediaInfoRepository.InsertAsync(new MediaInfo()
+                    {
+                        ChatId = chatId,
+                        ChatTitle = chatTitle,
+                        Message = message.message,
+                        SavePath = fileName,
                         Size = document.size,
+                        MD5 = string.Empty,
                         MimeType = document.mime_type,
-                        Title = title
+                        IsExternalLinkGenerated = false,
+                        IsFileDeleted = false
                     });
                     if (canAdd != null)
                     {
@@ -186,13 +199,25 @@ namespace DFApp.Background
                 }
                 else if (message.media is MessageMediaPhoto { photo: Photo photo })
                 {
-                    MediaInfo? canAdd = await AddDownloadInfo(new MediaInfo()
+
+                    string titleDirectoy = Path.Combine(await GetConfigurationInfo("SavePhotoPathPrefix"), chatId.ToString());
+                    if (!Directory.Exists(titleDirectoy))
                     {
-                        AccessHash = photo.access_hash,
-                        TID = photo.id,
+                        Directory.CreateDirectory(titleDirectoy);
+                    }
+                    string fileName = Path.Combine(titleDirectoy, $"{photo.id}.jpg");
+
+                    MediaInfo canAdd = await _mediaInfoRepository.InsertAsync(new MediaInfo()
+                    {
+                        ChatId = chatId,
+                        ChatTitle = chatTitle,
+                        Message = message.message,
+                        SavePath = fileName,
                         Size = photo.LargestPhotoSize.FileSize,
+                        MD5 = string.Empty,
                         MimeType = "JPG",
-                        Title = title
+                        IsExternalLinkGenerated = false,
+                        IsFileDeleted = false
                     });
                     if (canAdd != null)
                     {
@@ -205,24 +230,6 @@ namespace DFApp.Background
 
                 }
             }
-        }
-
-        public async Task<MediaInfo?> AddDownloadInfo(MediaInfo mediaInfo)
-        {
-            MediaInfo[] isArray = await _mediaInfoRepository.GetByAccessHashID(mediaInfo.AccessHash, mediaInfo.TID, mediaInfo.Size);
-            if (isArray != null && isArray.Length > 0)
-            {
-                Logger.LogDebug($"AccessHash:{mediaInfo.AccessHash},ID:{mediaInfo.TID},Size:{mediaInfo.Size},Already exists;");
-
-                return null;
-            }
-
-            MediaInfo dto = await _mediaInfoRepository.InsertAsync(mediaInfo);
-            if (dto != null && dto.Id > -1)
-            {
-                Logger.LogDebug($"New Media Save successfully;");
-            }
-            return dto;
         }
 
         public async Task DownloadPhoto(string savePathPrefix, IQueueBase<PhotoQueueModel> queue, CancellationToken stoppingToken)
@@ -255,26 +262,15 @@ namespace DFApp.Background
                     }
                     await IsUpperLimit();
                     DeleteTempFiles(savePathPrefix);
-                    string title = PathHelper.RemoveInvalidPath(PathHelper.SplitStringAndGetValueAtPosition(mediaInfo.Title, ":", 1));
-                    string titleDirectoy = Path.Combine(savePathPrefix, title);
-                    if (!Directory.Exists(titleDirectoy))
-                    {
-                        Directory.CreateDirectory(titleDirectoy);
-                    }
-                    string fileName = Path.Combine(titleDirectoy, $"{photo.id}.jpg");
-                    using var fileStream = File.Create(fileName);
+
+                    using var fileStream = File.Create(model.MediaInfos!.SavePath);
                     var type = await _client!.DownloadFileAsync(photo, fileStream);
-                    string valueSHA1 = HashHelper.CalculationHash(fileStream);
+                    string MD5 = HashHelper.CalculateMD5(fileStream);
+
                     fileStream.Close();
+                    await UpdateMD5ById(mediaInfo.Id, MD5);
 
-                    mediaInfo.AccessHash = photo.access_hash;
-                    mediaInfo.TID = photo.id;
-                    mediaInfo.SavePath = fileName;
-                    mediaInfo.ValueSHA1 = valueSHA1;
-
-                    await UpdateDownloadInfo(mediaInfo);
-
-                    Logger.LogDebug($"Photo download completed {fileName}");
+                    Logger.LogDebug($"Photo download completed {model.MediaInfos!.SavePath}");
                 }
                 catch (Exception e)
                 {
@@ -308,34 +304,22 @@ namespace DFApp.Background
                     {
                         continue;
                     }
-                    if (IsSpaceUpperLimit(document.size + (2048L * 1024L * 1024L)))
+                    if (IsSpaceUpperLimit(document.size + SpaceUpperLimitInBytes))
                     {
                         continue;
                     }
                     await IsUpperLimit();
-                    if (document.size / 1024 / 1024 <= 10)
-                    {
-                        continue;
-                    }
                     DeleteTempFiles(savePathPrefix);
-                    int slash = document.mime_type.IndexOf('/');
-                    string title = PathHelper.RemoveInvalidPath(PathHelper.SplitStringAndGetValueAtPosition(mediaInfo.Title, ":", 1));
-                    string fileName = Path.Combine(savePathPrefix, $"{document.id}{title}.{document.mime_type[(slash + 1)..]}");
-                    string fileNameTemp = $"{fileName}.temp";
+                    string fileNameTemp = $"{mediaInfo.SavePath}.temp";
                     using var fileStream = File.Create(fileNameTemp);
                     await _client!.DownloadFileAsync(document, fileStream);
-                    string valueSHA1 = HashHelper.CalculationHash(fileStream);
+                    string MD5 = HashHelper.CalculateMD5(fileStream);
                     fileStream.Close();
-                    File.Move(fileNameTemp, fileName, true);
+                    File.Move(fileNameTemp, mediaInfo.SavePath, true);
+                    await UpdateMD5ById(mediaInfo.Id, MD5);
 
-                    mediaInfo.AccessHash = document.access_hash;
-                    mediaInfo.TID = document.id;
-                    mediaInfo.SavePath = fileName;
-                    mediaInfo.ValueSHA1 = valueSHA1;
 
-                    await UpdateDownloadInfo(mediaInfo);
-
-                    Logger.LogDebug($"Video download completed {fileName}");
+                    Logger.LogDebug($"Video download completed {mediaInfo.SavePath}");
                 }
                 catch (Exception e)
                 {
@@ -345,43 +329,20 @@ namespace DFApp.Background
 
         }
 
-        public async Task UpdateDownloadInfo(MediaInfo mediaInfo)
-        {
-            try
-            {
-                if (mediaInfo.ValueSHA1 == null) { return; }
-                MediaInfo[] isArray = await _mediaInfoRepository.GetByValueSHA1(mediaInfo.ValueSHA1);
-                if (isArray.Length > 0)
-                {
-                    await DeleteDownloadInfo(mediaInfo);
-                    return;
-                }
-
-                await _mediaInfoRepository.UpdateAsync(mediaInfo);
-
-                Logger.LogDebug($"AccessHash:{mediaInfo.AccessHash},ID:{mediaInfo.TID},Update successful;");
-            }
-            catch (Exception e)
-            {
-                Logger.LogError($"UpdateDownloadInfo  error:{e.Message}------{e.StackTrace}"); ;
-            }
-
-        }
-
         public async Task DeleteDownloadInfo(MediaInfo mediaInfo)
         {
-            Logger.LogInformation($"Start deleting duplicates。ID:{mediaInfo.TID},AccessHash:{mediaInfo.AccessHash},Hash:{mediaInfo.ValueSHA1}");
+            Logger.LogInformation($"Start deleting duplicates。Hash:{mediaInfo.MD5}");
             try
             {
                 if (mediaInfo.SavePath == null) { return; }
                 File.Delete(mediaInfo.SavePath);
                 await _mediaInfoRepository.DeleteAsync(mediaInfo);
 
-                Logger.LogInformation($"End delete successfully。ID:{mediaInfo.TID},AccessHash:{mediaInfo.AccessHash},Hash:{mediaInfo.ValueSHA1}");
+                Logger.LogInformation($"End delete successfully。Hash:{mediaInfo.MD5}");
             }
             catch (System.Exception e)
             {
-                Logger.LogInformation($"End deletion failure, failure message{e.Message}。ID:{mediaInfo.TID},AccessHash:{mediaInfo.AccessHash},Hash:{mediaInfo.ValueSHA1}");
+                Logger.LogInformation($"End deletion failure, failure message{e.Message}。Hash:{mediaInfo.MD5}");
             }
         }
 
@@ -393,6 +354,11 @@ namespace DFApp.Background
 
         public async Task IsUpperLimit()
         {
+
+#if DEBUG
+return;
+#endif
+
             long.TryParse(AppsettingsHelper.app("RunConfig", "Bandwidth"), out long bandwidth);
             double sizes = await CalculationDownloadsSize();
             Logger.LogInformation($"{DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")} Downloaded:{sizes}MB");
@@ -406,6 +372,11 @@ namespace DFApp.Background
 
         public bool IsSpaceUpperLimit(long sizes)
         {
+
+#if DEBUG
+return false;
+#endif
+
             double availableFreeSpace = double.Parse(AppsettingsHelper.app("RunConfig", "AvailableFreeSpace"));
             string driveName = AppsettingsHelper.app("RunConfig", "SaveDrive");
             if ((SpaceHelper.GetDriveAvailableMB(driveName) - StorageUnitConversionHelper.ByteToMB(sizes)) < availableFreeSpace)
@@ -434,8 +405,12 @@ namespace DFApp.Background
             }
         }
 
-
-
+        public async Task UpdateMD5ById(long id, string md5)
+        {
+            var mediaInfo = await _mediaInfoRepository.GetAsync(id);
+            mediaInfo.MD5 = md5;
+            await _mediaInfoRepository.UpdateAsync(mediaInfo);
+        }
 
         public void Dispose()
         {

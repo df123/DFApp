@@ -15,7 +15,9 @@ namespace DFApp.Background
         private readonly IServiceScopeFactory _serviceScopeFactory;
         private readonly ILogger<BackgroundQueueHostedService> _logger;
 
-        public BackgroundQueueHostedService(IBackgroundTaskQueue taskQueue, IServiceScopeFactory serviceScopeFactory, ILogger<BackgroundQueueHostedService> logger)
+        public BackgroundQueueHostedService(IBackgroundTaskQueue taskQueue
+        , IServiceScopeFactory serviceScopeFactory
+        , ILogger<BackgroundQueueHostedService> logger)
         {
             _taskQueue = taskQueue ?? throw new ArgumentNullException(nameof(taskQueue));
             _serviceScopeFactory = serviceScopeFactory ?? throw new ArgumentNullException(nameof(serviceScopeFactory));

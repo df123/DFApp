@@ -286,3 +286,4 @@ src/DF.Telegram.Blazor.Server.Tiered/Logs/*
 src/DFApp.Web/DFApp.db
 src/DFApp.Web/DFApp.db-shm
 src/DFApp.Web/DFApp.db-wal
+.prompts/translate.prompt

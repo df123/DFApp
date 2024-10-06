@@ -11,9 +11,6 @@ namespace DFApp.Media
         PagedAndSortedResultRequestDto,
         CreateUpdateMediaInfoDto>
     {
-        Task<MediaInfoDto[]> GetByAccessHashID(MediaInfoDto mediaInfoDto);
-
-        Task<MediaInfoDto[]> GetByValueSHA1(MediaInfoDto mediaInfoDto);
 
         Task<long> GetDownloadsSize();
 

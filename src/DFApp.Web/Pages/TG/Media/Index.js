@@ -16,13 +16,6 @@ $(function () {
                         items:
                             [
                                 {
-                                    text: l('Edit'),
-                                    visible: abp.auth.isGranted('DFApp.Medias.Edit'),
-                                    action: function (data) {
-                                        editModal.open({ id: data.record.id });
-                                    }
-                                },
-                                {
                                     text: l('Delete'),
                                     visible: abp.auth.isGranted('DFApp.Medias.Delete'),
                                     confirmMessage: function (data) {
@@ -36,36 +29,21 @@ $(function () {
                                                 dataTable.ajax.reload();
                                             });
                                     }
-                                },
-                                {
-                                    text: l('Button:Download'),
-                                    visible: abp.auth.isGranted('DFApp.Medias.Download'),
-                                    action: function (data) {
-                                        window.open('api/FileDownload?id=' + data.record.id, '_blank');
-                                    }
-                                },
+                                }
                             ]
                     }
                 },
                 {
                     title: l('MediaId'),
-                    data: "id"
+                    data: "chatId"
+                },
+                {
+                    title: l('chatTitle'),
+                    data: "chatTitle"
                 },
                 {
                     title: l('IsExternalLinkGenerated'),
                     data: "isExternalLinkGenerated"
-                },
-                {
-                    title: l('IsFileDeleted'),
-                    data: "isFileDeleted"
-                },
-                {
-                    title: l('MediaAccessHash'),
-                    data: "accessHash"
-                },
-                {
-                    title: l('MediaTId'),
-                    data: "tid"
                 },
                 {
                     title: l('MediaSize'),
@@ -75,16 +53,16 @@ $(function () {
                     }
                 },
                 {
-                    title: l('MediaMimeType'),
-                    data: "mimeType"
-                },
-                {
                     title: l('MediaSavePath'),
                     data: "savePath"
                 },
                 {
                     title: l('MediaValueSHA1'),
-                    data: "valueSHA1"
+                    data: "mD5"
+                },
+                {
+                    title: l('MediaMimeType'),
+                    data: "mimeType"
                 },
                 {
                     title: l('MediaCreationTime'),
@@ -98,7 +76,7 @@ $(function () {
                 },
                 {
                     title: l('MediaChatTitle'),
-                    data: "title"
+                    data: "message"
                 }
             ]
         })
