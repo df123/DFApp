@@ -146,6 +146,12 @@ namespace DFApp.Background
             string chatTitle = "NoChatTitle";
             if(chats.Count > 0){
                 chatId = chats.First().Value.ID;
+                chatTitle = chats.First().Value.Title;
+            }
+
+            var ignoredChatIds = await GetConfigurationInfo("IgnoredChatIds");
+            if (ignoredChatIds.Contains(chatId.ToString())){
+                return;
             }
 
             foreach (Update update in updateArray)
