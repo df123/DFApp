@@ -24,7 +24,7 @@ namespace DFApp.Media
         FilterAndPagedAndSortedResultRequestDto,
         CreateUpdateMediaInfoDto>, IMediaInfoService
     {
-        private readonly IMediaRepository _mediaInfoRepository;
+        private readonly IRepository<MediaInfo,long> _mediaInfoRepository;
         private readonly IQueueBase<DocumentQueueModel> _documentQueue;
         private readonly IQueueBase<PhotoQueueModel> _photoQueue;
         private readonly IConfigurationInfoRepository _configurationInfoRepository;
@@ -32,7 +32,7 @@ namespace DFApp.Media
         private readonly string _moduleName;
         private readonly IReadOnlyRepository<MediaInfo,long>  _mediaInfoReadOnlyRepository;
 
-        public MediaInfoService(IMediaRepository repository
+        public MediaInfoService(IRepository<MediaInfo,long> repository
         , IConfigurationInfoRepository configurationInfoRepository
         , IQueueManagement queueManagement
         , IReadOnlyRepository<MediaInfo,long>  mediaInfoReadOnlyRepository) : base(repository)
@@ -68,10 +68,10 @@ namespace DFApp.Media
 
         }
 
-        public async Task<long> GetDownloadsSize()
-        {
-            return await _mediaInfoRepository.GetDownloadsSize();
-        }
+        // public async Task<long> GetDownloadsSize()
+        // {
+        //     return await _mediaInfoRepository.GetDownloadsSize();
+        // }
 
         public QueueCountDto GetQueueCount()
         {
@@ -85,10 +85,10 @@ namespace DFApp.Media
             return queueCountDto;
         }
 
-        public async Task<MediaInfoDto[]> GetMediaNotReturn()
-        {
-            return ObjectMapper.Map<MediaInfo[], MediaInfoDto[]>(await _mediaInfoRepository.GetMediaNotReturn());
-        }
+        // public async Task<MediaInfoDto[]> GetMediaNotReturn()
+        // {
+        //     return ObjectMapper.Map<MediaInfo[], MediaInfoDto[]>(await _mediaInfoRepository.GetMediaNotReturn());
+        // }
 
         public async Task<ChartDataDto> GetChartData()
         {
