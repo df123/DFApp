@@ -71,7 +71,7 @@ namespace DFApp.Media.ExternalLink
 
                 using var scope = serviceScopeFactory.CreateScope();
                 var configurationInfoRepository = scope.ServiceProvider.GetRequiredService<IConfigurationInfoRepository>();
-                var mediaInfoRepository = scope.ServiceProvider.GetRequiredService<IMediaRepository>();
+                var mediaInfoRepository = scope.ServiceProvider.GetRequiredService<IRepository<MediaInfo>>();
                 var externalLinkRepository = scope.ServiceProvider.GetRequiredService<IRepository<MediaExternalLink>>();
 
                 var returnDownloadUrlPrefix = await configurationInfoRepository.GetConfigurationInfoValue("ReturnDownloadUrlPrefix", MediaBackgroudConst.ModuleName);
@@ -182,7 +182,7 @@ namespace DFApp.Media.ExternalLink
 
                 using var scope = serviceScopeFactory.CreateScope();
                 var externalLinkRepository = scope.ServiceProvider.GetRequiredService<IRepository<MediaExternalLink>>();
-                var mediaInfoRepository = scope.ServiceProvider.GetRequiredService<IMediaRepository>();
+                var mediaInfoRepository = scope.ServiceProvider.GetRequiredService<IRepository<MediaInfo>>();
                 var configurationInfoRepository = scope.ServiceProvider.GetRequiredService<IConfigurationInfoRepository>();
                 var mediaExternalLinkMediaIdRepository = scope.ServiceProvider.GetRequiredService<IRepository<MediaExternalLinkMediaIds>>();
 

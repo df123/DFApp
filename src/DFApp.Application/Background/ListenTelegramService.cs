@@ -26,13 +26,13 @@ namespace DFApp.Background
         private readonly IQueueManagement _queueManagement;
         private readonly IQueueBase<DocumentQueueModel> _documentQueue;
         private readonly IQueueBase<PhotoQueueModel> _photoQueue;
-        private readonly IMediaRepository _mediaInfoRepository;
+        private readonly IRepository<MediaInfo,long> _mediaInfoRepository;
         public const long SpaceUpperLimitInBytes = 2048L * 1024L * 1024L; // 2 GB
 
 
         public ListenTelegramService(
         IQueueManagement queueManagement
-        , IMediaRepository mediaInfoRepository
+        , IRepository<MediaInfo,long> mediaInfoRepository
         , IConfigurationInfoRepository configurationInfoRepository)
             : base(ListenTelegramConst.ModuleName, configurationInfoRepository)
         {
@@ -194,7 +194,7 @@ namespace DFApp.Background
                     }
 
 
-                    var isExsist = await _mediaInfoRepository.FirstOrDefaultAsync(x => x.MediaId == document.id);
+                    var isExsist = await _mediaInfoRepository.FindAsync(x => x.MediaId == document.id);
                     if (isExsist != null)
                     {
                         continue;
@@ -233,7 +233,7 @@ namespace DFApp.Background
                 else if (message.media is MessageMediaPhoto { photo: Photo photo })
                 {
 
-                    var isExsist = await _mediaInfoRepository.FirstOrDefaultAsync(x => x.MediaId == photo.id);
+                    var isExsist = await _mediaInfoRepository.FindAsync(x => x.MediaId == photo.id);
                     if (isExsist != null)
                     {
                         continue;
@@ -386,28 +386,28 @@ namespace DFApp.Background
             }
         }
 
-        public async Task<double> CalculationDownloadsSize()
-        {
-            long size = await _mediaInfoRepository.GetDownloadsSize();
-            return StorageUnitConversionHelper.ByteToMB((double)(size));
-        }
+        // public async Task<double> CalculationDownloadsSize()
+        // {
+        //     long size = await _mediaInfoRepository.GetDownloadsSize();
+        //     return StorageUnitConversionHelper.ByteToMB((double)(size));
+        // }
 
         public async Task IsUpperLimit()
         {
-
-#if DEBUG
             return;
-#endif
+// #if DEBUG
+//             return;
+// #endif
 
-            long.TryParse(AppsettingsHelper.app("RunConfig", "Bandwidth"), out long bandwidth);
-            double sizes = await CalculationDownloadsSize();
-            Logger.LogInformation($"{DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")} Downloaded:{sizes}MB");
-            if (sizes > bandwidth)
-            {
-                Logger.LogInformation($"{DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")} Download traffic reached the limit, pause download");
-                Thread.Sleep(DateTimeHelper.GetUntilTomorrowTimeSpan());
-                Logger.LogInformation($"{DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")} Download traffic and start over");
-            }
+//             long.TryParse(AppsettingsHelper.app("RunConfig", "Bandwidth"), out long bandwidth);
+//             double sizes = await CalculationDownloadsSize();
+//             Logger.LogInformation($"{DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")} Downloaded:{sizes}MB");
+//             if (sizes > bandwidth)
+//             {
+//                 Logger.LogInformation($"{DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")} Download traffic reached the limit, pause download");
+//                 Thread.Sleep(DateTimeHelper.GetUntilTomorrowTimeSpan());
+//                 Logger.LogInformation($"{DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")} Download traffic and start over");
+//             }
         }
 
         public bool IsSpaceUpperLimit(long sizes)
