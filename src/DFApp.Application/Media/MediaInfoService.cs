@@ -30,10 +30,12 @@ namespace DFApp.Media
         private readonly IConfigurationInfoRepository _configurationInfoRepository;
         private readonly IQueueManagement _queueManagement;
         private readonly string _moduleName;
+        private readonly IReadOnlyRepository<MediaInfo,long>  _mediaInfoReadOnlyRepository;
 
         public MediaInfoService(IMediaRepository repository
         , IConfigurationInfoRepository configurationInfoRepository
-        , IQueueManagement queueManagement) : base(repository)
+        , IQueueManagement queueManagement
+        , IReadOnlyRepository<MediaInfo,long>  mediaInfoReadOnlyRepository) : base(repository)
         {
             _mediaInfoRepository = repository;
             _queueManagement = queueManagement;
@@ -46,7 +48,7 @@ namespace DFApp.Media
             DeletePolicyName = DFAppPermissions.Medias.Delete;
             _configurationInfoRepository = configurationInfoRepository;
             _moduleName = "DFApp.Media.MediaInfoService";
-
+            _mediaInfoReadOnlyRepository = mediaInfoReadOnlyRepository;
         }
 
         protected override async Task<IQueryable<MediaInfo>> CreateFilteredQueryAsync(FilterAndPagedAndSortedResultRequestDto input)
