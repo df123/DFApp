@@ -95,10 +95,12 @@ public class DFAppDbContext :
     public DbSet<FileUploadInfo> FileUploadInfos { get; set; }
 
     public DbSet<MediaExternalLink> MediaExternalLinks { get; set; }
+    public DbSet<MediaExternalLinkMediaIds> ExternalLinkMediaIds { get; set; }
 
     public DbSet<TellStatusResult> TellStatusResults { get; set; }
     public DbSet<FilesItem> FilesItems { get; set; }
     public DbSet<UrisItem> UrisItems { get; set; }
+
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
@@ -118,6 +120,7 @@ public class DFAppDbContext :
         builder.Entity<MediaInfo>(b =>
         {
             b.ToTable(DFAppConsts.DbTablePrefix + "MediaInfo", DFAppConsts.DbSchema);
+            b.HasIndex(e => e.MediaId);
             b.ConfigureByConvention();
         });
 
@@ -199,6 +202,18 @@ public class DFAppDbContext :
         builder.Entity<MediaExternalLink>(b =>
         {
             b.ToTable(DFAppConsts.DbTablePrefix + "MediaExternalLink", DFAppConsts.DbSchema);
+            
+            b.HasMany(e => e.MediaIds)
+            .WithOne(e => e.ExternalLink)
+            .HasForeignKey(e => e.MediaExternalLinkId)
+            .IsRequired();
+
+            b.ConfigureByConvention();
+        });
+
+        builder.Entity<MediaExternalLinkMediaIds>(b =>
+        {
+            b.ToTable(DFAppConsts.DbTablePrefix + "MediaExternalLinkMediaIds", DFAppConsts.DbSchema);
 
             b.ConfigureByConvention();
         });

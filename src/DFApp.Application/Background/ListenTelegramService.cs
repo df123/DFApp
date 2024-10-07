@@ -11,6 +11,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using TL;
+using Volo.Abp.Domain.Repositories;
 
 namespace DFApp.Background
 {
@@ -144,13 +145,15 @@ namespace DFApp.Background
             var chats = updates.chats;
             long chatId = long.MaxValue;
             string chatTitle = "NoChatTitle";
-            if(chats.Count > 0){
+            if (chats.Count > 0)
+            {
                 chatId = chats.First().Value.ID;
                 chatTitle = chats.First().Value.Title;
             }
 
             var ignoredChatIds = await GetConfigurationInfo("IgnoredChatIds");
-            if (ignoredChatIds.Contains(chatId.ToString())){
+            if (ignoredChatIds.Contains(chatId.ToString()))
+            {
                 return;
             }
 
@@ -162,10 +165,21 @@ namespace DFApp.Background
                 }
 
                 var ignoredMessages = await GetConfigurationInfo("IgnoredMessages");
-                if (ignoredMessages.Contains(message.message)){
+                var ignoredMessagesArrays = ignoredMessages.Split(";", StringSplitOptions.RemoveEmptyEntries);
+                bool isIgnored = false;
+                foreach (var ignoredMessage in ignoredMessagesArrays)
+                {
+                    if (message.message.Contains(ignoredMessage))
+                    {
+                        isIgnored = true;
+                        break;
+                    }
+                }
+                if (isIgnored)
+                {
                     continue;
                 }
-                
+
                 if (message.media is MessageMediaDocument { document: Document document })
                 {
                     int slash = document.mime_type.IndexOf('/');
@@ -179,6 +193,14 @@ namespace DFApp.Background
                         continue;
                     }
 
+
+                    var isExsist = await _mediaInfoRepository.FirstOrDefaultAsync(x => x.MediaId == document.id);
+                    if (isExsist != null)
+                    {
+                        continue;
+                    }
+
+
                     string titleDirectoy = Path.Combine(await GetConfigurationInfo("SaveVideoPathPrefix"), chatId.ToString());
                     if (!Directory.Exists(titleDirectoy))
                     {
@@ -188,6 +210,7 @@ namespace DFApp.Background
 
                     MediaInfo canAdd = await _mediaInfoRepository.InsertAsync(new MediaInfo()
                     {
+                        MediaId = document.id,
                         ChatId = chatId,
                         ChatTitle = chatTitle,
                         Message = message.message,
@@ -195,8 +218,7 @@ namespace DFApp.Background
                         Size = document.size,
                         MD5 = string.Empty,
                         MimeType = document.mime_type,
-                        IsExternalLinkGenerated = false,
-                        IsFileDeleted = false
+                        IsExternalLinkGenerated = false
                     });
                     if (canAdd != null)
                     {
@@ -211,6 +233,13 @@ namespace DFApp.Background
                 else if (message.media is MessageMediaPhoto { photo: Photo photo })
                 {
 
+                    var isExsist = await _mediaInfoRepository.FirstOrDefaultAsync(x => x.MediaId == photo.id);
+                    if (isExsist != null)
+                    {
+                        continue;
+                    }
+
+
                     string titleDirectoy = Path.Combine(await GetConfigurationInfo("SavePhotoPathPrefix"), chatId.ToString());
                     if (!Directory.Exists(titleDirectoy))
                     {
@@ -220,6 +249,7 @@ namespace DFApp.Background
 
                     MediaInfo canAdd = await _mediaInfoRepository.InsertAsync(new MediaInfo()
                     {
+                        MediaId = photo.id,
                         ChatId = chatId,
                         ChatTitle = chatTitle,
                         Message = message.message,
@@ -227,8 +257,7 @@ namespace DFApp.Background
                         Size = photo.LargestPhotoSize.FileSize,
                         MD5 = string.Empty,
                         MimeType = "JPG",
-                        IsExternalLinkGenerated = false,
-                        IsFileDeleted = false
+                        IsExternalLinkGenerated = false
                     });
                     if (canAdd != null)
                     {
@@ -367,7 +396,7 @@ namespace DFApp.Background
         {
 
 #if DEBUG
-return;
+            return;
 #endif
 
             long.TryParse(AppsettingsHelper.app("RunConfig", "Bandwidth"), out long bandwidth);
@@ -385,7 +414,7 @@ return;
         {
 
 #if DEBUG
-return false;
+            return false;
 #endif
 
             double availableFreeSpace = double.Parse(AppsettingsHelper.app("RunConfig", "AvailableFreeSpace"));

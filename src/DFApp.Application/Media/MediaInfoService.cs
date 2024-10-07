@@ -1,4 +1,5 @@
 ﻿using DFApp.Background;
+using DFApp.Bookkeeping.Expenditure;
 using DFApp.Configuration;
 using DFApp.Permissions;
 using DFApp.Queue;
@@ -20,7 +21,7 @@ namespace DFApp.Media
         MediaInfo,
         MediaInfoDto,
         long,
-        PagedAndSortedResultRequestDto,
+        FilterAndPagedAndSortedResultRequestDto,
         CreateUpdateMediaInfoDto>, IMediaInfoService
     {
         private readonly IMediaRepository _mediaInfoRepository;
@@ -29,12 +30,10 @@ namespace DFApp.Media
         private readonly IConfigurationInfoRepository _configurationInfoRepository;
         private readonly IQueueManagement _queueManagement;
         private readonly string _moduleName;
-        private readonly IReadOnlyRepository<MediaInfo,long>  _mediaInfoReadOnlyRepository;
 
         public MediaInfoService(IMediaRepository repository
         , IConfigurationInfoRepository configurationInfoRepository
-        , IQueueManagement queueManagement
-        , IReadOnlyRepository<MediaInfo,long>  mediaInfoReadOnlyRepository) : base(repository)
+        , IQueueManagement queueManagement) : base(repository)
         {
             _mediaInfoRepository = repository;
             _queueManagement = queueManagement;
@@ -47,7 +46,23 @@ namespace DFApp.Media
             DeletePolicyName = DFAppPermissions.Medias.Delete;
             _configurationInfoRepository = configurationInfoRepository;
             _moduleName = "DFApp.Media.MediaInfoService";
-            _mediaInfoReadOnlyRepository = mediaInfoReadOnlyRepository;
+
+        }
+
+        protected override async Task<IQueryable<MediaInfo>> CreateFilteredQueryAsync(FilterAndPagedAndSortedResultRequestDto input)
+        {
+            
+            if (!string.IsNullOrWhiteSpace(input.Filter))
+            {
+                var query = await Repository.GetQueryableAsync();
+                return query.Where(x => x.MediaId.ToString().Contains(input.Filter)
+                || x.ChatTitle.Contains(input.Filter)
+                || x.Message!.Contains(input.Filter));
+            }
+            else
+            {
+                return await Repository.GetQueryableAsync();
+            }
 
         }
 

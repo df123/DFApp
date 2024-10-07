@@ -6,7 +6,7 @@ $(function () {
         abp.libs.datatables.normalizeConfiguration({
             serverSide: true,
             paging: true,
-            order: [[6, "desc"]],
+            order: [[7, "desc"]],
             scrollX: true,
             ajax: abp.libs.datatables.createAjax(dFApp.media.mediaInfo.getList),
             columnDefs: [
@@ -34,8 +34,15 @@ $(function () {
                     }
                 },
                 {
+                    title: l('Media:Column:MediaId'),
+                    data: "mediaId"
+                },
+                {
                     title: l('Media:Column:IsExternalLinkGenerated'),
-                    data: "isExternalLinkGenerated"
+                    data: "isExternalLinkGenerated",
+                    render: function (data, type, row) {
+                        return '<input type="checkbox" ' + (data ? 'checked' : '') + '>';
+                    }
                 },
                 {
                     title: l('Media:Column:MediaSize'),

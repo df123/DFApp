@@ -6,6 +6,7 @@ namespace DFApp.Media
 {
     public class MediaInfo : AuditedAggregateRoot<long>
     {
+        public long MediaId { get; set; }
         public long ChatId { get; set; }
         public required string ChatTitle { get; set; }
         public string? Message { get; set; }
@@ -14,6 +15,5 @@ namespace DFApp.Media
         public required string MD5 { get; set; }
         public required string MimeType { get; set; }
         public bool IsExternalLinkGenerated { get; set; }
-        public bool IsFileDeleted { get; set; }
     }
 }
