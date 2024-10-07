@@ -165,7 +165,7 @@ namespace DFApp.Background
                 }
 
                 var ignoredMessages = await GetConfigurationInfo("IgnoredMessages");
-                var ignoredMessagesArrays = ignoredMessages.Split(";");
+                var ignoredMessagesArrays = ignoredMessages.Split(";", StringSplitOptions.RemoveEmptyEntries);
                 bool isIgnored = false;
                 foreach (var ignoredMessage in ignoredMessagesArrays)
                 {
@@ -193,14 +193,13 @@ namespace DFApp.Background
                         continue;
                     }
 
-                    using (_mediaInfoRepository.DisableTracking())
+
+                    var isExsist = await _mediaInfoRepository.FirstOrDefaultAsync(x => x.MediaId == document.id);
+                    if (isExsist != null)
                     {
-                        var isExsist = await _mediaInfoRepository.FirstOrDefaultAsync(x => x.MediaId == document.id);
-                        if (isExsist != null)
-                        {
-                            continue;
-                        }
+                        continue;
                     }
+
 
                     string titleDirectoy = Path.Combine(await GetConfigurationInfo("SaveVideoPathPrefix"), chatId.ToString());
                     if (!Directory.Exists(titleDirectoy))
@@ -233,14 +232,13 @@ namespace DFApp.Background
                 }
                 else if (message.media is MessageMediaPhoto { photo: Photo photo })
                 {
-                    using (_mediaInfoRepository.DisableTracking())
+
+                    var isExsist = await _mediaInfoRepository.FirstOrDefaultAsync(x => x.MediaId == photo.id);
+                    if (isExsist != null)
                     {
-                        var isExsist = await _mediaInfoRepository.FirstOrDefaultAsync(x => x.MediaId == photo.id);
-                        if (isExsist != null)
-                        {
-                            continue;
-                        }
+                        continue;
                     }
+
 
                     string titleDirectoy = Path.Combine(await GetConfigurationInfo("SavePhotoPathPrefix"), chatId.ToString());
                     if (!Directory.Exists(titleDirectoy))

@@ -73,9 +73,6 @@ namespace DFApp.Media.ExternalLink
                 var configurationInfoRepository = scope.ServiceProvider.GetRequiredService<IConfigurationInfoRepository>();
                 var mediaInfoRepository = scope.ServiceProvider.GetRequiredService<IMediaRepository>();
                 var externalLinkRepository = scope.ServiceProvider.GetRequiredService<IRepository<MediaExternalLink>>();
-                
-
-                using var configurationInfoRepositoryDisableTracking = configurationInfoRepository.DisableTracking();
 
                 var returnDownloadUrlPrefix = await configurationInfoRepository.GetConfigurationInfoValue("ReturnDownloadUrlPrefix", MediaBackgroudConst.ModuleName);
                 Check.NotNullOrWhiteSpace(returnDownloadUrlPrefix, nameof(returnDownloadUrlPrefix));
@@ -85,14 +82,10 @@ namespace DFApp.Media.ExternalLink
 
                 string zipType = await configurationInfoRepository.GetConfigurationInfoValue("ZipType", MediaBackgroudConst.ModuleName);
 
-                List<MediaInfo> temp;
-
-                using (mediaInfoRepository.DisableTracking())
-                {
-                    temp = await mediaInfoRepository.GetListAsync(x => !x.IsExternalLinkGenerated
+                List<MediaInfo> temp = await mediaInfoRepository.GetListAsync(x => !x.IsExternalLinkGenerated
                     && zipType.Contains(x.MimeType)
                     && x.SavePath != null);
-                }
+
 
                 if (temp == null || temp.Count <= 0)
                 {
@@ -160,8 +153,10 @@ namespace DFApp.Media.ExternalLink
                         MediaIds = mediaExternalLinkMediaIds
                     };
 
-                    foreach (var mediaInfo in temp){
-                        mediaExternalLinkMediaIds.Add(new MediaExternalLinkMediaIds(){
+                    foreach (var mediaInfo in temp)
+                    {
+                        mediaExternalLinkMediaIds.Add(new MediaExternalLinkMediaIds()
+                        {
                             MediaId = mediaInfo.Id
                         });
                     }
