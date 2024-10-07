@@ -73,15 +73,26 @@ namespace DFApp.Media.ExternalLink
                 var configurationInfoRepository = scope.ServiceProvider.GetRequiredService<IConfigurationInfoRepository>();
                 var mediaInfoRepository = scope.ServiceProvider.GetRequiredService<IMediaRepository>();
                 var externalLinkRepository = scope.ServiceProvider.GetRequiredService<IRepository<MediaExternalLink>>();
+                
+
+                using var configurationInfoRepositoryDisableTracking = configurationInfoRepository.DisableTracking();
 
                 var returnDownloadUrlPrefix = await configurationInfoRepository.GetConfigurationInfoValue("ReturnDownloadUrlPrefix", MediaBackgroudConst.ModuleName);
-
                 Check.NotNullOrWhiteSpace(returnDownloadUrlPrefix, nameof(returnDownloadUrlPrefix));
 
                 string photoSavePath = await configurationInfoRepository.GetConfigurationInfoValue("SavePhotoPathPrefix", MediaBackgroudConst.ModuleName);
                 Check.NotNullOrWhiteSpace(photoSavePath, nameof(photoSavePath));
 
-                var temp = await mediaInfoRepository.GetListAsync(x => (!x.IsFileDeleted) && (!x.IsExternalLinkGenerated));
+                string zipType = await configurationInfoRepository.GetConfigurationInfoValue("ZipType", MediaBackgroudConst.ModuleName);
+
+                List<MediaInfo> temp;
+
+                using (mediaInfoRepository.DisableTracking())
+                {
+                    temp = await mediaInfoRepository.GetListAsync(x => !x.IsExternalLinkGenerated
+                    && zipType.Contains(x.MimeType)
+                    && x.SavePath != null);
+                }
 
                 if (temp == null || temp.Count <= 0)
                 {
@@ -101,21 +112,18 @@ namespace DFApp.Media.ExternalLink
                     stringBuilder.AppendLine(Path.Combine(returnDownloadUrlPrefix, zipPhotoName));
                 }
 
-                string zipType = await configurationInfoRepository.GetConfigurationInfoValue("ZipType", MediaBackgroudConst.ModuleName);
+
                 string replaceUrlPrefix = await configurationInfoRepository.GetConfigurationInfoValue("ReplaceUrlPrefix", MediaBackgroudConst.ModuleName);
                 foreach (var mediaInfo in temp)
                 {
-                    if (mediaInfo.SavePath == null || zipType.Contains(mediaInfo.MimeType!))
-                    {
-                        if (!string.IsNullOrWhiteSpace(mediaInfo.SavePath) && File.Exists(mediaInfo.SavePath))
-                        {
-                            archive.CreateEntryFromFile(mediaInfo.SavePath, Path.GetFileName(mediaInfo.SavePath));
-                            mediaInfo.IsExternalLinkGenerated = true;
-                            size += mediaInfo.Size;
-                        }
 
-                        continue;
+                    if (File.Exists(mediaInfo.SavePath))
+                    {
+                        archive.CreateEntryFromFile(mediaInfo.SavePath, Path.GetFileName(mediaInfo.SavePath), CompressionLevel.NoCompression);
+                        mediaInfo.IsExternalLinkGenerated = true;
+                        size += mediaInfo.Size;
                     }
+
                     stringBuilder.AppendLine($"{Path.Combine(returnDownloadUrlPrefix, mediaInfo.SavePath.Replace(replaceUrlPrefix, string.Empty).Replace("\\", "/"))}");
                     mediaInfo.IsExternalLinkGenerated = true;
                 }
@@ -124,14 +132,14 @@ namespace DFApp.Media.ExternalLink
                 {
                     temp.Add(await mediaInfoRepository.InsertAsync(new MediaInfo()
                     {
+                        MediaId = Random.Shared.NextInt64(),
                         ChatId = Random.Shared.NextInt64(),
                         ChatTitle = "zip",
                         Size = size,
                         SavePath = zipPhotoPathName,
                         MD5 = HashHelper.CalculateMD5(zipPhotoPathName),
                         MimeType = "zip",
-                        IsExternalLinkGenerated = true,
-                        IsFileDeleted = false
+                        IsExternalLinkGenerated = true
                     }));
                 }
 
@@ -139,15 +147,27 @@ namespace DFApp.Media.ExternalLink
                 {
                     await mediaInfoRepository.UpdateManyAsync(temp);
                     stopwatch.Stop();
-                    await externalLinkRepository.InsertAsync(new MediaExternalLink()
+
+                    List<MediaExternalLinkMediaIds> mediaExternalLinkMediaIds = new List<MediaExternalLinkMediaIds>();
+
+                    var mediaExternalLink = new MediaExternalLink()
                     {
                         Name = datetimeName,
                         Size = size,
                         TimeConsumed = stopwatch.ElapsedMilliseconds,
                         IsRemove = false,
                         LinkContent = stringBuilder.ToString(),
-                        MediaIds = string.Join(',', temp.Select(x => x.Id)),
-                    });
+                        MediaIds = mediaExternalLinkMediaIds
+                    };
+
+                    foreach (var mediaInfo in temp){
+                        mediaExternalLinkMediaIds.Add(new MediaExternalLinkMediaIds(){
+                            MediaId = mediaInfo.Id
+                        });
+                    }
+
+
+                    await externalLinkRepository.InsertAsync(mediaExternalLink);
                 }
 
             });
@@ -169,23 +189,25 @@ namespace DFApp.Media.ExternalLink
                 var externalLinkRepository = scope.ServiceProvider.GetRequiredService<IRepository<MediaExternalLink>>();
                 var mediaInfoRepository = scope.ServiceProvider.GetRequiredService<IMediaRepository>();
                 var configurationInfoRepository = scope.ServiceProvider.GetRequiredService<IConfigurationInfoRepository>();
+                var mediaExternalLinkMediaIdRepository = scope.ServiceProvider.GetRequiredService<IRepository<MediaExternalLinkMediaIds>>();
 
 
                 MediaExternalLink mediaExternalLink = await externalLinkRepository.GetAsync(x => x.Id == id);
-                if (mediaExternalLink != null && (!mediaExternalLink.IsRemove) && (!string.IsNullOrWhiteSpace(mediaExternalLink.MediaIds)))
+                if (!mediaExternalLink.IsRemove)
                 {
-                    List<long> ids = (mediaExternalLink.MediaIds.Split(',')).Select(x => long.Parse(x)).ToList();
+
+                    var mediaExternalLinkMediaIds = await mediaExternalLinkMediaIdRepository.GetListAsync(x => x.MediaExternalLinkId == mediaExternalLink.Id);
+
+                    List<long> ids = mediaExternalLinkMediaIds.Select(x => x.MediaId).ToList();
                     List<MediaInfo> medias = await mediaInfoRepository.GetListAsync(x => ids.Contains(x.Id));
 
                     foreach (var item in medias)
                     {
                         if (item != null && (!string.IsNullOrWhiteSpace(item.SavePath)))
                         {
-                            item.IsFileDeleted = true;
                             SpaceHelper.DeleteFile(item.SavePath!);
                         }
                     }
-
 
                     var savePhotoPathPrefix = await configurationInfoRepository.GetConfigurationInfoValue("SavePhotoPathPrefix", MediaBackgroudConst.ModuleName);
                     var saveVideoPathPrefix = await configurationInfoRepository.GetConfigurationInfoValue("SaveVideoPathPrefix", MediaBackgroudConst.ModuleName);

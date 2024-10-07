@@ -4,14 +4,14 @@ namespace DFApp.Media
 {
     public class CreateUpdateMediaInfoDto
     {
-        public long AccessHash { get; set; }
-        public long TID { get; set; }
+        public long MediaId { get; set; }
+        public long ChatId { get; set; }
+        public required string ChatTitle { get; set; }
+        public string? Message { get; set; }
         public long Size { get; set; }
-        public string? SavePath { get; set; }
-        public string? ValueSHA1 { get; set; }
-        public string? MimeType { get; set; }
-        public string? Title { get; set; }
+        public required string SavePath { get; set; }
+        public required string MD5 { get; set; }
+        public required string MimeType { get; set; }
         public bool IsExternalLinkGenerated { get; set; }
-        public bool IsFileDeleted { get; set; }
     }
 }

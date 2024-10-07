@@ -5,6 +5,7 @@ namespace DFApp.Media
 {
     public class MediaInfoDto : AuditedEntityDto<long>
     {
+        public long MediaId { get; set; }
         public long ChatId { get; set; }
         public string ChatTitle { get; set; } = null!;
         public string? Message { get; set; }
@@ -13,6 +14,5 @@ namespace DFApp.Media
         public string MD5 { get; set; } = null!;
         public string MimeType { get; set; } = null!;
         public bool IsExternalLinkGenerated { get; set; }
-        public bool IsFileDeleted { get; set; }
     }
 }
