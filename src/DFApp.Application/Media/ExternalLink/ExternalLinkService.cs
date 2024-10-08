@@ -83,8 +83,7 @@ namespace DFApp.Media.ExternalLink
                 string zipType = await configurationInfoRepository.GetConfigurationInfoValue("ZipType", MediaBackgroudConst.ModuleName);
 
                 List<MediaInfo> temp = await mediaInfoRepository.GetListAsync(x => !x.IsExternalLinkGenerated
-                    && zipType.Contains(x.MimeType)
-                    && x.SavePath != null);
+                    && (!string.IsNullOrWhiteSpace(x.MD5)));
 
 
                 if (temp == null || temp.Count <= 0)
@@ -110,11 +109,13 @@ namespace DFApp.Media.ExternalLink
                 foreach (var mediaInfo in temp)
                 {
 
-                    if (File.Exists(mediaInfo.SavePath))
+                    if (zipType.Contains(mediaInfo.MimeType) && File.Exists(mediaInfo.SavePath))
                     {
                         archive.CreateEntryFromFile(mediaInfo.SavePath, Path.GetFileName(mediaInfo.SavePath), CompressionLevel.NoCompression);
                         mediaInfo.IsExternalLinkGenerated = true;
                         size += mediaInfo.Size;
+
+                        continue;
                     }
 
                     stringBuilder.AppendLine($"{Path.Combine(returnDownloadUrlPrefix, mediaInfo.SavePath.Replace(replaceUrlPrefix, string.Empty).Replace("\\", "/"))}");

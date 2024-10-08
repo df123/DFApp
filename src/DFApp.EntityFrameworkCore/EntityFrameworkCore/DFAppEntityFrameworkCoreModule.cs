@@ -5,6 +5,7 @@ using Volo.Abp.AuditLogging.EntityFrameworkCore;
 using Volo.Abp.BackgroundJobs.EntityFrameworkCore;
 using Volo.Abp.EntityFrameworkCore;
 using Volo.Abp.EntityFrameworkCore.SqlServer;
+using Volo.Abp.EntityFrameworkCore.Sqlite;
 using Volo.Abp.FeatureManagement.EntityFrameworkCore;
 using Volo.Abp.Identity.EntityFrameworkCore;
 using Volo.Abp.Modularity;
@@ -23,15 +24,21 @@ namespace DFApp.EntityFrameworkCore;
     typeof(AbpOpenIddictEntityFrameworkCoreModule),
     typeof(AbpPermissionManagementEntityFrameworkCoreModule),
     typeof(AbpSettingManagementEntityFrameworkCoreModule),
-    typeof(AbpEntityFrameworkCoreSqlServerModule),
     typeof(AbpBackgroundJobsEntityFrameworkCoreModule),
     typeof(AbpAuditLoggingEntityFrameworkCoreModule),
     typeof(AbpTenantManagementEntityFrameworkCoreModule),
     typeof(AbpFeatureManagementEntityFrameworkCoreModule)
     )]
 [DependsOn(typeof(CmsKitEntityFrameworkCoreModule))]
-    [DependsOn(typeof(BlobStoringDatabaseEntityFrameworkCoreModule))]
-    public class DFAppEntityFrameworkCoreModule : AbpModule
+[DependsOn(typeof(BlobStoringDatabaseEntityFrameworkCoreModule))]
+
+#if DEBUG
+[DependsOn(typeof(AbpEntityFrameworkCoreSqlServerModule))]
+#else
+[DependsOn(typeof(AbpEntityFrameworkCoreSqliteModule))]
+#endif
+
+public class DFAppEntityFrameworkCoreModule : AbpModule
 {
     public override void PreConfigureServices(ServiceConfigurationContext context)
     {
@@ -42,17 +49,26 @@ namespace DFApp.EntityFrameworkCore;
     {
         context.Services.AddAbpDbContext<DFAppDbContext>(options =>
         {
-                /* Remove "includeAllEntities: true" to create
-                 * default repositories only for aggregate roots */
+            /* Remove "includeAllEntities: true" to create
+             * default repositories only for aggregate roots */
             options.AddDefaultRepositories(includeAllEntities: true);
         });
 
         Configure<AbpDbContextOptions>(options =>
         {
-                /* The main point to change your DBMS.
-                 * See also DFAppMigrationsDbContextFactory for EF Core tooling. */
-            // options.UseSqlite();
+            /* The main point to change your DBMS.
+             * See also DFAppMigrationsDbContextFactory for EF Core tooling. */
+
+#if DEBUG
+
             options.UseSqlServer();
+#else
+
+     
+            options.UseSqlite();
+#endif
+
+
         });
 
         Configure<AbpUnitOfWorkDefaultOptions>(options =>

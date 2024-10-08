@@ -25,6 +25,22 @@ namespace DFApp.Configuration
                 await _configurationRepository.InsertAsync(new ConfigurationInfo
                 {
                     ModuleName = string.Empty,
+                    ConfigurationName = "IgnoredMessages",
+                    ConfigurationValue = "IgnoredMessages",
+                    Remark = string.Empty
+                }, autoSave: true);
+
+                await _configurationRepository.InsertAsync(new ConfigurationInfo
+                {
+                    ModuleName = string.Empty,
+                    ConfigurationName = "IgnoredChatIds",
+                    ConfigurationValue = "IgnoredChatIds",
+                    Remark = string.Empty
+                }, autoSave: true);
+
+                await _configurationRepository.InsertAsync(new ConfigurationInfo
+                {
+                    ModuleName = string.Empty,
                     ConfigurationName = "AvailableFreeSpace",
                     ConfigurationValue = "2048",
                     Remark = string.Empty
