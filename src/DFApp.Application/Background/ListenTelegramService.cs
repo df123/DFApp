@@ -2,10 +2,12 @@
 using DFApp.Helper;
 using DFApp.Media;
 using DFApp.Queue;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 using Starksoft.Net.Proxy;
 using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading;
@@ -15,51 +17,42 @@ using Volo.Abp.Domain.Repositories;
 
 namespace DFApp.Background
 {
-    public class ListenTelegramService : DFAppBackgroundWorkerBase, IDisposable
+    public class ListenTelegramService : BackgroundService
     {
         private WTelegram.Client? _client;
         public WTelegram.Client? TGClinet { get { return _client; } }
         public User? User => TGClinet?.User;
-
         public string ConfigNeeded { get; set; } = "start";
 
-        private readonly IQueueManagement _queueManagement;
-        private readonly IQueueBase<DocumentQueueModel> _documentQueue;
-        private readonly IQueueBase<PhotoQueueModel> _photoQueue;
-        private readonly IRepository<MediaInfo,long> _mediaInfoRepository;
-        public const long SpaceUpperLimitInBytes = 2048L * 1024L * 1024L; // 2 GB
+
+        private IQueueBase<DocumentQueueModel> _documentQueue;
+        private IQueueBase<PhotoQueueModel> _photoQueue;
+
+        private readonly IServiceScopeFactory _serviceScopeFactory;
+        private readonly IServiceScope _serviceScope;
+        private readonly ILoggerFactory _loggerFactory;
+        private readonly IConfigurationInfoRepository _configurationInfoRepository;
+        private readonly IRepository<MediaInfo, long> _mediaInfoRepository;
+
+        private ILogger Logger => _loggerFactory.CreateLogger(GetType().FullName!) ?? NullLogger.Instance;
 
 
-        public ListenTelegramService(
-        IQueueManagement queueManagement
-        , IRepository<MediaInfo,long> mediaInfoRepository
-        , IConfigurationInfoRepository configurationInfoRepository)
-            : base(ListenTelegramConst.ModuleName, configurationInfoRepository)
+        public ListenTelegramService(IServiceScopeFactory serviceScopeFactory)
         {
-            this._mediaInfoRepository = mediaInfoRepository;
-            _queueManagement = queueManagement;
-            _documentQueue = _queueManagement.AddQueue<DocumentQueueModel>(ListenTelegramConst.DocumentQueue);
-            _photoQueue = _queueManagement.AddQueue<PhotoQueueModel>(ListenTelegramConst.PhotoQueue);
+            _serviceScopeFactory = serviceScopeFactory;
+
+            _serviceScope = _serviceScopeFactory.CreateScope();
+            _loggerFactory = _serviceScope.ServiceProvider.GetRequiredService<ILoggerFactory>();
+            _configurationInfoRepository = _serviceScope.ServiceProvider.GetRequiredService<IConfigurationInfoRepository>();
+            _mediaInfoRepository = _serviceScope.ServiceProvider.GetRequiredService<IRepository<MediaInfo, long>>();
+
+            _documentQueue = new QueueBase<DocumentQueueModel>();
+            _photoQueue = new QueueBase<PhotoQueueModel>();
         }
 
-        public override Task StartAsync(CancellationToken cancellationToken = default)
+        protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
-            _executeTask = StartWork();
-
-            if (_executeTask.IsCompleted)
-            {
-                return _executeTask;
-            }
-
-            return base.StartAsync(StoppingToken);
-        }
-
-        public override async Task RestartAsync(CancellationToken cancellationToken = default)
-        {
-            await base.RestartAsync(StoppingToken);
-            _documentQueue.ResetSignal();
-            _photoQueue.ResetSignal();
-            await StartAsync(StoppingToken);
+            await StartWork(stoppingToken).ConfigureAwait(false);
         }
 
         public async Task<string> DoLogin(string loginInfo)
@@ -74,7 +67,16 @@ namespace DFApp.Background
             }
         }
 
-        public async Task StartWork()
+        public async Task<string> GetConfigurationInfo(string configurationName)
+        {
+            using (_configurationInfoRepository.DisableTracking())
+            {
+                string v = await _configurationInfoRepository.GetConfigurationInfoValue(configurationName, ListenTelegramConst.ModuleName);
+                return v;
+            }
+        }
+
+        public async Task StartWork(CancellationToken stoppingToken)
         {
             try
             {
@@ -120,17 +122,14 @@ namespace DFApp.Background
 
                 ConfigNeeded = await DoLogin(await GetConfigurationInfo("phone_number"));
 
-                var mediaTask = DownloadMedia(await GetConfigurationInfo("SaveVideoPathPrefix"), _documentQueue, StoppingToken);
-                var photoTask = DownloadPhoto(await GetConfigurationInfo("SavePhotoPathPrefix"), _photoQueue, StoppingToken);
-                await mediaTask;
-                await photoTask;
+                var mediaTask = DownloadMedia(await GetConfigurationInfo("SaveVideoPathPrefix"), _documentQueue, stoppingToken);
+                var photoTask = DownloadPhoto(await GetConfigurationInfo("SavePhotoPathPrefix"), _photoQueue, stoppingToken);
+                await mediaTask.ConfigureAwait(false);
+                await photoTask.ConfigureAwait(false);
             }
             catch (Exception ex)
             {
                 Logger.LogError(ex.Message);
-                _hasError = true;
-                ErrorCount++;
-                ErrorDescription = ex.Message;
             }
         }
 
@@ -296,7 +295,7 @@ namespace DFApp.Background
                         continue;
                     }
 
-                    if (IsSpaceUpperLimit(photo.LargestPhotoSize.FileSize))
+                    if (await IsSpaceUpperLimit(photo.LargestPhotoSize.FileSize))
                     {
                         continue;
                     }
@@ -344,7 +343,7 @@ namespace DFApp.Background
                     {
                         continue;
                     }
-                    if (IsSpaceUpperLimit(document.size + SpaceUpperLimitInBytes))
+                    if (await IsSpaceUpperLimit(document.size + ListenTelegramConst.SpaceUpperLimitInBytes))
                     {
                         continue;
                     }
@@ -369,57 +368,43 @@ namespace DFApp.Background
 
         }
 
-        public async Task DeleteDownloadInfo(MediaInfo mediaInfo)
+        public async Task<double> CalculationDownloadsSize()
         {
-            Logger.LogInformation($"Start deleting duplicates。Hash:{mediaInfo.MD5}");
-            try
+            DateTime todayAtZero = DateTimeHelper.GetTodayAtZero();
+            DateTime tomorrowAtZero = DateTimeHelper.GetTomorrowAtZero();
+            using (_mediaInfoRepository.DisableTracking())
             {
-                if (mediaInfo.SavePath == null) { return; }
-                File.Delete(mediaInfo.SavePath);
-                await _mediaInfoRepository.DeleteAsync(mediaInfo);
-
-                Logger.LogInformation($"End delete successfully。Hash:{mediaInfo.MD5}");
-            }
-            catch (System.Exception e)
-            {
-                Logger.LogInformation($"End deletion failure, failure message{e.Message}。Hash:{mediaInfo.MD5}");
+                var result = await _mediaInfoRepository.GetListAsync(m =>
+                    m.LastModificationTime >= todayAtZero &&
+                    m.LastModificationTime < tomorrowAtZero);
+                long size = result.Sum(x => x.Size);
+                return StorageUnitConversionHelper.ByteToMB((double)(size));
             }
         }
-
-        // public async Task<double> CalculationDownloadsSize()
-        // {
-        //     long size = await _mediaInfoRepository.GetDownloadsSize();
-        //     return StorageUnitConversionHelper.ByteToMB((double)(size));
-        // }
 
         public async Task IsUpperLimit()
         {
-            return;
-// #if DEBUG
-//             return;
-// #endif
 
-//             long.TryParse(AppsettingsHelper.app("RunConfig", "Bandwidth"), out long bandwidth);
-//             double sizes = await CalculationDownloadsSize();
-//             Logger.LogInformation($"{DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")} Downloaded:{sizes}MB");
-//             if (sizes > bandwidth)
-//             {
-//                 Logger.LogInformation($"{DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")} Download traffic reached the limit, pause download");
-//                 Thread.Sleep(DateTimeHelper.GetUntilTomorrowTimeSpan());
-//                 Logger.LogInformation($"{DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")} Download traffic and start over");
-//             }
+            long bandwidth = long.Parse(await GetConfigurationInfo("Bandwidth"));
+            double sizes = await CalculationDownloadsSize();
+            Logger.LogInformation($"{DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")} Downloaded:{sizes}MB");
+            if (sizes > bandwidth)
+            {
+                Logger.LogInformation($"{DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")} Download traffic reached the limit, pause download");
+                Thread.Sleep(DateTimeHelper.GetUntilTomorrowTimeSpan());
+                Logger.LogInformation($"{DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")} Download traffic and start over");
+            }
+
         }
 
-        public bool IsSpaceUpperLimit(long sizes)
+        public async Task<bool> IsSpaceUpperLimit(long sizes)
         {
 
-#if DEBUG
-            return false;
-#endif
-
-            double availableFreeSpace = double.Parse(AppsettingsHelper.app("RunConfig", "AvailableFreeSpace"));
-            string driveName = AppsettingsHelper.app("RunConfig", "SaveDrive");
-            if ((SpaceHelper.GetDriveAvailableMB(driveName) - StorageUnitConversionHelper.ByteToMB(sizes)) < availableFreeSpace)
+            double availableFreeSpace = double.Parse(await GetConfigurationInfo("AvailableFreeSpace"));
+            string driveName = await GetConfigurationInfo("SaveDrive");
+            var driveAvailableMB = SpaceHelper.GetDriveAvailableMB(driveName);
+            var sizesMB = StorageUnitConversionHelper.ByteToMB(sizes);
+            if ((driveAvailableMB - sizesMB) < availableFreeSpace)
             {
                 Logger.LogDebug($"{DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")} Out of space stop downloading");
                 return true;
@@ -452,9 +437,12 @@ namespace DFApp.Background
             await _mediaInfoRepository.UpdateAsync(mediaInfo);
         }
 
-        public void Dispose()
+        public override void Dispose()
         {
             TGClinet?.Dispose();
+            _serviceScope.Dispose();
+            base.Dispose();
         }
+
     }
 }

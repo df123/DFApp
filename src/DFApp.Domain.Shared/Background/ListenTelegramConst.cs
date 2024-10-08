@@ -9,5 +9,6 @@ namespace DFApp.Background
         public const string ModuleName = "DFApp.Background.ListenTelegramService";
         public const string DocumentQueue = "ListenTelegramServiceDocumentQueue";
         public const string PhotoQueue = "ListenTelegramServicePhotoQueue";
+        public const long SpaceUpperLimitInBytes = 2048L * 1024L * 1024L; // 2 GB
     }
 }
