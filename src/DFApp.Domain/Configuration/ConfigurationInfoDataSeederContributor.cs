@@ -21,6 +21,31 @@ namespace DFApp.Configuration
         {
             if ((await _configurationRepository.GetCountAsync()) <= 0)
             {
+
+                await _configurationRepository.InsertAsync(new ConfigurationInfo
+                {
+                    ModuleName = string.Empty,
+                    ConfigurationName = "AvailableFreeSpace",
+                    ConfigurationValue = "2048",
+                    Remark = string.Empty
+                }, autoSave: true);
+
+                await _configurationRepository.InsertAsync(new ConfigurationInfo
+                {
+                    ModuleName = string.Empty,
+                    ConfigurationName = "Bandwidth",
+                    ConfigurationValue = "30720000",
+                    Remark = string.Empty
+                }, autoSave: true);
+
+                await _configurationRepository.InsertAsync(new ConfigurationInfo
+                {
+                    ModuleName = string.Empty,
+                    ConfigurationName = "SaveDrive",
+                    ConfigurationValue = @"C:\",
+                    Remark = string.Empty
+                }, autoSave: true);
+
                 await _configurationRepository.InsertAsync(new ConfigurationInfo
                 {
                     ModuleName = string.Empty,

@@ -10,6 +10,7 @@
 
   <ItemGroup>
     <PackageReference Include="Volo.Abp.BlobStoring.Database.EntityFrameworkCore" Version="8.3.0" />
+    <PackageReference Include="Volo.Abp.EntityFrameworkCore.SqlServer" Version="8.3.0" />
     <PackageReference Include="Volo.CmsKit.EntityFrameworkCore" Version="8.3.0" />
     <ProjectReference Include="..\DFApp.Domain\DFApp.Domain.csproj" />
     <PackageReference Include="Volo.Abp.EntityFrameworkCore.Sqlite" Version="8.3.0" />

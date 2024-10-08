@@ -125,14 +125,15 @@ public class DFAppWebModule : AbpModule
         ConfigureAutoApiControllers();
         ConfigureSwaggerServices(context.Services);
 
-        context.Services.AddSingleton<IQueueManagement, QueueManagement>();
-        context.Services.AddSingleton<IDFAppBackgroundWorkerManagement, DFAppBackgroundWorkerManagement>();
         context.Services.AddSingleton(new AppsettingsHelper(context.Services.GetConfiguration()));
         context.Services.AddHttpClient();
         context.Services.AddSingleton<SinkHub>();
 
         context.Services.AddSingleton<IBackgroundTaskQueue, BackgroundTaskQueue>();
         context.Services.AddHostedService<BackgroundQueueHostedService>();
+        context.Services.AddHostedService<Aria2BackgroundWorker>();
+        context.Services.AddHostedService<ListenTelegramService>();
+
 
     }
 
@@ -240,7 +241,7 @@ public class DFAppWebModule : AbpModule
         );
     }
 
-    public async override void OnApplicationInitialization(ApplicationInitializationContext context)
+    public override void OnApplicationInitialization(ApplicationInitializationContext context)
     {
         var app = context.GetApplicationBuilder();
         var env = context.GetEnvironment();
@@ -285,10 +286,6 @@ public class DFAppWebModule : AbpModule
         app.UseAuditing();
         app.UseAbpSerilogEnrichers();
         app.UseConfiguredEndpoints();
-
-
-        await context.AddDFAppBackgroundWorkerAsync<ListenTelegramService>();
-        await context.AddDFAppBackgroundWorkerAsync<Aria2BackgroundWorker>();
         
 
     }

@@ -13,12 +13,6 @@ namespace DFApp.Media
         CreateUpdateMediaInfoDto>
     {
 
-        // Task<long> GetDownloadsSize();
-
-        // Task<MediaInfoDto[]> GetMediaNotReturn();
-
-        QueueCountDto GetQueueCount();
-
         Task<ChartDataDto> GetChartData();
 
     }

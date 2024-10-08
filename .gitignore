@@ -287,3 +287,4 @@ src/DFApp.Web/DFApp.db
 src/DFApp.Web/DFApp.db-shm
 src/DFApp.Web/DFApp.db-wal
 .prompts/translate.prompt
+src/DFApp.DbMigrator/appsettings.json
