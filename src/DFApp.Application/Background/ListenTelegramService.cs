@@ -14,6 +14,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using TL;
 using Volo.Abp.Domain.Repositories;
+using Volo.Abp.Uow;
 
 namespace DFApp.Background
 {
@@ -31,23 +32,27 @@ namespace DFApp.Background
         private readonly IServiceScopeFactory _serviceScopeFactory;
         private readonly IServiceScope _serviceScope;
         private readonly ILoggerFactory _loggerFactory;
+        private readonly IUnitOfWorkManager _unitOfWorkManager;
         private readonly IConfigurationInfoRepository _configurationInfoRepository;
         private readonly IRepository<MediaInfo, long> _mediaInfoRepository;
+
 
         private ILogger Logger => _loggerFactory.CreateLogger(GetType().FullName!) ?? NullLogger.Instance;
 
 
         public ListenTelegramService(IServiceScopeFactory serviceScopeFactory)
         {
+            _documentQueue = new QueueBase<DocumentQueueModel>();
+            _photoQueue = new QueueBase<PhotoQueueModel>();
+
             _serviceScopeFactory = serviceScopeFactory;
 
             _serviceScope = _serviceScopeFactory.CreateScope();
             _loggerFactory = _serviceScope.ServiceProvider.GetRequiredService<ILoggerFactory>();
+            _unitOfWorkManager = _serviceScope.ServiceProvider.GetRequiredService<IUnitOfWorkManager>();
             _configurationInfoRepository = _serviceScope.ServiceProvider.GetRequiredService<IConfigurationInfoRepository>();
             _mediaInfoRepository = _serviceScope.ServiceProvider.GetRequiredService<IRepository<MediaInfo, long>>();
 
-            _documentQueue = new QueueBase<DocumentQueueModel>();
-            _photoQueue = new QueueBase<PhotoQueueModel>();
         }
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -454,9 +459,12 @@ namespace DFApp.Background
 
         public async Task UpdateMD5ById(long id, string md5)
         {
-            var mediaInfo = await _mediaInfoRepository.GetAsync(id);
-            mediaInfo.MD5 = md5;
-            await _mediaInfoRepository.UpdateAsync(mediaInfo);
+            using (var uow = _unitOfWorkManager.Begin(requiresNew: true, isTransactional: false))
+            {
+                var mediaInfo = await _mediaInfoRepository.GetAsync(id);
+                mediaInfo.MD5 = md5;
+                await uow.CompleteAsync();
+            }
         }
 
         public override void Dispose()
