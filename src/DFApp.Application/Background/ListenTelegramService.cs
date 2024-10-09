@@ -186,12 +186,32 @@ namespace DFApp.Background
                     {
                         continue;
                     }
-                    string typeName = document.mime_type[..(slash)];
-                    if (typeName.ToLower() != "video" && typeName.ToLower() != "image")
+
+                    if (!document.mime_type.Contains("video"))
                     {
                         continue;
                     }
 
+                    double duration = double.Parse(await GetConfigurationInfo("VideoDurationLimit"));
+                    bool isDurationLimit = false;
+                    bool isVideo = false;
+
+                    foreach (var attribute in document.attributes)
+                    {
+                        if (attribute is DocumentAttributeVideo video)
+                        {
+                            if (video.duration <= duration)
+                            {
+                                isDurationLimit = true;
+                            }
+                            isVideo = true;
+                        }
+                    }
+
+                    if (isDurationLimit || (!isVideo))
+                    {
+                        continue;
+                    }
 
                     var isExsist = await _mediaInfoRepository.FindAsync(x => x.MediaId == document.id);
                     if (isExsist != null)
@@ -297,6 +317,7 @@ namespace DFApp.Background
 
                     if (await IsSpaceUpperLimit(photo.LargestPhotoSize.FileSize))
                     {
+                        await _mediaInfoRepository.DeleteAsync(mediaInfo.Id);
                         continue;
                     }
                     await IsUpperLimit();
@@ -345,6 +366,7 @@ namespace DFApp.Background
                     }
                     if (await IsSpaceUpperLimit(document.size + ListenTelegramConst.SpaceUpperLimitInBytes))
                     {
+                        await _mediaInfoRepository.DeleteAsync(mediaInfo.Id);
                         continue;
                     }
                     await IsUpperLimit();

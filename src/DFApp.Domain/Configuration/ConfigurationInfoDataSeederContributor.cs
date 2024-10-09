@@ -25,6 +25,14 @@ namespace DFApp.Configuration
                 await _configurationRepository.InsertAsync(new ConfigurationInfo
                 {
                     ModuleName = string.Empty,
+                    ConfigurationName = "VideoDurationLimit",
+                    ConfigurationValue = "5",
+                    Remark = string.Empty
+                }, autoSave: true);
+
+                await _configurationRepository.InsertAsync(new ConfigurationInfo
+                {
+                    ModuleName = string.Empty,
                     ConfigurationName = "IgnoredMessages",
                     ConfigurationValue = "IgnoredMessages",
                     Remark = string.Empty
