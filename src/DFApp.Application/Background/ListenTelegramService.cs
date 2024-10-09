@@ -14,6 +14,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using TL;
 using Volo.Abp.Domain.Repositories;
+using Volo.Abp.Uow;
 
 namespace DFApp.Background
 {
@@ -31,23 +32,27 @@ namespace DFApp.Background
         private readonly IServiceScopeFactory _serviceScopeFactory;
         private readonly IServiceScope _serviceScope;
         private readonly ILoggerFactory _loggerFactory;
+        private readonly IUnitOfWorkManager _unitOfWorkManager;
         private readonly IConfigurationInfoRepository _configurationInfoRepository;
         private readonly IRepository<MediaInfo, long> _mediaInfoRepository;
+
 
         private ILogger Logger => _loggerFactory.CreateLogger(GetType().FullName!) ?? NullLogger.Instance;
 
 
         public ListenTelegramService(IServiceScopeFactory serviceScopeFactory)
         {
+            _documentQueue = new QueueBase<DocumentQueueModel>();
+            _photoQueue = new QueueBase<PhotoQueueModel>();
+
             _serviceScopeFactory = serviceScopeFactory;
 
             _serviceScope = _serviceScopeFactory.CreateScope();
             _loggerFactory = _serviceScope.ServiceProvider.GetRequiredService<ILoggerFactory>();
+            _unitOfWorkManager = _serviceScope.ServiceProvider.GetRequiredService<IUnitOfWorkManager>();
             _configurationInfoRepository = _serviceScope.ServiceProvider.GetRequiredService<IConfigurationInfoRepository>();
             _mediaInfoRepository = _serviceScope.ServiceProvider.GetRequiredService<IRepository<MediaInfo, long>>();
 
-            _documentQueue = new QueueBase<DocumentQueueModel>();
-            _photoQueue = new QueueBase<PhotoQueueModel>();
         }
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -186,12 +191,32 @@ namespace DFApp.Background
                     {
                         continue;
                     }
-                    string typeName = document.mime_type[..(slash)];
-                    if (typeName.ToLower() != "video" && typeName.ToLower() != "image")
+
+                    if (!document.mime_type.Contains("video"))
                     {
                         continue;
                     }
 
+                    double duration = double.Parse(await GetConfigurationInfo("VideoDurationLimit"));
+                    bool isDurationLimit = false;
+                    bool isVideo = false;
+
+                    foreach (var attribute in document.attributes)
+                    {
+                        if (attribute is DocumentAttributeVideo video)
+                        {
+                            if (video.duration <= duration)
+                            {
+                                isDurationLimit = true;
+                            }
+                            isVideo = true;
+                        }
+                    }
+
+                    if (isDurationLimit || (!isVideo))
+                    {
+                        continue;
+                    }
 
                     var isExsist = await _mediaInfoRepository.FindAsync(x => x.MediaId == document.id);
                     if (isExsist != null)
@@ -297,6 +322,7 @@ namespace DFApp.Background
 
                     if (await IsSpaceUpperLimit(photo.LargestPhotoSize.FileSize))
                     {
+                        await _mediaInfoRepository.DeleteAsync(mediaInfo.Id);
                         continue;
                     }
                     await IsUpperLimit();
@@ -345,6 +371,7 @@ namespace DFApp.Background
                     }
                     if (await IsSpaceUpperLimit(document.size + ListenTelegramConst.SpaceUpperLimitInBytes))
                     {
+                        await _mediaInfoRepository.DeleteAsync(mediaInfo.Id);
                         continue;
                     }
                     await IsUpperLimit();
@@ -432,9 +459,12 @@ namespace DFApp.Background
 
         public async Task UpdateMD5ById(long id, string md5)
         {
-            var mediaInfo = await _mediaInfoRepository.GetAsync(id);
-            mediaInfo.MD5 = md5;
-            await _mediaInfoRepository.UpdateAsync(mediaInfo);
+            using (var uow = _unitOfWorkManager.Begin(requiresNew: true, isTransactional: false))
+            {
+                var mediaInfo = await _mediaInfoRepository.GetAsync(id);
+                mediaInfo.MD5 = md5;
+                await uow.CompleteAsync();
+            }
         }
 
         public override void Dispose()
