@@ -5,7 +5,7 @@ namespace DFApp.Media
 {
     public class MediaInfoDto : AuditedEntityDto<long>
     {
-        public long MediaId { get; set; }
+        public string MediaId { get; set; } = null!;
         public long ChatId { get; set; }
         public string ChatTitle { get; set; } = null!;
         public string? Message { get; set; }
