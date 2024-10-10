@@ -50,12 +50,12 @@ $(function () {
                     data: "category"
                 },
                 {
-                    title: l('MediaCreationTime'),
+                    title: l('Common:Column:CreationTime'),
                     data: "creationTime",
                     dataFormat: "datetime"
                 },
                 {
-                    title: l('MediaLastModificationTime'),
+                    title: l('Common:Column:ModificationTime'),
                     data: "lastModificationTime",
                     dataFormat: "datetime"
                 }

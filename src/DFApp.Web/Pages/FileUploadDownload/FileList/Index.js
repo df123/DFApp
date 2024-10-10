@@ -64,7 +64,7 @@ $(function () {
                     }
                 },
                 {
-                    title: l('MediaCreationTime'),
+                    title: l('Common:Column:CreationTime'),
                     data: "creationTime",
                     dataFormat: "datetime"
                 }
