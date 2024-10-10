@@ -21,7 +21,8 @@ public class DFAppApplicationAutoMapperProfile : Profile
 {
     public DFAppApplicationAutoMapperProfile()
     {
-        CreateMap<MediaInfo, MediaInfoDto>();
+        CreateMap<MediaInfo, MediaInfoDto>()
+        .ForMember(dest => dest.MediaId, opt => opt.MapFrom(src => src.MediaId.ToString()));
         CreateMap<CreateUpdateMediaInfoDto, MediaInfo>();
         CreateMap<MediaInfoDto, MediaInfo>();
         CreateMap<MediaInfoDto, CreateUpdateMediaInfoDto>();

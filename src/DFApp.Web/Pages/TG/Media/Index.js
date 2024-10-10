@@ -6,7 +6,7 @@ $(function () {
         abp.libs.datatables.normalizeConfiguration({
             serverSide: true,
             paging: true,
-            order: [[7, "desc"]],
+            order: [[6, "desc"]],
             scrollX: true,
             ajax: abp.libs.datatables.createAjax(dFApp.media.mediaInfo.getList),
             columnDefs: [
@@ -52,10 +52,6 @@ $(function () {
                     }
                 },
                 {
-                    title: l('Media:Column:MediaSavePath'),
-                    data: "savePath"
-                },
-                {
                     title: l('Media:Column:MD5'),
                     data: "mD5"
                 },
@@ -66,11 +62,6 @@ $(function () {
                 {
                     title: l('Media:Column:MediaCreationTime'),
                     data: "creationTime",
-                    dataFormat: "datetime"
-                },
-                {
-                    title: l('Media:Column:MediaLastModificationTime'),
-                    data: "lastModificationTime",
                     dataFormat: "datetime"
                 },
                 {
