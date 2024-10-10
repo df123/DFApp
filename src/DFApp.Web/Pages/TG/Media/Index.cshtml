@@ -1,17 +1,31 @@
 ﻿@page
+@using DFApp.Permissions
 @using DFApp.Web.Pages.Media
 @using DFApp.Localization
+@using Microsoft.AspNetCore.Authorization
 @using Microsoft.Extensions.Localization
 @model IndexModel
 @inject IStringLocalizer<DFAppResource> L
-@section scripts{
+@inject IAuthorizationService AuthorizationService
+@section scripts {
     <abp-script src="/Pages/TG/Media/Index.js"></abp-script>
     <abp-script src="/Pages/Utils/Utils.js"></abp-script>
 }
 
 <abp-card>
     <abp-card-header>
-        <abp-card-title>@L["MediaTitle"]</abp-card-title>
+        <abp-row>
+            <abp-column size-md="_6">
+                <abp-card-title>@L["MediaTitle"]</abp-card-title>
+            </abp-column>
+            <abp-column size-md="_6" class="text-end">
+                @if (await AuthorizationService.IsGrantedAnyAsync(DFAppPermissions.Medias.Delete))
+                {
+                    <abp-button id="deleteInvalidItemsButton" text="@L["Media:Button:DeleteInvalidItemsButton"].Value" icon="plus"
+                        button-type="Primary" />
+                }
+            </abp-column>
+        </abp-row>
     </abp-card-header>
     <abp-card-body>
         <abp-table striped-rows="true" id="MediasTable"></abp-table>

@@ -60,7 +60,7 @@ $(function () {
                     data: "mimeType"
                 },
                 {
-                    title: l('Media:Column:MediaCreationTime'),
+                    title: l('Common:Column:CreationTime'),
                     data: "creationTime",
                     dataFormat: "datetime"
                 },
@@ -83,5 +83,11 @@ $(function () {
     editModal.onResult(function () {
         dataTable.ajax.reload();
     });
+
+    $('#deleteInvalidItemsButton').click(function (e) {
+        dFApp.media.mediaInfo.deleteInvalidItems().then(function () {
+            abp.notify.info(l('Media:Message:InvalidItemsDeletedSuccessfully'));
+        });
+    })
 
 });

@@ -84,5 +84,12 @@ namespace DFApp.Media
 
         }
 
+        [Authorize(DFAppPermissions.Medias.Delete)]
+        public async Task DeleteInvalidItems(){
+            await _mediaInfoRepository.DeleteAsync(x => string.IsNullOrWhiteSpace(x.MD5)
+            && x.CreationTime <= DateTime.Now.AddMinutes(-1));
+        }
+
+
     }
 }

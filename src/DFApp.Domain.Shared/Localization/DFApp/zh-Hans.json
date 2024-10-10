@@ -7,6 +7,8 @@
     "Close": "关闭",
     "Delete": "删除",
     "Edit": "编辑",
+    "Common:Column:CreationTime":"创建时间",
+    "Common:Column:ModificationTime": "修改时间",
 
     "Menu:Home": "首页",
 
@@ -35,10 +37,10 @@
     "MediaTaskComplete": "任务完成时间",
     "Media:Column:MediaSavePath": "保存路径",
     "Media:Column:MD5": "MD5",
-    "Media:Column:MediaCreationTime": "创建时间",
-    "Media:Column:MediaLastModificationTime": "修改时间",
     "Media:Column:Message":"消息",
-  
+    "Media:Button:DeleteInvalidItemsButton":"删除无效项",
+    "Media:Message:InvalidItemsDeletedSuccessfully": "无效项删除成功",
+
 
     "Menu:TG:Media:ExternalLink": "外部下载",
     "TG:Media:ExternalLink:Title": "媒体外部下载",
