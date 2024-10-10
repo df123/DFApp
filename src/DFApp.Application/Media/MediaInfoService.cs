@@ -43,14 +43,10 @@ namespace DFApp.Media
             if (!string.IsNullOrWhiteSpace(input.Filter))
             {
                 Expression<Func<MediaInfo, bool>> filter = x => 
-                x.ChatTitle.Contains(input.Filter)
+                x.MediaId.ToString().Contains(input.Filter)
+                || x.ChatTitle.Contains(input.Filter)
                 || x.Message!.Contains(input.Filter)
                 || x.MimeType.Contains(input.Filter);
-
-                if(long.TryParse(input.Filter, out long mediaId))
-                {
-                    filter = filter.Or(x => x.MediaId == mediaId);
-                }
 
                 var query = await Repository.GetQueryableAsync();
                 return query.Where(filter);
