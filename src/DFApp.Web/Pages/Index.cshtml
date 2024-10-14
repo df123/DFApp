@@ -25,6 +25,15 @@
             <a abp-button="Primary" href="~/Account/Login"><i class="fa fa-sign-in"></i> @L["Login"]</a>
         }
 
+        @if (CurrentUser.IsAuthenticated)
+        {
+            <!-- New Display Box for Remaining Disk Space -->
+            <div class="mt-4 p-3 bg-primary text-white rounded shadow-lg">
+                <h5 class="mb-0"><i class="fas fa-hdd"></i> Remaining Disk Space: <strong>@Model.RemainingDiskSpace</strong>
+                </h5>
+            </div>
+        }
+
     </div>
    
 </div>
