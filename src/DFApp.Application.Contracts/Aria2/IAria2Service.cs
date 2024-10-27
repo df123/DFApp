@@ -10,5 +10,6 @@ namespace DFApp.Aria2
     public interface IAria2Service: ICrudAppService<TellStatusResultDto, long>
     {
         Task<string> GetExternalLink(long id);
+        Task<List<string>> GetAllExternalLinks();
     }
 }

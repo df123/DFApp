@@ -60,12 +60,52 @@ namespace DFApp.Aria2
                 string retUrl = await _configurationInfoRepository.GetConfigurationInfoValue("Aria2BtDownloadUrlPrefix", "DFApp.Aria2.Aria2Service");
                 foreach (var file in data.Files)
                 {
+                    if (string.IsNullOrEmpty(file.Path))
+                    {
+                        continue;
+                    }
+
                     stringBuilder.AppendLine(Path.Combine(retUrl, file.Path.Replace(reStr, string.Empty)));
                 }
                 return stringBuilder.ToString();
             }
             return string.Empty;
         }
+
+        [Authorize(DFAppPermissions.Aria2.Link)]
+        public async Task<List<string>> GetAllExternalLinks()
+        {
+            var allResults = await _tellStatusResultRepository.GetListAsync(true);
+            List<string> allLinks = new List<string>();
+
+            string reStr = await _configurationInfoRepository.GetConfigurationInfoValue("replaceString", "DFApp.Aria2.Aria2Service");
+            string retUrl = await _configurationInfoRepository.GetConfigurationInfoValue("Aria2BtDownloadUrlPrefix", "DFApp.Aria2.Aria2Service");
+
+            foreach (var result in allResults)
+            {
+                if (result.Files != null && result.Files.Count > 0)
+                {
+
+                    foreach (var file in result.Files)
+                    {
+                        if (string.IsNullOrEmpty(file.Path) || file.Path.Contains("[METADATA]", StringComparison.OrdinalIgnoreCase))
+                        {
+                            continue;
+                        }
+                        string filePath = Path.Combine(retUrl, file.Path.Replace(reStr, string.Empty));
+                        if (!allLinks.Contains(filePath))
+                        {
+                            allLinks.Add(filePath);
+                        }
+
+                    }
+
+                }
+            }
+
+            return allLinks;
+        }
+
 
         public override Task<TellStatusResultDto> CreateAsync(TellStatusResultDto input)
         {
@@ -104,7 +144,7 @@ namespace DFApp.Aria2
             var datas = await ReadOnlyRepository.GetListAsync();
             foreach (var data in datas)
             {
-                 await DeleteAsync(data.Id);
+                await DeleteAsync(data.Id);
             }
             string reStr = await _configurationInfoRepository.GetConfigurationInfoValue("replaceString", "DFApp.Aria2.Aria2Service");
             SpaceHelper.DeleteEmptyFolders(reStr);
