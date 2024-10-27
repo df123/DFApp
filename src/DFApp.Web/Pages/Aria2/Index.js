@@ -26,7 +26,7 @@ $(function () {
                                     text: l('Aria2:Button:Delete'),
                                     visible: abp.auth.isGranted('DFApp.Aria2.Delete'),
                                     confirmMessage: function (data) {
-                                        return l('Aria2:DeletionConfirmationMessage', data.record.gID);
+                                        return l('Aria2:DeletionConfirmationMessage', data.record.id);
                                     },
                                     action: function (data) {
                                         dFApp.aria2.aria2
@@ -82,6 +82,10 @@ $(function () {
             dFApp.aria2.aria2.deleteAll();
         }
 
+    })
+
+    $('#GetAllLinksButton').click(function (e) {
+        linkModal.open();
     })
 
 });

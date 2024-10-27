@@ -222,6 +222,7 @@
     "Aria2:Button:Remove": "删除文件",
     "Aria2:Button:Copy": "复制",
     "Aria2:Button:DeleteAll": "删除全部",
+    "Aria2:Button:GetAllLinks":"获取全部链接",
     "Aria2:Column:ID": "ID",
     "Aria2:Column:GID": "GID",
     "Aria2:Column:Status": "状态",

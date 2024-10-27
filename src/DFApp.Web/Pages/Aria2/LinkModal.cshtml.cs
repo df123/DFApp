@@ -9,10 +9,10 @@ namespace DFApp.Web.Pages.Aria2
     public class LinkModalModel : PageModel
     {
         [BindProperty(SupportsGet = true)]
-        public long Id { get; set; }
+        public long? Id { get; set; }
 
         [BindProperty]
-        public ContentViewModel ContentDto { get; set; }
+        public ContentViewModel? ContentDto { get; set; }
 
         private readonly IAria2Service _aria2Service;
 
@@ -25,14 +25,22 @@ namespace DFApp.Web.Pages.Aria2
         {
             ContentDto = new ContentViewModel();
 
-            ContentDto.Content = await _aria2Service.GetExternalLink(Id);             
+            if (Id.HasValue && Id.Value > 0)
+            {
+                ContentDto.Content = await _aria2Service.GetExternalLink(Id.Value);
+            }
+            else
+            {
+                var allLinks = await _aria2Service.GetAllExternalLinks();
+                ContentDto.Content = string.Join("\n", allLinks);
+            }
         }
 
         public class ContentViewModel
         {
             [DisplayName("Aria2:LinkContent")]
             [TextArea(Rows = 4)]
-            public string Content { get; set; }
+            public string? Content { get; set; }
 
         }
 

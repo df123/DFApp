@@ -18,11 +18,13 @@
                 <abp-card-title>@L["Aria2:Title"]</abp-card-title>
             </abp-column>
             <abp-column size-md="_6" class="text-end">
+                @if (await AuthorizationService.IsGrantedAnyAsync(DFAppPermissions.Aria2.Link))
+                {
+                    <abp-button id="GetAllLinksButton" text="@L["Aria2:Button:GetAllLinks"].Value" button-type="Primary" />
+                }
                 @if (await AuthorizationService.IsGrantedAnyAsync(DFAppPermissions.Aria2.Delete))
                 {
-                    <abp-button id="DeleteAllButton"
-                                text="@L["Aria2:Button:DeleteAll"].Value"
-                                button-type="Danger" />
+                    <abp-button id="DeleteAllButton" text="@L["Aria2:Button:DeleteAll"].Value" button-type="Danger" />
                 }
             </abp-column>
         </abp-row>
