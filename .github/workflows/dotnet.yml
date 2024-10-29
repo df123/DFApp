@@ -14,6 +14,8 @@ jobs:
 
     runs-on: ubuntu-latest
 
+    env:
+      release: true
 
     steps:
     - uses: actions/checkout@v4
@@ -21,10 +23,10 @@ jobs:
       uses: actions/setup-dotnet@v4
       with:
         dotnet-version: 8.0.x
-    - name: Restore dependencies
-      run: dotnet restore
-    - name: Build
-      run: dotnet build --no-restore
+    # - name: Restore dependencies
+    #   run: dotnet restore
+    # - name: Build
+    #   run: dotnet build --no-restore
 
     - name: Add repository directory to Git safe directory
       run: |
@@ -56,7 +58,9 @@ jobs:
       shell: bash
       
     - name: Publish project
-      run: dotnet publish --configuration Release --framework net8.0 --output ./publish
+      run: |
+        cd ./src/DFApp.Web/
+        dotnet publish --configuration Release --framework net8.0 --output ./publish
 
     - name: Upload build artifact
       uses: actions/upload-artifact@v3
