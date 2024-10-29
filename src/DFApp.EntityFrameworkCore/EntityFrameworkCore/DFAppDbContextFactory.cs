@@ -18,8 +18,18 @@ public class DFAppDbContextFactory : IDesignTimeDbContextFactory<DFAppDbContext>
 
 #if DEBUG
 
+#if SQLSERVER
+
         var builder = new DbContextOptionsBuilder<DFAppDbContext>()
             .UseSqlServer(configuration.GetConnectionString("Default"));
+#else
+
+        var builder = new DbContextOptionsBuilder<DFAppDbContext>()
+            .UseSqlite(configuration.GetConnectionString("Default"));
+
+#endif
+
+
 #else
 
         var builder = new DbContextOptionsBuilder<DFAppDbContext>()
