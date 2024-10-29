@@ -33,7 +33,14 @@ namespace DFApp.EntityFrameworkCore;
 [DependsOn(typeof(BlobStoringDatabaseEntityFrameworkCoreModule))]
 
 #if DEBUG
+
+    #if SQLSERVER
 [DependsOn(typeof(AbpEntityFrameworkCoreSqlServerModule))]
+
+    #else
+[DependsOn(typeof(AbpEntityFrameworkCoreSqliteModule))]
+    #endif
+
 #else
 [DependsOn(typeof(AbpEntityFrameworkCoreSqliteModule))]
 #endif
@@ -61,7 +68,12 @@ public class DFAppEntityFrameworkCoreModule : AbpModule
 
 #if DEBUG
 
+    #if SQLSERVER
             options.UseSqlServer();
+    #else
+            options.UseSqlite();
+    #endif
+            
 #else
 
      

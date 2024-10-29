@@ -1,7 +1,5 @@
-﻿using System.Collections.Generic;
-using System.Threading.Tasks;
-using DFApp.Bookkeeping.Expenditure;
-using Volo.Abp.Application.Dtos;
+﻿using System.Threading.Tasks;
+using DFApp.CommonDtos;
 using Volo.Abp.Application.Services;
 
 namespace DFApp.Media

@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using System.Text;
 using Volo.Abp.Application.Dtos;
 
-namespace DFApp.Bookkeeping.Expenditure
+namespace DFApp.CommonDtos
 {
     public class FilterAndPagedAndSortedResultRequestDto : PagedAndSortedResultRequestDto
     {

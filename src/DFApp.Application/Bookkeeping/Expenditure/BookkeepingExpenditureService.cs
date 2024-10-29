@@ -1,5 +1,6 @@
 ﻿using DFApp.Bookkeeping.Expenditure.Analysis;
 using DFApp.Bookkeeping.Expenditure.Lookup;
+using DFApp.CommonDtos;
 using DFApp.Permissions;
 using Microsoft.AspNetCore.Authorization;
 using System;
@@ -7,7 +8,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Threading.Tasks;
-using Volo.Abp.Application.Dtos;
 using Volo.Abp.Application.Services;
 using Volo.Abp.Domain.Repositories;
 

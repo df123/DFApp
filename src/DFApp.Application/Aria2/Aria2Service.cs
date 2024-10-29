@@ -1,5 +1,6 @@
 ﻿using DFApp.Aria2.Repository.Response.TellStatus;
 using DFApp.Aria2.Response.TellStatus;
+using DFApp.CommonDtos;
 using DFApp.Configuration;
 using DFApp.Helper;
 using DFApp.Permissions;
@@ -18,7 +19,12 @@ using Volo.Abp.Domain.Repositories;
 namespace DFApp.Aria2
 {
     [Authorize(DFAppPermissions.Aria2.Default)]
-    public class Aria2Service : CrudAppService<TellStatusResult, TellStatusResultDto, long>
+    public class Aria2Service : CrudAppService<
+    TellStatusResult
+    , TellStatusResultDto
+    , long
+    , FilterAndPagedAndSortedResultRequestDto
+    , TellStatusResultDto>
         , IAria2Service
     {
 
@@ -39,9 +45,46 @@ namespace DFApp.Aria2
             DeletePolicyName = DFAppPermissions.Aria2.Delete;
         }
 
-        protected override async Task<IQueryable<TellStatusResult>> CreateFilteredQueryAsync(PagedAndSortedResultRequestDto input)
+        protected override async Task<IQueryable<TellStatusResult>> CreateFilteredQueryAsync(FilterAndPagedAndSortedResultRequestDto input)
         {
             return await ReadOnlyRepository.WithDetailsAsync();
+        }
+
+        public override async Task<PagedResultDto<TellStatusResultDto>> GetListAsync(FilterAndPagedAndSortedResultRequestDto input)
+        {
+
+            var datas = await base.GetListAsync(input);
+
+            foreach (var data in datas.Items)
+            {
+                foreach (var file in data.files)
+                {
+                    if (!string.IsNullOrEmpty(file.Path))
+                    {
+                        file.Path = Path.GetFileName(file.Path);
+                    }
+                }
+            }
+
+            if (string.IsNullOrWhiteSpace(input.Filter))
+            {
+                return datas;
+            }
+
+            List<TellStatusResultDto> resultDtos = new List<TellStatusResultDto>();
+
+            foreach (var data in datas.Items)
+            {
+                if (data.files != null && data.files.FirstOrDefault(x => x.Path.Contains(input.Filter)) != null)
+                {
+                    resultDtos.Add(data);
+                }
+            }
+
+            datas.TotalCount = resultDtos.Count;
+            datas.Items = resultDtos;
+
+            return datas;
         }
 
         [Authorize(DFAppPermissions.Aria2.Link)]

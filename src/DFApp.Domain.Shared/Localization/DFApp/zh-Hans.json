@@ -227,6 +227,7 @@
     "Aria2:Column:GID": "GID",
     "Aria2:Column:Status": "状态",
     "Aria2:Column:TotalLength": "大小",
+    "Aria2:Column:Files": "文件",
     "Aria2:Column:CreationTime": "创建时间",
     "Aria2:DeletionConfirmationMessage": "您确定要删除吗 '{0}'?",
     "Aria2:RemoveConfirmationMessage": "您确定要移除文件吗 '{0}'?",

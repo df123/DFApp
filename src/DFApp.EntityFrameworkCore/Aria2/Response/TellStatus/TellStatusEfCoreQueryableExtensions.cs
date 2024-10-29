@@ -16,7 +16,8 @@ namespace DFApp.Aria2.Response.TellStatus
             {
                 return queryable;
             }
-            return queryable.Include(x => x.Files).ThenInclude(x => x.Uris);
+
+            return queryable.Include(x => x.Files!).ThenInclude(x => x.Uris);
         }
     }
 }

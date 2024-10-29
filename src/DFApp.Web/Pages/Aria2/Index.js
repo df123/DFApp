@@ -6,6 +6,7 @@ $(function () {
     var dataTable = $('#Aria2Table').DataTable(
         abp.libs.datatables.normalizeConfiguration({
             serverSide: true,
+            searching: true,
             paging: true,
             order: [[1, "desc"]],
             scrollX: true,
@@ -60,7 +61,7 @@ $(function () {
                     }
                 },
                 {
-                    title: l('Aria2:Column:TotalLength'),
+                    title: l('Aria2:Column:Files'),
                     data: "files",
                     render: function (data, type) {
                         return data[0].path;
