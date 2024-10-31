@@ -38,6 +38,13 @@ $(function () {
                     data: "mediaId"
                 },
                 {
+                    title: l('Media:Column:IsDownloadCompleted'),
+                    data: "isDownloadCompleted",
+                    render: function (data, type, row) {
+                        return '<input type="checkbox" ' + (data ? 'checked' : '') + '>';
+                    }
+                },
+                {
                     title: l('Media:Column:IsExternalLinkGenerated'),
                     data: "isExternalLinkGenerated",
                     render: function (data, type, row) {
@@ -50,10 +57,6 @@ $(function () {
                     render: function (data, type) {
                         return convertBytes(data);
                     }
-                },
-                {
-                    title: l('Media:Column:MD5'),
-                    data: "mD5"
                 },
                 {
                     title: l('Media:Column:MediaMimeType'),
