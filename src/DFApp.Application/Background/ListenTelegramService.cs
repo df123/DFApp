@@ -240,9 +240,9 @@ namespace DFApp.Background
                         Message = message.message,
                         SavePath = fileName,
                         Size = document.size,
-                        MD5 = string.Empty,
                         MimeType = document.mime_type,
-                        IsExternalLinkGenerated = false
+                        IsExternalLinkGenerated = false,
+                        ConcurrencyStamp = Guid.NewGuid().ToString("N")
                     });
                     if (canAdd != null)
                     {
@@ -279,9 +279,9 @@ namespace DFApp.Background
                         Message = message.message,
                         SavePath = fileName,
                         Size = photo.LargestPhotoSize.FileSize,
-                        MD5 = string.Empty,
                         MimeType = "JPG",
-                        IsExternalLinkGenerated = false
+                        IsExternalLinkGenerated = false,
+                        ConcurrencyStamp = Guid.NewGuid().ToString("N")
                     });
                     if (canAdd != null)
                     {
@@ -322,18 +322,27 @@ namespace DFApp.Background
 
                     if (await IsSpaceUpperLimit(photo.LargestPhotoSize.FileSize))
                     {
-                        await _mediaInfoRepository.DeleteAsync(mediaInfo.Id);
-                        continue;
+                        var isLoopDownload = bool.Parse(await GetConfigurationInfo("IsLoopDownload"));
+
+                        if (!isLoopDownload)
+                        {
+                            await _mediaInfoRepository.DeleteAsync(mediaInfo.Id);
+                            continue;
+                        }
+                        else
+                        {
+                            await DeleteOldestMediaUntilSpaceAvailable(photo.LargestPhotoSize.FileSize);
+                        }
+
                     }
                     await IsUpperLimit();
                     DeleteTempFiles(savePathPrefix);
 
                     using var fileStream = File.Create(model.MediaInfos!.SavePath);
                     var type = await _client!.DownloadFileAsync(photo, fileStream);
-                    string MD5 = HashHelper.CalculateMD5(fileStream);
 
                     fileStream.Close();
-                    await UpdateMD5ById(mediaInfo.Id, MD5);
+                    await UpdateIsDownloadCompleted(mediaInfo.Id);
 
                     Logger.LogDebug($"Photo download completed {model.MediaInfos!.SavePath}");
                 }
@@ -369,20 +378,29 @@ namespace DFApp.Background
                     {
                         continue;
                     }
-                    if (await IsSpaceUpperLimit(document.size + ListenTelegramConst.SpaceUpperLimitInBytes))
+                    if (await IsSpaceUpperLimit(document.size))
                     {
-                        await _mediaInfoRepository.DeleteAsync(mediaInfo.Id);
-                        continue;
+                        var isLoopDownload = bool.Parse(await GetConfigurationInfo("IsLoopDownload"));
+
+                        if (!isLoopDownload)
+                        {
+                            await _mediaInfoRepository.DeleteAsync(mediaInfo.Id);
+                            continue;
+                        }
+                        else
+                        {
+                            await DeleteOldestMediaUntilSpaceAvailable(document.size);
+                        }
+
                     }
                     await IsUpperLimit();
                     DeleteTempFiles(savePathPrefix);
                     string fileNameTemp = $"{mediaInfo.SavePath}.temp";
                     using var fileStream = File.Create(fileNameTemp);
                     await _client!.DownloadFileAsync(document, fileStream);
-                    string MD5 = HashHelper.CalculateMD5(fileStream);
                     fileStream.Close();
                     File.Move(fileNameTemp, mediaInfo.SavePath, true);
-                    await UpdateMD5ById(mediaInfo.Id, MD5);
+                    await UpdateIsDownloadCompleted(mediaInfo.Id);
 
 
                     Logger.LogDebug($"Video download completed {mediaInfo.SavePath}");
@@ -457,15 +475,40 @@ namespace DFApp.Background
             }
         }
 
-        public async Task UpdateMD5ById(long id, string md5)
+        public async Task UpdateIsDownloadCompleted(long id)
         {
             using (var uow = _unitOfWorkManager.Begin(requiresNew: true, isTransactional: false))
             {
                 var mediaInfo = await _mediaInfoRepository.GetAsync(id);
-                mediaInfo.MD5 = md5;
+                mediaInfo.IsDownloadCompleted = true;
                 await uow.CompleteAsync();
             }
         }
+
+
+        private async Task DeleteOldestMediaUntilSpaceAvailable(long requiredSpace)
+        {
+            while (await IsSpaceUpperLimit(requiredSpace))
+            {
+
+                var queryable = await _mediaInfoRepository.GetListAsync(x => x.IsDownloadCompleted && (!x.IsExternalLinkGenerated));
+
+                var oldestMedia = queryable
+                .OrderBy(x => x.LastModificationTime)
+                .FirstOrDefault();
+
+                if (oldestMedia == null)
+                {
+                    Logger.LogWarning("No media files found to delete.");
+                    break;
+                }
+
+                SpaceHelper.DeleteFile(oldestMedia.SavePath);
+                await _mediaInfoRepository.DeleteAsync(oldestMedia);
+                Logger.LogInformation($"Deleted oldest media file: {oldestMedia.SavePath}");
+            }
+        }
+
 
         public override void Dispose()
         {

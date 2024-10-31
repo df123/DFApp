@@ -83,7 +83,7 @@ namespace DFApp.Media.ExternalLink
                 string zipType = await configurationInfoRepository.GetConfigurationInfoValue("ZipType", MediaBackgroudConst.ModuleName);
 
                 List<MediaInfo> temp = await mediaInfoRepository.GetListAsync(x => !x.IsExternalLinkGenerated
-                    && (!string.IsNullOrWhiteSpace(x.MD5)));
+                    && x.IsDownloadCompleted);
 
 
                 if (temp == null || temp.Count <= 0)
@@ -131,9 +131,9 @@ namespace DFApp.Media.ExternalLink
                         ChatTitle = "zip",
                         Size = size,
                         SavePath = zipPhotoPathName,
-                        MD5 = HashHelper.CalculateMD5(zipPhotoPathName),
                         MimeType = "zip",
-                        IsExternalLinkGenerated = true
+                        IsExternalLinkGenerated = true,
+                        ConcurrencyStamp = Guid.NewGuid().ToString("N")
                     }));
                 }
 

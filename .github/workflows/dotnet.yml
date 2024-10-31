@@ -60,7 +60,7 @@ jobs:
     - name: Publish project
       run: |
         cd ./src/DFApp.Web/
-        dotnet publish --configuration Release --framework net8.0 --output ./publish
+        dotnet publish --configuration Release --framework net8.0 --output ../../publish
 
     - name: Upload build artifact
       uses: actions/upload-artifact@v3
