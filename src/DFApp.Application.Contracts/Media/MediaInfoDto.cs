@@ -14,5 +14,6 @@ namespace DFApp.Media
         public string MD5 { get; set; } = null!;
         public string MimeType { get; set; } = null!;
         public bool IsExternalLinkGenerated { get; set; }
+        public bool IsDownloadCompleted{ get; set; }
     }
 }
