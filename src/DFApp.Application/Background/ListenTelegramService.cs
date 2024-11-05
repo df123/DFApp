@@ -452,6 +452,7 @@ namespace DFApp.Background
             if ((driveAvailableMB - sizesMB) < availableFreeSpace)
             {
                 Logger.LogDebug($"{DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")} Out of space stop downloading");
+                await Task.Delay(1000);
                 return true;
             }
             else
@@ -488,24 +489,39 @@ namespace DFApp.Background
 
         private async Task DeleteOldestMediaUntilSpaceAvailable(long requiredSpace)
         {
-            while (await IsSpaceUpperLimit(requiredSpace))
+            using (var uow = _unitOfWorkManager.Begin(requiresNew: true, isTransactional: false))
             {
-
-                var queryable = await _mediaInfoRepository.GetListAsync(x => x.IsDownloadCompleted && (!x.IsExternalLinkGenerated));
-
-                var oldestMedia = queryable
-                .OrderBy(x => x.LastModificationTime)
-                .FirstOrDefault();
-
-                if (oldestMedia == null)
+                try
                 {
-                    Logger.LogWarning("No media files found to delete.");
-                    break;
-                }
+                    while (await IsSpaceUpperLimit(requiredSpace))
+                    {
 
-                SpaceHelper.DeleteFile(oldestMedia.SavePath);
-                await _mediaInfoRepository.DeleteAsync(oldestMedia);
-                Logger.LogInformation($"Deleted oldest media file: {oldestMedia.SavePath}");
+                        var queryable = await _mediaInfoRepository.GetListAsync(x => x.IsDownloadCompleted && (!x.IsExternalLinkGenerated));
+
+                        var oldestMedia = queryable
+                        .OrderBy(x => x.LastModificationTime)
+                        .FirstOrDefault();
+
+                        if (oldestMedia == null)
+                        {
+                            Logger.LogWarning("No media files found to delete.");
+                            break;
+                        }
+
+                        SpaceHelper.DeleteFile(oldestMedia.SavePath);
+
+                        var mediaInfo = await _mediaInfoRepository.GetAsync(oldestMedia.Id);
+                        mediaInfo.IsExternalLinkGenerated = true;
+                        Logger.LogInformation($"Deleted oldest media file: {oldestMedia.SavePath}");
+                        await uow.CompleteAsync();
+                    }
+
+                }
+                catch
+                {
+                    await uow.RollbackAsync();
+                    throw;
+                }
             }
         }
 

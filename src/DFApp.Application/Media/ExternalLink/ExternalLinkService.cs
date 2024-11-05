@@ -133,6 +133,7 @@ namespace DFApp.Media.ExternalLink
                         SavePath = zipPhotoPathName,
                         MimeType = "zip",
                         IsExternalLinkGenerated = true,
+                        IsDownloadCompleted = true,
                         ConcurrencyStamp = Guid.NewGuid().ToString("N")
                     }));
                 }
