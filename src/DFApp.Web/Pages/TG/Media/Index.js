@@ -19,7 +19,7 @@ $(function () {
                                     text: l('Delete'),
                                     visible: abp.auth.isGranted('DFApp.Medias.Delete'),
                                     confirmMessage: function (data) {
-                                        return l('MediaDeletionConfirmationMessage', data.record.accessHash);
+                                        return l('MediaDeletionConfirmationMessage', data.record.mediaId);
                                     },
                                     action: function (data) {
                                         dFApp.media.mediaInfo
