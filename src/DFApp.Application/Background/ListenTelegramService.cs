@@ -344,7 +344,10 @@ namespace DFApp.Background
                     fileStream.Close();
                     await UpdateIsDownloadCompleted(mediaInfo.Id);
 
-                    Logger.LogDebug($"Photo download completed {model.MediaInfos!.SavePath}");
+                    Logger.LogInformation($"Photo download completed {model.MediaInfos!.SavePath}");
+
+                    await RandomPause();
+
                 }
                 catch (Exception e)
                 {
@@ -403,7 +406,10 @@ namespace DFApp.Background
                     await UpdateIsDownloadCompleted(mediaInfo.Id);
 
 
-                    Logger.LogDebug($"Video download completed {mediaInfo.SavePath}");
+                    Logger.LogInformation($"Video download completed {mediaInfo.SavePath}");
+
+                    await RandomPause();
+
                 }
                 catch (Exception e)
                 {
@@ -525,7 +531,23 @@ namespace DFApp.Background
             }
         }
 
-
+        private async Task RandomPause()
+        {
+            var pauseRange = await GetConfigurationInfo("PauseRange");
+            var pauseRangeArray = pauseRange.Split('-');
+            if (pauseRangeArray.Length == 2)
+            {
+                int minPause = int.Parse(pauseRangeArray[0]);
+                int maxPause = int.Parse(pauseRangeArray[1]);
+                int pauseDuration = new Random().Next(minPause, maxPause);
+                Logger.LogInformation($"Pausing for {pauseDuration} milliseconds.");
+                await Task.Delay(pauseDuration);
+            }
+            else
+            {
+                Logger.LogWarning("Invalid PauseRange configuration.");
+            }
+        }
         public override void Dispose()
         {
             TGClinet?.Dispose();
