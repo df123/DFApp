@@ -92,6 +92,7 @@ namespace DFApp.Bookkeeping.Expenditure
             return chartJSDto;
         }
 
+
         private Expression<Func<BookkeepingExpenditure, bool>> BuildExpression(DateTime start, DateTime end, bool? isBelongToSelf)
         {
             Expression<Func<BookkeepingExpenditure, bool>> expression = x => x.ExpenditureDate >= start && x.ExpenditureDate <= end;
