@@ -2,7 +2,10 @@
 using DFApp.Permissions;
 using DFApp.TG.TGLogin;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Volo.Abp.Application.Services;
 
@@ -11,8 +14,19 @@ namespace DFApp.TG.Login
     [Authorize(DFAppPermissions.Medias.Default)]
     public class TGLoginService : ApplicationService, ITGLoginService
     {
-        private readonly ListenTelegramService WT;
-        public TGLoginService(ListenTelegramService wt) => WT = wt;
+        private readonly ListenTelegramService? WT;
+        public TGLoginService(IServiceProvider services) 
+        {
+            var v = services.GetRequiredService<IEnumerable<IHostedService>>();
+            foreach (var item in v)
+            {
+                if(item is ListenTelegramService)
+                {
+                    WT = item as ListenTelegramService;
+                    break;
+                }
+            }
+        }
 
         public string Status()
         {
