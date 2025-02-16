@@ -3,7 +3,7 @@ using Volo.Abp.Application.Dtos;
 
 namespace DFApp.Lottery.Simulation
 {
-    public class LotterySimulationDto : AuditedEntityDto<long>
+    public class LotterySimulationDto : AuditedEntityDto<Guid>
     {
         /// <summary>
         /// 期号

@@ -1,3 +1,4 @@
+using System;
 using DFApp.Permissions;
 using Microsoft.AspNetCore.Authorization;
 using Volo.Abp.Application.Dtos;
@@ -10,11 +11,11 @@ namespace DFApp.Lottery.Simulation
     public class LotterySimulationService : CrudAppService<
         LotterySimulation,
         LotterySimulationDto,
-        long,
+        Guid,
         PagedAndSortedResultRequestDto,
         CreateUpdateLotterySimulationDto>, ILotterySimulationService
     {
-        public LotterySimulationService(IRepository<LotterySimulation, long> repository) : base(repository)
+        public LotterySimulationService(IRepository<LotterySimulation, Guid> repository) : base(repository)
         {
             GetPolicyName = DFAppPermissions.Lottery.Default;
             GetListPolicyName = DFAppPermissions.Lottery.Default;

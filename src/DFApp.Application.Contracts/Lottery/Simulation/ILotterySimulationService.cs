@@ -6,7 +6,7 @@ namespace DFApp.Lottery.Simulation
 {
     public interface ILotterySimulationService : ICrudAppService<
         LotterySimulationDto,
-        long,
+        Guid,
         PagedAndSortedResultRequestDto,
         CreateUpdateLotterySimulationDto>
     {

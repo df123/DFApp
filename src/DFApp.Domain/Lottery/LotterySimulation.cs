@@ -11,7 +11,7 @@ namespace DFApp.Lottery
     /// <summary>
     /// 模拟购买彩票
     /// </summary>
-    public class LotterySimulation : AuditedAggregateRoot<long>
+    public class LotterySimulation : AuditedAggregateRoot<Guid>
     {
         /// <summary>
         /// 期号
