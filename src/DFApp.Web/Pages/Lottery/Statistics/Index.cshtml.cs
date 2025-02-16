@@ -13,7 +13,7 @@ namespace DFApp.Web.Pages.Lottery.Statistics
     {
         private readonly ILotteryService _lotteryAppService;
 
-        public List<SelectListItem> LotteryTypes { get; set; }
+        public List<SelectListItem> LotteryTypes { get; set; } = new();
 
         public IndexModel(ILotteryService lotteryService)
         {
