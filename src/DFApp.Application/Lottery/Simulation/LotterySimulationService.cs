@@ -227,5 +227,28 @@ namespace DFApp.Lottery.Simulation
             var prize = prizegrades.FirstOrDefault(x => x.Type == prizeLevel);
             return prize != null && decimal.TryParse(prize.TypeMoney, out decimal amount) ? amount : 0;
         }
+
+        public async Task<StatisticsDto> GetStatisticsAsync()
+        {
+            var statistics = new StatisticsDto();
+            var simulations = await Repository.GetListAsync();
+            
+            var groupedByTerm = simulations
+                .GroupBy(x => x.TermNumber)
+                .OrderBy(x => x.Key);
+
+            foreach (var term in groupedByTerm)
+            {
+                statistics.Terms.Add(term.Key);
+                // 每注2元
+                var purchaseAmount = term.GroupBy(x => x.GroupId).Count() * 2m;
+                statistics.PurchaseAmounts.Add(purchaseAmount);
+                
+                var winningStats = await CalculateWinningAmountAsync(term.Key);
+                statistics.WinningAmounts.Add(winningStats.TotalAmount);
+            }
+
+            return statistics;
+        }
     }
 }

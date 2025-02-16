@@ -20,6 +20,11 @@
             <abp-column size-md="_6" class="text-end">
                 @if (await AuthorizationService.IsGrantedAsync(DFAppPermissions.Lottery.Create))
                 {
+                    <abp-button id="StatisticsButton"
+                               text="@L["LotterySimulation:Button:Statistics"].Value"
+                               icon="chart-line"
+                               button-type="Info"
+                               class="me-2" />
                     <abp-button id="GenerateRandomNumbersButton"
                                text="@L["LotterySimulation:Button:Generate"].Value"
                                icon="plus"

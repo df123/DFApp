@@ -126,6 +126,11 @@
     "LotterySimulation:Generate:Count": "生成数量",
     "LotterySimulation:Generate:GameType": "游戏类型",
     "LotterySimulation:Generate:TermNumber": "期号",
+    "Menu:LotterySimulationStatistics": "模拟统计",
+    "LotterySimulation:Statistics": "模拟统计",
+    "LotterySimulation:PurchaseAmount": "购买金额",
+    "LotterySimulation:WinningAmount": "中奖金额",
+    "LotterySimulation:Button:Statistics": "统计",
 
     "Menu:LogSink": "日志",
     "Menu:SignalRSink": "实时日志",

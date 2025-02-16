@@ -12,5 +12,6 @@ namespace DFApp.Lottery.Simulation
         CreateUpdateLotterySimulationDto>
     {
         Task<ListResultDto<LotterySimulationDto>> GenerateRandomNumbersAsync(GenerateRandomNumbersDto input);
+        Task<StatisticsDto> GetStatisticsAsync();
     }
 }

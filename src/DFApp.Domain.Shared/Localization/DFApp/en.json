@@ -15,9 +15,14 @@
     "LotterySimulation:GroupId": "Group ID",
     "LotterySimulation:Button:Generate": "Generate Random Numbers",
     "LotterySimulation:Button:Calculate": "Calculate Winning",
+    "LotterySimulation:Button:Statistics": "Statistics",
     "LotterySimulation:Generate:Title": "Generate Random Numbers",
     "LotterySimulation:Generate:Count": "Count",
     "LotterySimulation:Generate:GameType": "Game Type",
-    "LotterySimulation:Generate:TermNumber": "Term Number"
+    "LotterySimulation:Generate:TermNumber": "Term Number",
+    "Menu:LotterySimulationStatistics": "Simulation Statistics",
+    "LotterySimulation:Statistics": "Simulation Statistics",
+    "LotterySimulation:PurchaseAmount": "Purchase Amount",
+    "LotterySimulation:WinningAmount": "Winning Amount"
   }
 }

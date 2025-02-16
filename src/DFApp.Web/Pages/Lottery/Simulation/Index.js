@@ -61,6 +61,11 @@ $(function () {
         modal.open();
     });
 
+    $('#StatisticsButton').click(function (e) {
+        e.preventDefault();
+        window.location.href = '/Lottery/Simulation/Statistics';
+    });
+
     // 初始化页面
     createDataTable();
 });
