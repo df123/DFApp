@@ -12,7 +12,7 @@ namespace DFApp.Lottery.Simulation
         /// 生成组数
         /// </summary>
         [Required]
-        [Range(1, int.MaxValue)]
+        [Range(1, 100)]
         public int Count { get; set; }
 
         /// <summary>
