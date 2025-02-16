@@ -14,7 +14,7 @@ namespace DFApp.Lottery
     public class LotterySimulation : AuditedAggregateRoot<Guid>
     {
         /// <summary>
-        /// 期号
+        /// 期号 (格式：yyyyxxx，例如：2023001)
         /// </summary>
         public int TermNumber { get; set; }
         /// <summary>

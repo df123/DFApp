@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using DFApp.Lottery.Validation;
 
 namespace DFApp.Lottery.Simulation
 {
@@ -11,7 +12,7 @@ namespace DFApp.Lottery.Simulation
         /// 生成组数
         /// </summary>
         [Required]
-        [Range(1, 100)]
+        [Range(1, int.MaxValue)]
         public int Count { get; set; }
 
         /// <summary>
@@ -21,10 +22,10 @@ namespace DFApp.Lottery.Simulation
         public LotteryGameType GameType { get; set; }
 
         /// <summary>
-        /// 期号
+        /// 期号 (格式：yyyyxxx，例如：2023001)
         /// </summary>
         [Required]
-        [Range(1, int.MaxValue)]
+        [TermNumberFormat]
         public int TermNumber { get; set; }
     }
 }
