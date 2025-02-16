@@ -12,8 +12,6 @@
 
     "Menu:Home": "首页",
 
-
-
     "Menu:TG:Media": "媒体",
     "Menu:TG:Media:Chart": "图表",
     "Menu:TG:Media:Login": "登录",
@@ -41,7 +39,6 @@
     "Media:Button:DeleteInvalidItemsButton":"删除无效项",
     "Media:Message:InvalidItemsDeletedSuccessfully": "无效项删除成功",
 
-
     "Menu:TG:Media:ExternalLink": "外部下载",
     "TG:Media:ExternalLink:Title": "媒体外部下载",
     "TG:Media:ExternalLink:Button:Remove": "移除文件",
@@ -63,10 +60,8 @@
     "TG:Media:ExternalLink:Column:CreationTime": "创建时间",
     "TG:Media:ExternalLink:Column:lastModificationTime": "修改时间",
 
-
     "TG:Media:Chart:Title": "媒体图表",
     "TG:Media:Chart:Login": "登录",
-
 
     "Menu:DynamicIP": "地址记录表",
     "DynamicIPIPAddress": "IP地址",
@@ -77,7 +72,6 @@
     "Permission:DynamicIPTelegaram": "地址记录表管理",
     "Permission:DynamicIPIP": "地址记录表",
     "Permission:DynamicIPIP.Delete": "删除",
-
 
     "Menu:Lottery": "彩票",
     "Menu:LotteryBuy": "自购彩票",
@@ -117,7 +111,21 @@
     "Lottery:LotteryRed": "红球",
     "Lottery:LotteryCode": "开奖日期",
     "Lottery:BatchCreateTitle": "批量添加",
-
+    "Menu:LotterySimulation": "彩票模拟",
+    "LotterySimulation:Title": "彩票模拟",
+    "LotterySimulation:TermNumber": "期号",
+    "LotterySimulation:Number": "号码",
+    "LotterySimulation:BallType": "球类型",
+    "LotterySimulation:BallType:Red": "红球",
+    "LotterySimulation:BallType:Blue": "蓝球",
+    "LotterySimulation:GameType": "游戏类型",
+    "LotterySimulation:GroupId": "组号",
+    "LotterySimulation:Button:Generate": "生成随机号码",
+    "LotterySimulation:Button:Calculate": "计算中奖",
+    "LotterySimulation:Generate:Title": "生成随机号码",
+    "LotterySimulation:Generate:Count": "生成数量",
+    "LotterySimulation:Generate:GameType": "游戏类型",
+    "LotterySimulation:Generate:TermNumber": "期号",
 
     "Menu:LogSink": "日志",
     "Menu:SignalRSink": "实时日志",
@@ -127,8 +135,6 @@
     "Permission:QueueSink": "缓存日志",
     "LogSink:SignalRSink:Title": "实时日志",
     "LogSink:QueueSink:Title": "缓存日志",
-
-
 
     "Menu:Bookkeeping": "记账",
     "Menu:BookkeepingCategory": "类型",
@@ -175,7 +181,6 @@
     "FileUploadDownload:Column:Path": "路径",
     "FileUploadDownload:Column:Sha1": "SHA1",
     "FileUploadDownload:Column:FileSize": "文件大小",
-
 
     "Menu:ConfigurationInfo": "配置",
     "Permisssion:ConfigurationInfo": "配置权限",
@@ -234,8 +239,5 @@
     "Aria2:SuccessfullyDeleted": "删除成功！",
     "Aria2:CopySuccessMesage": "复制成功！",
     "Aria2:LinkContent": "连接地址"
-
-
-
   }
 }

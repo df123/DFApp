@@ -155,6 +155,7 @@ public class DFAppWebModule : AbpModule
             options.Conventions.AuthorizePage("/Lottery/SpecifyPeriod/Index", DFAppPermissions.Lottery.Default);
             options.Conventions.AuthorizePage("/Lottery/Statistics/Index", DFAppPermissions.Lottery.Default);
             options.Conventions.AuthorizePage("/Lottery/StatisticsItem/Index", DFAppPermissions.Lottery.Default);
+            options.Conventions.AuthorizePage("/Lottery/Simulation/Index", DFAppPermissions.Lottery.Default);
             options.Conventions.AuthorizePage("/Lottery/BatchCreate/Index", DFAppPermissions.Lottery.Default);
             options.Conventions.AuthorizeFolder("/TG", DFAppPermissions.Medias.Default);
             options.Conventions.AuthorizeFolder("/Bookkeeping/Category", DFAppPermissions.BookkeepingCategory.Default);

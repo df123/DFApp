@@ -1,0 +1,38 @@
+@page
+@using DFApp.Localization;
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.Extensions.Localization;
+@using DFApp.Permissions
+@model DFApp.Web.Pages.Lottery.Simulation.IndexModel
+
+@inject IStringLocalizer<DFAppResource> L
+@inject IAuthorizationService AuthorizationService
+@section scripts{
+    <abp-script src="/Pages/Lottery/Simulation/Index.js"></abp-script>
+}
+
+<abp-card>
+    <abp-card-header>
+        <abp-row>
+            <abp-column size-md="_6">
+                <abp-card-title>@L["LotterySimulation:Title"]</abp-card-title>
+            </abp-column>
+            <abp-column size-md="_6" class="text-end">
+                @if (await AuthorizationService.IsGrantedAsync(DFAppPermissions.Lottery.Create))
+                {
+                    <abp-button id="GenerateRandomNumbersButton"
+                               text="@L["LotterySimulation:Button:Generate"].Value"
+                               icon="plus"
+                               button-type="Primary" />
+                    <abp-button id="CalculateWinningButton"
+                               text="@L["LotterySimulation:Button:Calculate"].Value"
+                               icon="calculator"
+                               button-type="Success" />
+                }
+            </abp-column>
+        </abp-row>
+    </abp-card-header>
+    <abp-card-body>
+        <abp-table striped-rows="true" id="SimulationTable"></abp-table>
+    </abp-card-body>
+</abp-card>

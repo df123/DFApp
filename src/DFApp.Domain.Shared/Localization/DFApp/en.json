@@ -3,6 +3,21 @@
   "texts": {
     "Menu:Home": "Home",
     "Welcome": "Welcome",
-    "LongWelcomeMessage": "Welcome to the application. This is a startup project based on the ABP framework. For more information, visit abp.io."
+    "LongWelcomeMessage": "Welcome to the application. This is a startup project based on the ABP framework. For more information, visit abp.io.",
+    "Menu:LotterySimulation": "Lottery Simulation",
+    "LotterySimulation:Title": "Lottery Simulation",
+    "LotterySimulation:TermNumber": "Term Number",
+    "LotterySimulation:Number": "Number",
+    "LotterySimulation:BallType": "Ball Type",
+    "LotterySimulation:BallType:Red": "Red Ball",
+    "LotterySimulation:BallType:Blue": "Blue Ball",
+    "LotterySimulation:GameType": "Game Type",
+    "LotterySimulation:GroupId": "Group ID",
+    "LotterySimulation:Button:Generate": "Generate Random Numbers",
+    "LotterySimulation:Button:Calculate": "Calculate Winning",
+    "LotterySimulation:Generate:Title": "Generate Random Numbers",
+    "LotterySimulation:Generate:Count": "Count",
+    "LotterySimulation:Generate:GameType": "Game Type",
+    "LotterySimulation:Generate:TermNumber": "Term Number"
   }
 }
