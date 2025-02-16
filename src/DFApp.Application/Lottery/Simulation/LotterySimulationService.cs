@@ -59,18 +59,27 @@ namespace DFApp.Lottery.Simulation
             {
                 if (input.GameType == LotteryGameType.双色球)
                 {
-                    // 生成6个红球(1-33)
-                    for (int j = 0; j < 6; j++)
+                    // 使用HashSet存储已选择的红球号码
+                    var redBalls = new HashSet<int>();
+                    // 生成6个不重复的红球(1-33)
+                    while (redBalls.Count < 6)
+                    {
+                        redBalls.Add(random.Next(1, 34));
+                    }
+
+                    // 添加红球
+                    foreach (var number in redBalls)
                     {
                         result.Add(new LotterySimulation
                         {
                             GameType = input.GameType,
                             BallType = LotteryBallType.Red,
-                            Number = random.Next(1, 34),
+                            Number = number,
                             GroupId = groupId,
                             TermNumber = input.TermNumber
                         });
                     }
+
                     // 生成1个蓝球(1-16)
                     result.Add(new LotterySimulation
                     {
@@ -83,14 +92,22 @@ namespace DFApp.Lottery.Simulation
                 }
                 else if (input.GameType == LotteryGameType.快乐8)
                 {
-                    // 生成20个红球(1-80)
-                    for (int j = 0; j < 20; j++)
+                    // 使用HashSet存储已选择的红球号码
+                    var redBalls = new HashSet<int>();
+                    // 生成20个不重复的红球(1-80)
+                    while (redBalls.Count < 20)
+                    {
+                        redBalls.Add(random.Next(1, 81));
+                    }
+
+                    // 添加红球
+                    foreach (var number in redBalls)
                     {
                         result.Add(new LotterySimulation
                         {
                             GameType = input.GameType,
                             BallType = LotteryBallType.Red,
-                            Number = random.Next(1, 81),
+                            Number = number,
                             GroupId = groupId,
                             TermNumber = input.TermNumber
                         });
