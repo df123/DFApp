@@ -100,7 +100,7 @@ public class DFAppDbContext :
     public DbSet<TellStatusResult> TellStatusResults { get; set; }
     public DbSet<FilesItem> FilesItems { get; set; }
     public DbSet<UrisItem> UrisItems { get; set; }
-
+    public DbSet<LotterySimulation> LotterySimulations { get; set; }
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
@@ -245,6 +245,14 @@ public class DFAppDbContext :
             .HasForeignKey(e => e.FilesItemId);
 
             b.ConfigureByConvention();
+        });
+
+        builder.Entity<LotterySimulation>(b =>
+        {
+            b.ToTable(DFAppConsts.DbTablePrefix + "LotterySimulation", DFAppConsts.DbSchema);
+            b.ConfigureByConvention();
+            
+            b.HasIndex(e => new { e.TermNumber, e.GroupId });
         });
 
     }
