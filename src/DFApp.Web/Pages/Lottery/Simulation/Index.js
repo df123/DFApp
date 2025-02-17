@@ -16,15 +16,18 @@ $(function () {
                 columnDefs: [
                     {
                         title: l('LotterySimulation:TermNumber'),
-                        data: "termNumber"
+                        data: "termNumber",
+                        className: 'text-start'
                     },
                     {
                         title: l('LotterySimulation:Number'),
-                        data: "number"
+                        data: "number",
+                        className: 'text-start'
                     },
                     {
                         title: l('LotterySimulation:BallType'),
                         data: "ballType",
+                        className: 'text-start',
                         render: function (data) {
                             return data === 0 ? l('LotterySimulation:BallType:Red') : l('LotterySimulation:BallType:Blue');
                         }
@@ -32,13 +35,15 @@ $(function () {
                     {
                         title: l('LotterySimulation:GameType'),
                         data: "gameType",
+                        className: 'text-start',
                         render: function (data) {
                             return data === 0 ? '双色球' : '快乐8';
                         }
                     },
                     {
                         title: l('LotterySimulation:GroupId'),
-                        data: "groupId"
+                        data: "groupId",
+                        className: 'text-start'
                     }
                 ]
             })
