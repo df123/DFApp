@@ -126,6 +126,8 @@
     "LotterySimulation:Generate:Count": "生成数量",
     "LotterySimulation:Generate:GameType": "游戏类型",
     "LotterySimulation:Generate:TermNumber": "期号",
+    "LotterySimulation:DeleteByTermNumber": "删除期号数据",
+    "LotterySimulation:Button:DeleteByTermNumber": "删除期号",
     "Menu:LotterySimulationStatistics": "模拟统计",
     "LotterySimulation:Statistics": "模拟统计",
     "LotterySimulation:PurchaseAmount": "购买金额",

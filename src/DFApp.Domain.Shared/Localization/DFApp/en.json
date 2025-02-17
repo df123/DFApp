@@ -23,6 +23,8 @@
     "Menu:LotterySimulationStatistics": "Simulation Statistics",
     "LotterySimulation:Statistics": "Simulation Statistics",
     "LotterySimulation:PurchaseAmount": "Purchase Amount",
-    "LotterySimulation:WinningAmount": "Winning Amount"
+    "LotterySimulation:WinningAmount": "Winning Amount",
+    "LotterySimulation:DeleteByTermNumber": "Delete Term Number Data",
+    "LotterySimulation:Button:DeleteByTermNumber": "Delete Term"
   }
 }

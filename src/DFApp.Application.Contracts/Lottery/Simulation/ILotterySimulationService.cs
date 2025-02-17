@@ -11,7 +11,8 @@ namespace DFApp.Lottery.Simulation
         PagedAndSortedResultRequestDto,
         CreateUpdateLotterySimulationDto>
     {
-        Task<ListResultDto<LotterySimulationDto>> GenerateRandomNumbersAsync(GenerateRandomNumbersDto input);
+        Task<bool> GenerateRandomNumbersAsync(GenerateRandomNumbersDto input);
         Task<StatisticsDto> GetStatisticsAsync();
+        Task DeleteByTermNumberAsync(int termNumber);
     }
 }

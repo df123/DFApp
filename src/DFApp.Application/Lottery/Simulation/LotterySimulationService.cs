@@ -41,7 +41,7 @@ namespace DFApp.Lottery.Simulation
         /// </summary>
         /// <param name="input">生成参数，包含生成组数、彩票类型和期号</param>
         /// <returns>生成的随机号码列表</returns>
-        public async Task<ListResultDto<LotterySimulationDto>> GenerateRandomNumbersAsync(GenerateRandomNumbersDto input)
+        public async Task<bool> GenerateRandomNumbersAsync(GenerateRandomNumbersDto input)
         {
             var random = new Random();
             var result = new List<LotterySimulation>();
@@ -118,9 +118,7 @@ namespace DFApp.Lottery.Simulation
 
             await Repository.InsertManyAsync(result);
 
-            return new ListResultDto<LotterySimulationDto>(
-                ObjectMapper.Map<List<LotterySimulation>, List<LotterySimulationDto>>(result)
-            );
+            return true;
         }
 
         /// <summary>
@@ -249,6 +247,15 @@ namespace DFApp.Lottery.Simulation
             }
 
             return statistics;
+        }
+
+        /// <summary>
+        /// 删除指定期号的所有模拟数据
+        /// </summary>
+        /// <param name="termNumber">期号</param>
+        public async Task DeleteByTermNumberAsync(int termNumber)
+        {
+            await Repository.DeleteAsync(x => x.TermNumber == termNumber);
         }
     }
 }

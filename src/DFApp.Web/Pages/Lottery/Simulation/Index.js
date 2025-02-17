@@ -66,6 +66,19 @@ $(function () {
         modal.open();
     });
 
+    // 删除指定期号按钮点击事件
+    $('#DeleteByTermNumberButton').click(function (e) {
+        var modal = new abp.ModalManager({
+            viewUrl: '/Lottery/Simulation/DeleteByTermNumberModal'
+        });
+        modal.open().then(function() {
+            modal.getModal().find('form').on('abp-ajax-success', function() {
+                modal.close();
+                dataTable.ajax.reload();
+            });
+        });
+    });
+
     $('#StatisticsButton').click(function (e) {
         e.preventDefault();
         window.location.href = '/Lottery/Simulation/Statistics';

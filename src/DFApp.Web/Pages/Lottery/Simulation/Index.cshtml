@@ -20,6 +20,11 @@
             <abp-column size-md="_6" class="text-end">
                 @if (await AuthorizationService.IsGrantedAsync(DFAppPermissions.Lottery.Create))
                 {
+                    <abp-button id="DeleteByTermNumberButton"
+                               text="@L["LotterySimulation:Button:DeleteByTermNumber"].Value"
+                               icon="trash"
+                               button-type="Danger"
+                               class="me-2" />
                     <abp-button id="StatisticsButton"
                                text="@L["LotterySimulation:Button:Statistics"].Value"
                                icon="chart-line"
