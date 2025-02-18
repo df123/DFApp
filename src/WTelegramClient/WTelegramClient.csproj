@@ -1,0 +1,63 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Library</OutputType>
+    <TargetFrameworks>net9.0</TargetFrameworks>
+    <LangVersion>latest</LangVersion>
+    <RootNamespace>WTelegram</RootNamespace>
+    <Deterministic>true</Deterministic>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <IncludeSymbols>true</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+    <EmbedUntrackedSources>true</EmbedUntrackedSources>
+    <PackageId>WTelegramClient</PackageId>
+    <Version>4.2.2</Version>
+    <Authors>Wizou</Authors>
+    <Description>Telegram Client API (MTProto) library written 100% in C# and .NET Standard | Latest API layer: 199
+
+Release Notes:
+$(ReleaseNotes.Replace("|", "%0D%0A").Replace(" - ","%0D%0A- ").Replace("  ", "%0D%0A%0D%0A"))</Description>
+    <Copyright>Copyright © Olivier Marcoux 2021-2025</Copyright>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageProjectUrl>https://wiz0u.github.io/WTelegramClient</PackageProjectUrl>
+    <PackageIcon>logo.png</PackageIcon>
+    <PublishRepositoryUrl>true</PublishRepositoryUrl>
+    <RepositoryUrl>https://github.com/wiz0u/WTelegramClient.git</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageTags>Telegram;MTProto;Client;Api;UserBot</PackageTags>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageReleaseNotes>$(ReleaseNotes.Replace("|", "%0D%0A").Replace(" - ","%0D%0A- ").Replace("  ", "%0D%0A%0D%0A"))</PackageReleaseNotes>
+    <NoWarn>NETSDK1138;CS0419;CS1573;CS1591</NoWarn>
+    <DefineConstants>TRACE;OBFUSCATION;</DefineConstants>
+    <!--<IsAotCompatible Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net7.0'))">true</IsAotCompatible>-->
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="..\.github\dev.yml" Link="Data\dev.yml" />
+    <None Include="..\.github\release.yml" Link="Data\release.yml" />
+    <None Include="..\EXAMPLES.md" Link="Data\EXAMPLES.md" />
+    <None Include="..\FAQ.md" Link="Data\FAQ.md" />
+    <None Include="..\README.md" Link="Data\README.md" Pack="true" PackagePath="\" />
+    <None Include="..\logo.png" Link="Data\logo.png" Pack="true" PackagePath="\" />
+  </ItemGroup>
+
+  <!-- Disabled because SourceLink navigation prevents a clear display of the API
+  <ItemGroup>
+    <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.1.1" PrivateAssets="All" />
+  </ItemGroup>-->
+
+  <ItemGroup Condition="$(DefineConstants.Contains('MTPG'))">
+    <ProjectReference Include="..\generator\MTProtoGenerator.csproj" OutputItemType="Analyzer" PrivateAssets="All" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(TargetFramework)' == 'netstandard2.0'">
+    <PackageReference Include="IndexRange" Version="1.0.3" />
+    <PackageReference Include="System.Memory" Version="4.5.5" />
+    <PackageReference Include="System.Text.Json" Version="6.0.10" />
+    <PackageReference Include="System.Collections.Immutable" Version="6.0.0" />
+  </ItemGroup>
+  <ItemGroup Condition="'$(TargetFramework)' == 'net5.0'">
+    <PackageReference Include="System.Collections.Immutable" Version="6.0.0" />
+  </ItemGroup>
+
+</Project>
