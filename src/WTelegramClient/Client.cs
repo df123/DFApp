@@ -1602,9 +1602,11 @@ namespace WTelegram
 					}
 					else if (code == 420 && (message.EndsWith("_WAIT_X") || message.EndsWith("_DELAY_X")))
 					{
-						if (x <= FloodRetryThreshold)
+						Helpers.Log(4, $"Test 420 Flood control triggered: {message}");
+                        if (x <= FloodRetryThreshold)
 						{
-							if (x == 0) x =1;
+                            Helpers.Log(4, $"Test 420 await control triggered: {message}");
+                            if (x == 0) x =1;
 							await Task.Delay(x * 1000);
 							goto retry;
 						}

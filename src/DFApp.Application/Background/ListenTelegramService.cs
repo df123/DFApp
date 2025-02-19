@@ -143,6 +143,10 @@ namespace DFApp.Background
         {
             try
             {
+                if (arg is ReactorError err)
+                {
+                    Logger.LogError($"ClientOnOther ReactorError:{err.Exception.Message}");
+                }
                 if (arg is RpcError rpcError)
                 {
                     Logger.LogError($"ClientOnOther RpcError:{rpcError.error_message}");
