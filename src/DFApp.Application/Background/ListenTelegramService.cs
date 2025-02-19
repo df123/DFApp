@@ -112,6 +112,7 @@ namespace DFApp.Background
                     _client.MaxAutoReconnects = int.MaxValue;
 
                     _client.OnUpdates += ClientUpdate;
+                    _client.OnOther += ClientOnOther;
                 }
 
                 if (bool.Parse(GetConfigurationInfo("EnableProxy").Result))
@@ -136,6 +137,24 @@ namespace DFApp.Background
             {
                 Logger.LogError(ex.Message);
             }
+        }
+
+         async Task ClientOnOther(IObject arg)
+        {
+            try
+            {
+                if (arg is RpcError rpcError)
+                {
+                    Logger.LogError($"ClientOnOther RpcError:{rpcError.error_message}");
+                }
+            }
+            catch (Exception e)
+            {
+                Logger.LogError($"ClientOnOther RpcError:{e.Message}");
+            }
+            
+
+            await Task.CompletedTask;
         }
 
         async Task ClientUpdate(IObject arg)
