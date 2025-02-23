@@ -14,6 +14,7 @@ using DFApp.Aria2.Request;
 using DFApp.Aria2;
 using DFApp.Aria2.Response.TellStatus;
 using DFApp.Aria2.Response;
+using DFApp.Lottery.Simulation;
 
 namespace DFApp;
 
@@ -85,5 +86,7 @@ public class DFAppApplicationAutoMapperProfile : Profile
 
         CreateMap<ConfigurationInfo, CustomFileTypeDto>();
 
+        CreateMap<LotterySimulation, LotterySimulationDto>();
+        CreateMap<CreateUpdateLotterySimulationDto, LotterySimulation>();
     }
 }

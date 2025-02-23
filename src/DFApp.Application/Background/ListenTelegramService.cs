@@ -26,8 +26,7 @@ namespace DFApp.Background
         public string ConfigNeeded { get; set; } = "start";
 
 
-        private IQueueBase<DocumentQueueModel> _documentQueue;
-        private IQueueBase<PhotoQueueModel> _photoQueue;
+        private IQueueBase<MediaQueueModel> _mediaQueue;
 
         private readonly IServiceScopeFactory _serviceScopeFactory;
         private readonly IServiceScope _serviceScope;
@@ -42,8 +41,7 @@ namespace DFApp.Background
 
         public ListenTelegramService(IServiceScopeFactory serviceScopeFactory)
         {
-            _documentQueue = new QueueBase<DocumentQueueModel>();
-            _photoQueue = new QueueBase<PhotoQueueModel>();
+            _mediaQueue = new QueueBase<MediaQueueModel>();
 
             _serviceScopeFactory = serviceScopeFactory;
 
@@ -110,7 +108,7 @@ namespace DFApp.Background
 
                     _client.PingInterval = 300;
                     _client.MaxAutoReconnects = int.MaxValue;
-
+                    
                     _client.OnUpdates += ClientUpdate;
                 }
 
@@ -127,10 +125,8 @@ namespace DFApp.Background
 
                 ConfigNeeded = await DoLogin(await GetConfigurationInfo("phone_number"));
 
-                var mediaTask = DownloadMedia(await GetConfigurationInfo("SaveVideoPathPrefix"), _documentQueue, stoppingToken);
-                var photoTask = DownloadPhoto(await GetConfigurationInfo("SavePhotoPathPrefix"), _photoQueue, stoppingToken);
+                var mediaTask = DownloadMedia(stoppingToken);
                 await mediaTask.ConfigureAwait(false);
-                await photoTask.ConfigureAwait(false);
             }
             catch (Exception ex)
             {
@@ -246,10 +242,11 @@ namespace DFApp.Background
                     });
                     if (canAdd != null)
                     {
-                        _documentQueue.AddItem(new DocumentQueueModel()
+                        _mediaQueue.AddItem(new MediaQueueModel()
                         {
                             MediaInfos = canAdd,
                             TObject = document,
+                            IsPhoto = false
                         });
                     }
 
@@ -285,10 +282,11 @@ namespace DFApp.Background
                     });
                     if (canAdd != null)
                     {
-                        _photoQueue.AddItem(new PhotoQueueModel()
+                        _mediaQueue.AddItem(new MediaQueueModel()
                         {
                             MediaInfos = canAdd,
                             TObject = photo,
+                            IsPhoto = true
                         });
                     }
 
@@ -296,34 +294,26 @@ namespace DFApp.Background
             }
         }
 
-        public async Task DownloadPhoto(string savePathPrefix, IQueueBase<PhotoQueueModel> queue, CancellationToken stoppingToken)
+        public async Task DownloadMedia(CancellationToken stoppingToken)
         {
             while (!stoppingToken.IsCancellationRequested)
             {
                 try
                 {
-                    var model = await queue.GetItemAsync(stoppingToken);
-                    if (model == null)
+                    var model = await _mediaQueue.GetItemAsync(stoppingToken);
+                    if (model?.MediaInfos == null || model.TObject == null)
                     {
                         continue;
                     }
 
-                    Photo? photo = model.TObject;
-                    if (photo == null)
-                    {
-                        continue;
-                    }
+                    var mediaInfo = model.MediaInfos;
+                    long fileSize = model.IsPhoto 
+                        ? ((Photo)model.TObject).LargestPhotoSize.FileSize 
+                        : ((Document)model.TObject).size;
 
-                    MediaInfo? mediaInfo = model.MediaInfos;
-                    if (mediaInfo == null)
-                    {
-                        continue;
-                    }
-
-                    if (await IsSpaceUpperLimit(photo.LargestPhotoSize.FileSize))
+                    if (await IsSpaceUpperLimit(fileSize))
                     {
                         var isLoopDownload = bool.Parse(await GetConfigurationInfo("IsLoopDownload"));
-
                         if (!isLoopDownload)
                         {
                             await _mediaInfoRepository.DeleteAsync(mediaInfo.Id);
@@ -331,92 +321,38 @@ namespace DFApp.Background
                         }
                         else
                         {
-                            await DeleteOldestMediaUntilSpaceAvailable(photo.LargestPhotoSize.FileSize);
+                            await DeleteOldestMediaUntilSpaceAvailable(fileSize);
                         }
-
                     }
+
                     await IsUpperLimit();
-                    DeleteTempFiles(savePathPrefix);
+                    DeleteTempFiles(model.IsPhoto 
+                        ? await GetConfigurationInfo("SavePhotoPathPrefix") 
+                        : await GetConfigurationInfo("SaveVideoPathPrefix"));
 
-                    using var fileStream = File.Create(model.MediaInfos!.SavePath);
-                    var type = await _client!.DownloadFileAsync(photo, fileStream);
+                    if (model.IsPhoto)
+                    {
+                        using var fileStream = File.Create(mediaInfo.SavePath);
+                        await _client!.DownloadFileAsync((Photo)model.TObject, fileStream);
+                        fileStream.Close();
+                    }
+                    else
+                    {
+                        string fileNameTemp = $"{mediaInfo.SavePath}.temp";
+                        using var fileStream = File.Create(fileNameTemp);
+                        await _client!.DownloadFileAsync((Document)model.TObject, fileStream);
+                        fileStream.Close();
+                        File.Move(fileNameTemp, mediaInfo.SavePath, true);
+                    }
 
-                    fileStream.Close();
                     await UpdateIsDownloadCompleted(mediaInfo.Id);
-
-                    Logger.LogInformation($"Photo download completed {model.MediaInfos!.SavePath}");
-
-                    await RandomPause();
-
+                    Logger.LogInformation($"{(model.IsPhoto ? "Photo" : "Video")} download completed {mediaInfo.SavePath}");
                 }
                 catch (Exception e)
                 {
-                    Logger.LogError($"Photo download error:{e.Message}------{e.StackTrace}");
+                    Logger.LogError($"Media download error:{e.Message}------{e.StackTrace}");
                 }
             }
-
-        }
-
-        public async Task DownloadMedia(string savePathPrefix, IQueueBase<DocumentQueueModel> queue, CancellationToken stoppingToken)
-        {
-
-            while (!stoppingToken.IsCancellationRequested)
-            {
-                try
-                {
-                    var model = await queue.GetItemAsync(stoppingToken);
-                    if (model == null)
-                    {
-                        continue;
-                    }
-
-                    Document? document = model.TObject;
-                    if (document == null)
-                    {
-                        continue;
-                    }
-
-                    MediaInfo? mediaInfo = model.MediaInfos;
-                    if (mediaInfo == null)
-                    {
-                        continue;
-                    }
-                    if (await IsSpaceUpperLimit(document.size))
-                    {
-                        var isLoopDownload = bool.Parse(await GetConfigurationInfo("IsLoopDownload"));
-
-                        if (!isLoopDownload)
-                        {
-                            await _mediaInfoRepository.DeleteAsync(mediaInfo.Id);
-                            continue;
-                        }
-                        else
-                        {
-                            await DeleteOldestMediaUntilSpaceAvailable(document.size);
-                        }
-
-                    }
-                    await IsUpperLimit();
-                    DeleteTempFiles(savePathPrefix);
-                    string fileNameTemp = $"{mediaInfo.SavePath}.temp";
-                    using var fileStream = File.Create(fileNameTemp);
-                    await _client!.DownloadFileAsync(document, fileStream);
-                    fileStream.Close();
-                    File.Move(fileNameTemp, mediaInfo.SavePath, true);
-                    await UpdateIsDownloadCompleted(mediaInfo.Id);
-
-
-                    Logger.LogInformation($"Video download completed {mediaInfo.SavePath}");
-
-                    await RandomPause();
-
-                }
-                catch (Exception e)
-                {
-                    Logger.LogError($"Video download error:{e.Message}------{e.StackTrace}");
-                }
-            }
-
         }
 
         public async Task<double> CalculationDownloadsSize()
@@ -531,23 +467,6 @@ namespace DFApp.Background
             }
         }
 
-        private async Task RandomPause()
-        {
-            var pauseRange = await GetConfigurationInfo("PauseRange");
-            var pauseRangeArray = pauseRange.Split('-');
-            if (pauseRangeArray.Length == 2)
-            {
-                int minPause = int.Parse(pauseRangeArray[0]);
-                int maxPause = int.Parse(pauseRangeArray[1]);
-                int pauseDuration = new Random().Next(minPause, maxPause);
-                Logger.LogInformation($"Pausing for {pauseDuration} milliseconds.");
-                await Task.Delay(pauseDuration);
-            }
-            else
-            {
-                Logger.LogWarning("Invalid PauseRange configuration.");
-            }
-        }
         public override void Dispose()
         {
             TGClinet?.Dispose();

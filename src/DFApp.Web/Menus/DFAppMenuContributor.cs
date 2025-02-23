@@ -101,6 +101,8 @@ public class DFAppMenuContributor : IMenuContributor
             lotteryFirst.AddItem(new ApplicationMenuItem(DFAppMenus.Lottery, l["Menu:LotteryResult"], "~/Lottery/Result", icon: "fas fa-baseball-ball", order: 2));
             lotteryFirst.AddItem(new ApplicationMenuItem(DFAppMenus.Lottery, l["Menu:LotteryStatistics"], "~/Lottery/Statistics", icon: "fas fa-baseball-ball", order: 3));
             lotteryFirst.AddItem(new ApplicationMenuItem(DFAppMenus.Lottery, l["Menu:LotteryStatisticsItem"], "~/Lottery/StatisticsItem", icon: "fas fa-baseball-ball", order: 4));
+            // 添加彩票模拟子菜单
+            lotteryFirst.AddItem(new ApplicationMenuItem(DFAppMenus.LotterySimulation, l["Menu:LotterySimulation"], "~/Lottery/Simulation", icon: "fas fa-random", order: 5));
            
             context.Menu.AddItem(lotteryFirst);
 

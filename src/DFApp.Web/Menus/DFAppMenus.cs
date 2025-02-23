@@ -15,6 +15,7 @@ public class DFAppMenus
 
     public const string DynamicIP = Prefix + ".DynamicIP";
     public const string Lottery = Prefix + ".Lottery";
+    public const string LotterySimulation = Lottery + ".Simulation";
     public const string LogSink = Prefix + ".LogSink";
     public const string Bookkeeping = Prefix + ".Bookkeeping";
     public const string FileUploadDownload = Prefix + ".FileUploadDownload";
