@@ -32,14 +32,11 @@
 
 	<ItemGroup>
 		<PackageReference Include="Microsoft.Extensions.FileProviders.Embedded" Version="9.0.0" />
+		<PackageReference Include="WTelegramClient" Version="4.3.1" />
 	</ItemGroup>
 
 	<ItemGroup>
 	  <Folder Include="TG\Login\" />
-	</ItemGroup>
-
-	<ItemGroup>
-	  <ProjectReference Include="..\WTelegramClient\WTelegramClient.csproj" />
 	</ItemGroup>
 
 </Project>
