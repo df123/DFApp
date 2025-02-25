@@ -25,6 +25,10 @@
     "LotterySimulation:PurchaseAmount": "Purchase Amount",
     "LotterySimulation:WinningAmount": "Winning Amount",
     "LotterySimulation:DeleteByTermNumber": "Delete Term Number Data",
-    "LotterySimulation:Button:DeleteByTermNumber": "Delete Term"
+    "LotterySimulation:Button:DeleteByTermNumber": "Delete Term",
+    "LotterySimulation:RedNumbers": "Red Numbers",
+    "LotterySimulation:BlueNumber": "Blue Number", 
+    "LotterySimulation:CalculateWinning": "Calculate Winning",
+    "LotterySimulation:CalculateWinning:Title": "Calculate Winning"
   }
 }

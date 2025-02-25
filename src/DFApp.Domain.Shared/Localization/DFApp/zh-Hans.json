@@ -133,6 +133,10 @@
     "LotterySimulation:PurchaseAmount": "购买金额",
     "LotterySimulation:WinningAmount": "中奖金额",
     "LotterySimulation:Button:Statistics": "统计",
+    "LotterySimulation:RedNumbers": "红球号码",
+    "LotterySimulation:BlueNumber": "蓝球号码",
+    "LotterySimulation:CalculateWinning": "中奖计算",
+    "LotterySimulation:CalculateWinning:Title": "中奖计算",
 
     "Menu:LogSink": "日志",
     "Menu:SignalRSink": "实时日志",

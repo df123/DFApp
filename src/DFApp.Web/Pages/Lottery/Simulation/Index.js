@@ -8,7 +8,7 @@ $(function () {
         abp.libs.datatables.normalizeConfiguration({
             serverSide: true,
             paging: true,
-            order: [[0, "asc"]],
+            order: [[0, "desc"]],
             searching: false,
             scrollX: true,
             ajax: abp.libs.datatables.createAjax(dFApp.lottery.simulation.lotterySimulation.getList),
@@ -16,25 +16,22 @@ $(function () {
                 {
                     title: l('LotterySimulation:TermNumber'),
                     data: "termNumber",
-                    className: 'text-start'
+                    className: 'text-center'
                 },
                 {
-                    title: l('LotterySimulation:Number'),
-                    data: "number",
-                    className: 'text-start'
+                    title: l('LotterySimulation:RedNumbers'),
+                    data: "redNumbers",
+                    className: 'text-center'
                 },
                 {
-                    title: l('LotterySimulation:BallType'),
-                    data: "ballType",
-                    className: 'text-start',
-                    render: function (data) {
-                        return data === 0 ? l('LotterySimulation:BallType:Red') : l('LotterySimulation:BallType:Blue');
-                    }
+                    title: l('LotterySimulation:BlueNumber'),
+                    data: "blueNumber",
+                    className: 'text-center'
                 },
                 {
                     title: l('LotterySimulation:GameType'),
                     data: "gameType",
-                    className: 'text-start',
+                    className: 'text-center',
                     render: function (data) {
                         return data === 0 ? '双色球' : '快乐8';
                     }
@@ -42,7 +39,7 @@ $(function () {
                 {
                     title: l('LotterySimulation:GroupId'),
                     data: "groupId",
-                    className: 'text-start'
+                    className: 'text-center'
                 }
             ]
         })

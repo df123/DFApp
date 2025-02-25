@@ -257,5 +257,42 @@ namespace DFApp.Lottery.Simulation
         {
             await Repository.DeleteAsync(x => x.TermNumber == termNumber);
         }
+
+        public override async Task<PagedResultDto<LotterySimulationDto>> GetListAsync(PagedAndSortedResultRequestDto input)
+        {
+            // 获取所有数据
+            var query = await Repository.GetQueryableAsync();
+            var totalCount = await AsyncExecuter.CountAsync(query);
+
+            // 分组查询
+            var groupedData = await AsyncExecuter.ToListAsync(
+                query.GroupBy(x => new { x.TermNumber, x.GroupId, x.GameType })
+                .Select(g => new
+                {
+                    g.Key.TermNumber,
+                    g.Key.GroupId,
+                    g.Key.GameType,
+                    RedNumbers = string.Join(",", g.Where(x => x.BallType == LotteryBallType.Red)
+                                                 .OrderBy(x => x.Number)
+                                                 .Select(x => x.Number.ToString("D2"))),
+                    BlueNumber = g.FirstOrDefault(x => x.BallType == LotteryBallType.Blue).Number.ToString("D2")
+                })
+                .OrderByDescending(x => x.TermNumber)
+                .ThenBy(x => x.GroupId)
+                .Skip(input.SkipCount)
+                .Take(input.MaxResultCount));
+
+            // 转换为DTO
+            var items = groupedData.Select(g => new LotterySimulationDto
+            {
+                TermNumber = g.TermNumber,
+                GroupId = g.GroupId,
+                GameType = g.GameType,
+                RedNumbers = g.RedNumbers,
+                BlueNumber = g.BlueNumber
+            }).ToList();
+
+            return new PagedResultDto<LotterySimulationDto>(totalCount, items);
+        }
     }
 }
