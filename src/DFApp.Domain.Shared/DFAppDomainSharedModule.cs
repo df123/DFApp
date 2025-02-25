@@ -25,11 +25,11 @@ namespace DFApp;
     typeof(AbpOpenIddictDomainSharedModule),
     typeof(AbpPermissionManagementDomainSharedModule),
     typeof(AbpSettingManagementDomainSharedModule),
-    typeof(AbpTenantManagementDomainSharedModule)    
+    typeof(AbpTenantManagementDomainSharedModule)
     )]
 [DependsOn(typeof(CmsKitDomainSharedModule))]
-    [DependsOn(typeof(BlobStoringDatabaseDomainSharedModule))]
-    public class DFAppDomainSharedModule : AbpModule
+[DependsOn(typeof(BlobStoringDatabaseDomainSharedModule))]
+public class DFAppDomainSharedModule : AbpModule
 {
     public override void PreConfigureServices(ServiceConfigurationContext context)
     {
@@ -50,6 +50,10 @@ namespace DFApp;
                 .Add<DFAppResource>("zh-Hans")
                 .AddBaseTypes(typeof(AbpValidationResource))
                 .AddVirtualJson("/Localization/DFApp");
+
+            options.Resources
+                .Get<DFAppResource>()
+                .AddVirtualJson("/Localization/LotterySimulation");
 
             options.DefaultResourceType = typeof(DFAppResource);
         });

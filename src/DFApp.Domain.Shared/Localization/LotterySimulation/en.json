@@ -1,0 +1,31 @@
+{
+  "culture": "en",
+  "texts": {
+    "Menu:LotterySimulation": "Lottery Simulation",
+    "LotterySimulation:Title": "Lottery Simulation",
+    "LotterySimulation:TermNumber": "Term Number",
+    "LotterySimulation:Number": "Number",
+    "LotterySimulation:BallType": "Ball Type",
+    "LotterySimulation:BallType:Red": "Red Ball",
+    "LotterySimulation:BallType:Blue": "Blue Ball",
+    "LotterySimulation:GameType": "Game Type",
+    "LotterySimulation:GroupId": "Group ID",
+    "LotterySimulation:Button:Generate": "Generate Random Numbers",
+    "LotterySimulation:Button:Calculate": "Calculate Winning",
+    "LotterySimulation:Button:Statistics": "Statistics",
+    "LotterySimulation:Generate:Title": "Generate Random Numbers",
+    "LotterySimulation:Generate:Count": "Count",
+    "LotterySimulation:Generate:GameType": "Game Type",
+    "LotterySimulation:Generate:TermNumber": "Term Number",
+    "Menu:LotterySimulationStatistics": "Simulation Statistics",
+    "LotterySimulation:Statistics": "Simulation Statistics",
+    "LotterySimulation:PurchaseAmount": "Purchase Amount",
+    "LotterySimulation:WinningAmount": "Winning Amount",
+    "LotterySimulation:DeleteByTermNumber": "Delete Term Number Data",
+    "LotterySimulation:Button:DeleteByTermNumber": "Delete Term",
+    "LotterySimulation:RedNumbers": "Red Numbers",
+    "LotterySimulation:BlueNumber": "Blue Number", 
+    "LotterySimulation:CalculateWinning": "Calculate Winning",
+    "LotterySimulation:CalculateWinning:Title": "Calculate Winning"
+  }
+}

@@ -1,0 +1,31 @@
+{
+  "culture": "zh-Hans",
+  "texts": {
+    "Menu:LotterySimulation": "彩票模拟",
+    "LotterySimulation:Title": "彩票模拟",
+    "LotterySimulation:TermNumber": "期号",
+    "LotterySimulation:Number": "号码",
+    "LotterySimulation:BallType": "球类型",
+    "LotterySimulation:BallType:Red": "红球",
+    "LotterySimulation:BallType:Blue": "蓝球",
+    "LotterySimulation:GameType": "游戏类型",
+    "LotterySimulation:GroupId": "组号",
+    "LotterySimulation:Button:Generate": "生成随机号码",
+    "LotterySimulation:Button:Calculate": "计算中奖",
+    "LotterySimulation:Generate:Title": "生成随机号码",
+    "LotterySimulation:Generate:Count": "生成数量",
+    "LotterySimulation:Generate:GameType": "游戏类型",
+    "LotterySimulation:Generate:TermNumber": "期号",
+    "LotterySimulation:DeleteByTermNumber": "删除期号数据",
+    "LotterySimulation:Button:DeleteByTermNumber": "删除期号",
+    "Menu:LotterySimulationStatistics": "模拟统计",
+    "LotterySimulation:Statistics": "模拟统计",
+    "LotterySimulation:PurchaseAmount": "购买金额",
+    "LotterySimulation:WinningAmount": "中奖金额",
+    "LotterySimulation:Button:Statistics": "统计",
+    "LotterySimulation:RedNumbers": "红球号码",
+    "LotterySimulation:BlueNumber": "蓝球号码",
+    "LotterySimulation:CalculateWinning": "中奖计算",
+    "LotterySimulation:CalculateWinning:Title": "中奖计算"
+  }
+}
