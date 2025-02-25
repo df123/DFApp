@@ -275,7 +275,7 @@ namespace DFApp.Lottery.Simulation
                     RedNumbers = string.Join(",", g.Where(x => x.BallType == LotteryBallType.Red)
                                                  .OrderBy(x => x.Number)
                                                  .Select(x => x.Number.ToString("D2"))),
-                    BlueNumber = g.FirstOrDefault(x => x.BallType == LotteryBallType.Blue).Number.ToString("D2")
+                    BlueNumber = g.FirstOrDefault(x => x.BallType == LotteryBallType.Blue)!.Number.ToString("D2")
                 })
                 .OrderByDescending(x => x.TermNumber)
                 .ThenBy(x => x.GroupId)
