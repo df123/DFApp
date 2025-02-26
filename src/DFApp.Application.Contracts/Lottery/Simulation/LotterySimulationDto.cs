@@ -13,7 +13,9 @@ namespace DFApp.Lottery.Simulation
         /// <summary>
         /// 号码
         /// </summary>
-        public int Number { get; set; }
+        public string? RedNumbers { get; set; }
+
+        public string? BlueNumber { get; set; }
 
         /// <summary>
         /// 彩票球类型

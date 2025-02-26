@@ -1,89 +1,75 @@
 $(function () {
-    // 定义模态框对象
     var l = abp.localization.getResource('DFApp');
-    var dataTable = null;
+    var generateModal = new abp.ModalManager(abp.appPath + 'Lottery/Simulation/GenerateRandomNumbersModal');
+    var deleteModal = new abp.ModalManager(abp.appPath + 'Lottery/Simulation/DeleteByTermNumberModal');
+    var calculateModal = new abp.ModalManager(abp.appPath + 'Lottery/Simulation/CalculateWinningModal');
 
-    // 创建数据表格
-    function createDataTable() {
-        dataTable = $('#SimulationTable').DataTable(
-            abp.libs.datatables.normalizeConfiguration({
-                serverSide: true,
-                paging: true,
-                order: [[0, "asc"]],
-                searching: false,
-                scrollX: true,
-                ajax: abp.libs.datatables.createAjax(dFApp.lottery.simulation.lotterySimulation.getList),
-                columnDefs: [
-                    {
-                        title: l('LotterySimulation:TermNumber'),
-                        data: "termNumber",
-                        className: 'text-start'
-                    },
-                    {
-                        title: l('LotterySimulation:Number'),
-                        data: "number",
-                        className: 'text-start'
-                    },
-                    {
-                        title: l('LotterySimulation:BallType'),
-                        data: "ballType",
-                        className: 'text-start',
-                        render: function (data) {
-                            return data === 0 ? l('LotterySimulation:BallType:Red') : l('LotterySimulation:BallType:Blue');
-                        }
-                    },
-                    {
-                        title: l('LotterySimulation:GameType'),
-                        data: "gameType",
-                        className: 'text-start',
-                        render: function (data) {
-                            return data === 0 ? '双色球' : '快乐8';
-                        }
-                    },
-                    {
-                        title: l('LotterySimulation:GroupId'),
-                        data: "groupId",
-                        className: 'text-start'
+    var dataTable = $('#SimulationTable').DataTable(
+        abp.libs.datatables.normalizeConfiguration({
+            serverSide: true,
+            paging: true,
+            order: [[0, "desc"]],
+            searching: false,
+            scrollX: true,
+            ajax: abp.libs.datatables.createAjax(dFApp.lottery.simulation.lotterySimulation.getList),
+            columnDefs: [
+                {
+                    title: l('LotterySimulation:TermNumber'),
+                    data: "termNumber",
+                    className: 'text-center'
+                },
+                {
+                    title: l('LotterySimulation:RedNumbers'),
+                    data: "redNumbers",
+                    className: 'text-center'
+                },
+                {
+                    title: l('LotterySimulation:BlueNumber'),
+                    data: "blueNumber",
+                    className: 'text-center'
+                },
+                {
+                    title: l('LotterySimulation:GameType'),
+                    data: "gameType",
+                    className: 'text-center',
+                    render: function (data) {
+                        return data === 0 ? '双色球' : '快乐8';
                     }
-                ]
-            })
-        );
-    }
+                },
+                {
+                    title: l('LotterySimulation:GroupId'),
+                    data: "groupId",
+                    className: 'text-center'
+                }
+            ]
+        })
+    );
 
-    // 生成随机号码按钮点击事件
+    generateModal.onResult(function () {
+        dataTable.ajax.reload();
+    });
+
+    deleteModal.onResult(function () {
+        dataTable.ajax.reload();
+    });
+
     $('#GenerateRandomNumbersButton').click(function (e) {
-        var modal = new abp.ModalManager({
-            viewUrl: '/Lottery/Simulation/GenerateRandomNumbersModal'
-        });
-        modal.open();
+        e.preventDefault();
+        generateModal.open();
     });
 
-    // 计算中奖按钮点击事件
-    $('#CalculateWinningButton').click(function (e) {
-        var modal = new abp.ModalManager({
-            viewUrl: '/Lottery/Simulation/CalculateWinningModal'
-        });
-        modal.open();
-    });
-
-    // 删除指定期号按钮点击事件
     $('#DeleteByTermNumberButton').click(function (e) {
-        var modal = new abp.ModalManager({
-            viewUrl: '/Lottery/Simulation/DeleteByTermNumberModal'
-        });
-        modal.open().then(function() {
-            modal.getModal().find('form').on('abp-ajax-success', function() {
-                modal.close();
-                dataTable.ajax.reload();
-            });
-        });
+        e.preventDefault();
+        deleteModal.open();
+    });
+
+    $('#CalculateWinningButton').click(function (e) {
+        e.preventDefault();
+        calculateModal.open();
     });
 
     $('#StatisticsButton').click(function (e) {
         e.preventDefault();
         window.location.href = '/Lottery/Simulation/Statistics';
     });
-
-    // 初始化页面
-    createDataTable();
 });

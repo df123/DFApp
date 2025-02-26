@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using DFApp.Lottery.Validation;
+using Volo.Abp.Validation;
 
 namespace DFApp.Lottery.Simulation
 {
@@ -13,12 +14,14 @@ namespace DFApp.Lottery.Simulation
         /// </summary>
         [Required]
         [Range(1, 1000)]
+        [Display(Name = "LotterySimulation:Generate:Count")]
         public int Count { get; set; }
 
         /// <summary>
         /// 彩票类型
         /// </summary>
         [Required]
+        [Display(Name = "LotterySimulation:Generate:GameType")]
         public LotteryGameType GameType { get; set; }
 
         /// <summary>
@@ -26,6 +29,7 @@ namespace DFApp.Lottery.Simulation
         /// </summary>
         [Required]
         [TermNumberFormat]
+        [Display(Name = "LotterySimulation:Generate:TermNumber")]
         public int TermNumber { get; set; }
     }
 }

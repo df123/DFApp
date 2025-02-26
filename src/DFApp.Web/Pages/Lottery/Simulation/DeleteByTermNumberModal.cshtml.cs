@@ -7,7 +7,7 @@ namespace DFApp.Web.Pages.Lottery.Simulation
     public class DeleteByTermNumberModalModel : DFAppPageModel
     {
         [BindProperty]
-        public int TermNumber { get; set; }
+        public DeleteByTermNumberDto Input { get; set; }
 
         private readonly ILotterySimulationService _lotterySimulationService;
 
@@ -18,11 +18,12 @@ namespace DFApp.Web.Pages.Lottery.Simulation
 
         public void OnGet()
         {
+            Input = new DeleteByTermNumberDto();
         }
 
         public async Task<IActionResult> OnPostAsync()
         {
-            await _lotterySimulationService.DeleteByTermNumberAsync(TermNumber);
+            await _lotterySimulationService.DeleteByTermNumberAsync(Input.TermNumber);
             return NoContent();
         }
     }

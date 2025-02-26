@@ -1,0 +1,13 @@
+{
+  "culture": "zh-Hans",
+  "texts": {
+    "Menu:LogSink": "日志",
+    "Menu:SignalRSink": "实时日志",
+    "Menu:QueueSink": "缓存日志",
+    "Permission:LogSinkTelegaram": "日志",
+    "Permission:SignalRSink": "实时日志",
+    "Permission:QueueSink": "缓存日志",
+    "LogSink:SignalRSink:Title": "实时日志",
+    "LogSink:QueueSink:Title": "缓存日志"
+  }
+}

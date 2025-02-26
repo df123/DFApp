@@ -1,0 +1,14 @@
+{
+  "culture": "zh-Hans",
+  "texts": {
+    "Menu:DynamicIP": "地址记录表",
+    "DynamicIPIPAddress": "IP地址",
+    "DynamicIPIP": "IP",
+    "DynamicIPPort": "端口号",
+    "DynamicIPCreateTime": "记录时间",
+    "DynamicIPTitle": "地址记录表",
+    "Permission:DynamicIPTelegaram": "地址记录表管理",
+    "Permission:DynamicIPIP": "地址记录表",
+    "Permission:DynamicIPIP.Delete": "删除"
+  }
+}

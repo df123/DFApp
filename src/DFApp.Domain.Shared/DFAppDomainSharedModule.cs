@@ -25,11 +25,11 @@ namespace DFApp;
     typeof(AbpOpenIddictDomainSharedModule),
     typeof(AbpPermissionManagementDomainSharedModule),
     typeof(AbpSettingManagementDomainSharedModule),
-    typeof(AbpTenantManagementDomainSharedModule)    
+    typeof(AbpTenantManagementDomainSharedModule)
     )]
 [DependsOn(typeof(CmsKitDomainSharedModule))]
-    [DependsOn(typeof(BlobStoringDatabaseDomainSharedModule))]
-    public class DFAppDomainSharedModule : AbpModule
+[DependsOn(typeof(BlobStoringDatabaseDomainSharedModule))]
+public class DFAppDomainSharedModule : AbpModule
 {
     public override void PreConfigureServices(ServiceConfigurationContext context)
     {
@@ -49,7 +49,17 @@ namespace DFApp;
             options.Resources
                 .Add<DFAppResource>("zh-Hans")
                 .AddBaseTypes(typeof(AbpValidationResource))
-                .AddVirtualJson("/Localization/DFApp");
+                .AddVirtualJson("/Localization/Aria2")
+                .AddVirtualJson("/Localization/Bookkeeping")
+                .AddVirtualJson("/Localization/ConfigurationInfo")
+                .AddVirtualJson("/Localization/DFApp")
+                .AddVirtualJson("/Localization/DynamicIP")
+                .AddVirtualJson("/Localization/FileUploadDownload")
+                .AddVirtualJson("/Localization/LogSink")
+                .AddVirtualJson("/Localization/Lottery")
+                .AddVirtualJson("/Localization/LotterySimulation")
+                .AddVirtualJson("/Localization/ManagementBackground")
+                .AddVirtualJson("/Localization/Media");
 
             options.DefaultResourceType = typeof(DFAppResource);
         });

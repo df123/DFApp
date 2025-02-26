@@ -260,8 +260,8 @@ public class DFAppDbContext :
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
 #if DEBUG
-        optionsBuilder.LogTo(System.Console.WriteLine, Microsoft.Extensions.Logging.LogLevel.Information)
-            .EnableSensitiveDataLogging();
+        //optionsBuilder.LogTo(System.Console.WriteLine, Microsoft.Extensions.Logging.LogLevel.Information)
+        //    .EnableSensitiveDataLogging();
 #endif
         base.OnConfiguring(optionsBuilder);
     }
