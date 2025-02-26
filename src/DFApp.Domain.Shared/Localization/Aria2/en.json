@@ -1,0 +1,28 @@
+{
+  "culture": "en",
+  "texts": {
+    "Menu:Aria2": "Aria2 Management",
+    "Permisssion:Aria2": "Aria2",
+    "Permisssion:Aria2:Delete": "Delete",
+    "Permisssion:Aria2:Link": "Link",
+    "Aria2:Title": "Aria2",
+    "Aria2:Link:Title": "Address",
+    "Aria2:Button:Link": "Link",
+    "Aria2:Button:Delete": "Delete",
+    "Aria2:Button:Remove": "Remove File",
+    "Aria2:Button:Copy": "Copy",
+    "Aria2:Button:DeleteAll": "Delete All",
+    "Aria2:Button:GetAllLinks": "Get All Links",
+    "Aria2:Column:ID": "ID",
+    "Aria2:Column:GID": "GID",
+    "Aria2:Column:Status": "Status",
+    "Aria2:Column:TotalLength": "Size",
+    "Aria2:Column:Files": "Files",
+    "Aria2:Column:CreationTime": "Creation Time",
+    "Aria2:DeletionConfirmationMessage": "Are you sure to delete '{0}'?",
+    "Aria2:RemoveConfirmationMessage": "Are you sure to remove file '{0}'?",
+    "Aria2:SuccessfullyDeleted": "Successfully deleted!",
+    "Aria2:CopySuccessMesage": "Successfully copied!",
+    "Aria2:LinkContent": "Link Address"
+  }
+}

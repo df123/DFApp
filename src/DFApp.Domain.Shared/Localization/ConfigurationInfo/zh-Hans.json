@@ -1,0 +1,18 @@
+{
+  "culture": "zh-Hans",
+  "texts": {
+    "Menu:ConfigurationInfo": "配置",
+    "Permisssion:ConfigurationInfo": "配置权限",
+    "Permisssion:ConfigurationInfo:Create": "创建",
+    "Permisssion:ConfigurationInfo:Delete": "删除",
+    "Permisssion:ConfigurationInfo:Modify": "修改",
+    "ConfigurationInfo:Title": "配置",
+    "ConfigurationInfo:Modal:Create:Title": "新增配置",
+    "ConfigurationInfo:Modal:Update:Title": "更新配置",
+    "ConfigurationInfo:Column:Id": "ID",
+    "ConfigurationInfo:Column:MoudleName": "模块名称",
+    "ConfigurationInfo:Column:ConfigurationName": "配置名称",
+    "ConfigurationInfo:Column:ConfigurationValue": "配置值",
+    "ConfigurationInfo:Column:Remark": "备注"
+  }
+}

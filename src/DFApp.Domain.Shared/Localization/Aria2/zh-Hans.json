@@ -1,0 +1,28 @@
+{
+  "culture": "zh-Hans",
+  "texts": {
+    "Menu:Aria2": "Aria2管理",
+    "Permisssion:Aria2": "Aria2",
+    "Permisssion:Aria2:Delete": "删除",
+    "Permisssion:Aria2:Link": "链接",
+    "Aria2:Title": "Aria2",
+    "Aria2:Link:Title": "地址",
+    "Aria2:Button:Link": "链接",
+    "Aria2:Button:Delete": "删除",
+    "Aria2:Button:Remove": "删除文件",
+    "Aria2:Button:Copy": "复制",
+    "Aria2:Button:DeleteAll": "删除全部",
+    "Aria2:Button:GetAllLinks": "获取全部链接",
+    "Aria2:Column:ID": "ID",
+    "Aria2:Column:GID": "GID",
+    "Aria2:Column:Status": "状态",
+    "Aria2:Column:TotalLength": "大小",
+    "Aria2:Column:Files": "文件",
+    "Aria2:Column:CreationTime": "创建时间",
+    "Aria2:DeletionConfirmationMessage": "您确定要删除吗 '{0}'?",
+    "Aria2:RemoveConfirmationMessage": "您确定要移除文件吗 '{0}'?",
+    "Aria2:SuccessfullyDeleted": "删除成功！",
+    "Aria2:CopySuccessMesage": "复制成功！",
+    "Aria2:LinkContent": "连接地址"
+  }
+}

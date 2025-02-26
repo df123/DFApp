@@ -49,11 +49,17 @@ public class DFAppDomainSharedModule : AbpModule
             options.Resources
                 .Add<DFAppResource>("zh-Hans")
                 .AddBaseTypes(typeof(AbpValidationResource))
-                .AddVirtualJson("/Localization/DFApp");
-
-            options.Resources
-                .Get<DFAppResource>()
-                .AddVirtualJson("/Localization/LotterySimulation");
+                .AddVirtualJson("/Localization/Aria2")
+                .AddVirtualJson("/Localization/Bookkeeping")
+                .AddVirtualJson("/Localization/ConfigurationInfo")
+                .AddVirtualJson("/Localization/DFApp")
+                .AddVirtualJson("/Localization/DynamicIP")
+                .AddVirtualJson("/Localization/FileUploadDownload")
+                .AddVirtualJson("/Localization/LogSink")
+                .AddVirtualJson("/Localization/Lottery")
+                .AddVirtualJson("/Localization/LotterySimulation")
+                .AddVirtualJson("/Localization/ManagementBackground")
+                .AddVirtualJson("/Localization/Media");
 
             options.DefaultResourceType = typeof(DFAppResource);
         });
