@@ -28,6 +28,36 @@
 	<ItemGroup>
 		<EmbeddedResource Include="Localization\DFApp\*.json" />
 		<Content Remove="Localization\DFApp\*.json" />
+		
+		<EmbeddedResource Include="Localization\Lottery\*.json" />
+		<Content Remove="Localization\Lottery\*.json" />
+		
+		<EmbeddedResource Include="Localization\LogSink\*.json" />
+		<Content Remove="Localization\LogSink\*.json" />
+		
+		<EmbeddedResource Include="Localization\FileUploadDownload\*.json" />
+		<Content Remove="Localization\FileUploadDownload\*.json" />
+		
+		<EmbeddedResource Include="Localization\DynamicIP\*.json" />
+		<Content Remove="Localization\DynamicIP\*.json" />
+		
+		<EmbeddedResource Include="Localization\ConfigurationInfo\*.json" />
+		<Content Remove="Localization\ConfigurationInfo\*.json" />
+		
+		<EmbeddedResource Include="Localization\Bookkeeping\*.json" />
+		<Content Remove="Localization\Bookkeeping\*.json" />
+		
+		<EmbeddedResource Include="Localization\Aria2\*.json" />
+		<Content Remove="Localization\Aria2\*.json" />
+		
+		<EmbeddedResource Include="Localization\Media\*.json" />
+		<Content Remove="Localization\Media\*.json" />
+		
+		<EmbeddedResource Include="Localization\ManagementBackground\*.json" />
+		<Content Remove="Localization\ManagementBackground\*.json" />
+		
+		<EmbeddedResource Include="Localization\LotterySimulation\*.json" />
+		<Content Remove="Localization\LotterySimulation\*.json" />
 	</ItemGroup>
 
 	<ItemGroup>
