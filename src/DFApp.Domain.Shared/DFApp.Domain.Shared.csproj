@@ -53,9 +53,6 @@
 		<EmbeddedResource Include="Localization\Media\*.json" />
 		<Content Remove="Localization\Media\*.json" />
 		
-		<EmbeddedResource Include="Localization\ManagementBackground\*.json" />
-		<Content Remove="Localization\ManagementBackground\*.json" />
-		
 		<EmbeddedResource Include="Localization\LotterySimulation\*.json" />
 		<Content Remove="Localization\LotterySimulation\*.json" />
 	</ItemGroup>

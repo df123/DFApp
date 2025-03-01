@@ -58,7 +58,6 @@ public class DFAppDomainSharedModule : AbpModule
                 .AddVirtualJson("/Localization/LogSink")
                 .AddVirtualJson("/Localization/Lottery")
                 .AddVirtualJson("/Localization/LotterySimulation")
-                .AddVirtualJson("/Localization/ManagementBackground")
                 .AddVirtualJson("/Localization/Media");
 
             options.DefaultResourceType = typeof(DFAppResource);
