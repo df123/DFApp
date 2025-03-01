@@ -43,8 +43,6 @@ using Volo.Abp.BackgroundWorkers.Quartz;
 using DFApp.Background;
 using Volo.Abp.AspNetCore.SignalR;
 using DFApp.Web.SignalRHub;
-using DFApp.Web.Extensions;
-
 namespace DFApp.Web;
 
 [DependsOn(
@@ -161,7 +159,6 @@ public class DFAppWebModule : AbpModule
             options.Conventions.AuthorizeFolder("/Bookkeeping/Category", DFAppPermissions.BookkeepingCategory.Default);
             options.Conventions.AuthorizeFolder("/Bookkeeping/Expenditure", DFAppPermissions.BookkeepingExpenditure.Default);
             options.Conventions.AuthorizeFolder("/FileUploadDownload", DFAppPermissions.FileUploadDownload.Default);
-            options.Conventions.AuthorizeFolder("/Management/Background", DFAppPermissions.ManagementBackground.Default);
             options.Conventions.AuthorizeFolder("/Aria2", DFAppPermissions.Aria2.Default);
 
         });

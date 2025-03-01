@@ -55,13 +55,6 @@ public class DFAppPermissionDefinitionProvider : PermissionDefinitionProvider
         configurationInfoPermission.AddChild(DFAppPermissions.ConfigurationInfo.Delete, L("Permisssion:ConfigurationInfo:Delete"));
         configurationInfoPermission.AddChild(DFAppPermissions.ConfigurationInfo.Edit, L("Permisssion:ConfigurationInfo:Modify"));
 
-
-        var managementBackgroundGroup = context.AddGroup(DFAppPermissions.ManagementBackground.Default, L("Permisssion:ManagementBackground"));
-        var managementBackgroundPermission = managementBackgroundGroup.AddPermission(DFAppPermissions.ManagementBackground.Default
-            , L("Permisssion:ManagementBackground"));
-        managementBackgroundPermission.AddChild(DFAppPermissions.ManagementBackground.Restart, L("Permisssion:ManagementBackground:Restart"));
-        managementBackgroundPermission.AddChild(DFAppPermissions.ManagementBackground.Stop, L("Permisssion:ManagementBackground:Stop"));
-
         var aria2Group = context.AddGroup(DFAppPermissions.Aria2.Default, L("Permisssion:Aria2"));
         var aria2Permission = aria2Group.AddPermission(DFAppPermissions.Aria2.Default, L("Permisssion:Aria2"));
         aria2Permission.AddChild(DFAppPermissions.Aria2.Link, L("Permisssion:Aria2:Link"));

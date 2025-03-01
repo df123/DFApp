@@ -227,20 +227,6 @@ public class DFAppMenuContributor : IMenuContributor
 
         }
 
-        if (await context.IsGrantedAsync(DFAppPermissions.ManagementBackground.Default))
-        {
-
-            var configurationInfoFirst = new ApplicationMenuItem(
-                DFAppMenus.ManagementBackground.Default
-                , l["Menu:ManagementBackground"]
-                , "~/Management/Background"
-                , icon: "fas fa-toolbox"
-                , order: 8);
-
-            context.Menu.AddItem(configurationInfoFirst);
-
-        }
-
         if(await context.IsGrantedAsync(DFAppPermissions.Aria2.Default))
         {
             var aria2First = new ApplicationMenuItem(
@@ -248,7 +234,7 @@ public class DFAppMenuContributor : IMenuContributor
                 , l["Menu:Aria2"]
                 ,"~/Aria2"
                 , icon: "fas fa-download"
-                , order: 9);
+                , order: 8);
             context.Menu.AddItem(aria2First);
         }
 

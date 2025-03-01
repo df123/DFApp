@@ -95,7 +95,14 @@ namespace DFApp.Background
                                 break;
                             }
                             var message = Encoding.UTF8.GetString(buffer, 0, result.Count);
-                            Logger.LogInformation($"Aria2BackgroundWorker:Connect:message:{message}");
+                            if (message.Contains("\"error\":"))
+                            {
+                                Logger.LogDebug($"Aria2BackgroundWorker:Connect:message:{message}");
+                            }
+                            else
+                            {
+                                Logger.LogInformation($"Aria2BackgroundWorker:Connect:message:{message}");
+                            }
                             ResponseBase? dto;
                             if (message.Contains("\"id\":") && (!message.Contains("\"error\":")))
                             {

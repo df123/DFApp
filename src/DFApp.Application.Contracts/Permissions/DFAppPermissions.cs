@@ -72,13 +72,6 @@ public static class DFAppPermissions
         public const string Delete = Default + ".Delete";
     }
 
-    public static class ManagementBackground
-    {
-        public const string Default = GroupName + ".ManagementBackground";
-        public const string Restart = Default + ".Restart";
-        public const string Stop = Default + ".Stop";
-    }
-
     public static class Aria2 {
         public const string Default = GroupName + ".Aria2";
         public const string Link = Default + ".Link";
