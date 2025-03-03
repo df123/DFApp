@@ -194,8 +194,11 @@ namespace DFApp.Background
                     }
 
                     double duration = double.Parse(await GetConfigurationInfo("VideoDurationLimit"));
+                    int minWidth = int.Parse(await GetConfigurationInfo("MinVideoWidth"));
+                    int minHeight = int.Parse(await GetConfigurationInfo("MinVideoHeight"));
                     bool isDurationLimit = false;
                     bool isVideo = false;
+                    bool isQualityEnough = false;
 
                     foreach (var attribute in document.attributes)
                     {
@@ -206,10 +209,15 @@ namespace DFApp.Background
                                 isDurationLimit = true;
                             }
                             isVideo = true;
+                            // 使用配置的分辨率进行判断
+                            if (video.w >= minWidth && video.h >= minHeight)
+                            {
+                                isQualityEnough = true;
+                            }
                         }
                     }
 
-                    if (isDurationLimit || (!isVideo))
+                    if (isDurationLimit || (!isVideo) || (!isQualityEnough))
                     {
                         continue;
                     }
