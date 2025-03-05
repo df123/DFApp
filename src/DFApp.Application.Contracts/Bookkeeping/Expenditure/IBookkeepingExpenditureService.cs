@@ -22,5 +22,6 @@ namespace DFApp.Bookkeeping.Expenditure
             , NumberType numberType
             , bool? isBelongToSelf);
 
+        Task<MonthlyExpenditureDto> GetMonthlyExpenditureAsync(int year);
     }
 }

@@ -197,6 +197,14 @@ public class DFAppMenuContributor : IMenuContributor
                     , "~/Bookkeeping/Expenditure"
                     , icon: "fas fa-receipt"
                     , order: 2));
+
+                // 添加图表菜单项
+                bookkeepingFirst.AddItem(new ApplicationMenuItem(
+                    DFAppMenus.Bookkeeping
+                    , l["Menu:BookkeepingExpenditure:Chart"]
+                    , "~/Bookkeeping/Expenditure/Chart"
+                    , icon: "fas fa-chart-bar"
+                    , order: 3));
             }
 
             if (await context.IsGrantedAsync(DFAppPermissions.BookkeepingExpenditure.Analysis))
