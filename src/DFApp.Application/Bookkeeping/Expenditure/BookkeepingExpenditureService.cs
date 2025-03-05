@@ -92,6 +92,39 @@ namespace DFApp.Bookkeeping.Expenditure
             return chartJSDto;
         }
 
+        public async Task<MonthlyExpenditureDto> GetMonthlyExpenditureAsync(int year)
+        {
+            var startDate = new DateTime(year, 1, 1);
+            var endDate = new DateTime(year, 12, 31);
+            
+            var expenditures = await Repository.GetListAsync(
+                x => x.ExpenditureDate >= startDate && x.ExpenditureDate <= endDate
+            );
+
+            var result = new MonthlyExpenditureDto();
+            
+            for (int month = 1; month <= 12; month++)
+            {
+                result.Labels.Add($"{year}/{month}");
+                
+                var monthlyData = expenditures.Where(x => x.ExpenditureDate.Month == month);
+                
+                result.TotalData.Add(monthlyData.Sum(x => x.Expenditure));
+                result.SelfData.Add(monthlyData.Where(x => x.IsBelongToSelf).Sum(x => x.Expenditure));
+                result.NonSelfData.Add(monthlyData.Where(x => !x.IsBelongToSelf).Sum(x => x.Expenditure));
+            }
+
+            // 计算有记录的月份数
+            var monthsWithRecords = result.TotalData.Count(x => x > 0);
+            if (monthsWithRecords == 0) monthsWithRecords = 1; // 避免除以零
+
+            // 计算月均
+            result.TotalAverage = result.TotalData.Sum() / monthsWithRecords;
+            result.SelfAverage = result.SelfData.Sum() / monthsWithRecords;
+            result.NonSelfAverage = result.NonSelfData.Sum() / monthsWithRecords;
+
+            return result;
+        }
 
         private Expression<Func<BookkeepingExpenditure, bool>> BuildExpression(DateTime start, DateTime end, bool? isBelongToSelf)
         {
