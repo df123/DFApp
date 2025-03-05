@@ -1,4 +1,5 @@
 $(function () {
+    var l = abp.localization.getResource('DFApp');
     let monthlyChart = null;
 
     function initMonthlyChart() {
