@@ -55,6 +55,33 @@ $(function () {
                     backgroundColor: 'rgba(255, 99, 132, 0.5)',
                     borderColor: 'rgba(255, 99, 132, 1)',
                     borderWidth: 1
+                },
+                {
+                    label: l('BookkeepingExpenditure:Chart:TotalAverage'),
+                    data: Array(12).fill(data.totalAverage),
+                    type: 'line',
+                    borderColor: 'rgba(54, 162, 235, 1)',
+                    borderWidth: 2,
+                    borderDash: [5, 5],
+                    fill: false
+                },
+                {
+                    label: l('BookkeepingExpenditure:Chart:SelfAverage'),
+                    data: Array(12).fill(data.selfAverage),
+                    type: 'line',
+                    borderColor: 'rgba(75, 192, 192, 1)',
+                    borderWidth: 2,
+                    borderDash: [5, 5],
+                    fill: false
+                },
+                {
+                    label: l('BookkeepingExpenditure:Chart:NonSelfAverage'),
+                    data: Array(12).fill(data.nonSelfAverage),
+                    type: 'line',
+                    borderColor: 'rgba(255, 99, 132, 1)',
+                    borderWidth: 2,
+                    borderDash: [5, 5],
+                    fill: false
                 }
             ]
         };

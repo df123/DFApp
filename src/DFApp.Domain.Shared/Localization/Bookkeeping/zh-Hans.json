@@ -35,6 +35,9 @@
     "BookkeepingExpenditure:Chart:TotalExpenditure": "总支出",
     "BookkeepingExpenditure:Chart:SelfExpenditure": "自用支出",
     "BookkeepingExpenditure:Chart:NonSelfExpenditure": "非自用支出",
+    "BookkeepingExpenditure:Chart:TotalAverage": "总支出月均",
+    "BookkeepingExpenditure:Chart:SelfAverage": "自用支出月均",
+    "BookkeepingExpenditure:Chart:NonSelfAverage": "非自用支出月均",
     "BookkeepingExpenditure:Button:Add": "添加",
     "Common:Year": "年"
   }

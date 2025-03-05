@@ -114,6 +114,11 @@ namespace DFApp.Bookkeeping.Expenditure
                 result.NonSelfData.Add(monthlyData.Where(x => !x.IsBelongToSelf).Sum(x => x.Expenditure));
             }
 
+            // 计算月均
+            result.TotalAverage = result.TotalData.Sum() / 12;
+            result.SelfAverage = result.SelfData.Sum() / 12;
+            result.NonSelfAverage = result.NonSelfData.Sum() / 12;
+
             return result;
         }
 
