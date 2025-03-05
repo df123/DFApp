@@ -4,8 +4,27 @@
 @using Microsoft.Extensions.Localization
 @inject IStringLocalizer<DFAppResource> L
 
+@section styles {
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+    <style>
+        .select2-container--default .select2-selection--single {
+            height: 38px;
+            border: 1px solid #ced4da;
+            border-radius: 0.25rem;
+        }
+        .select2-container--default .select2-selection--single .select2-selection__rendered {
+            line-height: 36px;
+            padding-left: 12px;
+        }
+        .select2-container--default .select2-selection--single .select2-selection__arrow {
+            height: 36px;
+        }
+    </style>
+}
+
 @section scripts {
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
     <abp-script src="/Pages/Bookkeeping/Expenditure/Chart.js"></abp-script>
 }
 
@@ -13,11 +32,11 @@
     <abp-card-header>
         <abp-row>
             <abp-column size-md="_6">
-                <abp-card-title>@L["BookkeepingExpenditure:Chart:Monthly"]</abp-card-title>
+                    <abp-card-title>@L["BookkeepingExpenditure:Chart:Monthly"]</abp-card-title>
             </abp-column>
             <abp-column size-md="_6" class="text-end">
-                <select id="yearSelect" class="form-select" style="width: 150px; display: inline-block;">
-                    @for (int year = DateTime.Now.Year; year >= 2020; year--)
+                <select id="yearSelect" class="form-select-year">
+                    @for (int year = DateTime.Now.Year; year >= 2024; year--)
                     {
                         <option value="@year">@year @L["Common:Year"]</option>
                     }

@@ -88,6 +88,13 @@ $(function () {
         monthlyChart.update();
     }
 
+    // 初始化Select2
+    $('#yearSelect').select2({
+        minimumResultsForSearch: Infinity, // 禁用搜索
+        theme: 'default',
+        width: '150px'
+    });
+
     $('#yearSelect').on('change', function() {
         loadMonthlyData($(this).val());
     });
