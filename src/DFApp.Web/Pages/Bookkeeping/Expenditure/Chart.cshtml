@@ -16,7 +16,7 @@
                 <abp-card-title>@L["BookkeepingExpenditure:Chart:Monthly"]</abp-card-title>
             </abp-column>
             <abp-column size-md="_6" class="text-end">
-                <select id="yearSelect" class="form-select" style="width: 120px; display: inline-block;">
+                <select id="yearSelect" class="form-select" style="width: 150px; display: inline-block;">
                     @for (int year = DateTime.Now.Year; year >= 2020; year--)
                     {
                         <option value="@year">@year @L["Common:Year"]</option>
