@@ -31,5 +31,11 @@ namespace DFApp.Lottery.Simulation
         [TermNumberFormat]
         [Display(Name = "LotterySimulation:Generate:TermNumber")]
         public int TermNumber { get; set; }
+
+        /// <summary>
+        /// 玩法类型
+        /// </summary>
+        [Display(Name = "LotterySimulation:Generate:PlayType")]
+        public LotteryK8PlayType PlayType { get; set; }
     }
 }
