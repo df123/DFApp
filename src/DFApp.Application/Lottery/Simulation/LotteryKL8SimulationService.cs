@@ -88,7 +88,7 @@ namespace DFApp.Lottery.Simulation
                 return new WinningStatisticsDto { TotalAmount = 0 };
             }
 
-            var simulationGroups = (await Repository.GetListAsync(x => x.TermNumber == termNumber))
+            var simulationGroups = (await Repository.GetListAsync(x => x.TermNumber == termNumber && x.GameType == LotteryGameType.快乐8))
                 .GroupBy(x => x.GroupId);
 
             var statistics = new WinningStatisticsDto
@@ -183,13 +183,7 @@ namespace DFApp.Lottery.Simulation
                 statistics.Terms.Add(term.Key);
                 
                 // 根据每组号码数量计算投注金额（每注2元）
-                var groups = term.GroupBy(x => x.GroupId);
-                var purchaseAmount = groups.Sum(group => 
-                {
-                    var numberCount = group.Count();
-                    return numberCount * 2m; // 每注2元
-                });
-                
+                var purchaseAmount = term.GroupBy(x => x.GroupId).Count() * 2m;
                 statistics.PurchaseAmounts.Add(purchaseAmount);
                 
                 // 计算中奖金额

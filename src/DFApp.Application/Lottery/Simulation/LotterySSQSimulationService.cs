@@ -113,7 +113,7 @@ namespace DFApp.Lottery.Simulation
             }
 
             // 获取当期投注记录，按组分类
-            var simulationGroups = (await Repository.GetListAsync(x => x.TermNumber == termNumber))
+            var simulationGroups = (await Repository.GetListAsync(x => x.TermNumber == termNumber && x.GameType == LotteryGameType.双色球))
                 .GroupBy(x => x.GroupId);
 
             var statistics = new WinningStatisticsDto();
