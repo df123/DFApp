@@ -169,9 +169,35 @@ namespace DFApp.Lottery.Simulation
             await Repository.DeleteAsync(x => x.TermNumber == termNumber);
         }
 
-        public Task<StatisticsDto> GetStatisticsAsync()
+        public async Task<StatisticsDto> GetStatisticsAsync()
         {
-            throw new NotImplementedException();
+            var statistics = new StatisticsDto();
+            var simulations = await Repository.GetListAsync(x => x.GameType == LotteryGameType.快乐8);
+            
+            var groupedByTerm = simulations
+                .GroupBy(x => x.TermNumber)
+                .OrderBy(x => x.Key);
+
+            foreach (var term in groupedByTerm)
+            {
+                statistics.Terms.Add(term.Key);
+                
+                // 根据每组号码数量计算投注金额（每注2元）
+                var groups = term.GroupBy(x => x.GroupId);
+                var purchaseAmount = groups.Sum(group => 
+                {
+                    var numberCount = group.Count();
+                    return numberCount * 2m; // 每注2元
+                });
+                
+                statistics.PurchaseAmounts.Add(purchaseAmount);
+                
+                // 计算中奖金额
+                var winningStats = await CalculateWinningAmountAsync(term.Key);
+                statistics.WinningAmounts.Add(winningStats.TotalAmount);
+            }
+
+            return statistics;
         }
     }
 }
