@@ -35,6 +35,6 @@ namespace DFApp.Lottery.Simulation.KL8
         /// 玩法类型
         /// </summary>
         [Display(Name = "LotterySimulation:Generate:PlayType")]
-        public LotteryK8PlayType PlayType { get; set; }
+        public LotteryKL8PlayType PlayType { get; set; }
     }
 }

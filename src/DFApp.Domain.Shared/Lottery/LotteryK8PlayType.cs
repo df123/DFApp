@@ -1,6 +1,6 @@
 namespace DFApp.Lottery
 {
-    public enum LotteryK8PlayType
+    public enum LotteryKL8PlayType
     {
         Select1 = 1,    // 选一
         Select2 = 2,    // 选二

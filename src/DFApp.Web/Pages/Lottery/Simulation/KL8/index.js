@@ -1,7 +1,7 @@
 $(function () {
     var l = abp.localization.getResource('DFApp');
-    var k8GenerateModal = new abp.ModalManager(abp.appPath + 'Lottery/Simulation/K8/K8GenerateModal');
-    var deleteModal = new abp.ModalManager(abp.appPath + 'Lottery/Simulation/K8/DeleteByTermNumberModal');
+    var k8GenerateModal = new abp.ModalManager(abp.appPath + 'Lottery/Simulation/KL8/K8GenerateModal');
+    var deleteModal = new abp.ModalManager(abp.appPath + 'Lottery/Simulation/KL8/DeleteByTermNumberModal');
 
     var dataTable = $('#K8SimulationTable').DataTable(
         abp.libs.datatables.normalizeConfiguration({
@@ -59,6 +59,6 @@ $(function () {
 
     $('#K8StatisticsButton').click(function (e) {
         e.preventDefault();
-        window.location.href = '/Lottery/Simulation/K8Statistics';
+        window.location.href = '/Lottery/Simulation/KL8/K8Statistics';
     });
 });

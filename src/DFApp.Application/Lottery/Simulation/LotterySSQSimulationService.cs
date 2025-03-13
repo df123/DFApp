@@ -242,7 +242,8 @@ namespace DFApp.Lottery.Simulation
 
             // 分组查询
             var groupedData = await AsyncExecuter.ToListAsync(
-                query.GroupBy(x => new { x.TermNumber, x.GroupId, x.GameType })
+                query.Where(x => x.GameType == LotteryGameType.双色球)
+                .GroupBy(x => new { x.TermNumber, x.GroupId, x.GameType })
                 .Select(g => new
                 {
                     g.Key.TermNumber,
