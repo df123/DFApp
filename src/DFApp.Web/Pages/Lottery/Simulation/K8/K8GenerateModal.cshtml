@@ -2,13 +2,13 @@
 @using Microsoft.Extensions.Localization
 @using DFApp.Localization
 @using Volo.Abp.AspNetCore.Mvc.UI.Bootstrap.TagHelpers.Modal
-@model DFApp.Web.Pages.Lottery.Simulation.K8GenerateModalModel
+@model DFApp.Web.Pages.Lottery.Simulation.K8.K8GenerateModalModel
 @inject IStringLocalizer<DFAppResource> L
 @{
     Layout = null;
 }
 
-<abp-dynamic-form abp-model="Input" asp-page="/Lottery/Simulation/K8GenerateModal">
+<abp-dynamic-form abp-model="Input" asp-page="/Lottery/Simulation/K8/K8GenerateModal">
     <abp-modal>
         <abp-modal-header title="@L["LotteryK8:Generate:Title"].Value"></abp-modal-header>
         <abp-modal-body>

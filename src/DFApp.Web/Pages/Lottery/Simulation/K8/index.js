@@ -1,7 +1,7 @@
 $(function () {
     var l = abp.localization.getResource('DFApp');
-    var k8GenerateModal = new abp.ModalManager(abp.appPath + 'Lottery/Simulation/K8GenerateModal');
-    var deleteModal = new abp.ModalManager(abp.appPath + 'Lottery/Simulation/DeleteByTermNumberModal');
+    var k8GenerateModal = new abp.ModalManager(abp.appPath + 'Lottery/Simulation/K8/K8GenerateModal');
+    var deleteModal = new abp.ModalManager(abp.appPath + 'Lottery/Simulation/K8/DeleteByTermNumberModal');
 
     var dataTable = $('#K8SimulationTable').DataTable(
         abp.libs.datatables.normalizeConfiguration({
