@@ -1,28 +1,30 @@
-using System.ComponentModel.DataAnnotations;
+using DFApp.Lottery.Simulation.KL8;
 using Microsoft.AspNetCore.Mvc;
-using Volo.Abp.AspNetCore.Mvc.UI.Bootstrap.TagHelpers.Form;
+using System.Threading.Tasks;
 
 namespace DFApp.Web.Pages.Lottery.Simulation.K8
 {
     public class K8GenerateModalModel : DFAppPageModel
     {
         [BindProperty]
-        public GenerateViewModel Input { get; set; }
+        public GenerateRandomNumbersDto Input { get; set; }
+
+        private readonly ILotteryKL8SimulationService _lotterySimulationService;
+
+        public K8GenerateModalModel(ILotteryKL8SimulationService lotterySimulationService)
+        {
+            _lotterySimulationService = lotterySimulationService;
+        }
 
         public void OnGet()
         {
-            Input = new GenerateViewModel();
+            Input = new GenerateRandomNumbersDto();
         }
 
-        public class GenerateViewModel
+        public async Task<IActionResult> OnPostAsync()
         {
-            [Required]
-            [Display(Name = "GroupId")]
-            public string GroupId { get; set; }
-
-            [Required]
-            [Display(Name = "Count")]
-            public int Count { get; set; }
+            await _lotterySimulationService.GenerateRandomNumbersAsync(Input);
+            return NoContent();
         }
     }
 }

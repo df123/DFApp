@@ -136,7 +136,7 @@ namespace DFApp.Lottery.Simulation
         public override async Task<PagedResultDto<LotterySimulationDto>> GetListAsync(PagedAndSortedResultRequestDto input)
         {
             var query = await Repository.GetQueryableAsync();
-            var totalCount = await AsyncExecuter.CountAsync(query) / 20; // 每组20个号码
+            var totalCount = await AsyncExecuter.CountAsync(query.Where(x => x.GameType == LotteryGameType.快乐8)) / 10; // 每组20个号码
 
             var groupedData = await AsyncExecuter.ToListAsync(
                 query.Where(x => x.GameType == LotteryGameType.快乐8)

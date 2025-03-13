@@ -238,7 +238,8 @@ namespace DFApp.Lottery.Simulation
         {
             // 获取所有数据
             var query = await Repository.GetQueryableAsync();
-            var totalCount = await AsyncExecuter.CountAsync(query) / 7;
+            var totalCount = await AsyncExecuter.CountAsync(
+                query.Where(x => x.GameType == LotteryGameType.双色球)) / 7;
 
             // 分组查询
             var groupedData = await AsyncExecuter.ToListAsync(
