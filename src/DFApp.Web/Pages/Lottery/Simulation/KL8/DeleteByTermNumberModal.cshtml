@@ -1,0 +1,19 @@
+@page
+@using DFApp.Localization
+@using Microsoft.Extensions.Localization
+@using Volo.Abp.AspNetCore.Mvc.UI.Bootstrap.TagHelpers.Modal
+@model DFApp.Web.Pages.Lottery.Simulation.K8.DeleteByTermNumberModalModel
+@inject IStringLocalizer<DFAppResource> L
+@{
+    Layout = null;
+}
+
+<abp-dynamic-form abp-model="Input" asp-page="/Lottery/Simulation/KL8/DeleteByTermNumberModal">
+    <abp-modal>
+        <abp-modal-header title="@L["LotteryK8:DeleteByTermNumber"].Value"></abp-modal-header>
+        <abp-modal-body>
+            <abp-form-content />
+        </abp-modal-body>
+        <abp-modal-footer buttons="@(AbpModalButtons.Cancel|AbpModalButtons.Save)"></abp-modal-footer>
+    </abp-modal>
+</abp-dynamic-form>
