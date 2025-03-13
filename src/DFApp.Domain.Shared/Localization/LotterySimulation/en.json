@@ -38,6 +38,7 @@
     "LotteryK8:Generate:Title": "Generate K8 Numbers",
     "LotteryK8:Statistics": "K8 Statistics",
     "LotteryK8:PurchaseAmount": "Purchase Amount",
-    "LotteryK8:WinningAmount": "Winning Amount"
+    "LotteryK8:WinningAmount": "Winning Amount",
+    "Menu:LotteryK8": "K8 Lottery"
   }
 }
