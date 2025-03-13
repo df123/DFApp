@@ -10,7 +10,7 @@ $(function () {
             order: [[0, "desc"]],
             searching: false,
             scrollX: true,
-            ajax: abp.libs.datatables.createAjax(dFApp.lottery.simulation.lotteryK8Simulation.getList),
+            ajax: abp.libs.datatables.createAjax(dFApp.lottery.simulation.lotteryKL8Simulation.getList),
             columnDefs: [
                 {
                     title: l('LotteryK8:TermNumber'),
