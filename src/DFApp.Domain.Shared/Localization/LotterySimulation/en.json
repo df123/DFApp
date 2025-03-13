@@ -26,6 +26,18 @@
     "LotterySimulation:RedNumbers": "Red Numbers",
     "LotterySimulation:BlueNumber": "Blue Number", 
     "LotterySimulation:CalculateWinning": "Calculate Winning",
-    "LotterySimulation:CalculateWinning:Title": "Calculate Winning"
+    "LotterySimulation:CalculateWinning:Title": "Calculate Winning",
+    "LotteryK8:Title": "K8 Lottery Simulation",
+    "LotteryK8:TermNumber": "Term Number",
+    "LotteryK8:Numbers": "Numbers", 
+    "LotteryK8:GameType": "Game Type",
+    "LotteryK8:GroupId": "Group ID",
+    "LotteryK8:Button:Generate": "Generate",
+    "LotteryK8:Button:Statistics": "Statistics",
+    "LotteryK8:Button:DeleteByTermNumber": "Delete Term",
+    "LotteryK8:Generate:Title": "Generate K8 Numbers",
+    "LotteryK8:Statistics": "K8 Statistics",
+    "LotteryK8:PurchaseAmount": "Purchase Amount",
+    "LotteryK8:WinningAmount": "Winning Amount"
   }
 }

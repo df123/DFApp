@@ -26,6 +26,18 @@
     "LotterySimulation:RedNumbers": "红球号码",
     "LotterySimulation:BlueNumber": "蓝球号码",
     "LotterySimulation:CalculateWinning": "中奖计算",
-    "LotterySimulation:CalculateWinning:Title": "中奖计算"
+    "LotterySimulation:CalculateWinning:Title": "中奖计算",
+    "LotteryK8:Title": "快乐8模拟",
+    "LotteryK8:TermNumber": "期号",
+    "LotteryK8:Numbers": "号码", 
+    "LotteryK8:GameType": "游戏类型",
+    "LotteryK8:GroupId": "组号",
+    "LotteryK8:Button:Generate": "生成",
+    "LotteryK8:Button:Statistics": "统计",
+    "LotteryK8:Button:DeleteByTermNumber": "删除期号",
+    "LotteryK8:Generate:Title": "生成快乐8号码",
+    "LotteryK8:Statistics": "快乐8统计",
+    "LotteryK8:PurchaseAmount": "购买金额",
+    "LotteryK8:WinningAmount": "中奖金额"
   }
 }
