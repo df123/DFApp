@@ -8,21 +8,22 @@ using Volo.Abp.Application.Dtos;
 using Volo.Abp.Application.Services;
 using Volo.Abp.Domain.Repositories;
 using DFApp.Lottery.Consts;
+using DFApp.Lottery.Simulation.KL8;
 
 namespace DFApp.Lottery.Simulation
 {
     [Authorize(DFAppPermissions.Lottery.Default)]
-    public class LotteryK8SimulationService : CrudAppService<
+    public class LotteryKL8SimulationService : CrudAppService<
         LotterySimulation,
         LotterySimulationDto,
         Guid,
         PagedAndSortedResultRequestDto,
-        CreateUpdateLotterySimulationDto>, ILotteryK8SimulationService
+        CreateUpdateLotterySimulationDto>, ILotteryKL8SimulationService
     {
         private readonly IRepository<LotteryResult, long> _lotteryResultRepository;
         private readonly IRepository<LotteryPrizegrades, long> _lotteryPrizegradesRepository;
 
-        public LotteryK8SimulationService(
+        public LotteryKL8SimulationService(
             IRepository<LotterySimulation, Guid> repository,
             IRepository<LotteryResult, long> lotteryResultRepository,
             IRepository<LotteryPrizegrades, long> lotteryPrizegradesRepository) : base(repository)
@@ -165,6 +166,11 @@ namespace DFApp.Lottery.Simulation
         public async Task DeleteByTermNumberAsync(int termNumber)
         {
             await Repository.DeleteAsync(x => x.TermNumber == termNumber);
+        }
+
+        public Task<StatisticsDto> GetStatisticsAsync()
+        {
+            throw new NotImplementedException();
         }
     }
 }

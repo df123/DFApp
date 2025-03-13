@@ -1,8 +1,9 @@
 using System;
+using Volo.Abp.Application.Dtos;
 
-namespace DFApp.Lottery.Simulation
+namespace DFApp.Lottery.Simulation.SSQ
 {
-    public class CreateUpdateLotterySimulationDto
+    public class LotterySimulationDto : AuditedEntityDto<Guid>
     {
         /// <summary>
         /// 期号
@@ -12,7 +13,9 @@ namespace DFApp.Lottery.Simulation
         /// <summary>
         /// 号码
         /// </summary>
-        public int Number { get; set; }
+        public string? RedNumbers { get; set; }
+
+        public string? BlueNumber { get; set; }
 
         /// <summary>
         /// 彩票球类型

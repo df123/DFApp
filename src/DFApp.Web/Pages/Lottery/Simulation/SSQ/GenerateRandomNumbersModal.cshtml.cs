@@ -1,4 +1,5 @@
 using DFApp.Lottery.Simulation;
+using DFApp.Lottery.Simulation.SSQ;
 using Microsoft.AspNetCore.Mvc;
 using System.Threading.Tasks;
 
@@ -9,9 +10,9 @@ namespace DFApp.Web.Pages.Lottery.Simulation
         [BindProperty]
         public GenerateRandomNumbersDto Input { get; set; }
 
-        private readonly ILotterySimulationService _lotterySimulationService;
+        private readonly ILotterySSQSimulationService _lotterySimulationService;
 
-        public GenerateRandomNumbersModalModel(ILotterySimulationService lotterySimulationService)
+        public GenerateRandomNumbersModalModel(ILotterySSQSimulationService lotterySimulationService)
         {
             _lotterySimulationService = lotterySimulationService;
         }

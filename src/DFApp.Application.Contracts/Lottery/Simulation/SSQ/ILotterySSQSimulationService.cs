@@ -3,9 +3,9 @@ using System.Threading.Tasks;
 using Volo.Abp.Application.Dtos;
 using Volo.Abp.Application.Services;
 
-namespace DFApp.Lottery.Simulation
+namespace DFApp.Lottery.Simulation.SSQ
 {
-    public interface ILotterySimulationService : ICrudAppService<
+    public interface ILotterySSQSimulationService : ICrudAppService<
         LotterySimulationDto,
         Guid,
         PagedAndSortedResultRequestDto,

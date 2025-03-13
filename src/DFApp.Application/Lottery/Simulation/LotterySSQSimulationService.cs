@@ -8,21 +8,22 @@ using Volo.Abp.Application.Dtos;
 using Volo.Abp.Application.Services;
 using Volo.Abp.Domain.Repositories;
 using DFApp.Lottery.Consts;
+using DFApp.Lottery.Simulation.SSQ;
 
 namespace DFApp.Lottery.Simulation
 {
     [Authorize(DFAppPermissions.Lottery.Default)]
-    public class LotterySimulationService : CrudAppService<
+    public class LotterySSQSimulationService : CrudAppService<
         LotterySimulation,
         LotterySimulationDto,
         Guid,
         PagedAndSortedResultRequestDto,
-        CreateUpdateLotterySimulationDto>, ILotterySimulationService
+        CreateUpdateLotterySimulationDto>, ILotterySSQSimulationService
     {
         private readonly IRepository<LotteryResult, long> _lotteryResultRepository;
         private readonly IRepository<LotteryPrizegrades, long> _lotteryPrizegradesRepository;
 
-        public LotterySimulationService(
+        public LotterySSQSimulationService(
             IRepository<LotterySimulation, Guid> repository,
             IRepository<LotteryResult, long> lotteryResultRepository,
             IRepository<LotteryPrizegrades, long> lotteryPrizegradesRepository) : base(repository)
