@@ -289,3 +289,4 @@ src/DFApp.Web/DFApp.db-wal
 .prompts/translate.prompt
 /src/DFApp.Web/Photo/
 /src/DFApp.Web/Video/
+.vscode/settings.json
