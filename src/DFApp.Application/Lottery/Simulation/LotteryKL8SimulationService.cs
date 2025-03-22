@@ -48,30 +48,33 @@ namespace DFApp.Lottery.Simulation
             var maxGroupId = await AsyncExecuter.MaxAsync(maxGroupIdLinq) ?? 0;
 
             var groupId = maxGroupId + 1;
-            int numberCount = (int)input.PlayType;
 
-            for (int i = 0; i < input.Count; i++)
+            // 遍历所有玩法类型
+            for (int playType = 1; playType <= 10; playType++)
             {
-                var numbers = new HashSet<int>();
-                // 根据玩法生成对应数量的不重复号码(1-80)
-                while (numbers.Count < numberCount)
+                for (int i = 0; i < input.Count; i++)
                 {
-                    numbers.Add(random.Next(1, 81));
-                }
-
-                foreach (var number in numbers.OrderBy(x => x))
-                {
-                    result.Add(new LotterySimulation
+                    var numbers = new HashSet<int>();
+                    // 根据玩法生成对应数量的不重复号码(1-80)
+                    while (numbers.Count < playType)
                     {
-                        GameType = LotteryGameType.快乐8,
-                        BallType = LotteryBallType.Red,
-                        Number = number,
-                        GroupId = groupId,
-                        TermNumber = input.TermNumber
-                    });
-                }
+                        numbers.Add(random.Next(1, 81));
+                    }
 
-                groupId++;
+                    foreach (var number in numbers.OrderBy(x => x))
+                    {
+                        result.Add(new LotterySimulation
+                        {
+                            GameType = LotteryGameType.快乐8,
+                            BallType = LotteryBallType.Red,
+                            Number = number,
+                            GroupId = groupId,
+                            TermNumber = input.TermNumber
+                        });
+                    }
+
+                    groupId++;
+                }
             }
 
             await Repository.InsertManyAsync(result);
@@ -136,7 +139,7 @@ namespace DFApp.Lottery.Simulation
         public override async Task<PagedResultDto<LotterySimulationDto>> GetListAsync(PagedAndSortedResultRequestDto input)
         {
             var query = await Repository.GetQueryableAsync();
-            var totalCount = await AsyncExecuter.CountAsync(query.Where(x => x.GameType == LotteryGameType.快乐8)) / 10; // 每组20个号码
+            var totalCount = await AsyncExecuter.CountAsync(query.Where(x => x.GameType == LotteryGameType.快乐8)) / 10;
 
             var groupedData = await AsyncExecuter.ToListAsync(
                 query.Where(x => x.GameType == LotteryGameType.快乐8)
