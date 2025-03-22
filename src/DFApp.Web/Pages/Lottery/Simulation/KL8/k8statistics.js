@@ -42,7 +42,7 @@ $(function () {
             // 为每种选号类型创建数据集
             Object.keys(result.purchaseAmountsByType).forEach(function(type, index) {
                 datasets.push({
-                    label: l('LotteryK8:PurchaseAmount') + '-' + type,
+                    label: l('LotteryK8:PurchaseAmount') + '-' + l('LotteryK8:PlayType:' + type),
                     data: result.purchaseAmountsByType[type],
                     backgroundColor: colors[index * 2].backgroundColor,
                     borderColor: colors[index * 2].borderColor,
@@ -50,7 +50,7 @@ $(function () {
                 });
                 
                 datasets.push({
-                    label: l('LotteryK8:WinningAmount') + '-' + type,
+                    label: l('LotteryK8:WinningAmount') + '-' + l('LotteryK8:PlayType:' + type),
                     data: result.winningAmountsByType[type],
                     backgroundColor: colors[index * 2 + 1].backgroundColor,
                     borderColor: colors[index * 2 + 1].borderColor,

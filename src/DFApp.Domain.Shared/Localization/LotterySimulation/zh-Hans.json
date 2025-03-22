@@ -42,6 +42,16 @@
     "Menu:LotteryK8": "快乐8",
     "LotteryK8:DeleteByTermNumber": "删除快乐8期号数据",
     "LotteryK8:Term": "期号",
-    "LotteryK8:Amount": "金额"
+    "LotteryK8:Amount": "金额",
+    "LotteryK8:PlayType:Select1": "选一",
+    "LotteryK8:PlayType:Select2": "选二",
+    "LotteryK8:PlayType:Select3": "选三",
+    "LotteryK8:PlayType:Select4": "选四",
+    "LotteryK8:PlayType:Select5": "选五",
+    "LotteryK8:PlayType:Select6": "选六",
+    "LotteryK8:PlayType:Select7": "选七",
+    "LotteryK8:PlayType:Select8": "选八",
+    "LotteryK8:PlayType:Select9": "选九",
+    "LotteryK8:PlayType:Select10": "选十"
   }
 }

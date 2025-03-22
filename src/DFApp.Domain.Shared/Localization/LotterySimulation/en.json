@@ -42,6 +42,16 @@
     "Menu:LotteryK8": "K8 Lottery",
     "LotteryK8:DeleteByTermNumber": "Delete K8 Term Number Data",
     "LotteryK8:Term": "Term",
-    "LotteryK8:Amount": "Amount"
+    "LotteryK8:Amount": "Amount",
+    "LotteryK8:PlayType:Select1": "Select One",
+    "LotteryK8:PlayType:Select2": "Select Two",
+    "LotteryK8:PlayType:Select3": "Select Three",
+    "LotteryK8:PlayType:Select4": "Select Four",
+    "LotteryK8:PlayType:Select5": "Select Five",
+    "LotteryK8:PlayType:Select6": "Select Six",
+    "LotteryK8:PlayType:Select7": "Select Seven",
+    "LotteryK8:PlayType:Select8": "Select Eight",
+    "LotteryK8:PlayType:Select9": "Select Nine",
+    "LotteryK8:PlayType:Select10": "Select Ten"
   }
 }
