@@ -4,15 +4,8 @@ namespace DFApp.Lottery.Simulation.KL8
 {
     public class StatisticsDto
     {
-        public List<int> Terms { get; set; }
-        public List<decimal> PurchaseAmounts { get; set; }
-        public List<decimal> WinningAmounts { get; set; }
-        
-        public StatisticsDto()
-        {
-            Terms = new List<int>();
-            PurchaseAmounts = new List<decimal>();
-            WinningAmounts = new List<decimal>();
-        }
+        public List<int> Terms { get; set; } = new();
+        public Dictionary<LotteryKL8PlayType, List<decimal>> PurchaseAmountsByType { get; set; } = new();
+        public Dictionary<LotteryKL8PlayType, List<decimal>> WinningAmountsByType { get; set; } = new();
     }
 }

@@ -14,28 +14,44 @@ $(function () {
                 console.error('未找到图表容器元素');
                 return;
             }
+
+            var datasets = [];
+            var colors = {
+                purchase: {
+                    backgroundColor: 'rgba(75, 192, 192, 0.5)',
+                    borderColor: 'rgb(75, 192, 192)'
+                },
+                winning: {
+                    backgroundColor: 'rgba(255, 99, 132, 0.5)',
+                    borderColor: 'rgb(255, 99, 132)'
+                }
+            };
+
+            // 为每种选号类型创建数据集
+            Object.keys(result.purchaseAmountsByType).forEach(function(type) {
+                datasets.push({
+                    label: l('LotteryK8:PurchaseAmount') + '-' + type,
+                    data: result.purchaseAmountsByType[type],
+                    backgroundColor: colors.purchase.backgroundColor,
+                    borderColor: colors.purchase.borderColor,
+                    borderWidth: 1
+                });
+                
+                datasets.push({
+                    label: l('LotteryK8:WinningAmount') + '-' + type,
+                    data: result.winningAmountsByType[type],
+                    backgroundColor: colors.winning.backgroundColor,
+                    borderColor: colors.winning.borderColor,
+                    borderWidth: 1
+                });
+            });
             
             ctx = ctx.getContext('2d');
             new Chart(ctx, {
                 type: 'bar',
                 data: {
                     labels: result.terms,
-                    datasets: [
-                        {
-                            label: l('LotteryK8:PurchaseAmount'),
-                            data: result.purchaseAmounts,
-                            backgroundColor: 'rgba(75, 192, 192, 0.5)',
-                            borderColor: 'rgb(75, 192, 192)',
-                            borderWidth: 1
-                        },
-                        {
-                            label: l('LotteryK8:WinningAmount'),
-                            data: result.winningAmounts,
-                            backgroundColor: 'rgba(255, 99, 132, 0.5)',
-                            borderColor: 'rgb(255, 99, 132)',
-                            borderWidth: 1
-                        }
-                    ]
+                    datasets: datasets
                 },
                 options: {
                     responsive: true,
@@ -43,11 +59,27 @@ $(function () {
                         title: {
                             display: true,
                             text: l('LotteryK8:Statistics')
+                        },
+                        legend: {
+                            position: 'right',
+                            labels: {
+                                boxWidth: 20
+                            }
                         }
                     },
                     scales: {
+                        x: {
+                            title: {
+                                display: true,
+                                text: l('LotteryK8:Term')
+                            }
+                        },
                         y: {
-                            beginAtZero: true
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: l('LotteryK8:Amount')
+                            }
                         }
                     }
                 }

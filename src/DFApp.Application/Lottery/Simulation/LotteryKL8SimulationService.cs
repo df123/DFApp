@@ -198,24 +198,60 @@ namespace DFApp.Lottery.Simulation
             var statistics = new StatisticsDto();
             var simulations = await Repository.GetListAsync(x => x.GameType == LotteryGameType.快乐8);
             
+            // 初始化所有玩法类型的数据列表
+            foreach (LotteryKL8PlayType playType in Enum.GetValues(typeof(LotteryKL8PlayType)))
+            {
+                statistics.PurchaseAmountsByType[playType] = new List<decimal>();
+                statistics.WinningAmountsByType[playType] = new List<decimal>();
+            }
+
             var groupedByTerm = simulations
                 .GroupBy(x => x.TermNumber)
                 .OrderBy(x => x.Key);
 
             foreach (var term in groupedByTerm)
             {
-                statistics.Terms.Add(term.Key);
-                
-                // 根据每组号码数量计算投注金额（每注2元）
-                var purchaseAmount = term.GroupBy(x => x.GroupId).Count() * 2m;
-                statistics.PurchaseAmounts.Add(purchaseAmount);
-                
-                // 计算中奖金额
-                var winningStats = await CalculateWinningAmountAsync(term.Key);
-                statistics.WinningAmounts.Add(winningStats.TotalAmount);
+                if (!statistics.Terms.Contains(term.Key))
+                {
+                    statistics.Terms.Add(term.Key);
+                }
+
+                // 按玩法类型分组统计
+                foreach (LotteryKL8PlayType playType in Enum.GetValues(typeof(LotteryKL8PlayType)))
+                {
+                    var numbersInGroup = (int)playType;
+                    var groupsForPlayType = term.GroupBy(x => x.GroupId)
+                        .Where(g => g.Count() == numbersInGroup);
+
+                    // 计算该玩法的投注金额（每注2元）
+                    var purchaseAmount = groupsForPlayType.Count() * 2m;
+                    statistics.PurchaseAmountsByType[playType].Add(purchaseAmount);
+
+                    // 计算该玩法的中奖金额
+                    decimal winningAmount = 0;
+                    foreach (var group in groupsForPlayType)
+                    {
+                        var numbers = group.Select(x => x.Number).ToList();
+                        var matchCount = await CalculateMatchCount(term.Key, numbers);
+                        winningAmount += await CalculateK8Prize(term.Key.ToString(), numbersInGroup, matchCount);
+                    }
+                    statistics.WinningAmountsByType[playType].Add(winningAmount);
+                }
             }
 
             return statistics;
+        }
+
+        private async Task<int> CalculateMatchCount(int termNumber, List<int> selectedNumbers)
+        {
+            var lotteryResult = await _lotteryResultRepository.FirstOrDefaultAsync(x =>
+                x.Code == termNumber.ToString() && x.Name == LotteryConst.KL8);
+
+            if (lotteryResult == null)
+                return 0;
+
+            var winningNumbers = lotteryResult.Red!.Split(',').Select(int.Parse).ToList();
+            return selectedNumbers.Intersect(winningNumbers).Count();
         }
     }
 }
