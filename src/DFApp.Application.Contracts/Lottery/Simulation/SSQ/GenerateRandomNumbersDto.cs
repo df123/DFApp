@@ -2,7 +2,7 @@ using System.ComponentModel.DataAnnotations;
 using DFApp.Lottery.Validation;
 using Volo.Abp.Validation;
 
-namespace DFApp.Lottery.Simulation
+namespace DFApp.Lottery.Simulation.SSQ
 {
     /// <summary>
     /// 生成随机号码的请求参数

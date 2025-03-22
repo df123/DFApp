@@ -1,8 +1,8 @@
 $(function () {
     var l = abp.localization.getResource('DFApp');
-    var generateModal = new abp.ModalManager(abp.appPath + 'Lottery/Simulation/GenerateRandomNumbersModal');
-    var deleteModal = new abp.ModalManager(abp.appPath + 'Lottery/Simulation/DeleteByTermNumberModal');
-    var calculateModal = new abp.ModalManager(abp.appPath + 'Lottery/Simulation/CalculateWinningModal');
+    var generateModal = new abp.ModalManager(abp.appPath + 'Lottery/Simulation/SSQ/GenerateRandomNumbersModal');
+    var deleteModal = new abp.ModalManager(abp.appPath + 'Lottery/Simulation/SSQ/DeleteByTermNumberModal');
+    var calculateModal = new abp.ModalManager(abp.appPath + 'Lottery/Simulation/SSQ/CalculateWinningModal');
 
     var dataTable = $('#SimulationTable').DataTable(
         abp.libs.datatables.normalizeConfiguration({
@@ -11,7 +11,7 @@ $(function () {
             order: [[0, "desc"]],
             searching: false,
             scrollX: true,
-            ajax: abp.libs.datatables.createAjax(dFApp.lottery.simulation.lotterySimulation.getList),
+            ajax: abp.libs.datatables.createAjax(dFApp.lottery.simulation.lotterySSQSimulation.getList),
             columnDefs: [
                 {
                     title: l('LotterySimulation:TermNumber'),
@@ -70,6 +70,6 @@ $(function () {
 
     $('#StatisticsButton').click(function (e) {
         e.preventDefault();
-        window.location.href = '/Lottery/Simulation/Statistics';
+        window.location.href = '/Lottery/Simulation/SSQ/Statistics';
     });
 });

@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 
-namespace DFApp.Lottery.Simulation
+namespace DFApp.Lottery.Simulation.SSQ
 {
     public class StatisticsDto
     {

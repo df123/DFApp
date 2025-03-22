@@ -86,7 +86,11 @@ public class DFAppApplicationAutoMapperProfile : Profile
 
         CreateMap<ConfigurationInfo, CustomFileTypeDto>();
 
-        CreateMap<LotterySimulation, LotterySimulationDto>();
-        CreateMap<CreateUpdateLotterySimulationDto, LotterySimulation>();
+        CreateMap<LotterySimulation, Lottery.Simulation.SSQ.LotterySimulationDto>();
+        CreateMap<Lottery.Simulation.SSQ.CreateUpdateLotterySimulationDto, LotterySimulation>();
+
+        CreateMap<LotterySimulation, Lottery.Simulation.KL8.LotterySimulationDto>();
+        CreateMap<Lottery.Simulation.KL8.CreateUpdateLotterySimulationDto, LotterySimulation>();
+
     }
 }

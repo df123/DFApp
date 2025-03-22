@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 
-namespace DFApp.Lottery.Simulation
+namespace DFApp.Lottery.Simulation.SSQ
 {
     /// <summary>
     /// 中奖统计结果

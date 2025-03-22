@@ -1,6 +1,6 @@
 $(function () {
     var l = abp.localization.getResource('DFApp');
-    var statisticsService = dFApp.lottery.simulation.lotterySimulation.getStatistics;
+    var statisticsService = dFApp.lottery.simulation.lotterySSQSimulation.getStatistics;
     
     function initChart() {
         statisticsService().then(function (result) {

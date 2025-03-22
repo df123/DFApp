@@ -8,21 +8,22 @@ using Volo.Abp.Application.Dtos;
 using Volo.Abp.Application.Services;
 using Volo.Abp.Domain.Repositories;
 using DFApp.Lottery.Consts;
+using DFApp.Lottery.Simulation.SSQ;
 
 namespace DFApp.Lottery.Simulation
 {
     [Authorize(DFAppPermissions.Lottery.Default)]
-    public class LotterySimulationService : CrudAppService<
+    public class LotterySSQSimulationService : CrudAppService<
         LotterySimulation,
         LotterySimulationDto,
         Guid,
         PagedAndSortedResultRequestDto,
-        CreateUpdateLotterySimulationDto>, ILotterySimulationService
+        CreateUpdateLotterySimulationDto>, ILotterySSQSimulationService
     {
         private readonly IRepository<LotteryResult, long> _lotteryResultRepository;
         private readonly IRepository<LotteryPrizegrades, long> _lotteryPrizegradesRepository;
 
-        public LotterySimulationService(
+        public LotterySSQSimulationService(
             IRepository<LotterySimulation, Guid> repository,
             IRepository<LotteryResult, long> lotteryResultRepository,
             IRepository<LotteryPrizegrades, long> lotteryPrizegradesRepository) : base(repository)
@@ -57,62 +58,37 @@ namespace DFApp.Lottery.Simulation
 
             for (int i = 0; i < input.Count; i++)
             {
-                if (input.GameType == LotteryGameType.双色球)
+                // 使用HashSet存储已选择的红球号码
+                var redBalls = new HashSet<int>();
+                // 生成6个不重复的红球(1-33)
+                while (redBalls.Count < 6)
                 {
-                    // 使用HashSet存储已选择的红球号码
-                    var redBalls = new HashSet<int>();
-                    // 生成6个不重复的红球(1-33)
-                    while (redBalls.Count < 6)
-                    {
-                        redBalls.Add(random.Next(1, 34));
-                    }
+                    redBalls.Add(random.Next(1, 34));
+                }
 
-                    // 添加红球
-                    foreach (var number in redBalls)
-                    {
-                        result.Add(new LotterySimulation
-                        {
-                            GameType = input.GameType,
-                            BallType = LotteryBallType.Red,
-                            Number = number,
-                            GroupId = groupId,
-                            TermNumber = input.TermNumber
-                        });
-                    }
-
-                    // 生成1个蓝球(1-16)
+                // 添加红球
+                foreach (var number in redBalls)
+                {
                     result.Add(new LotterySimulation
                     {
                         GameType = input.GameType,
-                        BallType = LotteryBallType.Blue,
-                        Number = random.Next(1, 17),
+                        BallType = LotteryBallType.Red,
+                        Number = number,
                         GroupId = groupId,
                         TermNumber = input.TermNumber
                     });
                 }
-                else if (input.GameType == LotteryGameType.快乐8)
-                {
-                    // 使用HashSet存储已选择的红球号码
-                    var redBalls = new HashSet<int>();
-                    // 生成20个不重复的红球(1-80)
-                    while (redBalls.Count < 20)
-                    {
-                        redBalls.Add(random.Next(1, 81));
-                    }
 
-                    // 添加红球
-                    foreach (var number in redBalls)
-                    {
-                        result.Add(new LotterySimulation
-                        {
-                            GameType = input.GameType,
-                            BallType = LotteryBallType.Red,
-                            Number = number,
-                            GroupId = groupId,
-                            TermNumber = input.TermNumber
-                        });
-                    }
-                }
+                // 生成1个蓝球(1-16)
+                result.Add(new LotterySimulation
+                {
+                    GameType = input.GameType,
+                    BallType = LotteryBallType.Blue,
+                    Number = random.Next(1, 17),
+                    GroupId = groupId,
+                    TermNumber = input.TermNumber
+                });
+
                 groupId++;
             }
 
@@ -137,7 +113,7 @@ namespace DFApp.Lottery.Simulation
             }
 
             // 获取当期投注记录，按组分类
-            var simulationGroups = (await Repository.GetListAsync(x => x.TermNumber == termNumber))
+            var simulationGroups = (await Repository.GetListAsync(x => x.TermNumber == termNumber && x.GameType == LotteryGameType.双色球))
                 .GroupBy(x => x.GroupId);
 
             var statistics = new WinningStatisticsDto();
@@ -262,11 +238,13 @@ namespace DFApp.Lottery.Simulation
         {
             // 获取所有数据
             var query = await Repository.GetQueryableAsync();
-            var totalCount = await AsyncExecuter.CountAsync(query) / 7;
+            var totalCount = await AsyncExecuter.CountAsync(
+                query.Where(x => x.GameType == LotteryGameType.双色球)) / 7;
 
             // 分组查询
             var groupedData = await AsyncExecuter.ToListAsync(
-                query.GroupBy(x => new { x.TermNumber, x.GroupId, x.GameType })
+                query.Where(x => x.GameType == LotteryGameType.双色球)
+                .GroupBy(x => new { x.TermNumber, x.GroupId, x.GameType })
                 .Select(g => new
                 {
                     g.Key.TermNumber,

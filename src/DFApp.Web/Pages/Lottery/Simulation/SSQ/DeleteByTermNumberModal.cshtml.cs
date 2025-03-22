@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using System.Threading.Tasks;
 using DFApp.Lottery.Simulation;
+using DFApp.Lottery.Simulation.KL8;
 
 namespace DFApp.Web.Pages.Lottery.Simulation
 {
@@ -9,9 +10,9 @@ namespace DFApp.Web.Pages.Lottery.Simulation
         [BindProperty]
         public DeleteByTermNumberDto Input { get; set; }
 
-        private readonly ILotterySimulationService _lotterySimulationService;
+        private readonly ILotteryKL8SimulationService _lotterySimulationService;
 
-        public DeleteByTermNumberModalModel(ILotterySimulationService lotterySimulationService)
+        public DeleteByTermNumberModalModel(ILotteryKL8SimulationService lotterySimulationService)
         {
             _lotterySimulationService = lotterySimulationService;
         }

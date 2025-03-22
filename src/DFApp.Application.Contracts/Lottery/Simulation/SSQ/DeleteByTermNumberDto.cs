@@ -1,7 +1,7 @@
 using System.ComponentModel.DataAnnotations;
 using DFApp.Lottery.Validation;
 
-namespace DFApp.Lottery.Simulation
+namespace DFApp.Lottery.Simulation.SSQ
 {
     public class DeleteByTermNumberDto
     {
