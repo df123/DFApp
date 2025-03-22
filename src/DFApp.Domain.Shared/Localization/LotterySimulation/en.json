@@ -24,12 +24,12 @@
     "LotterySimulation:DeleteByTermNumber": "Delete Term Number Data",
     "LotterySimulation:Button:DeleteByTermNumber": "Delete Term",
     "LotterySimulation:RedNumbers": "Red Numbers",
-    "LotterySimulation:BlueNumber": "Blue Number", 
+    "LotterySimulation:BlueNumber": "Blue Number",
     "LotterySimulation:CalculateWinning": "Calculate Winning",
     "LotterySimulation:CalculateWinning:Title": "Calculate Winning",
     "LotteryK8:Title": "K8 Lottery Simulation",
     "LotteryK8:TermNumber": "Term Number",
-    "LotteryK8:Numbers": "Numbers", 
+    "LotteryK8:Numbers": "Numbers",
     "LotteryK8:GameType": "Game Type",
     "LotteryK8:GroupId": "Group ID",
     "LotteryK8:Button:Generate": "Generate",
@@ -39,6 +39,9 @@
     "LotteryK8:Statistics": "K8 Statistics",
     "LotteryK8:PurchaseAmount": "Purchase Amount",
     "LotteryK8:WinningAmount": "Winning Amount",
-    "Menu:LotteryK8": "K8 Lottery"
+    "Menu:LotteryK8": "K8 Lottery",
+    "LotteryK8:DeleteByTermNumber": "Delete K8 Term Number Data",
+    "LotteryK8:Term": "Term",
+    "LotteryK8:Amount": "Amount"
   }
 }

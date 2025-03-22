@@ -29,7 +29,7 @@
     "LotterySimulation:CalculateWinning:Title": "中奖计算",
     "LotteryK8:Title": "快乐8模拟",
     "LotteryK8:TermNumber": "期号",
-    "LotteryK8:Numbers": "号码", 
+    "LotteryK8:Numbers": "号码",
     "LotteryK8:GameType": "游戏类型",
     "LotteryK8:GroupId": "组号",
     "LotteryK8:Button:Generate": "生成",
@@ -39,6 +39,9 @@
     "LotteryK8:Statistics": "快乐8统计",
     "LotteryK8:PurchaseAmount": "购买金额",
     "LotteryK8:WinningAmount": "中奖金额",
-    "Menu:LotteryK8": "快乐8"
+    "Menu:LotteryK8": "快乐8",
+    "LotteryK8:DeleteByTermNumber": "删除快乐8期号数据",
+    "LotteryK8:Term": "期号",
+    "LotteryK8:Amount": "金额"
   }
 }
