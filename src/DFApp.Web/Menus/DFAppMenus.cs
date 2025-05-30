@@ -19,6 +19,7 @@ public class DFAppMenus
     public const string LogSink = Prefix + ".LogSink";
     public const string Bookkeeping = Prefix + ".Bookkeeping";
     public const string FileUploadDownload = Prefix + ".FileUploadDownload";
+    public const string LogViewer = Prefix + ".LogViewer";
 
     public static class ConfigurationInfo
     {
@@ -40,4 +41,3 @@ public class DFAppMenus
     //Add your menu items here...
 
 }
-

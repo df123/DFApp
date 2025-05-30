@@ -160,6 +160,7 @@ public class DFAppWebModule : AbpModule
             options.Conventions.AuthorizeFolder("/Bookkeeping/Expenditure", DFAppPermissions.BookkeepingExpenditure.Default);
             options.Conventions.AuthorizeFolder("/FileUploadDownload", DFAppPermissions.FileUploadDownload.Default);
             options.Conventions.AuthorizeFolder("/Aria2", DFAppPermissions.Aria2.Default);
+            options.Conventions.AuthorizePage("/LogViewer", DFAppPermissions.LogViewer.Default);
 
         });
 
@@ -219,13 +220,14 @@ public class DFAppWebModule : AbpModule
         });
     }
 
-    private void ConfigureAutoApiControllers()
-    {
-        Configure<AbpAspNetCoreMvcOptions>(options =>
+        private void ConfigureAutoApiControllers()
         {
-            options.ConventionalControllers.Create(typeof(DFAppApplicationModule).Assembly);
-        });
-    }
+            Configure<AbpAspNetCoreMvcOptions>(options =>
+            {
+                options.ConventionalControllers.Create(typeof(DFAppApplicationModule).Assembly);
+                options.ConventionalControllers.Create(typeof(DFAppWebModule).Assembly);
+            });
+        }
 
     private void ConfigureSwaggerServices(IServiceCollection services)
     {

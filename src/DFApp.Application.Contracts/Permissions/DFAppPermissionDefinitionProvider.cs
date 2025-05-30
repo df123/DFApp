@@ -34,10 +34,12 @@ public class DFAppPermissionDefinitionProvider : PermissionDefinitionProvider
 
         var bookkeepingGroup = context.AddGroup(DFAppPermissions.Bookkeeping.Default, L("Permisssion:Bookkeeping"));
         var bookkeepingPermission = bookkeepingGroup.AddPermission(DFAppPermissions.Bookkeeping.Default, L("Permisssion:Bookkeeping"));
+
         var bookkeepingCategoryPermission = bookkeepingPermission.AddChild(DFAppPermissions.BookkeepingCategory.Default, L("Permisssion:BookkeepingCategory"));
         bookkeepingCategoryPermission.AddChild(DFAppPermissions.BookkeepingCategory.Create, L("Permisssion:BookkeepingCategory:Create"));
         bookkeepingCategoryPermission.AddChild(DFAppPermissions.BookkeepingCategory.Delete, L("Permisssion:BookkeepingCategory:Delete"));
         bookkeepingCategoryPermission.AddChild(DFAppPermissions.BookkeepingCategory.Edit, L("Permisssion:BookkeepingCategory:Modify"));
+
         var bookkeepingExpenditurePermission = bookkeepingPermission.AddChild(DFAppPermissions.BookkeepingExpenditure.Default, L("Permisssion:BookkeepingExpenditure"));
         bookkeepingExpenditurePermission.AddChild(DFAppPermissions.BookkeepingExpenditure.Create, L("Permisssion:BookkeepingExpenditure:Create"));
         bookkeepingExpenditurePermission.AddChild(DFAppPermissions.BookkeepingExpenditure.Delete, L("Permisssion:BookkeepingExpenditure:Delete"));
@@ -60,6 +62,9 @@ public class DFAppPermissionDefinitionProvider : PermissionDefinitionProvider
         aria2Permission.AddChild(DFAppPermissions.Aria2.Link, L("Permisssion:Aria2:Link"));
         aria2Permission.AddChild(DFAppPermissions.Aria2.Delete, L("Permisssion:Aria2:Delete"));
 
+        // 添加LogViewer权限组
+        var logViewerGroup = context.AddGroup(DFAppPermissions.LogViewer.Default, L("LogViewer"));
+        logViewerGroup.AddPermission(DFAppPermissions.LogViewer.Default, L("LogViewer"));
     }
 
     private static LocalizableString L(string name)
