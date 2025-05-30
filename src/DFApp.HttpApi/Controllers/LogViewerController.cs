@@ -94,5 +94,26 @@ namespace DFApp.Web.LogViewer
 
             return string.Join(Environment.NewLine, contentBuilder);
         }
+        [HttpGet("download")]
+        public IActionResult DownloadLog(string fileName)
+        {
+            Check.NotNullOrWhiteSpace(fileName, nameof(fileName));
+
+            var logPath = Path.Combine(_webHostEnvironment.ContentRootPath, LogFolder);
+            var filePath = Path.Combine(logPath, fileName);
+
+            if (!System.IO.File.Exists(filePath))
+            {
+                throw new UserFriendlyException($"Log file {fileName} not found");
+            }
+
+            var contentType = "text/plain";
+            var fileStream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+
+            return new FileStreamResult(fileStream, contentType)
+            {
+                FileDownloadName = fileName
+            };
+        }
     }
 }

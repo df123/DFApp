@@ -64,11 +64,15 @@
                         files.forEach(file => {
                             const size = formatFileSize(file.size);
                             const date = new Date(file.lastModified).toLocaleString();
-                            logsList.append(`
-                                <a href="#" class="list-group-item list-group-item-action log-file" data-file="${file.name}">
+                            logsList.append(`                                <a href="#" class="list-group-item list-group-item-action log-file" data-file="${file.name}">
                                     <div class="d-flex w-100 justify-content-between">
                                         <h6 class="mb-1">${file.name}</h6>
-                                        <small>${size}</small>
+                                        <div>
+                                            <button class="btn btn-sm btn-link download-log" data-file="${file.name}" title="下载">
+                                                <i class="fas fa-download"></i>
+                                            </button>
+                                            <small>${size}</small>
+                                        </div>
                                     </div>
                                     <small class="text-muted">${date}</small>
                                 </a>
@@ -116,6 +120,11 @@
                 });
             }
 
+            // 下载日志文件
+            function downloadLogFile(fileName) {
+                window.location.href = `/api/LogViewer/download?fileName=${fileName}`;
+            }
+
             // 格式化文件大小
             function formatFileSize(bytes) {
                 if (bytes === 0) return '0 B';
@@ -149,6 +158,14 @@
                 $(this).addClass('active');
                 currentFile = $(this).data('file');
                 loadLogContent(currentFile);
+            });
+
+            // 阻止下载按钮的点击事件冒泡
+            $('#logFilesList').on('click', '.download-log', function (e) {
+                e.preventDefault();
+                e.stopPropagation();
+                const fileName = $(this).data('file');
+                downloadLogFile(fileName);
             });
 
             $('#autoRefresh').change(function () {
