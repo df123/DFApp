@@ -3,28 +3,32 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
-using DFApp.LogViewer;
+using DFApp.Controllers;
 using DFApp.LogViewer.Dtos;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Mvc;
 using Volo.Abp;
 
 namespace DFApp.Web.LogViewer
 {
-    public class LogViewerAppService : DFAppAppService, ILogViewerAppService
+    [Route("api/[controller]")]
+    [ApiController]
+    public class LogViewerController : DFAppController
     {
         private readonly IWebHostEnvironment _webHostEnvironment;
         private const string LogFolder = "Logs";
         private const int DefaultTailLines = 1000; // 默认读取最后1000行
 
-        public LogViewerAppService(IWebHostEnvironment webHostEnvironment)
+        public LogViewerController(IWebHostEnvironment webHostEnvironment)
         {
             _webHostEnvironment = webHostEnvironment;
         }
 
+        [HttpGet("log-files")]
         public async Task<List<LogFileDto>> GetLogFilesAsync()
         {
             var logPath = Path.Combine(_webHostEnvironment.ContentRootPath, LogFolder);
-            
+
             if (!Directory.Exists(logPath))
             {
                 return new List<LogFileDto>();
@@ -44,14 +48,15 @@ namespace DFApp.Web.LogViewer
             return await Task.FromResult(logFiles);
         }
 
+        [HttpGet("log-content")]
         public async Task<string> GetLogContentAsync(string fileName, bool isTail = true)
         {
             Check.NotNullOrWhiteSpace(fileName, nameof(fileName));
-            
+
             var logPath = Path.Combine(_webHostEnvironment.ContentRootPath, LogFolder);
             var filePath = Path.Combine(logPath, fileName);
 
-            if (!File.Exists(filePath))
+            if (!System.IO.File.Exists(filePath))
             {
                 throw new UserFriendlyException($"Log file {fileName} not found");
             }
@@ -60,8 +65,8 @@ namespace DFApp.Web.LogViewer
             {
                 return await ReadLastLinesAsync(filePath, DefaultTailLines);
             }
-            
-            return await File.ReadAllTextAsync(filePath);
+
+            return await System.IO.File.ReadAllTextAsync(filePath);
         }
 
         private async Task<string> ReadLastLinesAsync(string filePath, int lines)

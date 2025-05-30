@@ -50,7 +50,7 @@
                 $('#logFilesList').html('<div class="text-center p-3"><div class="spinner-border" role="status"></div></div>');
                 
                 $.ajax({
-                    url: '/api/app/log-viewer/log-files',
+                    url: '/api/LogViewer/log-files',
                     method: 'GET',
                     success: function (files) {
                         const logsList = $('#logFilesList');
@@ -88,8 +88,8 @@
                 }
 
                 const url = isTail 
-                    ? `/api/app/log-viewer/log-content?fileName=${fileName}&isTail=true` 
-                    : `/api/app/log-viewer/log-content?fileName=${fileName}`;
+                    ? `/api/LogViewer/log-content?fileName=${fileName}&isTail=true` 
+                    : `/api/LogViewer/log-content?fileName=${fileName}`;
                 
                 $('#logContent').html('<div class="text-center"><div class="spinner-border" role="status"></div></div>');
                 
