@@ -78,5 +78,10 @@ public static class DFAppPermissions
         public const string Delete = Default + ".Delete";
     }
 
+    public static class LogViewer
+    {
+        public const string Default = GroupName + ".LogViewer";
+    }
+
 
 }

@@ -248,6 +248,19 @@ public class DFAppMenuContributor : IMenuContributor
             context.Menu.AddItem(aria2First);
         }
 
+        if (await context.IsGrantedAsync(DFAppPermissions.LogViewer.Default))
+        {
+            context.Menu.AddItem(
+                new ApplicationMenuItem(
+                    DFAppMenus.LogViewer,
+                    l["Menu:LogViewer"],
+                    url: "/LogViewer",
+                    icon: "fas fa-scroll",
+                    order: 9
+                )
+            );
+        }
+
         administration.TryRemoveMenuItem(TenantManagementMenuNames.GroupName);
         administration.SetSubItemOrder(IdentityMenuNames.GroupName, 2);
         administration.SetSubItemOrder(SettingManagementMenuNames.GroupName, 3);

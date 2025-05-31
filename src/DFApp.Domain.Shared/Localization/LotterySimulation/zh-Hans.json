@@ -52,6 +52,8 @@
     "LotteryK8:PlayType:Select7": "选七",
     "LotteryK8:PlayType:Select8": "选八",
     "LotteryK8:PlayType:Select9": "选九",
-    "LotteryK8:PlayType:Select10": "选十"
+    "LotteryK8:PlayType:Select10": "选十",
+    "Menu:LogViewer": "日志查看器",
+    "LogViewer": "日志查看器"
   }
 }
