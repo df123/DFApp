@@ -79,7 +79,7 @@ namespace DFApp.Lottery
                         string[] reds = periodResult.Red!.Split(',');
 
 
-                        winDto.BuyLottery.Reds.AddRange((lotteryNumbers.Where(x => x.ColorType != "1").Select(x => x.Number).ToArray())!);
+                        winDto.BuyLottery.Reds.AddRange(lotteryNumbers.Where(x => x.ColorType != "1").Select(x => x.Number).ToArray());
                         winDto.WinLottery.Reds.AddRange(reds);
                         winDto.BuyLottery.Blue = lotteryNumbers.FirstOrDefault(x => x.ColorType == "1")?.Number;
                         winDto.WinLottery.Blue = periodResult.Blue;
