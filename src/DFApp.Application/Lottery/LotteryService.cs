@@ -57,32 +57,32 @@ namespace DFApp.Lottery
             List<LotteryInfo> info = await GetLotteryInfoData(purchasedPeriod, lotteryType);
 
             var infoGroup = info.GroupBy(item => item.IndexNo);
-
             List<StatisticsWinItemDto> results = new List<StatisticsWinItemDto>();
 
             foreach (var item in infoGroup)
             {
                 List<LotteryInfo> tempList = item.OrderBy(o => o.Id).ToList();
-
                 var groupIdList = tempList.GroupBy(x => x.GroupId);
 
                 foreach (var groupId in groupIdList)
                 {
                     List<LotteryInfo> lotteryNumbers = groupId.OrderBy(x => x.Id).ToList();
-                    foreach (LotteryResult lotteryResultItem in lotteryResults)
+                    // 只处理对应期号的中奖结果
+                    var periodResult = lotteryResults.FirstOrDefault(x => x.Code == item.Key.ToString());
+                    if (periodResult != null && !string.IsNullOrEmpty(periodResult.Code))
                     {
                         int redWin = 0;
                         StatisticsWinItemDto winDto = new StatisticsWinItemDto();
                         winDto.Code = item.Key.ToString();
-                        winDto.WinCode = lotteryResultItem.Code;
+                        winDto.WinCode = periodResult.Code;
                         winDto.WinAmount = 0;
-                        string[] reds = lotteryResultItem.Red!.Split(',');
+                        string[] reds = periodResult.Red!.Split(',');
 
 
-                        winDto.BuyLottery.Reds.AddRange((lotteryNumbers.Where(x => x.ColorType != "1").Select(x => x.Number).ToArray())!);
+                        winDto.BuyLottery.Reds.AddRange(lotteryNumbers.Where(x => x.ColorType != "1").Select(x => x.Number).ToArray());
                         winDto.WinLottery.Reds.AddRange(reds);
                         winDto.BuyLottery.Blue = lotteryNumbers.FirstOrDefault(x => x.ColorType == "1")?.Number;
-                        winDto.WinLottery.Blue = lotteryResultItem.Blue;
+                        winDto.WinLottery.Blue = periodResult.Blue;
 
                         foreach (string red in reds)
                         {
@@ -104,11 +104,11 @@ namespace DFApp.Lottery
                         if (lotteryType == LotteryConst.SSQ)
                         {
                             LotteryInfo blueLotteryInfo = lotteryNumbers.First(x => x.ColorType == "1");
-                            winMoney = await JudgeWin(redWin, lotteryResultItem.Blue == blueLotteryInfo.Number, lotteryResultItem.Code);
+                            winMoney = await JudgeWin(redWin, periodResult.Blue == blueLotteryInfo.Number, periodResult.Code);
                         }
                         else
                         {
-                            winMoney = await GetActualAmount(lotteryResultItem.Code, lotteryType, 10, redWin);
+                            winMoney = await GetActualAmount(periodResult.Code, lotteryType, 10, redWin);
                         }
 
                         if (winMoney > 0)
@@ -118,7 +118,6 @@ namespace DFApp.Lottery
                             winDto.WinLotteryString = string.Join(",", string.Join(",", winDto.WinLottery.Reds), winDto.WinLottery.Blue);
                             results.Add(winDto);
                         }
-
                     }
                 }
             }
@@ -133,30 +132,28 @@ namespace DFApp.Lottery
             List<LotteryInfo> info = await GetLotteryInfoData(purchasedPeriod, lotteryType);
 
             var infoGroup = info.GroupBy(item => item.IndexNo);
-
             List<StatisticsWinDto> results = new List<StatisticsWinDto>();
-
-            
 
             foreach (var item in infoGroup)
             {
-
                 List<LotteryInfo> tempList = item.OrderBy(o => o.Id).ToList();
                 var groupIdList = tempList.GroupBy(x => x.GroupId);
 
                 StatisticsWinDto winDto = new StatisticsWinDto();
                 winDto.Code = item.Key.ToString();
-                winDto.BuyAmount = groupIdList.Count() * 2 * lotteryResults.Count;
+                // 只计算单期对应的购买金额
+                winDto.BuyAmount = groupIdList.Count() * 2;
                 winDto.WinAmount = 0;
 
-                foreach (var groupId in groupIdList)
+                // 只处理对应期号的中奖结果
+                var periodResult = lotteryResults.FirstOrDefault(x => x.Code == item.Key.ToString());
+                if (periodResult != null && !string.IsNullOrEmpty(periodResult.Code))
                 {
-                    List<LotteryInfo> lotteryNumbers = groupId.OrderBy(x => x.Id).ToList();
-
-                    foreach (LotteryResult lotteryResultItem in lotteryResults)
+                    foreach (var groupId in groupIdList)
                     {
+                        List<LotteryInfo> lotteryNumbers = groupId.OrderBy(x => x.Id).ToList();
                         int redWin = 0;
-                        string[] reds = lotteryResultItem.Red!.Split(',');
+                        string[] reds = periodResult.Red!.Split(',');
 
                         foreach (string s in reds)
                         {
@@ -178,11 +175,11 @@ namespace DFApp.Lottery
                         if (lotteryType == LotteryConst.SSQ)
                         {
                             LotteryInfo blueLotteryInfo = lotteryNumbers.First(x => x.ColorType == "1");
-                            winMoney = await JudgeWin(redWin, lotteryResultItem.Blue == blueLotteryInfo.Number, lotteryResultItem.Code);
+                            winMoney = await JudgeWin(redWin, periodResult.Blue == blueLotteryInfo.Number, periodResult.Code);
                         }
                         else
                         {
-                            winMoney = await GetActualAmount(lotteryResultItem.Code, lotteryType, 10, redWin);
+                            winMoney = await GetActualAmount(periodResult.Code, lotteryType, 10, redWin);
                         }
 
                         if (winMoney > 0)
