@@ -194,6 +194,7 @@ namespace DFApp.Background
                     }
 
                     double duration = double.Parse(await GetConfigurationInfo("VideoDurationLimit"));
+                    double maxDuration = double.Parse(await GetConfigurationInfo("VideoDurationMaxLimit"));
                     int minWidth = int.Parse(await GetConfigurationInfo("MinVideoWidth"));
                     int minHeight = int.Parse(await GetConfigurationInfo("MinVideoHeight"));
                     bool isDurationLimit = false;
@@ -205,6 +206,10 @@ namespace DFApp.Background
                         if (attribute is DocumentAttributeVideo video)
                         {
                             if (video.duration <= duration)
+                            {
+                                isDurationLimit = true;
+                            }
+                            if (video.duration > maxDuration)
                             {
                                 isDurationLimit = true;
                             }
