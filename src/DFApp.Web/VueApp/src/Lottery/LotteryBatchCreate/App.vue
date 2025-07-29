@@ -16,7 +16,7 @@
             </div>
             <div v-if="lotteryTypeValue != 'ssq'" class="margin-left-12">
                 <el-input class="m-1" v-model="period" placeholder="期号" />
-                <el-input class="m-1" v-model="reds" placeholder="红球" />
+                <el-input class="m-1" v-model="reds" :rows="5" type="textarea" placeholder="红球" />
                 <el-button class="m-1" type="primary" @click="groupImport">导入</el-button>
             </div>
         </el-row>
@@ -60,7 +60,8 @@ async function groupImport() {
     let lotteryType = lotteryTypeItems.value.find(item => item.value === lotteryTypeValue.value);
 
     let createDtos: CreateUpdateLotteryDto[] = [];
-    let tempStr = reds.value.split(',');
+    // 支持空格、逗号和换行符作为分隔符
+    let tempStr = reds.value.split(/[\s,]+/).filter(item => item.trim() !== '');
     tempStr.forEach(element => {
         createDtos.push({
             indexNo: parseInt(period.value),
@@ -68,27 +69,27 @@ async function groupImport() {
             colorType: '0',
             lotteryType: lotteryType.label,
             groupId: 0
-
         });
     });
 
     if (lotteryTypeValue.value === "ssq") {
-        createDtos.push({
-            indexNo: parseInt(period.value),
-            number: blues.value,
-            colorType: '1',
-            lotteryType: lotteryType.label,
-            groupId: 0
-
+        // 蓝球也支持空格、逗号和换行符作为分隔符
+        let blueStr = blues.value.split(/[\s,]+/).filter(item => item.trim() !== '');
+        blueStr.forEach(element => {
+            createDtos.push({
+                indexNo: parseInt(period.value),
+                number: element,
+                colorType: '1',
+                lotteryType: lotteryType.label,
+                groupId: 0
+            });
         });
 
-        if(tempStr.length > 6 || blues.value.split(',').length > 1){
+        if(tempStr.length > 6 || blueStr.length > 1){
             await groupImportF();
             return;
         }
-        
     }
-
 
     let dtos: LotteryDto = await dFApp.lottery.lottery.createLotteryBatch(createDtos) as LotteryDto;
     if (dtos != undefined && dtos != null && dtos.id > 0) {
@@ -110,8 +111,9 @@ async function groupImportF() {
         return;
     }
     combinationDto.period = parseInt(period.value);
-    combinationDto.reds = reds.value.split(',');
-    combinationDto.blues = blues.value.split(',');
+    // 支持空格、逗号和换行符作为分隔符
+    combinationDto.reds = reds.value.split(/[\s,]+/).filter(item => item.trim() !== '');
+    combinationDto.blues = blues.value.split(/[\s,]+/).filter(item => item.trim() !== '');
 
     console.log(combinationDto);
 
