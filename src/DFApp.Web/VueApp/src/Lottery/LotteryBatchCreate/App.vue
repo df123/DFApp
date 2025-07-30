@@ -16,7 +16,7 @@
             </div>
             <div v-if="lotteryTypeValue != 'ssq'" class="margin-left-12">
                 <el-input class="m-1" v-model="period" placeholder="期号" />
-                <el-input class="m-1" v-model="reds" placeholder="红球" />
+                <el-input class="m-1" v-model="reds" :rows="5" type="textarea" placeholder="红球" />
                 <el-button class="m-1" type="primary" @click="groupImport">导入</el-button>
             </div>
         </el-row>
@@ -60,35 +60,45 @@ async function groupImport() {
     let lotteryType = lotteryTypeItems.value.find(item => item.value === lotteryTypeValue.value);
 
     let createDtos: CreateUpdateLotteryDto[] = [];
-    let tempStr = reds.value.split(',');
-    tempStr.forEach(element => {
-        createDtos.push({
-            indexNo: parseInt(period.value),
-            number: element,
-            colorType: '0',
-            lotteryType: lotteryType.label,
-            groupId: 0
-
+    // 按换行符分组，逗号和空格作为组内分隔符
+    let redGroups = reds.value.split(/\n+/).filter(group => group.trim() !== '');
+    redGroups.forEach((group, groupIndex) => {
+        let groupItems = group.split(/[\s,]+/).filter(item => item.trim() !== '');
+        groupItems.forEach(element => {
+            createDtos.push({
+                indexNo: parseInt(period.value),
+                number: element,
+                colorType: '0',
+                lotteryType: lotteryType.label,
+                groupId: groupIndex + 1  // 使用1-based索引作为groupId
+            });
         });
     });
 
     if (lotteryTypeValue.value === "ssq") {
-        createDtos.push({
-            indexNo: parseInt(period.value),
-            number: blues.value,
-            colorType: '1',
-            lotteryType: lotteryType.label,
-            groupId: 0
-
+        // 蓝球也按换行符分组，逗号和空格作为组内分隔符
+        let blueGroups = blues.value.split(/\n+/).filter(group => group.trim() !== '');
+        blueGroups.forEach((group, groupIndex) => {
+            let groupItems = group.split(/[\s,]+/).filter(item => item.trim() !== '');
+            groupItems.forEach(element => {
+                createDtos.push({
+                    indexNo: parseInt(period.value),
+                    number: element,
+                    colorType: '1',
+                    lotteryType: lotteryType.label,
+                    groupId: groupIndex + 1  // 使用1-based索引作为groupId
+                });
+            });
         });
 
-        if(tempStr.length > 6 || blues.value.split(',').length > 1){
+        // 检查是否需要使用组合导入
+        let maxRedGroupSize = Math.max(...redGroups.map(group => group.split(/[\s,]+/).filter(item => item.trim() !== '').length));
+        let maxBlueGroupSize = Math.max(...blueGroups.map(group => group.split(/[\s,]+/).filter(item => item.trim() !== '').length));
+        if(maxRedGroupSize > 6 || maxBlueGroupSize > 1){
             await groupImportF();
             return;
         }
-        
     }
-
 
     let dtos: LotteryDto = await dFApp.lottery.lottery.createLotteryBatch(createDtos) as LotteryDto;
     if (dtos != undefined && dtos != null && dtos.id > 0) {
@@ -110,8 +120,9 @@ async function groupImportF() {
         return;
     }
     combinationDto.period = parseInt(period.value);
-    combinationDto.reds = reds.value.split(',');
-    combinationDto.blues = blues.value.split(',');
+    // 支持空格、逗号和换行符作为分隔符
+    combinationDto.reds = reds.value.split(/[\s,]+/).filter(item => item.trim() !== '');
+    combinationDto.blues = blues.value.split(/[\s,]+/).filter(item => item.trim() !== '');
 
     console.log(combinationDto);
 
