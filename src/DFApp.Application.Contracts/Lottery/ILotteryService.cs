@@ -21,6 +21,7 @@ namespace DFApp.Lottery
         Task<PagedResultDto<StatisticsWinItemDto>> GetStatisticsWinItem(string? purchasedPeriod, string? winningPeriod, string lotteryType);
         Task<List<LotteryDto>> CalculateCombination(LotteryCombinationDto dto);
         List<ConstsDto> GetLotteryConst();
+        Task<PagedResultDto<LotteryGroupDto>> GetListGrouped(PagedAndSortedResultRequestDto input);
     }
 
 }

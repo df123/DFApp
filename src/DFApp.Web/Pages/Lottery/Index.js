@@ -9,7 +9,7 @@ $(function () {
             paging: true,
             order: [[1, "desc"]],
             scrollX: true,
-            ajax: abp.libs.datatables.createAjax(dFApp.lottery.lottery.getList),
+            ajax: abp.libs.datatables.createAjax(dFApp.lottery.lottery.getListGrouped),
             columnDefs: [
                 {
                     title: l('Actions'),
@@ -54,21 +54,8 @@ $(function () {
                     data: "lotteryType"
                 },
                 {
-                    title: l('LotteryNumber'),
-                    data: "number"
-                },
-                {
-                    title: l('LotteryColorType'),
-                    data: "colorType",
-                    render: function (data, type) {
-                        if (data == '0') {
-                            return '红球';
-                        }
-                        else {
-                            return '蓝球';
-                        }
-                        return data;
-                    }
+                    title: l('LotteryNumbers'),
+                    data: "numbers"
                 },
                 {
                     title: l('LotteryGroupId'),

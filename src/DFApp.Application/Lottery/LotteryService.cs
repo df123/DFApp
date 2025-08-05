@@ -487,5 +487,60 @@ namespace DFApp.Lottery
 
             return await this.GetStatisticsWinItem(dto.PurchasedPeriod, dto.WinningPeriod, dto.LotteryType);
         }
+
+        public async Task<PagedResultDto<LotteryGroupDto>> GetListGrouped(PagedAndSortedResultRequestDto input)
+        {
+            // 获取所有彩票数据
+            var query = await _lotteryInforepository.GetQueryableAsync();
+            
+            // 应用排序
+            if (!string.IsNullOrWhiteSpace(input.Sorting))
+            {
+                query = query.OrderBy(input.Sorting);
+            }
+            else
+            {
+                query = query.OrderBy(x => x.Id);
+            }
+            
+            // 应用分页
+            var totalCount = query.Count();
+            var lotteryInfos = query.Skip(input.SkipCount).Take(input.MaxResultCount).ToList();
+            
+            // 按GroupId分组
+            var groupedLotteries = lotteryInfos.GroupBy(x => x.GroupId);
+            
+            // 转换为LotteryGroupDto
+            var lotteryGroupDtos = new List<LotteryGroupDto>();
+            
+            foreach (var group in groupedLotteries)
+            {
+                var groupList = group.OrderBy(x => x.Id).ToList();
+                var firstItem = groupList.First();
+                
+                var lotteryGroupDto = new LotteryGroupDto
+                {
+                    Id = firstItem.Id,
+                    IndexNo = firstItem.IndexNo,
+                    LotteryType = firstItem.LotteryType,
+                    GroupId = firstItem.GroupId,
+                    CreationTime = firstItem.CreationTime,
+                    LastModificationTime = firstItem.LastModificationTime
+                };
+                
+                // 分别获取红球和蓝球
+                var redNumbers = groupList.Where(x => x.ColorType == "0").Select(x => x.Number).ToList();
+                var blueNumbers = groupList.Where(x => x.ColorType == "1").Select(x => x.Number).ToList();
+                
+                // 拼接号码
+                lotteryGroupDto.RedNumbers = string.Join(",", redNumbers.OrderBy(x => x));
+                lotteryGroupDto.BlueNumber = blueNumbers.FirstOrDefault() ?? "";
+                lotteryGroupDto.Numbers = string.Join(",", redNumbers.OrderBy(x => x).Concat(blueNumbers));
+                
+                lotteryGroupDtos.Add(lotteryGroupDto);
+            }
+            
+            return new PagedResultDto<LotteryGroupDto>(totalCount, lotteryGroupDtos);
+        }
     }
 }

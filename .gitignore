@@ -290,3 +290,4 @@ src/DFApp.Web/DFApp.db-wal
 /src/DFApp.Web/Photo/
 /src/DFApp.Web/Video/
 .vscode/settings.json
+/.continue/
