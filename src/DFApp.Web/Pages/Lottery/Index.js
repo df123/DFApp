@@ -42,10 +42,6 @@ $(function () {
                     }
                 },
                 {
-                    title: l('LotteryId'),
-                    data: "id"
-                },
-                {
                     title: l('LotteryIndexNo'),
                     data: "indexNo"
                 },
@@ -54,8 +50,12 @@ $(function () {
                     data: "lotteryType"
                 },
                 {
-                    title: l('LotteryNumbers'),
-                    data: "numbers"
+                    title: l('LotteryRedNumbers'),
+                    data: "redNumbers"
+                },
+                {
+                    title: l('LotteryBlueNumbers'),
+                    data: "blueNumber"
                 },
                 {
                     title: l('LotteryGroupId'),
@@ -64,11 +64,6 @@ $(function () {
                 {
                     title: l('LotteryCreationTime'),
                     data: "creationTime",
-                    dataFormat: "datetime"
-                },
-                {
-                    title: l('LotteryLastModificationTime'),
-                    data: "lastModificationTime",
                     dataFormat: "datetime"
                 }
             ]
