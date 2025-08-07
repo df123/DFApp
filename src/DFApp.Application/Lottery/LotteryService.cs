@@ -490,10 +490,8 @@ namespace DFApp.Lottery
 
         public async Task<PagedResultDto<LotteryGroupDto>> GetListGrouped(PagedAndSortedResultRequestDto input)
         {
-            // 获取所有彩票数据
             var query = await _lotteryInforepository.GetListAsync();
 
-            // 应用排序
             if (!string.IsNullOrWhiteSpace(input.Sorting))
             {
                 query = query.AsQueryable().OrderBy(input.Sorting).ToList();
@@ -503,12 +501,10 @@ namespace DFApp.Lottery
                 query = query.AsQueryable().OrderBy(x => x.Id).ToList();
             }
 
-            // 按GroupId分组
             var groupedLotteries = query.GroupBy(x => new { x.IndexNo, x.GroupId, x.LotteryType });
 
             var totalCount = groupedLotteries.Count();
 
-            // 转换为LotteryGroupDto
             var lotteryGroupDtos = new List<LotteryGroupDto>();
 
             foreach (var group in groupedLotteries)
@@ -526,18 +522,15 @@ namespace DFApp.Lottery
                     LastModificationTime = firstItem.LastModificationTime
                 };
 
-                // 分别获取红球和蓝球
                 var redNumbers = groupList.Where(x => x.ColorType == "0").Select(x => x.Number).ToList();
                 var blueNumbers = groupList.Where(x => x.ColorType == "1").Select(x => x.Number).ToList();
 
-                // 拼接号码
                 lotteryGroupDto.RedNumbers = string.Join(",", redNumbers.OrderBy(x => x));
                 lotteryGroupDto.BlueNumber = blueNumbers.FirstOrDefault() ?? "";
 
                 lotteryGroupDtos.Add(lotteryGroupDto);
             }
 
-            // 返回分页结果
             if (input.MaxResultCount > 0)
             {
                 lotteryGroupDtos = lotteryGroupDtos.Skip(input.SkipCount).Take(input.MaxResultCount).ToList();
