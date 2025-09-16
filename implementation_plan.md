@@ -502,7 +502,7 @@ sequenceDiagram
 // src/config/oidc.ts
 export const oidcConfig: OidcConfig = {
   authority: 'https://localhost:44369',
-  client_id: 'DFApp_Vue',
+  client_id: 'DFApp_Web',
   redirect_uri: `${window.location.origin}/auth/callback`,
   post_logout_redirect_uri: `${window.location.origin}/`,
   response_type: 'code',
@@ -602,7 +602,7 @@ VITE_API_BASE_URL = "https://localhost:44350"
 VITE_AUTH_AUTHORITY = "https://localhost:44369"
 
 # OAuth 客户端 ID
-VITE_OAUTH_CLIENT_ID = "DFApp_Vue"
+VITE_OAUTH_CLIENT_ID = "DFApp_Web"
 ```
 
 更新 `vite.config.ts` 代理配置：
