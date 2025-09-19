@@ -25,137 +25,410 @@
 - **支持的作用域**：openid, offline_access, email, profile, phone, roles, address, DFApp
 
 ## [Types]
-定义迁移过程中需要的类型定义和接口规范。
+基于 `simplified-swagger.json` 实际 API 规范定义的类型系统。
 
-### API 响应类型
+### 通用 API 类型
 ```typescript
-// API 基础响应类型
-interface ApiResponse<T = any> {
-  success: boolean;
-  result: T;
-  error?: {
-    code: string;
-    message: string;
-    details?: string;
-  };
+// ABP 标准分页参数
+interface PagedRequestDto {
+  skipCount?: number;
+  maxResultCount?: number;
+  sorting?: string;
 }
 
-// 分页响应类型
-interface PagedResult<T> {
+// ABP 标准分页响应
+interface PagedResultDto<T> {
   items: T[];
   totalCount: number;
 }
 
-// 认证相关类型
-interface LoginRequest {
+// ABP 应用配置响应
+interface ApplicationConfigurationDto {
+  localization: Record<string, any>;
+  auth: Record<string, any>;
+  setting: Record<string, any>;
+  currentUser: Record<string, any>;
+  features: Record<string, any>;
+  globalFeatures: Record<string, any>;
+  multiTenancy: Record<string, any>;
+  currentTenant: Record<string, any>;
+  timing: Record<string, any>;
+  clock: Record<string, any>;
+  objectExtensions: Record<string, any>;
+}
+```
+
+### 认证相关类型
+```typescript
+// 登录请求 (基于 /api/account/login)
+interface LoginRequestDto {
   userNameOrEmailAddress: string;
   password: string;
   rememberMe?: boolean;
 }
 
-interface TokenResponse {
-  access_token: string;
-  token_type: string;
-  expires_in: number;
-  refresh_token?: string;
-}
-
-interface UserInfo {
-  id: string;
-  userName: string;
-  email: string;
-  roles: string[];
-  permissions: string[];
-}
-
-// OpenIddict 相关类型
-interface OidcConfig {
-  authority: string;
-  client_id: string;
-  redirect_uri: string;
-  post_logout_redirect_uri: string;
-  response_type: string;
-  scope: string;
-  automaticSilentRenew: boolean;
-  silent_redirect_uri: string;
-}
-
-interface OidcUserInfo {
-  sub: string;
-  name?: string;
-  email?: string;
-  roles?: string[];
-  permissions?: string[];
-}
-```
-
-### 业务实体类型
-```typescript
-// 彩票模块 DTO (基于现有 VueApp 组件)
-interface LotteryDto {
-  id: number;
-  creationTime: string;
-  creatorId: string;
-  lastModificationTime: string;
-  lastModifierId: string;
-  indexNo: number;
-  number: string;
-  colorType: string;
-  groupId: number;
-}
-
-// 支出分析 DTO (基于现有 VueApp 组件)
-interface ChartJSDatasetsItemDto {
-  label: string;
-  data: number[];
-}
-
-interface ChartJSDto {
-  labels: string[];
-  datasets: ChartJSDatasetsItemDto[];
-  total: number;
-  compareTotal: number;
-  differenceTotal: number;
-}
-
-// 其他业务实体
-interface ExpenditureDto {
-  id: string;
-  amount: number;
-  category: string;
-  date: string;
-  isBelongToSelf: boolean;
-  creationTime: string;
-  creatorId: string;
-}
-
-interface ConfigurationDto {
-  name: string;
-  value: string;
-  displayName: string;
+// 登录响应
+interface LoginResultDto {
+  result: number;
   description: string;
 }
 
-interface FileUploadInfoDto {
-  id: string;
-  fileName: string;
-  filePath: string;
-  fileSize: number;
-  contentType: string;
-  uploadTime: string;
+// 注册请求 (基于 /api/account/register)
+interface RegisterRequestDto {
+  userName: string;
+  emailAddress: string;
+  password: string;
+  appName: string;
 }
 
-interface Aria2DownloadDto {
+// 混合认证配置 (支持传统登录 + OpenIddict)
+interface AuthConfig {
+  // 传统认证
+  loginEndpoint: string;
+  registerEndpoint: string;
+  // OpenIddict 配置
+  authority: string;
+  clientId: string;
+  redirectUri: string;
+  postLogoutRedirectUri: string;
+  responseType: string;
+  scope: string;
+  automaticSilentRenew: boolean;
+  silentRedirectUri: string;
+}
+```
+
+### Aria2 模块类型
+```typescript
+// Aria2 状态响应 (基于实际 Schema)
+interface TellStatusResultDto {
+  id: number;
   gid: string;
   status: string;
   totalLength: string;
   completedLength: string;
+  uploadLength: string;
   downloadSpeed: string;
+  uploadSpeed: string;
+  errorCode: string;
+  errorMessage: string;
   files: Array<{
     path: string;
     length: string;
     completedLength: string;
   }>;
+}
+
+// 添加下载请求
+interface AddDownloadRequestDto {
+  urls: string[];
+  savePath?: string;
+}
+
+// 添加下载响应
+interface AddDownloadResponseDto {
+  id: string;
+}
+
+// 外部链接响应
+interface ExternalLinkResponseDto {
+  link: string;
+}
+```
+
+### 记账模块类型
+```typescript
+// 记账分类 DTO
+interface BookkeepingCategoryDto {
+  id: number;
+  category: string;
+}
+
+interface CreateUpdateBookkeepingCategoryDto {
+  category: string;
+}
+
+// 记账支出 DTO
+interface BookkeepingExpenditureDto {
+  id: number;
+  expenditureDate: string; // ISO 8601 格式
+  expenditure: number; // double 类型
+  remark: string;
+  isBelongToSelf: boolean;
+  category: BookkeepingCategoryDto;
+  categoryId: number;
+}
+
+interface CreateUpdateBookkeepingExpenditureDto {
+  expenditureDate: string;
+  expenditure: number;
+  remark?: string;
+  isBelongToSelf: boolean;
+  categoryId: number;
+}
+
+// 支出查询参数
+interface GetExpendituresRequestDto extends PagedRequestDto {
+  filter?: string;
+  categoryId?: number;
+  isBelongToSelf?: boolean;
+}
+
+// 图表数据类型 (基于实际 Schema)
+interface ChartJSDto {
+  labels: string[];
+  datasets: Array<{
+    label: string;
+    data: number[];
+  }>;
+  total: number;
+  compareTotal: number;
+  differenceTotal: number;
+}
+
+// 图表查询参数
+interface ChartDataRequestDto {
+  start?: string; // ISO 8601 日期时间
+  end?: string;
+  compareType?: CompareType; // 枚举: 0,1,2,3
+  numberType?: NumberType; // 枚举: 0,1
+}
+
+// 月度支出 DTO
+interface MonthlyExpenditureDto {
+  labels: string[];
+  totalData: number[];
+  selfData: number[];
+  nonSelfData: number[];
+  totalAverage: number;
+  selfAverage: number;
+  nonSelfAverage: number;
+}
+
+// 枚举类型
+enum CompareType {
+  None = 0,
+  PreviousPeriod = 1,
+  SamePeriodLastYear = 2,
+  Custom = 3
+}
+
+enum NumberType {
+  Amount = 0,
+  Count = 1
+}
+```
+
+### 配置管理类型
+```typescript
+interface ConfigurationInfoDto {
+  id: number;
+  moduleName: string;
+  configurationName: string;
+  configurationValue: string;
+  remark: string;
+}
+
+interface CreateUpdateConfigurationInfoDto {
+  moduleName: string;
+  configurationName: string;
+  configurationValue: string;
+  remark?: string;
+}
+```
+
+### 动态IP类型
+```typescript
+interface DynamicIPDto {
+  id: string; // UUID 格式
+  ip: string;
+  port: string;
+}
+
+interface CreateUpdateDynamicIPDto {
+  ip: string;
+  port: string;
+}
+```
+
+### 文件上传类型
+```typescript
+interface FileUploadInfoDto {
+  id: number;
+  fileName: string;
+  path: string;
+  sha1: string;
+  fileSize: number;
+}
+
+interface CreateUpdateFileUploadInfoDto {
+  fileName: string;
+  path: string;
+  sha1: string;
+  fileSize: number;
+}
+
+interface CustomFileTypeDto {
+  configurationName: string;
+  configurationValue: string;
+}
+```
+
+### 彩票模块类型
+```typescript
+// 基础彩票 DTO
+interface LotteryDto {
+  id: number;
+  indexNo: number;
+  number: string;
+  colorType: string;
+  lotteryType: string;
+  groupId: number;
+}
+
+interface CreateUpdateLotteryDto {
+  indexNo: number;
+  number: string;
+  colorType: string;
+  lotteryType: string;
+  groupId: number;
+}
+
+// 彩票组 DTO
+interface LotteryGroupDto {
+  id: number;
+  indexNo: number;
+  lotteryType: string;
+  groupId: number;
+  redNumbers: string;
+  blueNumber: string;
+}
+
+// 彩票结果 DTO
+interface LotteryResultDto {
+  id: number;
+  name: string;
+  code: string;
+  detailsLink: string;
+  videoLink: string;
+  date: string;
+  week: string;
+  red: string;
+  blue: string;
+  blue2: string;
+  sales: string;
+  poolMoney: string;
+  content: string;
+  addMoney: string;
+  addMoney2: string;
+  msg: string;
+  z2Add: string;
+  m2Add: string;
+  prizegrades: Array<{
+    type: number;
+    typeNum: string;
+    typeMoney: string;
+  }>;
+}
+
+interface CreateUpdateLotteryResultDto {
+  name: string;
+  code: string;
+  detailsLink?: string;
+  videoLink?: string;
+  date: string;
+  week: string;
+  red: string;
+  blue: string;
+  blue2?: string;
+  sales?: string;
+  poolMoney?: string;
+  content?: string;
+  addMoney?: string;
+  addMoney2?: string;
+  msg?: string;
+  z2Add?: string;
+  m2Add?: string;
+  prizegrades?: Array<{
+    type: number;
+    typeNum: string;
+    typeMoney: string;
+  }>;
+}
+
+// 彩票组合 DTO
+interface LotteryCombinationDto {
+  // 根据实际需求定义
+  [key: string]: any;
+}
+
+// 彩票常量 DTO
+interface ConstsDto {
+  // 根据实际需求定义
+  [key: string]: any;
+}
+
+// 彩票模拟相关类型
+interface GenerateRandomNumbersDto {
+  // SSQ 和 KL8 通用接口
+  [key: string]: any;
+}
+
+interface LotterySimulationDto {
+  // SSQ 和 KL8 通用响应
+  [key: string]: any;
+}
+
+interface StatisticsDto {
+  // 统计数据响应
+  [key: string]: any;
+}
+
+// 中奖统计查询参数
+interface StatisticsWinRequestDto extends PagedRequestDto {
+  purchasedPeriod?: number;
+  winningPeriod?: number;
+  lotteryType?: string;
+}
+
+interface StatisticsWinItemDto {
+  // 中奖统计项
+  [key: string]: any;
+}
+```
+
+### Telegram 模块类型
+```typescript
+// TG 登录状态响应
+interface TGLoginStatusDto {
+  status: string;
+}
+
+// TG 配置响应
+interface TGConfigDto {
+  config: string;
+}
+
+// TG 聊天响应 (403 Forbidden)
+interface TGChatsDto {
+  // 需要权限访问
+  [key: string]: any;
+}
+```
+
+### 日志模块类型
+```typescript
+interface LogEntryDto {
+  message: string;
+  timestamp: string; // ISO 8601 格式
+}
+
+interface GetLogsRequestDto {
+  // 根据实际需求定义查询参数
+  level?: string;
+  startTime?: string;
+  endTime?: string;
+  keyword?: string;
 }
 ```
 
@@ -299,81 +572,344 @@ class ApiService {
 }
 ```
 
-#### 业务模块 API 函数
+#### 基于实际 API 端点的业务模块函数
+
 ```typescript
-// 彩票模块 API (src/api/lottery.ts)
-class LotteryApi extends ApiService {
-  async getLotteries(params: GetLotteriesInput): Promise<PagedResult<LotteryDto>>;
-  async getLottery(id: number): Promise<LotteryDto>;
-  async createLottery(input: CreateLotteryDto): Promise<LotteryDto>;
-  async updateLottery(id: number, input: UpdateLotteryDto): Promise<LotteryDto>;
-  async deleteLottery(id: number): Promise<void>;
-  async getStatistics(params: StatisticsInput): Promise<StatisticsDto>;
+// ABP 应用配置 API (src/api/abp.ts)
+class AbpApi extends ApiService {
+  // GET /api/abp/application-configuration
+  async getApplicationConfiguration(): Promise<ApplicationConfigurationDto> {
+    return this.get('/api/abp/application-configuration');
+  }
 }
 
-// 记账模块 API (src/api/bookkeeping.ts)
-class BookkeepingApi extends ApiService {
-  async getExpenditures(params: GetExpendituresInput): Promise<PagedResult<ExpenditureDto>>;
-  async getChartData(input: ChartDataInput): Promise<ChartJSDto>;
-  async createExpenditure(input: CreateExpenditureDto): Promise<ExpenditureDto>;
-  async updateExpenditure(id: string, input: UpdateExpenditureDto): Promise<ExpenditureDto>;
-  async deleteExpenditure(id: string): Promise<void>;
-  async getCategories(): Promise<CategoryDto[]>;
-}
+// 认证 API (src/api/auth.ts) - 混合认证支持
+class AuthApi extends ApiService {
+  // POST /api/account/login - 传统登录
+  async login(request: LoginRequestDto): Promise<LoginResultDto> {
+    return this.post('/api/account/login', request);
+  }
 
-// 文件管理 API (src/api/fileUpload.ts)
-class FileUploadApi extends ApiService {
-  async uploadFile(file: File, onProgress?: (progress: number) => void): Promise<FileUploadInfoDto>;
-  async getFileList(params: GetFileListInput): Promise<PagedResult<FileUploadInfoDto>>;
-  async deleteFile(id: string): Promise<void>;
-  async downloadFile(id: string): Promise<Blob>;
+  // POST /api/account/register - 用户注册
+  async register(request: RegisterRequestDto): Promise<void> {
+    return this.post('/api/account/register', request);
+  }
+
+  // OpenIddict 相关方法
+  async getOidcConfig(): Promise<AuthConfig> {
+    // 返回客户端配置
+  }
+
+  async handleOidcCallback(): Promise<void> {
+    // 处理 OAuth 回调
+  }
 }
 
 // Aria2 管理 API (src/api/aria2.ts)
 class Aria2Api extends ApiService {
-  async getDownloads(): Promise<Aria2DownloadDto[]>;
-  async addDownload(input: AddDownloadInput): Promise<string>;
-  async pauseDownload(gid: string): Promise<void>;
-  async resumeDownload(gid: string): Promise<void>;
-  async removeDownload(gid: string): Promise<void>;
+  // GET /api/app/aria2 - 获取下载状态
+  async getAria2Status(params?: PagedRequestDto & { filter?: string }): Promise<PagedResultDto<TellStatusResultDto>> {
+    return this.get('/api/app/aria2', params);
+  }
+
+  // POST /api/app/aria2 - 添加下载
+  async addDownload(request: AddDownloadRequestDto): Promise<AddDownloadResponseDto> {
+    return this.post('/api/app/aria2', request);
+  }
+
+  // GET /api/app/aria2/{id}/external-link - 获取外部链接
+  async getExternalLink(id: number): Promise<ExternalLinkResponseDto> {
+    return this.get(`/api/app/aria2/${id}/external-link`);
+  }
+}
+
+// 记账分类 API (src/api/bookkeeping.ts)
+class BookkeepingCategoryApi extends ApiService {
+  // GET /api/app/bookkeeping-category
+  async getCategories(params?: PagedRequestDto): Promise<PagedResultDto<BookkeepingCategoryDto>> {
+    return this.get('/api/app/bookkeeping-category', params);
+  }
+
+  // POST /api/app/bookkeeping-category
+  async createCategory(request: CreateUpdateBookkeepingCategoryDto): Promise<BookkeepingCategoryDto> {
+    return this.post('/api/app/bookkeeping-category', request);
+  }
+
+  // PUT /api/app/bookkeeping-category/{id}
+  async updateCategory(id: number, request: CreateUpdateBookkeepingCategoryDto): Promise<BookkeepingCategoryDto> {
+    return this.put(`/api/app/bookkeeping-category/${id}`, request);
+  }
+
+  // DELETE /api/app/bookkeeping-category/{id}
+  async deleteCategory(id: number): Promise<void> {
+    return this.delete(`/api/app/bookkeeping-category/${id}`);
+  }
+}
+
+// 记账支出 API (src/api/bookkeeping.ts)
+class BookkeepingExpenditureApi extends ApiService {
+  // GET /api/app/bookkeeping-expenditure
+  async getExpenditures(params?: GetExpendituresRequestDto): Promise<PagedResultDto<BookkeepingExpenditureDto>> {
+    return this.get('/api/app/bookkeeping-expenditure', params);
+  }
+
+  // POST /api/app/bookkeeping-expenditure
+  async createExpenditure(request: CreateUpdateBookkeepingExpenditureDto): Promise<BookkeepingExpenditureDto> {
+    return this.post('/api/app/bookkeeping-expenditure', request);
+  }
+
+  // PUT /api/app/bookkeeping-expenditure/{id}
+  async updateExpenditure(id: number, request: CreateUpdateBookkeepingExpenditureDto): Promise<BookkeepingExpenditureDto> {
+    return this.put(`/api/app/bookkeeping-expenditure/${id}`, request);
+  }
+
+  // DELETE /api/app/bookkeeping-expenditure/{id}
+  async deleteExpenditure(id: number): Promise<void> {
+    return this.delete(`/api/app/bookkeeping-expenditure/${id}`);
+  }
+
+  // GET /api/app/bookkeeping-expenditure/chart - 图表数据
+  async getChartData(params?: ChartDataRequestDto): Promise<ChartJSDto> {
+    return this.get('/api/app/bookkeeping-expenditure/chart', params);
+  }
+
+  // GET /api/app/bookkeeping-expenditure/monthly-expenditure - 月度支出
+  async getMonthlyExpenditure(year?: number): Promise<MonthlyExpenditureDto> {
+    return this.get('/api/app/bookkeeping-expenditure/monthly-expenditure', { year });
+  }
 }
 
 // 配置管理 API (src/api/configuration.ts)
 class ConfigurationApi extends ApiService {
-  async getConfigurations(): Promise<ConfigurationDto[]>;
-  async getConfiguration(name: string): Promise<ConfigurationDto>;
-  async updateConfiguration(name: string, value: string): Promise<void>;
-  async createConfiguration(input: CreateConfigurationDto): Promise<ConfigurationDto>;
-  async deleteConfiguration(name: string): Promise<void>;
-}
+  // GET /api/app/configuration-info
+  async getConfigurations(params?: PagedRequestDto): Promise<PagedResultDto<ConfigurationInfoDto>> {
+    return this.get('/api/app/configuration-info', params);
+  }
 
-// Telegram API (src/api/telegram.ts)
-class TelegramApi extends ApiService {
-  async login(phoneNumber: string): Promise<TelegramLoginDto>;
-  async verifyCode(code: string): Promise<boolean>;
-  async getMediaList(params: GetMediaListInput): Promise<PagedResult<MediaDto>>;
-  async getMediaChart(params: ChartParams): Promise<MediaChartDto>;
-  async getExternalLinks(params: GetLinksInput): Promise<PagedResult<ExternalLinkDto>>;
-  async createExternalLink(input: CreateLinkDto): Promise<ExternalLinkDto>;
-  async deleteExternalLink(id: string): Promise<void>;
-}
+  // POST /api/app/configuration-info
+  async createConfiguration(request: CreateUpdateConfigurationInfoDto): Promise<ConfigurationInfoDto> {
+    return this.post('/api/app/configuration-info', request);
+  }
 
-// 日志查看 API (src/api/logViewer.ts)
-class LogViewerApi extends ApiService {
-  async getLogs(params: GetLogsInput): Promise<PagedResult<LogEntryDto>>;
-  async getLogLevels(): Promise<string[]>;
-  async clearLogs(before?: Date): Promise<void>;
-  // SignalR 连接管理
-  async connectLogHub(): Promise<HubConnection>;
-  async subscribeToLogs(callback: (log: LogEntryDto) => void): Promise<void>;
+  // PUT /api/app/configuration-info/{id}
+  async updateConfiguration(id: number, request: CreateUpdateConfigurationInfoDto): Promise<ConfigurationInfoDto> {
+    return this.put(`/api/app/configuration-info/${id}`, request);
+  }
+
+  // DELETE /api/app/configuration-info/{id}
+  async deleteConfiguration(id: number): Promise<void> {
+    return this.delete(`/api/app/configuration-info/${id}`);
+  }
 }
 
 // 动态IP API (src/api/dynamicIp.ts)
 class DynamicIpApi extends ApiService {
-  async getCurrentIp(): Promise<DynamicIpDto>;
-  async getIpHistory(params: GetIpHistoryInput): Promise<PagedResult<DynamicIpDto>>;
-  async updateIpProvider(provider: string): Promise<void>;
-  async forceRefreshIp(): Promise<DynamicIpDto>;
+  // GET /api/app/dynamic-ip
+  async getDynamicIPs(params?: PagedRequestDto): Promise<PagedResultDto<DynamicIPDto>> {
+    return this.get('/api/app/dynamic-ip', params);
+  }
+
+  // POST /api/app/dynamic-ip
+  async createDynamicIP(request: CreateUpdateDynamicIPDto): Promise<DynamicIPDto> {
+    return this.post('/api/app/dynamic-ip', request);
+  }
+
+  // PUT /api/app/dynamic-ip/{id}
+  async updateDynamicIP(id: string, request: CreateUpdateDynamicIPDto): Promise<DynamicIPDto> {
+    return this.put(`/api/app/dynamic-ip/${id}`, request);
+  }
+
+  // DELETE /api/app/dynamic-ip/{id}
+  async deleteDynamicIP(id: string): Promise<void> {
+    return this.delete(`/api/app/dynamic-ip/${id}`);
+  }
+}
+
+// 文件上传 API (src/api/fileUpload.ts)
+class FileUploadApi extends ApiService {
+  // GET /api/app/file-upload-info
+  async getFileUploadInfos(params?: PagedRequestDto): Promise<PagedResultDto<FileUploadInfoDto>> {
+    return this.get('/api/app/file-upload-info', params);
+  }
+
+  // POST /api/app/file-upload-info
+  async createFileUploadInfo(request: CreateUpdateFileUploadInfoDto): Promise<FileUploadInfoDto> {
+    return this.post('/api/app/file-upload-info', request);
+  }
+
+  // PUT /api/app/file-upload-info/{id}
+  async updateFileUploadInfo(id: number, request: CreateUpdateFileUploadInfoDto): Promise<FileUploadInfoDto> {
+    return this.put(`/api/app/file-upload-info/${id}`, request);
+  }
+
+  // DELETE /api/app/file-upload-info/{id}
+  async deleteFileUploadInfo(id: number): Promise<void> {
+    return this.delete(`/api/app/file-upload-info/${id}`);
+  }
+
+  // GET /api/app/file-upload-info/configuration-value
+  async getCustomFileTypeConfig(configurationName?: string): Promise<CustomFileTypeDto> {
+    return this.get('/api/app/file-upload-info/configuration-value', { configurationName });
+  }
+
+  // 文件上传辅助方法
+  async uploadFile(file: File, onProgress?: (progress: number) => void): Promise<FileUploadInfoDto> {
+    // 实现文件上传逻辑
+    const formData = new FormData();
+    formData.append('file', file);
+    
+    // 使用 axios 上传并监听进度
+    return this.post('/api/app/file-upload', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+      onUploadProgress: (progressEvent) => {
+        if (onProgress && progressEvent.total) {
+          const progress = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+          onProgress(progress);
+        }
+      }
+    });
+  }
+}
+
+// 彩票基础 API (src/api/lottery.ts)
+class LotteryApi extends ApiService {
+  // GET /api/app/lottery
+  async getLotteries(params?: PagedRequestDto): Promise<PagedResultDto<LotteryDto>> {
+    return this.get('/api/app/lottery', params);
+  }
+
+  // POST /api/app/lottery
+  async createLottery(request: CreateUpdateLotteryDto): Promise<LotteryDto> {
+    return this.post('/api/app/lottery', request);
+  }
+
+  // PUT /api/app/lottery/{id}
+  async updateLottery(id: number, request: CreateUpdateLotteryDto): Promise<LotteryDto> {
+    return this.put(`/api/app/lottery/${id}`, request);
+  }
+
+  // DELETE /api/app/lottery/{id}
+  async deleteLottery(id: number): Promise<void> {
+    return this.delete(`/api/app/lottery/${id}`);
+  }
+
+  // GET /api/app/lottery-grouped
+  async getLotteryGroups(params?: PagedRequestDto): Promise<PagedResultDto<LotteryGroupDto>> {
+    return this.get('/api/app/lottery-grouped', params);
+  }
+
+  // POST /api/app/lottery-grouped
+  async createLotteryGroup(request: CreateUpdateLotteryDto): Promise<LotteryGroupDto> {
+    return this.post('/api/app/lottery-grouped', request);
+  }
+
+  // GET /api/app/lottery/consts
+  async getLotteryConsts(): Promise<ConstsDto> {
+    return this.get('/api/app/lottery/consts');
+  }
+}
+
+// 彩票结果 API (src/api/lottery.ts)
+class LotteryResultApi extends ApiService {
+  // GET /api/app/lottery-result
+  async getLotteryResults(params?: PagedRequestDto): Promise<PagedResultDto<LotteryResultDto>> {
+    return this.get('/api/app/lottery-result', params);
+  }
+
+  // POST /api/app/lottery-result
+  async createLotteryResult(request: CreateUpdateLotteryResultDto): Promise<LotteryResultDto> {
+    return this.post('/api/app/lottery-result', request);
+  }
+
+  // PUT /api/app/lottery-result/{id}
+  async updateLotteryResult(id: number, request: CreateUpdateLotteryResultDto): Promise<LotteryResultDto> {
+    return this.put(`/api/app/lottery-result/${id}`, request);
+  }
+
+  // DELETE /api/app/lottery-result/{id}
+  async deleteLotteryResult(id: number): Promise<void> {
+    return this.delete(`/api/app/lottery-result/${id}`);
+  }
+}
+
+// 彩票模拟 API (src/api/lottery.ts)
+class LotterySimulationApi extends ApiService {
+  // POST /api/app/lottery/simulation/kl8
+  async generateKL8Simulation(request: GenerateRandomNumbersDto): Promise<LotterySimulationDto> {
+    return this.post('/api/app/lottery/simulation/kl8', request);
+  }
+
+  // GET /api/app/lottery/simulation/kl8/statistics
+  async getKL8Statistics(termNumber?: number): Promise<StatisticsDto> {
+    return this.get('/api/app/lottery/simulation/kl8/statistics', { termNumber });
+  }
+
+  // POST /api/app/lottery/simulation/ssq
+  async generateSSQSimulation(request: GenerateRandomNumbersDto): Promise<LotterySimulationDto> {
+    return this.post('/api/app/lottery/simulation/ssq', request);
+  }
+
+  // GET /api/app/lottery/simulation/ssq/statistics
+  async getSSQStatistics(termNumber?: number): Promise<StatisticsDto> {
+    return this.get('/api/app/lottery/simulation/ssq/statistics', { termNumber });
+  }
+}
+
+// 彩票统计 API (src/api/lottery.ts)
+class LotteryStatisticsApi extends ApiService {
+  // GET /api/app/lottery/statistics-win
+  async getWinStatistics(params?: StatisticsWinRequestDto): Promise<PagedResultDto<StatisticsWinItemDto>> {
+    return this.get('/api/app/lottery/statistics-win', params);
+  }
+}
+
+// 彩票组合 API (src/api/lottery.ts)
+class LotteryCombinationApi extends ApiService {
+  // POST /api/app/lottery-combination
+  async generateCombination(request: LotteryCombinationDto): Promise<LotteryCombinationDto> {
+    return this.post('/api/app/lottery-combination', request);
+  }
+}
+
+// Telegram API (src/api/telegram.ts)
+class TelegramApi extends ApiService {
+  // POST /api/app/tg-login/status
+  async getTGLoginStatus(): Promise<TGLoginStatusDto> {
+    return this.post('/api/app/tg-login/status');
+  }
+
+  // POST /api/app/tg-login/config
+  async getTGLoginConfig(value?: string): Promise<TGConfigDto> {
+    return this.post('/api/app/tg-login/config', null, { params: { value } });
+  }
+
+  // POST /api/app/tg-login/chats (需要权限)
+  async getTGChats(): Promise<TGChatsDto> {
+    return this.post('/api/app/tg-login/chats');
+  }
+}
+
+// 日志查看 API (src/api/logViewer.ts)
+class LogViewerApi extends ApiService {
+  // GET /api/log-sink/queuesink/logs
+  async getLogs(): Promise<LogEntryDto[]> {
+    return this.get('/api/log-sink/queuesink/logs');
+  }
+
+  // SignalR 连接管理
+  async connectLogHub(): Promise<HubConnection> {
+    const connection = new HubConnectionBuilder()
+      .withUrl('/logHub')
+      .build();
+    
+    await connection.start();
+    return connection;
+  }
+
+  async subscribeToLogs(callback: (log: LogEntryDto) => void): Promise<void> {
+    const connection = await this.connectLogHub();
+    connection.on('NewLog', callback);
+  }
 }
 ```
 
@@ -472,83 +1008,548 @@ export default defineComponent({
 })
 ```
 
-## [OpenIddict 集成方案]
-基于后端已配置的 OpenIddict 服务器，设计前端认证集成方案。
+## [混合认证集成方案]
+基于实际 API 分析，设计支持传统登录和 OpenIddict 的混合认证方案。
 
-### 认证流程设计
+### 🔍 认证策略分析
+根据 `simplified-swagger.json` 发现：
+- **传统认证端点**：`/api/account/login` 和 `/api/account/register`
+- **OpenIddict 端点**：`/connect/*` 系列（OAuth 2.0 标准端点）
+- **应用配置端点**：`/api/abp/application-configuration`（包含认证配置）
+
+### 混合认证流程设计
 ```mermaid
 sequenceDiagram
     participant U as 用户
     participant F as 前端应用
-    participant A as 认证服务器
+    participant T as 传统认证API
+    participant O as OpenIddict服务器
     participant B as 后端API
     
     U->>F: 访问应用
-    F->>F: 检查本地令牌
-    alt 令牌无效或不存在
-        F->>A: 重定向到认证页面
-        U->>A: 输入用户名密码
-        A->>F: 返回授权码
-        F->>A: 使用授权码获取令牌
-        A->>F: 返回 access_token 和 refresh_token
-        F->>F: 存储令牌信息
+    F->>F: 检查认证状态
+    
+    alt 选择传统登录
+        U->>F: 输入用户名密码
+        F->>T: POST /api/account/login
+        T->>F: 返回登录结果 + Cookie
+        F->>B: 使用 Cookie 请求 API
+    else 选择 OAuth 登录
+        F->>O: 重定向到 /connect/authorize
+        U->>O: OAuth 认证流程
+        O->>F: 返回授权码
+        F->>O: POST /connect/token (授权码换令牌)
+        O->>F: 返回 access_token
+        F->>B: 使用 Bearer Token 请求 API
     end
-    F->>B: 携带 Bearer Token 请求 API
+    
     B->>F: 返回 API 响应
 ```
 
-### 认证配置
+### 认证配置架构
 ```typescript
-// src/config/oidc.ts
-export const oidcConfig: OidcConfig = {
-  authority: 'https://localhost:44369',
-  client_id: 'DFApp_Web',
-  redirect_uri: `${window.location.origin}/auth/callback`,
-  post_logout_redirect_uri: `${window.location.origin}/`,
-  response_type: 'code',
-  scope: 'openid profile email roles permissions DFApp offline_access',
-  automaticSilentRenew: true,
-  silent_redirect_uri: `${window.location.origin}/auth/silent-callback`,
-  // 使用 PKCE 增强安全性
-  client_authentication: 'pkce'
+// src/config/auth.ts - 混合认证配置
+export interface AuthConfig {
+  // 认证模式
+  mode: 'traditional' | 'oauth' | 'hybrid';
+  
+  // 传统认证配置
+  traditional: {
+    loginEndpoint: string;
+    registerEndpoint: string;
+    logoutEndpoint: string;
+    cookieName: string;
+  };
+  
+  // OpenIddict OAuth 配置
+  oauth: {
+    authority: string;
+    clientId: string;
+    redirectUri: string;
+    postLogoutRedirectUri: string;
+    responseType: string;
+    scope: string;
+    automaticSilentRenew: boolean;
+    silentRedirectUri: string;
+    usePkce: boolean;
+  };
+  
+  // ABP 应用配置
+  abp: {
+    applicationConfigurationEndpoint: string;
+  };
+}
+
+export const authConfig: AuthConfig = {
+  mode: 'hybrid', // 支持两种认证方式
+  
+  traditional: {
+    loginEndpoint: '/api/account/login',
+    registerEndpoint: '/api/account/register',
+    logoutEndpoint: '/api/account/logout',
+    cookieName: 'XSRF-TOKEN'
+  },
+  
+  oauth: {
+    authority: 'https://localhost:44369',
+    clientId: 'DFApp_Web',
+    redirectUri: `${window.location.origin}/auth/callback`,
+    postLogoutRedirectUri: `${window.location.origin}/`,
+    responseType: 'code',
+    scope: 'openid profile email roles permissions DFApp offline_access',
+    automaticSilentRenew: true,
+    silentRedirectUri: `${window.location.origin}/auth/silent-callback`,
+    usePkce: true
+  },
+  
+  abp: {
+    applicationConfigurationEndpoint: '/api/abp/application-configuration'
+  }
 };
 ```
 
-### 认证服务类更新
+### 混合认证服务类
 ```typescript
-// src/utils/auth.ts 增强版本
-export class AuthService {
+// src/utils/auth.ts - 混合认证服务
+import { UserManager, User } from 'oidc-client-ts';
+import { authConfig } from '@/config/auth';
+import { AuthApi } from '@/api/auth';
+import { AbpApi } from '@/api/abp';
+
+export enum AuthMode {
+  Traditional = 'traditional',
+  OAuth = 'oauth'
+}
+
+export interface AuthState {
+  isAuthenticated: boolean;
+  mode: AuthMode | null;
+  user: any;
+  token: string | null;
+}
+
+export class HybridAuthService {
   private userManager: UserManager;
-  
+  private authApi: AuthApi;
+  private abpApi: AbpApi;
+  private currentMode: AuthMode | null = null;
+
   constructor() {
-    this.userManager = new UserManager(oidcConfig);
+    this.userManager = new UserManager({
+      authority: authConfig.oauth.authority,
+      client_id: authConfig.oauth.clientId,
+      redirect_uri: authConfig.oauth.redirectUri,
+      post_logout_redirect_uri: authConfig.oauth.postLogoutRedirectUri,
+      response_type: authConfig.oauth.responseType,
+      scope: authConfig.oauth.scope,
+      automaticSilentRenew: authConfig.oauth.automaticSilentRenew,
+      silent_redirect_uri: authConfig.oauth.silentRedirectUri,
+      userStore: new WebStorageStateStore({ store: window.localStorage })
+    });
+
+    this.authApi = new AuthApi();
+    this.abpApi = new AbpApi();
   }
-  
-  // OAuth 2.0 Authorization Code Flow
-  async login(): Promise<void> {
-    await this.userManager.signinRedirect();
+
+  // 获取 ABP 应用配置
+  async getApplicationConfiguration(): Promise<ApplicationConfigurationDto> {
+    return await this.abpApi.getApplicationConfiguration();
   }
-  
-  // 处理认证回调
-  async handleCallback(): Promise<User | null> {
-    return await this.userManager.signinRedirectCallback();
+
+  // 传统登录
+  async loginTraditional(credentials: LoginRequestDto): Promise<LoginResultDto> {
+    try {
+      const result = await this.authApi.login(credentials);
+      if (result.result === 1) { // 假设 1 表示成功
+        this.currentMode = AuthMode.Traditional;
+        // 传统登录通常使用 Cookie，无需手动管理 token
+      }
+      return result;
+    } catch (error) {
+      throw new Error(`传统登录失败: ${error.message}`);
+    }
   }
-  
-  // 获取当前用户
-  async getCurrentUser(): Promise<User | null> {
-    return await this.userManager.getUser();
+
+  // OAuth 登录
+  async loginOAuth(): Promise<void> {
+    try {
+      await this.userManager.signinRedirect();
+      this.currentMode = AuthMode.OAuth;
+    } catch (error) {
+      throw new Error(`OAuth 登录失败: ${error.message}`);
+    }
   }
-  
-  // 静默刷新令牌
-  async renewToken(): Promise<User | null> {
-    return await this.userManager.signinSilent();
+
+  // 处理 OAuth 回调
+  async handleOAuthCallback(): Promise<User | null> {
+    try {
+      const user = await this.userManager.signinRedirectCallback();
+      if (user) {
+        this.currentMode = AuthMode.OAuth;
+      }
+      return user;
+    } catch (error) {
+      throw new Error(`OAuth 回调处理失败: ${error.message}`);
+    }
   }
-  
-  // 登出
+
+  // 获取当前用户（OAuth）
+  async getCurrentOAuthUser(): Promise<User | null> {
+    try {
+      return await this.userManager.getUser();
+    } catch (error) {
+      console.error('获取 OAuth 用户失败:', error);
+      return null;
+    }
+  }
+
+  // 静默刷新 OAuth 令牌
+  async renewOAuthToken(): Promise<User | null> {
+    try {
+      return await this.userManager.signinSilent();
+    } catch (error) {
+      console.error('OAuth 令牌刷新失败:', error);
+      return null;
+    }
+  }
+
+  // 统一登出
   async logout(): Promise<void> {
-    await this.userManager.signoutRedirect();
+    try {
+      if (this.currentMode === AuthMode.OAuth) {
+        await this.userManager.signoutRedirect();
+      } else if (this.currentMode === AuthMode.Traditional) {
+        // 传统登出 - 清除 Cookie
+        document.cookie = `${authConfig.traditional.cookieName}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;`;
+        // 可以调用后端登出接口
+        // await this.authApi.logout();
+      }
+      this.currentMode = null;
+    } catch (error) {
+      console.error('登出失败:', error);
+      throw error;
+    }
+  }
+
+  // 检查认证状态
+  async isAuthenticated(): Promise<boolean> {
+    try {
+      // 检查 OAuth 认证
+      const oauthUser = await this.getCurrentOAuthUser();
+      if (oauthUser && !oauthUser.expired) {
+        this.currentMode = AuthMode.OAuth;
+        return true;
+      }
+
+      // 检查传统认证（通过 Cookie 或调用配置接口）
+      try {
+        const config = await this.getApplicationConfiguration();
+        if (config.currentUser && Object.keys(config.currentUser).length > 0) {
+          this.currentMode = AuthMode.Traditional;
+          return true;
+        }
+      } catch (error) {
+        // 配置接口调用失败，可能未认证
+      }
+
+      return false;
+    } catch (error) {
+      console.error('认证状态检查失败:', error);
+      return false;
+    }
+  }
+
+  // 获取当前认证模式
+  getCurrentMode(): AuthMode | null {
+    return this.currentMode;
+  }
+
+  // 获取访问令牌（OAuth 模式）
+  async getAccessToken(): Promise<string | null> {
+    if (this.currentMode === AuthMode.OAuth) {
+      const user = await this.getCurrentOAuthUser();
+      return user?.access_token || null;
+    }
+    return null;
+  }
+
+  // 用户注册
+  async register(request: RegisterRequestDto): Promise<void> {
+    return await this.authApi.register(request);
   }
 }
+
+// 导出单例实例
+export const hybridAuthService = new HybridAuthService();
+```
+
+### HTTP 拦截器集成
+```typescript
+// src/utils/http/interceptors.ts - HTTP 拦截器
+import { hybridAuthService, AuthMode } from '@/utils/auth';
+
+// 请求拦截器
+export const requestInterceptor = async (config: any) => {
+  const mode = hybridAuthService.getCurrentMode();
+  
+  if (mode === AuthMode.OAuth) {
+    // OAuth 模式：添加 Bearer Token
+    const token = await hybridAuthService.getAccessToken();
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+  } else if (mode === AuthMode.Traditional) {
+    // 传统模式：确保 Cookie 被发送
+    config.withCredentials = true;
+    
+    // 添加 CSRF Token（如果需要）
+    const csrfToken = getCsrfToken();
+    if (csrfToken) {
+      config.headers['X-CSRF-TOKEN'] = csrfToken;
+    }
+  }
+  
+  return config;
+};
+
+// 响应拦截器
+export const responseInterceptor = {
+  success: (response: any) => response,
+  
+  error: async (error: any) => {
+    if (error.response?.status === 401) {
+      // 未授权，尝试刷新令牌或重新登录
+      const mode = hybridAuthService.getCurrentMode();
+      
+      if (mode === AuthMode.OAuth) {
+        try {
+          await hybridAuthService.renewOAuthToken();
+          // 重试原请求
+          return axios.request(error.config);
+        } catch (refreshError) {
+          // 刷新失败，跳转到登录页
+          await hybridAuthService.logout();
+          window.location.href = '/login';
+        }
+      } else {
+        // 传统模式认证失败，跳转到登录页
+        await hybridAuthService.logout();
+        window.location.href = '/login';
+      }
+    }
+    
+    return Promise.reject(error);
+  }
+};
+
+// 获取 CSRF Token
+function getCsrfToken(): string | null {
+  const name = 'XSRF-TOKEN';
+  const value = `; ${document.cookie}`;
+  const parts = value.split(`; ${name}=`);
+  if (parts.length === 2) {
+    return parts.pop()?.split(';').shift() || null;
+  }
+  return null;
+}
+```
+
+### 路由守卫集成
+```typescript
+// src/router/guards.ts - 路由守卫
+import { hybridAuthService } from '@/utils/auth';
+
+export const authGuard = async (to: any, from: any, next: any) => {
+  // 检查路由是否需要认证
+  if (to.meta?.requiresAuth !== false) {
+    const isAuthenticated = await hybridAuthService.isAuthenticated();
+    
+    if (!isAuthenticated) {
+      // 未认证，重定向到登录页
+      next({
+        path: '/login',
+        query: { redirect: to.fullPath }
+      });
+      return;
+    }
+  }
+  
+  next();
+};
+```
+
+### 登录页面组件
+```typescript
+// src/views/login/index.vue - 登录页面
+<template>
+  <div class="login-container">
+    <el-card class="login-card">
+      <template #header>
+        <h2>用户登录</h2>
+      </template>
+      
+      <!-- 登录方式选择 -->
+      <el-radio-group v-model="loginMode" class="login-mode-selector">
+        <el-radio-button label="traditional">账号密码</el-radio-button>
+        <el-radio-button label="oauth">OAuth 登录</el-radio-button>
+      </el-radio-group>
+      
+      <!-- 传统登录表单 -->
+      <el-form 
+        v-if="loginMode === 'traditional'"
+        ref="loginFormRef"
+        :model="loginForm"
+        :rules="loginRules"
+        @submit.prevent="handleTraditionalLogin"
+      >
+        <el-form-item prop="userNameOrEmailAddress">
+          <el-input
+            v-model="loginForm.userNameOrEmailAddress"
+            placeholder="用户名或邮箱"
+            prefix-icon="User"
+          />
+        </el-form-item>
+        
+        <el-form-item prop="password">
+          <el-input
+            v-model="loginForm.password"
+            type="password"
+            placeholder="密码"
+            prefix-icon="Lock"
+            show-password
+          />
+        </el-form-item>
+        
+        <el-form-item>
+          <el-checkbox v-model="loginForm.rememberMe">
+            记住我
+          </el-checkbox>
+        </el-form-item>
+        
+        <el-form-item>
+          <el-button 
+            type="primary" 
+            :loading="loading"
+            @click="handleTraditionalLogin"
+            style="width: 100%"
+          >
+            登录
+          </el-button>
+        </el-form-item>
+      </el-form>
+      
+      <!-- OAuth 登录 -->
+      <div v-else class="oauth-login">
+        <el-button 
+          type="primary" 
+          :loading="loading"
+          @click="handleOAuthLogin"
+          style="width: 100%"
+        >
+          使用 OAuth 登录
+        </el-button>
+      </div>
+      
+      <!-- 注册链接 -->
+      <div class="register-link">
+        <router-link to="/register">没有账号？立即注册</router-link>
+      </div>
+    </el-card>
+  </div>
+</template>
+
+<script setup lang="ts">
+import { ref, reactive } from 'vue';
+import { useRouter } from 'vue-router';
+import { ElMessage } from 'element-plus';
+import { hybridAuthService } from '@/utils/auth';
+import type { LoginRequestDto } from '@/types/auth';
+
+const router = useRouter();
+const loading = ref(false);
+const loginMode = ref<'traditional' | 'oauth'>('traditional');
+
+const loginForm = reactive<LoginRequestDto>({
+  userNameOrEmailAddress: '',
+  password: '',
+  rememberMe: false
+});
+
+const loginRules = {
+  userNameOrEmailAddress: [
+    { required: true, message: '请输入用户名或邮箱', trigger: 'blur' }
+  ],
+  password: [
+    { required: true, message: '请输入密码', trigger: 'blur' }
+  ]
+};
+
+// 传统登录
+const handleTraditionalLogin = async () => {
+  loading.value = true;
+  try {
+    const result = await hybridAuthService.loginTraditional(loginForm);
+    if (result.result === 1) {
+      ElMessage.success('登录成功');
+      router.push('/dashboard');
+    } else {
+      ElMessage.error(result.description || '登录失败');
+    }
+  } catch (error) {
+    ElMessage.error(error.message || '登录失败');
+  } finally {
+    loading.value = false;
+  }
+};
+
+// OAuth 登录
+const handleOAuthLogin = async () => {
+  loading.value = true;
+  try {
+    await hybridAuthService.loginOAuth();
+    // OAuth 登录会重定向，不需要额外处理
+  } catch (error) {
+    ElMessage.error(error.message || 'OAuth 登录失败');
+    loading.value = false;
+  }
+};
+</script>
+```
+
+### 认证回调页面
+```typescript
+// src/views/auth/callback.vue - OAuth 回调处理
+<template>
+  <div class="auth-callback">
+    <el-loading-directive v-loading="true" text="正在处理登录..." />
+  </div>
+</template>
+
+<script setup lang="ts">
+import { onMounted } from 'vue';
+import { useRouter } from 'vue-router';
+import { ElMessage } from 'element-plus';
+import { hybridAuthService } from '@/utils/auth';
+
+const router = useRouter();
+
+onMounted(async () => {
+  try {
+    const user = await hybridAuthService.handleOAuthCallback();
+    if (user) {
+      ElMessage.success('登录成功');
+      // 获取重定向地址
+      const redirect = new URLSearchParams(window.location.search).get('redirect');
+      router.push(redirect || '/dashboard');
+    } else {
+      throw new Error('登录失败');
+    }
+  } catch (error) {
+    ElMessage.error(error.message || 'OAuth 登录处理失败');
+    router.push('/login');
+  }
+});
+</script>
 ```
 
 ## [Dependencies]
@@ -747,49 +1748,161 @@ DFApp.Vue/tests/
   - 添加加载状态和用户反馈机制
 
 ### 🔄 第三阶段：组件迁移（第6-9周）
+*基于 API 复杂度重新排序迁移优先级*
 
-#### 3.1 高优先级组件迁移（第6周）
-- [ ] **支出分析组件**
-  - 迁移 `VueApp/src/Expenditure/Analysis/App.vue`
+#### 3.1 简单模块优先迁移（第6周）
+**优先级：⭐⭐⭐ 高**
+- [ ] **配置管理模块**
+  - API 复杂度：⭐ 简单（标准 CRUD）
+  - 转换 `Pages/Configuration/Index.cshtml` → `views/configuration/index.vue`
+  - 实现配置的增删改查功能
+  - 集成 `ConfigurationApi` 服务
+
+- [ ] **动态IP管理模块**
+  - API 复杂度：⭐ 简单（标准 CRUD + UUID 主键）
+  - 创建 `views/dynamicIp/index.vue`
+  - 实现动态IP的管理功能
+  - 集成 `DynamicIpApi` 服务
+
+- [ ] **记账分类管理**
+  - API 复杂度：⭐ 简单（标准 CRUD）
+  - 创建 `views/bookkeeping/category/index.vue`
+  - 实现分类的增删改查
+  - 集成 `BookkeepingCategoryApi` 服务
+
+#### 3.2 中等复杂度模块（第7周）
+**优先级：⭐⭐ 中等**
+- [ ] **记账支出管理**
+  - API 复杂度：⭐⭐ 中等（CRUD + 查询过滤 + 关联分类）
+  - 转换 `Pages/Bookkeeping/Expenditure/Index.cshtml` → `views/bookkeeping/expenditure/index.vue`
+  - 实现支出的增删改查和过滤功能
+  - 集成 `BookkeepingExpenditureApi` 服务
+  - 添加分类选择和日期筛选
+
+- [ ] **支出分析组件迁移**
+  - API 复杂度：⭐⭐ 中等（图表数据 + 月度统计）
+  - 迁移 `VueApp/src/Expenditure/Analysis/App.vue` → `views/bookkeeping/expenditure/analysis.vue`
   - 重构为 Composition API
-  - 替换 ABP 服务调用为 HTTP API 调用
-  - 集成到 `views/bookkeeping/expenditure/analysis.vue`
+  - 集成图表数据 API (`/chart` 和 `/monthly-expenditure`)
+  - 使用 ECharts 重构图表展示
 
-- [ ] **文件上传组件**
-  - 迁移 `VueApp/src/FileUpDownload/Upload/App.vue`
-  - 实现新的文件上传 API 集成
-  - 添加上传进度和错误处理
+- [ ] **Aria2 下载管理**
+  - API 复杂度：⭐⭐ 中等（状态查询 + 下载操作 + 外部链接）
+  - 转换 `Pages/Aria2/Index.cshtml` → `views/aria2/index.vue`
+  - 实现下载任务的查看、添加和管理
+  - 集成 `Aria2Api` 服务
 
-#### 3.2 Telegram 模块迁移（第7周）
-- [ ] **TG 登录组件**
-  - 迁移 `VueApp/src/TG/Login/App.vue`
-  - 更新为 API 调用方式
+#### 3.3 复杂模块迁移（第8周）
+**优先级：⭐⭐ 中等偏高**
+- [ ] **文件上传管理**
+  - API 复杂度：⭐⭐⭐ 复杂（文件上传 + 进度监控 + 配置管理）
+  - 迁移 `VueApp/src/FileUpDownload/Upload/App.vue` → `views/fileUpload/index.vue`
+  - 实现文件上传功能和进度显示
+  - 集成自定义文件类型配置
+  - 添加文件列表管理
 
-- [ ] **媒体管理组件**
-  - 迁移 `VueApp/src/Media/Chart/App.vue`
-  - 迁移 `VueApp/src/Media/ExternalLink/App.vue`
+- [ ] **日志查看器**
+  - API 复杂度：⭐⭐⭐ 复杂（实时日志 + SignalR 集成）
+  - 迁移 `VueApp/src/LogSink/QueueSink/App.vue` → `views/logViewer/index.vue`
+  - 集成 SignalR 实时日志推送
+  - 实现日志过滤和搜索功能
+
+- [ ] **Telegram 基础功能**
+  - API 复杂度：⭐⭐ 中等（状态查询 + 配置获取）
+  - 迁移 `VueApp/src/TG/Login/App.vue` → `views/telegram/login/index.vue`
+  - 实现 TG 登录状态检查和配置管理
+  - 集成 `TelegramApi` 服务
+
+#### 3.4 高复杂度模块（第9周）
+**优先级：⭐ 最复杂**
+- [ ] **彩票数据管理**
+  - API 复杂度：⭐⭐⭐⭐ 非常复杂（多个子模块 + 复杂关联）
+  - 转换 `Pages/Lottery/Index.cshtml` → `views/lottery/index.vue`
+  - 实现彩票基础数据、结果、组合的管理
+  - 集成多个彩票相关 API 服务
+  - 实现彩票常量和分组功能
+
+- [ ] **彩票模拟功能**
+  - API 复杂度：⭐⭐⭐⭐ 非常复杂（SSQ + KL8 双模拟系统）
+  - 创建 `views/lottery/simulation/ssq/index.vue`
+  - 创建 `views/lottery/simulation/kl8/index.vue`
+  - 实现随机数生成和统计分析
+  - 集成 `LotterySimulationApi` 服务
+
+- [ ] **彩票统计分析**
+  - API 复杂度：⭐⭐⭐⭐ 非常复杂（中奖统计 + 复杂查询）
+  - 创建 `views/lottery/statistics/index.vue`
+  - 实现中奖统计和数据分析
+  - 集成 `LotteryStatisticsApi` 服务
+  - 添加复杂的查询和过滤功能
+
+#### 3.5 媒体管理模块（第9周末）
+**优先级：⭐⭐ 中等（依赖 Telegram 权限）**
+- [ ] **媒体图表组件**
+  - 迁移 `VueApp/src/Media/Chart/App.vue` → `views/telegram/media/chart.vue`
   - 重构图表组件使用 ECharts
+  - 注意：需要 TG 聊天权限（403 Forbidden）
 
-#### 3.3 主要页面转换（第8-9周）
-- [ ] **首页重构**
+- [ ] **外部链接管理**
+  - 迁移 `VueApp/src/Media/ExternalLink/App.vue` → `views/telegram/media/externalLink.vue`
+  - 实现外部链接的管理功能
+  - 注意：需要相应的 API 权限
+
+#### 3.6 仪表板整合（第9周末）
+**优先级：⭐⭐⭐ 高（展示整体效果）**
+- [ ] **首页仪表板**
   - 转换 `Pages/Index.cshtml` → `views/dashboard/index.vue`
-  - 实现仪表板数据获取
-  - 添加统计图表和概览信息
+  - 整合各模块的关键数据展示
+  - 实现统计图表和概览信息
+  - 展示迁移成果的综合效果
 
-- [ ] **记账模块页面**
-  - 转换支出管理页面
-  - 转换分类管理页面
-  - 集成已迁移的分析组件
+### 📊 迁移复杂度评估表
 
-- [ ] **彩票模块页面**
-  - 转换彩票数据管理页面
-  - 转换统计分析页面
-  - 转换模拟功能页面
+| 模块 | API 复杂度 | 前端复杂度 | 迁移优先级 | 预估工时 |
+|------|------------|------------|------------|----------|
+| 配置管理 | ⭐ | ⭐ | 🔥 最高 | 0.5天 |
+| 动态IP | ⭐ | ⭐ | 🔥 最高 | 0.5天 |
+| 记账分类 | ⭐ | ⭐ | 🔥 最高 | 0.5天 |
+| 记账支出 | ⭐⭐ | ⭐⭐ | 🔥 高 | 1天 |
+| 支出分析 | ⭐⭐ | ⭐⭐⭐ | 🔥 高 | 1.5天 |
+| Aria2管理 | ⭐⭐ | ⭐⭐ | 🔥 高 | 1天 |
+| 文件上传 | ⭐⭐⭐ | ⭐⭐⭐ | ⚡ 中 | 2天 |
+| 日志查看 | ⭐⭐⭐ | ⭐⭐⭐ | ⚡ 中 | 2天 |
+| TG登录 | ⭐⭐ | ⭐⭐ | ⚡ 中 | 1天 |
+| 彩票数据 | ⭐⭐⭐⭐ | ⭐⭐⭐ | 🐌 低 | 3天 |
+| 彩票模拟 | ⭐⭐⭐⭐ | ⭐⭐⭐⭐ | 🐌 低 | 4天 |
+| 彩票统计 | ⭐⭐⭐⭐ | ⭐⭐⭐⭐ | 🐌 低 | 3天 |
+| 媒体管理 | ⭐⭐ | ⭐⭐ | ⚡ 中 | 1.5天 |
+| 仪表板 | ⭐⭐ | ⭐⭐⭐ | 🔥 高 | 1.5天 |
 
-- [ ] **系统管理页面**
-  - 转换配置管理页面
-  - 转换 Aria2 管理页面
-  - 转换日志查看器页面
+### 🎯 迁移策略优化
+
+#### 快速见效策略
+1. **第6周**：完成所有简单模块（配置、动态IP、记账分类）
+   - 快速建立信心和成就感
+   - 验证 API 集成和基础架构
+   - 为复杂模块积累经验
+
+2. **第7周**：攻克中等复杂度模块
+   - 记账支出和分析（业务核心功能）
+   - Aria2 管理（实用工具功能）
+   - 建立完整的业务流程
+
+3. **第8周**：处理技术挑战模块
+   - 文件上传（技术复杂度高）
+   - 日志查看（SignalR 集成）
+   - TG 基础功能
+
+4. **第9周**：完成最复杂模块
+   - 彩票系统（功能最复杂）
+   - 媒体管理（权限依赖）
+   - 仪表板整合（展示效果）
+
+#### 风险缓解措施
+- **并行开发**：简单模块可以并行进行
+- **增量交付**：每完成一个模块立即集成测试
+- **回滚准备**：保持原有页面可用，直到新页面稳定
+- **用户反馈**：及时收集用户对新界面的反馈
 
 ### 🧪 第四阶段：集成测试与优化（第10周）
 
