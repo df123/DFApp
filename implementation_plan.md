@@ -15,15 +15,6 @@
 - ✅ 支持独立部署和横向扩展
 - ✅ 为未来功能扩展提供更好的技术基础
 
-### OpenIddict 认证服务器配置分析
-基于提供的配置信息，后端已配置：
-- **授权端点**：`https://localhost:44369/connect/authorize`
-- **令牌端点**：`https://localhost:44369/connect/token`
-- **用户信息端点**：`https://localhost:44369/connect/userinfo`
-- **支持的授权模式**：authorization_code, implicit, password, client_credentials, refresh_token
-- **支持的响应类型**：code, token, id_token 及其组合
-- **支持的作用域**：openid, offline_access, email, profile, phone, roles, address, DFApp
-
 ## [Types]
 基于 `simplified-swagger.json` 实际 API 规范定义的类型系统。
 
@@ -81,20 +72,11 @@ interface RegisterRequestDto {
   appName: string;
 }
 
-// 混合认证配置 (支持传统登录 + OpenIddict)
+// 传统认证配置
 interface AuthConfig {
   // 传统认证
   loginEndpoint: string;
   registerEndpoint: string;
-  // OpenIddict 配置
-  authority: string;
-  clientId: string;
-  redirectUri: string;
-  postLogoutRedirectUri: string;
-  responseType: string;
-  scope: string;
-  automaticSilentRenew: boolean;
-  silentRedirectUri: string;
 }
 ```
 
@@ -439,7 +421,6 @@ interface GetLogsRequestDto {
 
 #### API 服务层
 - `DFApp.Vue/src/api/base.ts` - API 基础服务类
-- `DFApp.Vue/src/api/auth.ts` - 认证相关 API (集成 OpenIddict)
 - `DFApp.Vue/src/api/lottery.ts` - 彩票模块 API
 - `DFApp.Vue/src/api/bookkeeping.ts` - 记账模块 API
 - `DFApp.Vue/src/api/configuration.ts` - 配置模块 API
@@ -448,12 +429,6 @@ interface GetLogsRequestDto {
 - `DFApp.Vue/src/api/dynamicIp.ts` - 动态IP API
 - `DFApp.Vue/src/api/logViewer.ts` - 日志查看 API
 - `DFApp.Vue/src/api/telegram.ts` - Telegram 模块 API
-
-#### 认证相关
-- `DFApp.Vue/src/config/oidc.ts` - OpenIddict 配置
-- `DFApp.Vue/src/utils/oidc.ts` - OpenID Connect 工具类
-- `DFApp.Vue/src/views/auth/callback.vue` - 认证回调页面
-- `DFApp.Vue/src/views/auth/silent-callback.vue` - 静默刷新回调页面
 
 #### 业务页面组件
 - `DFApp.Vue/src/views/dashboard/index.vue` - 仪表板首页
