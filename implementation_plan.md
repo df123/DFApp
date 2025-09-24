@@ -1679,40 +1679,6 @@ DFApp.Vue/tests/
 - **第四阶段**：集成测试与优化（1周）
 - **第五阶段**：部署上线（1周）
 
-### 🔧 第一阶段：基础设施搭建（第1-2周）
-
-#### 1.1 项目配置更新
-- [ ] **依赖包管理**
-  - 添加 `oidc-client-ts`, `@microsoft/signalr`, `crypto-js` 等新依赖
-  - 更新现有依赖到最新稳定版本
-  - 配置 TypeScript 类型支持
-
-- [ ] **环境配置**
-  - 更新 `.env.development` 和 `.env.production`
-  - 配置 API 基础地址和认证服务器地址
-  - 设置 OAuth 客户端配置参数
-
-- [ ] **构建配置**
-  - 更新 `vite.config.ts` 代理设置
-  - 配置开发环境和生产环境构建选项
-  - 优化打包体积和加载性能
-
-#### 1.2 认证基础架构
-- [ ] **OpenIddict 集成**
-  - 创建 `DFApp.Vue/src/config/oidc.ts` 配置文件
-  - 实现 `DFApp.Vue/src/utils/oidc.ts` 认证工具类
-  - 集成 oidc-client-ts 库
-
-- [ ] **认证页面**
-  - 创建认证回调页面 `/auth/callback`
-  - 创建静默刷新页面 `/auth/silent-callback`
-  - 更新登录页面集成 OAuth 流程
-
-#### 1.3 HTTP 客户端增强
-- [ ] **现有 HTTP 工具类优化**
-  - 集成 OpenIddict 令牌管理到现有 `DFApp.Vue/src/utils/http/index.ts`
-  - 添加自动令牌刷新机制
-  - 实现请求重试和错误处理
 
 ### 🔌 第二阶段：认证与API层（第3-5周）
 
