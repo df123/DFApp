@@ -575,7 +575,7 @@ class ApiService {
 #### 基于实际 API 端点的业务模块函数
 
 ```typescript
-// ABP 应用配置 API (src/api/abp.ts)
+// ABP 应用配置 API (DFApp.Vue/src/api/abp.ts)
 class AbpApi extends ApiService {
   // GET /api/abp/application-configuration
   async getApplicationConfiguration(): Promise<ApplicationConfigurationDto> {
@@ -583,7 +583,7 @@ class AbpApi extends ApiService {
   }
 }
 
-// 认证 API (src/api/auth.ts) - 混合认证支持
+// 认证 API (DFApp.Vue/src/api/auth.ts) - 混合认证支持
 class AuthApi extends ApiService {
   // POST /api/account/login - 传统登录
   async login(request: LoginRequestDto): Promise<LoginResultDto> {
@@ -605,7 +605,7 @@ class AuthApi extends ApiService {
   }
 }
 
-// Aria2 管理 API (src/api/aria2.ts)
+// Aria2 管理 API (DFApp.Vue/src/api/aria2.ts)
 class Aria2Api extends ApiService {
   // GET /api/app/aria2 - 获取下载状态
   async getAria2Status(params?: PagedRequestDto & { filter?: string }): Promise<PagedResultDto<TellStatusResultDto>> {
@@ -623,7 +623,7 @@ class Aria2Api extends ApiService {
   }
 }
 
-// 记账分类 API (src/api/bookkeeping.ts)
+// 记账分类 API (DFApp.Vue/src/api/bookkeeping.ts)
 class BookkeepingCategoryApi extends ApiService {
   // GET /api/app/bookkeeping-category
   async getCategories(params?: PagedRequestDto): Promise<PagedResultDto<BookkeepingCategoryDto>> {
@@ -646,7 +646,7 @@ class BookkeepingCategoryApi extends ApiService {
   }
 }
 
-// 记账支出 API (src/api/bookkeeping.ts)
+// 记账支出 API (DFApp.Vue/src/api/bookkeeping.ts)
 class BookkeepingExpenditureApi extends ApiService {
   // GET /api/app/bookkeeping-expenditure
   async getExpenditures(params?: GetExpendituresRequestDto): Promise<PagedResultDto<BookkeepingExpenditureDto>> {
@@ -679,7 +679,7 @@ class BookkeepingExpenditureApi extends ApiService {
   }
 }
 
-// 配置管理 API (src/api/configuration.ts)
+// 配置管理 API (DFApp.Vue/src/api/configuration.ts)
 class ConfigurationApi extends ApiService {
   // GET /api/app/configuration-info
   async getConfigurations(params?: PagedRequestDto): Promise<PagedResultDto<ConfigurationInfoDto>> {
@@ -702,7 +702,7 @@ class ConfigurationApi extends ApiService {
   }
 }
 
-// 动态IP API (src/api/dynamicIp.ts)
+// 动态IP API (DFApp.Vue/src/api/dynamicIp.ts)
 class DynamicIpApi extends ApiService {
   // GET /api/app/dynamic-ip
   async getDynamicIPs(params?: PagedRequestDto): Promise<PagedResultDto<DynamicIPDto>> {
@@ -725,7 +725,7 @@ class DynamicIpApi extends ApiService {
   }
 }
 
-// 文件上传 API (src/api/fileUpload.ts)
+// 文件上传 API (DFApp.Vue/src/api/fileUpload.ts)
 class FileUploadApi extends ApiService {
   // GET /api/app/file-upload-info
   async getFileUploadInfos(params?: PagedRequestDto): Promise<PagedResultDto<FileUploadInfoDto>> {
@@ -771,7 +771,7 @@ class FileUploadApi extends ApiService {
   }
 }
 
-// 彩票基础 API (src/api/lottery.ts)
+// 彩票基础 API (DFApp.Vue/src/api/lottery.ts)
 class LotteryApi extends ApiService {
   // GET /api/app/lottery
   async getLotteries(params?: PagedRequestDto): Promise<PagedResultDto<LotteryDto>> {
@@ -809,7 +809,7 @@ class LotteryApi extends ApiService {
   }
 }
 
-// 彩票结果 API (src/api/lottery.ts)
+// 彩票结果 API (DFApp.Vue/src/api/lottery.ts)
 class LotteryResultApi extends ApiService {
   // GET /api/app/lottery-result
   async getLotteryResults(params?: PagedRequestDto): Promise<PagedResultDto<LotteryResultDto>> {
@@ -832,7 +832,7 @@ class LotteryResultApi extends ApiService {
   }
 }
 
-// 彩票模拟 API (src/api/lottery.ts)
+// 彩票模拟 API (DFApp.Vue/src/api/lottery.ts)
 class LotterySimulationApi extends ApiService {
   // POST /api/app/lottery/simulation/kl8
   async generateKL8Simulation(request: GenerateRandomNumbersDto): Promise<LotterySimulationDto> {
@@ -855,7 +855,7 @@ class LotterySimulationApi extends ApiService {
   }
 }
 
-// 彩票统计 API (src/api/lottery.ts)
+// 彩票统计 API (DFApp.Vue/src/api/lottery.ts)
 class LotteryStatisticsApi extends ApiService {
   // GET /api/app/lottery/statistics-win
   async getWinStatistics(params?: StatisticsWinRequestDto): Promise<PagedResultDto<StatisticsWinItemDto>> {
@@ -863,7 +863,7 @@ class LotteryStatisticsApi extends ApiService {
   }
 }
 
-// 彩票组合 API (src/api/lottery.ts)
+// 彩票组合 API (DFApp.Vue/src/api/lottery.ts)
 class LotteryCombinationApi extends ApiService {
   // POST /api/app/lottery-combination
   async generateCombination(request: LotteryCombinationDto): Promise<LotteryCombinationDto> {
@@ -871,7 +871,7 @@ class LotteryCombinationApi extends ApiService {
   }
 }
 
-// Telegram API (src/api/telegram.ts)
+// Telegram API (DFApp.Vue/src/api/telegram.ts)
 class TelegramApi extends ApiService {
   // POST /api/app/tg-login/status
   async getTGLoginStatus(): Promise<TGLoginStatusDto> {
@@ -889,7 +889,7 @@ class TelegramApi extends ApiService {
   }
 }
 
-// 日志查看 API (src/api/logViewer.ts)
+// 日志查看 API (DFApp.Vue/src/api/logViewer.ts)
 class LogViewerApi extends ApiService {
   // GET /api/log-sink/queuesink/logs
   async getLogs(): Promise<LogEntryDto[]> {
@@ -1048,7 +1048,7 @@ sequenceDiagram
 
 ### 认证配置架构
 ```typescript
-// src/config/auth.ts - 混合认证配置
+// DFApp.Vue/src/config/auth.ts - 混合认证配置
 export interface AuthConfig {
   // 认证模式
   mode: 'traditional' | 'oauth' | 'hybrid';
@@ -1110,7 +1110,7 @@ export const authConfig: AuthConfig = {
 
 ### 混合认证服务类
 ```typescript
-// src/utils/auth.ts - 混合认证服务
+// DFApp.Vue/src/utils/auth.ts - 混合认证服务
 import { UserManager, User } from 'oidc-client-ts';
 import { authConfig } from '@/config/auth';
 import { AuthApi } from '@/api/auth';
@@ -1285,7 +1285,7 @@ export const hybridAuthService = new HybridAuthService();
 
 ### HTTP 拦截器集成
 ```typescript
-// src/utils/http/interceptors.ts - HTTP 拦截器
+// DFApp.Vue/src/utils/http/interceptors.ts - HTTP 拦截器
 import { hybridAuthService, AuthMode } from '@/utils/auth';
 
 // 请求拦截器
@@ -1356,7 +1356,7 @@ function getCsrfToken(): string | null {
 
 ### 路由守卫集成
 ```typescript
-// src/router/guards.ts - 路由守卫
+// DFApp.Vue/src/router/guards.ts - 路由守卫
 import { hybridAuthService } from '@/utils/auth';
 
 export const authGuard = async (to: any, from: any, next: any) => {
@@ -1380,7 +1380,7 @@ export const authGuard = async (to: any, from: any, next: any) => {
 
 ### 登录页面组件
 ```typescript
-// src/views/login/index.vue - 登录页面
+// DFApp.Vue/src/views/login/index.vue - 登录页面
 <template>
   <div class="login-container">
     <el-card class="login-card">
@@ -1518,7 +1518,7 @@ const handleOAuthLogin = async () => {
 
 ### 认证回调页面
 ```typescript
-// src/views/auth/callback.vue - OAuth 回调处理
+// DFApp.Vue/src/views/auth/callback.vue - OAuth 回调处理
 <template>
   <div class="auth-callback">
     <el-loading-directive v-loading="true" text="正在处理登录..." />
@@ -1699,8 +1699,8 @@ DFApp.Vue/tests/
 
 #### 1.2 认证基础架构
 - [ ] **OpenIddict 集成**
-  - 创建 `src/config/oidc.ts` 配置文件
-  - 实现 `src/utils/oidc.ts` 认证工具类
+  - 创建 `DFApp.Vue/src/config/oidc.ts` 配置文件
+  - 实现 `DFApp.Vue/src/utils/oidc.ts` 认证工具类
   - 集成 oidc-client-ts 库
 
 - [ ] **认证页面**
@@ -1710,7 +1710,7 @@ DFApp.Vue/tests/
 
 #### 1.3 HTTP 客户端增强
 - [ ] **现有 HTTP 工具类优化**
-  - 集成 OpenIddict 令牌管理到现有 `src/utils/http/index.ts`
+  - 集成 OpenIddict 令牌管理到现有 `DFApp.Vue/src/utils/http/index.ts`
   - 添加自动令牌刷新机制
   - 实现请求重试和错误处理
 
@@ -1718,23 +1718,23 @@ DFApp.Vue/tests/
 
 #### 2.1 API 服务层架构
 - [ ] **API 基础类**
-  - 创建 `src/api/base.ts` 基础服务类
+  - 创建 `DFApp.Vue/src/api/base.ts` 基础服务类
   - 实现通用的 CRUD 操作方法
   - 添加统一的错误处理和响应格式化
 
 - [ ] **业务模块 API**
-  - `src/api/bookkeeping.ts` - 记账模块 API
-  - `src/api/lottery.ts` - 彩票模块 API
-  - `src/api/aria2.ts` - Aria2 下载管理 API
-  - `src/api/fileUpload.ts` - 文件上传管理 API
-  - `src/api/configuration.ts` - 配置管理 API
-  - `src/api/telegram.ts` - Telegram 模块 API
+  - `DFApp.Vue/src/api/bookkeeping.ts` - 记账模块 API
+  - `DFApp.Vue/src/api/lottery.ts` - 彩票模块 API
+  - `DFApp.Vue/src/api/aria2.ts` - Aria2 下载管理 API
+  - `DFApp.Vue/src/api/fileUpload.ts` - 文件上传管理 API
+  - `DFApp.Vue/src/api/configuration.ts` - 配置管理 API
+  - `DFApp.Vue/src/api/telegram.ts` - Telegram 模块 API
 
 #### 2.2 类型定义系统
 - [ ] **类型文件创建**
-  - `src/types/api.ts` - API 响应和请求类型
-  - `src/types/business.ts` - 业务实体类型
-  - `src/types/auth.ts` - 认证相关类型
+  - `DFApp.Vue/src/types/api.ts` - API 响应和请求类型
+  - `DFApp.Vue/src/types/business.ts` - 业务实体类型
+  - `DFApp.Vue/src/types/auth.ts` - 认证相关类型
 
 #### 2.3 路由与权限系统
 - [ ] **路由模块重构**
@@ -2028,12 +2028,12 @@ DFApp.Vue/tests/
    - 更新 Vite 代理配置
 
 3. **OpenIddict 配置文件创建**
-   - 创建 `src/config/oidc.ts`
+   - 创建 `DFApp.Vue/src/config/oidc.ts`
    - 基于提供的服务器配置设置客户端参数
 
 #### 第二优先级（下周开始）
 1. **API 基础服务层**
-   - 创建 `src/api/base.ts` 基础服务类
+   - 创建 `DFApp.Vue/src/api/base.ts` 基础服务类
    - 集成现有 HTTP 客户端
    - 添加认证令牌管理
 
