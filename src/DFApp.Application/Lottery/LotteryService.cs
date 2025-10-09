@@ -50,7 +50,12 @@ namespace DFApp.Lottery
             _lotteryPrizegradesRepository = lotteryPrizegradesRepository;
         }
 
-        public async Task<PagedResultDto<StatisticsWinItemDto>> GetStatisticsWinItem(string? purchasedPeriod, string? winningPeriod, string lotteryType)
+        public async Task<PagedResultDto<StatisticsWinItemDto>> GetStatisticsWinItem(StatisticsWinItemRequestDto input)
+        {
+            return await GetStatisticsWinItemInternal(input.PurchasedPeriod, input.WinningPeriod, input.LotteryType, input.SkipCount, input.MaxResultCount);
+        }
+
+        private async Task<PagedResultDto<StatisticsWinItemDto>> GetStatisticsWinItemInternal(string? purchasedPeriod, string? winningPeriod, string lotteryType, int? skipCount, int? maxResultCount)
         {
             PagedResultDto<StatisticsWinItemDto> pagedResultDto = new PagedResultDto<StatisticsWinItemDto>();
             List<LotteryResult> lotteryResults = await GetLotteryResultData(winningPeriod, lotteryType);
@@ -121,8 +126,30 @@ namespace DFApp.Lottery
                     }
                 }
             }
-            pagedResultDto.Items = results;
-            pagedResultDto.TotalCount = pagedResultDto.Items.Count;
+
+            // 应用排序
+            if (!string.IsNullOrWhiteSpace(winningPeriod))
+            {
+                results = results.OrderByDescending(x => x.Code).ToList();
+            }
+            else
+            {
+                results = results.OrderByDescending(x => x.Code).ToList();
+            }
+
+            // 设置总数
+            pagedResultDto.TotalCount = results.Count;
+
+            // 应用分页
+            if (skipCount.HasValue && maxResultCount.HasValue)
+            {
+                pagedResultDto.Items = results.Skip(skipCount.Value).Take(maxResultCount.Value).ToList();
+            }
+            else
+            {
+                pagedResultDto.Items = results;
+            }
+
             return pagedResultDto;
         }
 
@@ -485,7 +512,15 @@ namespace DFApp.Lottery
                 dto.PurchasedPeriod = dto.WinningPeriod;
             }
 
-            return await this.GetStatisticsWinItem(dto.PurchasedPeriod, dto.WinningPeriod, dto.LotteryType);
+            // 创建分页请求DTO
+            var requestDto = new StatisticsWinItemRequestDto
+            {
+                PurchasedPeriod = dto.PurchasedPeriod,
+                WinningPeriod = dto.WinningPeriod,
+                LotteryType = dto.LotteryType
+            };
+
+            return await this.GetStatisticsWinItem(requestDto);
         }
 
         public async Task<PagedResultDto<LotteryGroupDto>> GetListGrouped(PagedAndSortedResultRequestDto input)
