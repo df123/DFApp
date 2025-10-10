@@ -291,3 +291,4 @@ src/DFApp.Web/DFApp.db-wal
 /src/DFApp.Web/Video/
 .vscode/
 /.continue/
+src/Upload/
