@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Threading.Tasks;
-using DFApp.Web.SerilogSink;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -24,7 +23,6 @@ public class Program
             .Enrich.FromLogContext()
             .WriteTo.Async(c => c.File("Logs/logs.txt"))
             .WriteTo.Async(c => c.Console())
-            .WriteTo.Async(c => c.QueueSink())
             .CreateLogger();
 
         try

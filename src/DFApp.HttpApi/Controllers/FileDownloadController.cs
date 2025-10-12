@@ -1,17 +1,11 @@
-﻿using DFApp.Helper;
-using DFApp.Media;
+﻿using DFApp.Media;
 using DFApp.Permissions;
-using DFApp.Queue;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.StaticFiles;
-using System;
 using System.IO;
-using System.Text;
 using System.Threading.Tasks;
 using Volo.Abp;
-using Volo.Abp.BlobStoring;
-using Volo.Abp.Imaging;
 using Volo.Abp.ObjectMapping;
 
 namespace DFApp.Web.Controller
@@ -22,63 +16,15 @@ namespace DFApp.Web.Controller
     {
         private readonly IMediaInfoService _mediaInfoService;
         private readonly IObjectMapper _objectMapper;
-        private readonly IImageResizer _imageResizer;
         private readonly FileExtensionContentTypeProvider _typeProvider;
 
         public FileDownloadController(IMediaInfoService mediaInfoService,
-            IObjectMapper objectMapper,
-            IImageResizer imageResizer)
+            IObjectMapper objectMapper)
         {
             _mediaInfoService = mediaInfoService;
             _objectMapper = objectMapper;
-            _imageResizer = imageResizer;
             _typeProvider = new FileExtensionContentTypeProvider();
             _typeProvider.Mappings[".iso"] = "application/octet-stream";
-        }
-
-        [HttpGet("thumbnail")]
-        [Authorize(DFAppPermissions.Medias.Download)]
-        public async Task<IActionResult> GeTthumbnail(int id)
-        {
-            var dto = await _mediaInfoService.GetAsync(id);
-
-            Check.NotNull(dto, nameof(dto));
-
-            Check.NotNullOrWhiteSpace(dto.SavePath, nameof(dto.SavePath));
-
-            _typeProvider.TryGetContentType(dto.SavePath, out var contentType);
-            Check.NotNullOrWhiteSpace(contentType, nameof(contentType));
-
-            if (contentType.Contains("video"))
-            {
-                return NoContent();
-            }
-
-            var fileDownloadName = Path.GetFileName(dto.SavePath);
-            Check.NotNullOrWhiteSpace(fileDownloadName, nameof(fileDownloadName));
-
-            using FileStream fs = new FileStream(dto.SavePath, FileMode.Open, FileAccess.Read, FileShare.Read, 4096, true);
-            var result = await _imageResizer.ResizeAsync(fs, new ImageResizeArgs()
-            {
-                Width = 256,
-                Height = 256,
-                Mode = ImageResizeMode.BoxPad
-            },
-            mimeType: contentType);
-
-            if (result.State == ImageProcessState.Done)
-            {
-                return new FileStreamResult(result.Result, contentType!)
-                {
-                    FileDownloadName = fileDownloadName,
-                    EnableRangeProcessing = true
-                };
-            }
-            else
-            {
-                return NoContent();
-            }
-
         }
 
         [HttpGet]

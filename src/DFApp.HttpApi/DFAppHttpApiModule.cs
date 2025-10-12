@@ -8,7 +8,6 @@ using Volo.Abp.Modularity;
 using Volo.Abp.PermissionManagement.HttpApi;
 using Volo.Abp.SettingManagement;
 using Volo.Abp.TenantManagement;
-using Volo.Abp.Imaging;
 
 namespace DFApp;
 
@@ -21,8 +20,6 @@ namespace DFApp;
     typeof(AbpFeatureManagementHttpApiModule),
     typeof(AbpSettingManagementHttpApiModule)
     )]
-[DependsOn(typeof(AbpImagingAbstractionsModule))]
-[DependsOn(typeof(AbpImagingImageSharpModule))]
 public class DFAppHttpApiModule : AbpModule
 {
     public override void ConfigureServices(ServiceConfigurationContext context)
