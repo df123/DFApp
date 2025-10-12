@@ -18,9 +18,10 @@ namespace DFApp.Lottery
         Task<LotteryDto> CreateLotteryBatch(List<CreateUpdateLotteryDto> dtos);
         Task<List<StatisticsWinDto>> GetStatisticsWin(string? purchasedPeriod, string? winningPeriod,string lotteryType);
         Task<PagedResultDto<StatisticsWinItemDto>> GetStatisticsWinItemInputDto(StatisticsInputDto dto);
-        Task<PagedResultDto<StatisticsWinItemDto>> GetStatisticsWinItem(string? purchasedPeriod, string? winningPeriod, string lotteryType);
+        Task<PagedResultDto<StatisticsWinItemDto>> GetStatisticsWinItem(StatisticsWinItemRequestDto input);
         Task<List<LotteryDto>> CalculateCombination(LotteryCombinationDto dto);
         List<ConstsDto> GetLotteryConst();
+        Task<PagedResultDto<LotteryGroupDto>> GetListGrouped(PagedAndSortedResultRequestDto input);
     }
 
 }

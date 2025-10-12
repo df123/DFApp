@@ -84,3 +84,4 @@ jobs:
         files: DFApp-linux-x64.zip
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  

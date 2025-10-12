@@ -12,7 +12,6 @@ using Volo.Abp.PermissionManagement.Identity;
 using Volo.Abp.PermissionManagement.OpenIddict;
 using Volo.Abp.SettingManagement;
 using Volo.Abp.TenantManagement;
-using Volo.CmsKit;
 using Volo.Abp.BlobStoring.Database;
 
 namespace DFApp;
@@ -30,7 +29,6 @@ namespace DFApp;
     typeof(AbpTenantManagementDomainModule),
     typeof(AbpEmailingModule)
 )]
-[DependsOn(typeof(CmsKitDomainModule))]
     [DependsOn(typeof(BlobStoringDatabaseDomainModule))]
     public class DFAppDomainModule : AbpModule
 {

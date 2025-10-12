@@ -38,6 +38,8 @@
     "Lottery:LotteryBlue": "蓝球",
     "Lottery:LotteryRed": "红球",
     "Lottery:LotteryCode": "开奖日期",
-    "Lottery:BatchCreateTitle": "批量添加"
+    "Lottery:BatchCreateTitle": "批量添加",
+    "LotteryRedNumbers": "红球",
+    "LotteryBlueNumbers": "蓝球"
   }
 }

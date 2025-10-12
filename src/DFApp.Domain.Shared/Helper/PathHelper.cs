@@ -41,12 +41,16 @@ namespace DFApp.Helper
             return strs[position];
         }
 
-
         public static string[] GetFilesSortedByPathLength(string[] filePaths)
         {
-            Array.Sort(filePaths, (x, y) => x.Length.CompareTo(y.Length));
-            return filePaths.Reverse().ToArray();
+            if (filePaths == null) throw new ArgumentNullException(nameof(filePaths));
+            Array.Sort(filePaths, (x, y) =>
+            {
+                int lx = x?.Length ?? 0;
+                int ly = y?.Length ?? 0;
+                return ly.CompareTo(lx);
+            });
+            return filePaths;
         }
-
     }
 }

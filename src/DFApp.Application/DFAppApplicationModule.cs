@@ -6,7 +6,6 @@ using Volo.Abp.Modularity;
 using Volo.Abp.PermissionManagement;
 using Volo.Abp.SettingManagement;
 using Volo.Abp.TenantManagement;
-using Volo.CmsKit;
 using Volo.Abp.BackgroundWorkers.Quartz;
 
 namespace DFApp;
@@ -21,7 +20,6 @@ namespace DFApp;
     typeof(AbpFeatureManagementApplicationModule),
     typeof(AbpSettingManagementApplicationModule)
     )]
-[DependsOn(typeof(CmsKitApplicationModule))]
     [DependsOn(typeof(AbpBackgroundWorkersQuartzModule))]
     public class DFAppApplicationModule : AbpModule
 {

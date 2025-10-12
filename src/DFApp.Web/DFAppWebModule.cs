@@ -37,7 +37,6 @@ using Volo.Abp.BackgroundWorkers;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using DFApp.Permissions;
-using Volo.CmsKit.Web;
 using Volo.Abp.Imaging;
 using Volo.Abp.BackgroundWorkers.Quartz;
 using DFApp.Background;
@@ -60,7 +59,6 @@ namespace DFApp.Web;
     typeof(AbpBackgroundWorkersModule),
     typeof(AbpBackgroundWorkersQuartzModule)
     )]
-[DependsOn(typeof(CmsKitWebModule))]
 [DependsOn(typeof(AbpImagingAbstractionsModule))]
 [DependsOn(typeof(AbpImagingImageSharpModule))]
 [DependsOn(typeof(AbpAspNetCoreSignalRModule))]
@@ -122,6 +120,30 @@ public class DFAppWebModule : AbpModule
         ConfigureNavigationServices();
         ConfigureAutoApiControllers();
         ConfigureSwaggerServices(context.Services);
+
+        context.Services.AddCors(options =>
+        {
+            options.AddDefaultPolicy(builder =>
+            {
+                builder.WithOrigins(
+                        "http://localhost:8848",
+                        "https://localhost:8848"
+                    )
+                    .AllowAnyHeader()
+                    .AllowAnyMethod()
+                    .AllowCredentials();
+            });
+        });
+
+        PreConfigure<OpenIddictBuilder>(builder =>
+        {
+            builder.AddValidation(options =>
+            {
+                options.AddAudiences("DFApp_Web");
+                options.UseLocalServer();
+                options.UseAspNetCore();
+            });
+        });
 
         context.Services.AddSingleton(new AppsettingsHelper(context.Services.GetConfiguration()));
         context.Services.AddHttpClient();
@@ -220,14 +242,14 @@ public class DFAppWebModule : AbpModule
         });
     }
 
-        private void ConfigureAutoApiControllers()
+    private void ConfigureAutoApiControllers()
+    {
+        Configure<AbpAspNetCoreMvcOptions>(options =>
         {
-            Configure<AbpAspNetCoreMvcOptions>(options =>
-            {
-                options.ConventionalControllers.Create(typeof(DFAppApplicationModule).Assembly);
-                options.ConventionalControllers.Create(typeof(DFAppWebModule).Assembly);
-            });
-        }
+            options.ConventionalControllers.Create(typeof(DFAppApplicationModule).Assembly);
+            options.ConventionalControllers.Create(typeof(DFAppWebModule).Assembly);
+        });
+    }
 
     private void ConfigureSwaggerServices(IServiceCollection services)
     {
@@ -261,6 +283,7 @@ public class DFAppWebModule : AbpModule
         app.UseCorrelationId();
         app.UseStaticFiles();
         app.UseRouting();
+        app.UseCors();
 
         if (!env.IsDevelopment())
         {
@@ -286,7 +309,7 @@ public class DFAppWebModule : AbpModule
         app.UseAuditing();
         app.UseAbpSerilogEnrichers();
         app.UseConfiguredEndpoints();
-        
+
 
     }
 }

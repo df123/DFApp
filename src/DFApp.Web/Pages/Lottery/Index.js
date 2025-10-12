@@ -9,7 +9,7 @@ $(function () {
             paging: true,
             order: [[1, "desc"]],
             scrollX: true,
-            ajax: abp.libs.datatables.createAjax(dFApp.lottery.lottery.getList),
+            ajax: abp.libs.datatables.createAjax(dFApp.lottery.lottery.getListGrouped),
             columnDefs: [
                 {
                     title: l('Actions'),
@@ -42,10 +42,6 @@ $(function () {
                     }
                 },
                 {
-                    title: l('LotteryId'),
-                    data: "id"
-                },
-                {
                     title: l('LotteryIndexNo'),
                     data: "indexNo"
                 },
@@ -54,21 +50,12 @@ $(function () {
                     data: "lotteryType"
                 },
                 {
-                    title: l('LotteryNumber'),
-                    data: "number"
+                    title: l('LotteryRedNumbers'),
+                    data: "redNumbers"
                 },
                 {
-                    title: l('LotteryColorType'),
-                    data: "colorType",
-                    render: function (data, type) {
-                        if (data == '0') {
-                            return '红球';
-                        }
-                        else {
-                            return '蓝球';
-                        }
-                        return data;
-                    }
+                    title: l('LotteryBlueNumbers'),
+                    data: "blueNumber"
                 },
                 {
                     title: l('LotteryGroupId'),
@@ -77,11 +64,6 @@ $(function () {
                 {
                     title: l('LotteryCreationTime'),
                     data: "creationTime",
-                    dataFormat: "datetime"
-                },
-                {
-                    title: l('LotteryLastModificationTime'),
-                    data: "lastModificationTime",
                     dataFormat: "datetime"
                 }
             ]

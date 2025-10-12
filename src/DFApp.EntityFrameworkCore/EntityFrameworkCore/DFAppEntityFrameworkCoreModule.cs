@@ -13,7 +13,6 @@ using Volo.Abp.OpenIddict.EntityFrameworkCore;
 using Volo.Abp.PermissionManagement.EntityFrameworkCore;
 using Volo.Abp.SettingManagement.EntityFrameworkCore;
 using Volo.Abp.TenantManagement.EntityFrameworkCore;
-using Volo.CmsKit.EntityFrameworkCore;
 using Volo.Abp.BlobStoring.Database.EntityFrameworkCore;
 
 namespace DFApp.EntityFrameworkCore;
@@ -29,7 +28,6 @@ namespace DFApp.EntityFrameworkCore;
     typeof(AbpTenantManagementEntityFrameworkCoreModule),
     typeof(AbpFeatureManagementEntityFrameworkCoreModule)
     )]
-[DependsOn(typeof(CmsKitEntityFrameworkCoreModule))]
 [DependsOn(typeof(BlobStoringDatabaseEntityFrameworkCoreModule))]
 
 #if DEBUG
