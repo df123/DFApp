@@ -25,14 +25,6 @@ jobs:
       uses: actions/setup-dotnet@v4
       with:
         dotnet-version: 9.0.x
-    - name: Setup Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: '20'
-    - name: Setup pnpm
-      uses: pnpm/action-setup@v4
-      with:
-        version: 9
     # - name: Restore dependencies
     #   run: dotnet restore
     # - name: Build
@@ -67,22 +59,6 @@ jobs:
     #     dotnet run
     #   shell: bash
       
-    - name: Install dependencies for DFApp.Vue
-      run: |
-        cd ./DFApp.Vue/
-        pnpm install
-
-    - name: Build DFApp.Vue
-      run: |
-        cd ./DFApp.Vue/
-        pnpm build
-
-    - name: Zip DFApp.Vue dist files
-      run: |
-        cd ./DFApp.Vue/dist
-        zip -r ../../DFApp-Vue-dist.zip .
-      shell: bash
-
     - name: Publish project
       run: |
         cd ./src/DFApp.Web/
@@ -105,8 +81,7 @@ jobs:
         name: Preview Release ${{ github.run_number }}
         draft: false
         prerelease: true
-        files: |
-          DFApp-linux-x64.zip
-          DFApp-Vue-dist.zip
+        files: DFApp-linux-x64.zip
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  
