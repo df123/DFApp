@@ -14,5 +14,6 @@ namespace DFApp.Configuration
     {
         Task<string> GetConfigurationInfoValue(string configurationName, string moduleName);
         Task<List<ConfigurationInfoDto>> GetAllParametersInModule(string moduleName);
+        Task<string> GetRemainingDiskSpaceAsync();
     }
 }

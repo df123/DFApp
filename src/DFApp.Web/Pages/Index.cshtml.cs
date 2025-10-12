@@ -1,6 +1,5 @@
 ﻿using System.Threading.Tasks;
 using DFApp.Configuration;
-using DFApp.Helper;
 
 namespace DFApp.Web.Pages;
 
@@ -16,13 +15,7 @@ public class IndexModel : DFAppPageModel
 
     public async Task OnGetAsync()
     {
-        RemainingDiskSpace = await GetRemainingDiskSpaceAsync();
-    }
-
-    private async Task<string> GetRemainingDiskSpaceAsync()
-    {
-        string SaveDrive = await _configurationInfoService.GetConfigurationInfoValue("SaveDrive",string.Empty);
-        return StorageUnitConversionHelper.ByteToGB(SpaceHelper.GetAnyDriveAvailable(SaveDrive)).ToString("F2") + "GB";
+        RemainingDiskSpace = await _configurationInfoService.GetRemainingDiskSpaceAsync();
     }
 
 
