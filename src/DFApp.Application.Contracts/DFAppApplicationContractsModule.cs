@@ -6,7 +6,6 @@ using Volo.Abp.ObjectExtending;
 using Volo.Abp.PermissionManagement;
 using Volo.Abp.SettingManagement;
 using Volo.Abp.TenantManagement;
-using Volo.CmsKit;
 
 namespace DFApp;
 
@@ -20,7 +19,6 @@ namespace DFApp;
     typeof(AbpTenantManagementApplicationContractsModule),
     typeof(AbpObjectExtendingModule)
 )]
-[DependsOn(typeof(CmsKitApplicationContractsModule))]
     public class DFAppApplicationContractsModule : AbpModule
 {
     public override void PreConfigureServices(ServiceConfigurationContext context)

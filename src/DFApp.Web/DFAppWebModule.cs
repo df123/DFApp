@@ -37,7 +37,6 @@ using Volo.Abp.BackgroundWorkers;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using DFApp.Permissions;
-using Volo.CmsKit.Web;
 using Volo.Abp.Imaging;
 using Volo.Abp.BackgroundWorkers.Quartz;
 using DFApp.Background;
@@ -60,7 +59,6 @@ namespace DFApp.Web;
     typeof(AbpBackgroundWorkersModule),
     typeof(AbpBackgroundWorkersQuartzModule)
     )]
-[DependsOn(typeof(CmsKitWebModule))]
 [DependsOn(typeof(AbpImagingAbstractionsModule))]
 [DependsOn(typeof(AbpImagingImageSharpModule))]
 [DependsOn(typeof(AbpAspNetCoreSignalRModule))]
