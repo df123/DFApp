@@ -35,13 +35,8 @@ using DFApp.Queue;
 using DFApp.Helper;
 using Volo.Abp.BackgroundWorkers;
 using Microsoft.AspNetCore.HttpOverrides;
-using Microsoft.AspNetCore.Mvc.RazorPages;
-using DFApp.Permissions;
-using Volo.Abp.Imaging;
 using Volo.Abp.BackgroundWorkers.Quartz;
 using DFApp.Background;
-using Volo.Abp.AspNetCore.SignalR;
-using DFApp.Web.SignalRHub;
 namespace DFApp.Web;
 
 [DependsOn(
@@ -59,9 +54,6 @@ namespace DFApp.Web;
     typeof(AbpBackgroundWorkersModule),
     typeof(AbpBackgroundWorkersQuartzModule)
     )]
-[DependsOn(typeof(AbpImagingAbstractionsModule))]
-[DependsOn(typeof(AbpImagingImageSharpModule))]
-[DependsOn(typeof(AbpAspNetCoreSignalRModule))]
 public class DFAppWebModule : AbpModule
 {
     public override void PreConfigureServices(ServiceConfigurationContext context)
@@ -147,7 +139,6 @@ public class DFAppWebModule : AbpModule
 
         context.Services.AddSingleton(new AppsettingsHelper(context.Services.GetConfiguration()));
         context.Services.AddHttpClient();
-        context.Services.AddSingleton<SinkHub>();
 
         context.Services.AddSingleton<IBackgroundTaskQueue, BackgroundTaskQueue>();
         context.Services.AddHostedService<BackgroundQueueHostedService>();
@@ -164,28 +155,6 @@ public class DFAppWebModule : AbpModule
         {
             options.IsDynamicClaimsEnabled = true;
         });
-
-        Configure<RazorPagesOptions>(options =>
-        {
-            options.Conventions.AuthorizePage("/DynamicIP/Index", DFAppPermissions.DynamicIP.Default);
-            options.Conventions.AuthorizePage("/LogSink/QueueSink/Index", DFAppPermissions.LogSink.Default);
-            options.Conventions.AuthorizePage("/LogSink/SignalRSink/Index", DFAppPermissions.LogSink.Default);
-            options.Conventions.AuthorizePage("/Lottery/Index", DFAppPermissions.Lottery.Default);
-            options.Conventions.AuthorizePage("/Lottery/Result/Index", DFAppPermissions.Lottery.Default);
-            options.Conventions.AuthorizePage("/Lottery/SpecifyPeriod/Index", DFAppPermissions.Lottery.Default);
-            options.Conventions.AuthorizePage("/Lottery/Statistics/Index", DFAppPermissions.Lottery.Default);
-            options.Conventions.AuthorizePage("/Lottery/StatisticsItem/Index", DFAppPermissions.Lottery.Default);
-            options.Conventions.AuthorizePage("/Lottery/Simulation/Index", DFAppPermissions.Lottery.Default);
-            options.Conventions.AuthorizePage("/Lottery/BatchCreate/Index", DFAppPermissions.Lottery.Default);
-            options.Conventions.AuthorizeFolder("/TG", DFAppPermissions.Medias.Default);
-            options.Conventions.AuthorizeFolder("/Bookkeeping/Category", DFAppPermissions.BookkeepingCategory.Default);
-            options.Conventions.AuthorizeFolder("/Bookkeeping/Expenditure", DFAppPermissions.BookkeepingExpenditure.Default);
-            options.Conventions.AuthorizeFolder("/FileUploadDownload", DFAppPermissions.FileUploadDownload.Default);
-            options.Conventions.AuthorizeFolder("/Aria2", DFAppPermissions.Aria2.Default);
-            options.Conventions.AuthorizePage("/LogViewer", DFAppPermissions.LogViewer.Default);
-
-        });
-
     }
 
     private void ConfigureUrls(IConfiguration configuration)
@@ -200,7 +169,6 @@ public class DFAppWebModule : AbpModule
     {
         Configure<AbpBundlingOptions>(options =>
         {
-            options.Mode = BundlingMode.Bundle;
             options.StyleBundles.Configure(
                 LeptonXLiteThemeBundles.Styles.Global,
                 bundle =>

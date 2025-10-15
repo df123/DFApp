@@ -1,4 +1,5 @@
 ﻿using DFApp.Permissions;
+using DFApp.Helper;
 using Microsoft.AspNetCore.Authorization;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -66,6 +67,13 @@ namespace DFApp.Configuration
         {
             var datas = await _configurationInfoRepository.GetAllParametersInModule(moduleName);
             return ObjectMapper.Map<List<ConfigurationInfo>, List<ConfigurationInfoDto>>(datas);
+        }
+
+        [Authorize(DFAppPermissions.ConfigurationInfo.Default)]
+        public async Task<string> GetRemainingDiskSpaceAsync()
+        {
+            string SaveDrive = await _configurationInfoRepository.GetConfigurationInfoValue("SaveDrive", string.Empty);
+            return StorageUnitConversionHelper.ByteToGB(SpaceHelper.GetAnyDriveAvailable(SaveDrive)).ToString("F2") + "GB";
         }
 
     }
