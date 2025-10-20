@@ -573,5 +573,18 @@ namespace DFApp.Lottery
 
             return new PagedResultDto<LotteryGroupDto>(totalCount, lotteryGroupDtos);
         }
+
+        public async Task<int> GetLatestIndexNoByType(string lotteryType)
+        {
+            Check.NotNullOrWhiteSpace(lotteryType, nameof(lotteryType));
+
+            var query = await _lotteryInforepository.GetQueryableAsync();
+            var latestLottery = query
+                .Where(x => x.LotteryType == lotteryType)
+                .OrderByDescending(x => x.IndexNo)
+                .FirstOrDefault();
+
+            return latestLottery?.IndexNo ?? 0;
+        }
     }
 }
