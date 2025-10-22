@@ -22,6 +22,7 @@ namespace DFApp.Lottery
         Task<List<LotteryDto>> CalculateCombination(LotteryCombinationDto dto);
         List<ConstsDto> GetLotteryConst();
         Task<PagedResultDto<LotteryGroupDto>> GetListGrouped(PagedAndSortedResultRequestDto input);
+        Task<int> GetLatestIndexNoByType(string lotteryType);
     }
 
 }
