@@ -104,7 +104,7 @@ namespace DFApp.Lottery
         /// <summary>
         /// 生成双色球复式组合
         /// </summary>
-        public List<string> GenerateSSQCombinations(List<string> reds, List<string> blues)
+        private List<string> GenerateSSQCombinations(List<string> reds, List<string> blues)
         {
             if (reds == null || blues == null)
                 throw new ArgumentException("红球和蓝球列表不能为空");
@@ -148,7 +148,7 @@ namespace DFApp.Lottery
         /// <summary>
         /// 生成快乐8复式组合
         /// </summary>
-        public List<string> GenerateKL8Combinations(List<string> numbers, LotteryKL8PlayType playType)
+        private List<string> GenerateKL8Combinations(List<string> numbers, LotteryKL8PlayType playType)
         {
             if (numbers == null)
                 throw new ArgumentException("号码列表不能为空");
@@ -168,7 +168,7 @@ namespace DFApp.Lottery
         /// <summary>
         /// 验证复式投注输入
         /// </summary>
-        public async Task<string> ValidateCompoundInput(CompoundLotteryInputDto dto)
+        private async Task<string> ValidateCompoundInput(CompoundLotteryInputDto dto)
         {
             if (dto == null)
                 return "输入数据不能为空";
