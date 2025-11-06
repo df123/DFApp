@@ -586,5 +586,65 @@ namespace DFApp.Lottery
 
             return latestLottery?.IndexNo ?? 0;
         }
+
+        [Authorize(DFAppPermissions.Lottery.Delete)]
+        public async Task DeleteLotteryGroup(long groupId)
+        {
+            Check.NotNull(groupId, nameof(groupId));
+            
+            var query = await _lotteryInforepository.GetQueryableAsync();
+            var groupLotteries = query.Where(x => x.GroupId == groupId).ToList();
+            
+            if (groupLotteries.Any())
+            {
+                using (var uom = _unitOfWorkManager.Begin(true, true))
+                {
+                    try
+                    {
+                        foreach (var lottery in groupLotteries)
+                        {
+                            await _lotteryInforepository.DeleteAsync(lottery);
+                        }
+                        await uom.CompleteAsync();
+                    }
+                    catch (Exception)
+                    {
+                        await uom.RollbackAsync();
+                        throw;
+                    }
+                }
+            }
+        }
+
+        [Authorize(DFAppPermissions.Lottery.Delete)]
+        public async Task DeleteLotteryGroupByIndexNoAndGroupId(int indexNo, long groupId)
+        {
+            Check.NotNull(groupId, nameof(groupId));
+            Check.NotNull(indexNo, nameof(indexNo));
+            
+            var query = await _lotteryInforepository.GetQueryableAsync();
+            // 按期号和组号删除，确保只删除指定期内的指定组
+            var groupLotteries = query.Where(x => x.IndexNo == indexNo && x.GroupId == groupId).ToList();
+            
+            if (groupLotteries.Any())
+            {
+                using (var uom = _unitOfWorkManager.Begin(true, true))
+                {
+                    try
+                    {
+                        foreach (var lottery in groupLotteries)
+                        {
+                            await _lotteryInforepository.DeleteAsync(lottery);
+                        }
+                        await uom.CompleteAsync();
+                    }
+                    catch (Exception)
+                    {
+                        await uom.RollbackAsync();
+                        throw;
+                    }
+                }
+            }
+        }
     }
 }
