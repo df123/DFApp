@@ -23,6 +23,7 @@ namespace DFApp.Lottery
         List<ConstsDto> GetLotteryConst();
         Task<PagedResultDto<LotteryGroupDto>> GetListGrouped(PagedAndSortedResultRequestDto input);
         Task<int> GetLatestIndexNoByType(string lotteryType);
+        Task DeleteLotteryGroupByIndexNoAndGroupId(int indexNo, long groupId);
     }
 
 }
