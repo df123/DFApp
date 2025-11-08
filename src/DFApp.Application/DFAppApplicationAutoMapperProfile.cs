@@ -47,8 +47,12 @@ public class DFAppApplicationAutoMapperProfile : Profile
         CreateMap<ResultItemDto, CreateUpdateLotteryResultDto>();
         CreateMap<PrizegradesItemDto, CreateUpdateLotteryPrizegradesDto>();
 
-        CreateMap<ResultItemDto, LotteryResult>();
-        CreateMap<PrizegradesItemDto, LotteryPrizegrades>();
+        CreateMap<ResultItemDto, LotteryResult>()
+            .ForMember(dest => dest.Prizegrades, opt => opt.Ignore()); // 忽略Prizegrades，手动处理
+        
+        CreateMap<PrizegradesItemDto, LotteryPrizegrades>()
+            .ForMember(dest => dest.LotteryResultId, opt => opt.Ignore()) // 忽略外键，手动设置
+            .ForMember(dest => dest.Result, opt => opt.Ignore()); // 忽略导航属性，手动设置
 
         CreateMap<BookkeepingCategory, BookkeepingCategoryDto>();
         CreateMap<BookkeepingCategoryDto, BookkeepingCategory>();

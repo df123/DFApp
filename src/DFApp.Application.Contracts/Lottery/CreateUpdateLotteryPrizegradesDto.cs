@@ -6,7 +6,7 @@ namespace DFApp.Lottery
 {
     public class CreateUpdateLotteryPrizegradesDto
     {
-        public int Type { get; set; }
+        public string? Type { get; set; }
 
         public string? TypeNum { get; set; }
 
