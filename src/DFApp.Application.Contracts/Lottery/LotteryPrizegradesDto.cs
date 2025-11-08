@@ -7,7 +7,7 @@ namespace DFApp.Lottery
 {
     public class LotteryPrizegradesDto : AuditedEntityDto<long>
     {
-        public int Type { get; set; }
+        public string? Type { get; set; }
 
         public string? TypeNum { get; set; }
 
