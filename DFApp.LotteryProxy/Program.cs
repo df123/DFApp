@@ -127,7 +127,7 @@ static void ConfigureMiddleware(WebApplication app)
 static void ConfigureEndpoints(WebApplication app)
 {
     var logger = app.Services.GetRequiredService<ILogger<Program>>();
-    var proxyService = app.Services.GetRequiredService<LotteryProxyService>();
+    var proxyService = app.Services.CreateScope().ServiceProvider.GetRequiredService<LotteryProxyService>();
 
     // 健康检查端点
     app.MapGet("/api/health", () => 
@@ -156,6 +156,17 @@ static void ConfigureEndpoints(WebApplication app)
         if (queryString.StartsWith('?'))
         {
             queryString = queryString.Substring(1);
+        }
+        
+        // 检查查询字符串是否为空
+        if (string.IsNullOrWhiteSpace(queryString))
+        {
+            logger.LogWarning("查询字符串为空，返回错误");
+            return Results.Problem(
+                detail: "查询字符串不能为空",
+                statusCode: 400,
+                title: "请求参数错误"
+            );
         }
         
         logger.LogInformation("查询字符串: {QueryString}", queryString);
