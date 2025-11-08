@@ -31,11 +31,14 @@ public class LotteryProxyService
     /// <returns>响应内容</returns>
     public async Task<IResult> ProxyRequestAsync(string queryString)
     {
-        var targetUrl = $"{_proxySettings.TargetBaseUrl}/cwl_admin/front/cwlkj/search/kjxx/findDrawNotice?{queryString}";
+        var targetUrl = $"/cwl_admin/front/cwlkj/search/kjxx/findDrawNotice?{queryString}";
         
         _logger.LogInformation("代理请求到目标URL: {TargetUrl}", targetUrl);
 
         using var client = _httpClientFactory.CreateClient();
+        
+        // 设置BaseAddress以确保HttpClient可以处理相对URL
+        client.BaseAddress = new Uri(_proxySettings.TargetBaseUrl);
         
         // 配置请求头，模拟真实浏览器
         ConfigureClientHeaders(client);
