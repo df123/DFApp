@@ -1,5 +1,6 @@
 using DFApp.Permissions;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
@@ -22,17 +23,20 @@ namespace DFApp.Lottery
         private readonly IObjectMapper _mapper;
         private readonly IHttpClientFactory _httpClientFactory;
         private readonly IUnitOfWorkManager _unitOfWorkManager;
+        private readonly IConfiguration _configuration;
 
         public LotteryDataFetchService(
             IRepository<LotteryResult, long> lotteryResultRepository,
             IObjectMapper mapper,
             IHttpClientFactory httpClientFactory,
-            IUnitOfWorkManager unitOfWorkManager)
+            IUnitOfWorkManager unitOfWorkManager,
+            IConfiguration configuration)
         {
             _lotteryResultRepository = lotteryResultRepository;
             _mapper = mapper;
             _httpClientFactory = httpClientFactory;
             _unitOfWorkManager = unitOfWorkManager;
+            _configuration = configuration;
         }
 
         public async Task<LotteryDataFetchResponseDto> FetchLotteryData(LotteryDataFetchRequestDto input)
@@ -44,22 +48,20 @@ namespace DFApp.Lottery
             {
                 Logger.LogInformation($"开始获取彩票数据 - 彩票类型: {input.LotteryType}, 开始日期: {input.DayStart}, 结束日期: {input.DayEnd}, 页码: {input.PageNo}");
                 
-                // 构建请求URL
-                string requestUrl = $"https://www.cwl.gov.cn/cwl_admin/front/cwlkj/search/kjxx/findDrawNotice?name={input.LotteryType}&issueCount=&issueStart=&issueEnd=&dayStart={input.DayStart}&dayEnd={input.DayEnd}&pageNo={input.PageNo}&pageSize=30&week=&systemType=PC";
+                // 使用代理服务器获取数据
+                string proxyServerUrl = LotteryConst.GetLotteryProxyUrl(_configuration);
+                string queryString = $"name={input.LotteryType}&issueCount=&issueStart=&issueEnd=&dayStart={input.DayStart}&dayEnd={input.DayEnd}&pageNo={input.PageNo}&pageSize=30&week=&systemType=PC";
+                string requestUrl = $"{proxyServerUrl}/api/proxy/lottery/findDrawNotice?{queryString}";
                 response.RequestUrl = requestUrl;
                 
-                Logger.LogInformation($"请求URL: {requestUrl}");
+                Logger.LogInformation($"通过代理服务器请求URL: {requestUrl}");
                 
                 // 创建HTTP客户端
                 using var client = _httpClientFactory.CreateClient();
-                client.DefaultRequestHeaders.Add("Host", "www.cwl.gov.cn");
-                client.DefaultRequestHeaders.Add("User-Agent", "Mozilla/5.0 (X11; Linux x86_64; rv:102.0) Gecko/20100101 Firefox/102.0");
-                client.DefaultRequestHeaders.Add("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8");
-                client.DefaultRequestHeaders.Add("Accept-Language", "en-US,en;q=0.5");
                 
-                Logger.LogInformation("发送HTTP请求...");
+                Logger.LogInformation("发送代理HTTP请求...");
                 
-                // 发送请求
+                // 发送请求到代理服务器
                 var httpResponse = await client.GetAsync(requestUrl);
                 response.StatusCode = (int)httpResponse.StatusCode;
                 
