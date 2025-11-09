@@ -1,4 +1,5 @@
 ﻿using DFApp.Lottery;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Quartz;
 using System;
@@ -25,13 +26,15 @@ namespace DFApp.Background
         private readonly IObjectMapper _mapper;
         private readonly IHttpClientFactory _httpClientFactory;
         private readonly IUnitOfWorkManager _unitOfWorkManager;
+        private readonly IConfiguration _configuration;
         public LotteryResultTimer(IRepository<LotteryResult, long> lotteryResultRepository
             , IReadOnlyRepository<LotteryResult, long> resultReadOnly
             , IRepository<LotteryPrizegrades, long> lotteryPrizegradesRepository
             , IReadOnlyRepository<LotteryPrizegrades, long> prizegradesReadOnly
             , IObjectMapper mapper
             , IHttpClientFactory httpClientFactory
-            , IUnitOfWorkManager unitOfWorkManager)
+            , IUnitOfWorkManager unitOfWorkManager
+            , IConfiguration configuration)
         {
             JobDetail = JobBuilder
                 .Create<LotteryResultTimer>()
@@ -46,6 +49,7 @@ namespace DFApp.Background
             _mapper = mapper;
             _httpClientFactory = httpClientFactory;
             _unitOfWorkManager = unitOfWorkManager;
+            _configuration = configuration;
             _lotteryPrizegradesRepository = lotteryPrizegradesRepository;
             _prizegradesReadOnly = prizegradesReadOnly;
             _resultReadOnly = resultReadOnly;
@@ -303,50 +307,50 @@ namespace DFApp.Background
 
         private async Task<LotteryInputDto> GetLotteryResult(string dayStart, string dayEnd, int pageNo, string lotteryType)
         {
-            string requestUrl = $"https://www.cwl.gov.cn/cwl_admin/front/cwlkj/search/kjxx/findDrawNotice?name={lotteryType}&issueCount=&issueStart=&issueEnd=&dayStart={dayStart}&dayEnd={dayEnd}&pageNo={pageNo}&pageSize=30&week=&systemType=PC";
+            // 使用代理服务器获取数据
+            string proxyServerUrl = LotteryConst.GetLotteryProxyUrl(_configuration);
+            string requestUrl = $"{proxyServerUrl}/api/proxy/lottery/findDrawNotice?name={lotteryType}&dayStart={dayStart}&dayEnd={dayEnd}&pageNo={pageNo}&pageSize=30&week=&systemType=PC";
             
-            Logger.LogInformation($"开始获取彩票数据 - 彩票类型: {lotteryType}, 开始日期: {dayStart}, 结束日期: {dayEnd}, 页码: {pageNo}");
-            Logger.LogInformation($"请求URL: {requestUrl}");
+            Logger.LogInformation($"开始通过代理获取彩票数据 - 彩票类型: {lotteryType}, 开始日期: {dayStart}, 结束日期: {dayEnd}, 页码: {pageNo}");
+            Logger.LogInformation($"代理请求URL: {requestUrl}");
             
             try
             {
                 using var client = _httpClientFactory.CreateClient();
-                client.DefaultRequestHeaders.Add("Host", "www.cwl.gov.cn");
-                client.DefaultRequestHeaders.Add("User-Agent", "Mozilla/5.0 (X11; Linux x86_64; rv:102.0) Gecko/20100101 Firefox/102.0");
-                client.DefaultRequestHeaders.Add("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8");
-                client.DefaultRequestHeaders.Add("Accept-Language", "en-US,en;q=0.5");
-
-                Logger.LogInformation("发送HTTP请求...");
+                // 设置超时时间
+                client.Timeout = TimeSpan.FromSeconds(60);
+                
+                Logger.LogInformation("发送代理HTTP请求...");
                 
                 HttpResponseMessage message = await client.GetAsync(requestUrl);
                 
-                Logger.LogInformation($"HTTP响应状态码: {(int)message.StatusCode} ({message.StatusCode})");
+                Logger.LogInformation($"代理HTTP响应状态码: {(int)message.StatusCode} ({message.StatusCode})");
                 
                 message.EnsureSuccessStatusCode();
                 
                 string responseContent = await message.Content.ReadAsStringAsync();
-                Logger.LogInformation($"响应内容长度: {responseContent.Length} 字符");
+                Logger.LogInformation($"代理响应内容长度: {responseContent.Length} 字符");
                 
                 // 记录响应内容（仅前500字符，避免日志过长）
                 if (responseContent.Length > 500)
                 {
-                    Logger.LogInformation($"响应内容前500字符: {responseContent.Substring(0, 500)}...");
+                    Logger.LogInformation($"代理响应内容前500字符: {responseContent.Substring(0, 500)}...");
                 }
                 else
                 {
-                    Logger.LogInformation($"响应内容: {responseContent}");
+                    Logger.LogInformation($"代理响应内容: {responseContent}");
                 }
                 
                 LotteryInputDto? dto = JsonSerializer.Deserialize<LotteryInputDto>(responseContent);
                 
                 if (dto == null)
                 {
-                    Logger.LogWarning("反序列化响应失败，响应为null，创建空对象");
+                    Logger.LogWarning("反序列化代理响应失败，响应为null，创建空对象");
                     dto = new LotteryInputDto();
                 }
                 else
                 {
-                    Logger.LogInformation($"反序列化成功 - 总数据量: {dto.Total}, 当前页: {dto.PageNo}/{dto.PageNum}, 每页大小: {dto.PageSize}");
+                    Logger.LogInformation($"反序列化代理响应成功 - 总数据量: {dto.Total}, 当前页: {dto.PageNo}/{dto.PageNum}, 每页大小: {dto.PageSize}");
                     
                     if (dto.Result != null)
                     {
@@ -361,7 +365,7 @@ namespace DFApp.Background
                     }
                     else
                     {
-                        Logger.LogWarning("响应中的Result字段为null");
+                        Logger.LogWarning("代理响应中的Result字段为null");
                     }
                 }
 
@@ -369,22 +373,22 @@ namespace DFApp.Background
             }
             catch (HttpRequestException ex)
             {
-                Logger.LogError(ex, $"HTTP请求异常: {ex.Message}");
+                Logger.LogError(ex, $"代理HTTP请求异常: {ex.Message}");
                 throw;
             }
             catch (TaskCanceledException ex)
             {
-                Logger.LogError(ex, $"请求超时: {ex.Message}");
+                Logger.LogError(ex, $"代理请求超时: {ex.Message}");
                 throw;
             }
             catch (JsonException ex)
             {
-                Logger.LogError(ex, $"JSON解析异常: {ex.Message}");
+                Logger.LogError(ex, $"代理JSON解析异常: {ex.Message}");
                 throw;
             }
             catch (Exception ex)
             {
-                Logger.LogError(ex, $"未知异常: {ex.Message}");
+                Logger.LogError(ex, $"代理未知异常: {ex.Message}");
                 throw;
             }
         }

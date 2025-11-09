@@ -1,0 +1,30 @@
+version: '3.8'
+
+services:
+  lottery-proxy:
+    build: .
+    container_name: lottery-proxy
+    ports:
+      - "5000:5000"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      - ProxySettings__AllowedIPs__0=
+      - ProxySettings__TargetBaseUrl=https://www.cwl.gov.cn
+      - ProxySettings__TimeoutSeconds=30
+      - ProxySettings__RetryCount=3
+      - ProxySettings__RetryDelaySeconds=2
+    volumes:
+      - ./logs:/app/logs
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - lottery-network
+
+networks:
+  lottery-network:
+    driver: bridge
