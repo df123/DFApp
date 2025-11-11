@@ -25,18 +25,11 @@ jobs:
       uses: actions/setup-dotnet@v4
       with:
         dotnet-version: 9.0.x
-    # - name: Restore dependencies
-    #   run: dotnet restore
-    # - name: Build
-    #   run: dotnet build --no-restore
 
     - name: Add repository directory to Git safe directory
       run: |
         git config --global --add safe.directory ./publish
       shell: bash
-
-    - name: Install dotnet-ef tool
-      run: dotnet tool install --global dotnet-ef
 
     - name: Install Abp Cli
       run: dotnet tool install -g Volo.Abp.Cli
@@ -46,18 +39,6 @@ jobs:
 
     - name: Create publish directory
       run: mkdir -p ./publish
-
-    # - name: Modify appsettings.json for DbMigrator
-    #   run: |
-    #     jq '.ConnectionStrings.Default = "Data Source=/home/runner/work/DFApp/DFApp/publish/DFApp.db"' ./src/DFApp.DbMigrator/appsettings.json > ./src/DFApp.DbMigrator/appsettings.tmp.json
-    #     mv ./src/DFApp.DbMigrator/appsettings.tmp.json ./src/DFApp.DbMigrator/appsettings.json
-    #   shell: bash
-
-    # - name: Run DbMigrator
-    #   run: |
-    #     cd ./src/DFApp.DbMigrator/
-    #     dotnet run
-    #   shell: bash
       
     - name: Publish project
       run: |
