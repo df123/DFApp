@@ -144,8 +144,6 @@ public class DFAppWebModule : AbpModule
         context.Services.AddHostedService<BackgroundQueueHostedService>();
         context.Services.AddHostedService<Aria2BackgroundWorker>();
         context.Services.AddHostedService<ListenTelegramService>();
-
-
     }
 
     private void ConfigureAuthentication(ServiceConfigurationContext context)
