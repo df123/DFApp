@@ -91,5 +91,30 @@ namespace DFApp.Helper
             }
         }
 
+        public static void ClearDirectory(string directoryPath)
+        {
+            if (string.IsNullOrEmpty(directoryPath) || string.IsNullOrWhiteSpace(directoryPath))
+            {
+                return;
+            }
+
+            if (!Directory.Exists(directoryPath))
+            {
+                return;
+            }
+
+            // 删除所有文件
+            foreach (string file in Directory.GetFiles(directoryPath))
+            {
+                File.Delete(file);
+            }
+
+            // 递归删除所有子目录
+            foreach (string subdirectory in Directory.GetDirectories(directoryPath))
+            {
+                Directory.Delete(subdirectory, true);
+            }
+        }
+
     }
 }
