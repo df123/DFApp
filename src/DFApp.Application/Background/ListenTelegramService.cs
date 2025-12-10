@@ -9,6 +9,7 @@ using Microsoft.Extensions.Logging.Abstractions;
 using Starksoft.Net.Proxy;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Threading;
@@ -344,6 +345,8 @@ namespace DFApp.Background
                         ? await GetConfigurationInfo("SavePhotoPathPrefix") 
                         : await GetConfigurationInfo("SaveVideoPathPrefix"));
 
+                    // 下载速度测量
+                    var stopwatch = Stopwatch.StartNew();
                     if (model.IsPhoto)
                     {
                         using var fileStream = File.Create(mediaInfo.SavePath);
@@ -358,9 +361,19 @@ namespace DFApp.Background
                         fileStream.Close();
                         File.Move(fileNameTemp, mediaInfo.SavePath, true);
                     }
+                    stopwatch.Stop();
 
+                    // 计算下载速度（字节/秒）
+                    long downloadTimeMs = stopwatch.ElapsedMilliseconds;
+                    double downloadSpeedBps = downloadTimeMs > 0 ? (fileSize * 1000.0 / downloadTimeMs) : 0;
+
+                    // 更新下载统计信息
+                    await UpdateDownloadStats(mediaInfo.Id, downloadTimeMs, downloadSpeedBps);
                     await UpdateIsDownloadCompleted(mediaInfo.Id);
-                    Logger.LogInformation($"{(model.IsPhoto ? "Photo" : "Video")} download completed {mediaInfo.SavePath}");
+
+                    // 日志记录下载速度（MB/s）
+                    double speedMBps = StorageUnitConversionHelper.ByteToMB(fileSize) / (downloadTimeMs / 1000.0);
+                    Logger.LogInformation($"{(model.IsPhoto ? "Photo" : "Video")} download completed {mediaInfo.SavePath}, Time: {downloadTimeMs}ms, Speed: {speedMBps:F2} MB/s ({downloadSpeedBps:F0} Bps)");
                 }
                 catch (Exception e)
                 {
@@ -438,6 +451,17 @@ namespace DFApp.Background
             {
                 var mediaInfo = await _mediaInfoRepository.GetAsync(id);
                 mediaInfo.IsDownloadCompleted = true;
+                await uow.CompleteAsync();
+            }
+        }
+
+        public async Task UpdateDownloadStats(long id, long downloadTimeMs, double downloadSpeedBps)
+        {
+            using (var uow = _unitOfWorkManager.Begin(requiresNew: true, isTransactional: false))
+            {
+                var mediaInfo = await _mediaInfoRepository.GetAsync(id);
+                mediaInfo.DownloadTimeMs = downloadTimeMs;
+                mediaInfo.DownloadSpeedBps = downloadSpeedBps;
                 await uow.CompleteAsync();
             }
         }

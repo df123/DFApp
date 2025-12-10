@@ -20,5 +20,9 @@ namespace DFApp.Media
         public DateTime CreationTime { get; set; }
         public DateTime? LastModificationTime { get; set; }
         public required string ConcurrencyStamp { get; set; }
+
+        // 下载速度相关字段
+        public long DownloadTimeMs { get; set; }
+        public double DownloadSpeedBps { get; set; }
     }
 }
