@@ -14,5 +14,6 @@ namespace DFApp.Aria2
     {
         Task<string> GetExternalLink(long id);
         Task<List<string>> GetAllExternalLinks();
+        Task ClearDownloadDirectoryAsync();
     }
 }

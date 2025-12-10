@@ -193,6 +193,23 @@ namespace DFApp.Aria2
             SpaceHelper.DeleteEmptyFolders(reStr);
         }
 
+        [Authorize(DFAppPermissions.Aria2.Delete)]
+        public async Task ClearDownloadDirectoryAsync()
+        {
+            string downloadDirectory = await _configurationInfoRepository.GetConfigurationInfoValue("Aria2DownloadPath", "");
+            if (string.IsNullOrEmpty(downloadDirectory) || string.IsNullOrWhiteSpace(downloadDirectory))
+            {
+                throw new UserFriendlyException("下载目录路径未配置");
+            }
+
+            if (!Directory.Exists(downloadDirectory))
+            {
+                throw new UserFriendlyException($"下载目录不存在: {downloadDirectory}");
+            }
+
+            SpaceHelper.ClearDirectory(downloadDirectory);
+        }
+
     }
 
 }
