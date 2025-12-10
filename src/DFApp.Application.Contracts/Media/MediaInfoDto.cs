@@ -15,5 +15,9 @@ namespace DFApp.Media
         public string MimeType { get; set; } = null!;
         public bool IsExternalLinkGenerated { get; set; }
         public bool IsDownloadCompleted{ get; set; }
+
+        // 下载速度相关字段
+        public long DownloadTimeMs { get; set; }
+        public double DownloadSpeedBps { get; set; }
     }
 }
