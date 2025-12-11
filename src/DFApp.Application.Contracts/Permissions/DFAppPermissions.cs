@@ -83,5 +83,9 @@ public static class DFAppPermissions
         public const string Default = GroupName + ".LogViewer";
     }
 
+    public static class Rss
+    {
+        public const string Default = GroupName + ".Rss";
+    }
 
 }

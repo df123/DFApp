@@ -10,7 +10,8 @@
     "Common:Column:CreationTime":"创建时间",
     "Common:Column:ModificationTime": "修改时间",
 
-    "Menu:Home": "首页"
+    "Menu:Home": "首页",
+    "Permission:Rss": "RSS阅读器"
 
   }
 }
