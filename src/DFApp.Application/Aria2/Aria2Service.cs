@@ -1,9 +1,11 @@
 ﻿using DFApp.Aria2.Repository.Response.TellStatus;
+using DFApp.Aria2.Request;
 using DFApp.Aria2.Response.TellStatus;
 using DFApp.CommonDtos;
 using DFApp.Configuration;
 using DFApp.Helper;
 using DFApp.Permissions;
+using DFApp.Queue;
 using Microsoft.AspNetCore.Authorization;
 using System;
 using System.Collections.Generic;
@@ -31,13 +33,16 @@ namespace DFApp.Aria2
 
         private readonly ITellStatusResultRepository _tellStatusResultRepository;
         private readonly IConfigurationInfoRepository _configurationInfoRepository;
+        private readonly IQueueManagement _queueManagement;
 
         public Aria2Service(ITellStatusResultRepository tellStatusResultRepository
-            , IConfigurationInfoRepository configurationInfoRepository)
+            , IConfigurationInfoRepository configurationInfoRepository
+            , IQueueManagement queueManagement)
             : base(tellStatusResultRepository)
         {
             _tellStatusResultRepository = tellStatusResultRepository;
             _configurationInfoRepository = configurationInfoRepository;
+            _queueManagement = queueManagement;
             GetPolicyName = DFAppPermissions.Aria2.Default;
             GetListPolicyName = DFAppPermissions.Aria2.Default;
             CreatePolicyName = DFAppPermissions.Aria2.Default;
@@ -208,6 +213,52 @@ namespace DFApp.Aria2
             }
 
             SpaceHelper.ClearDirectory(downloadDirectory);
+        }
+
+        [Authorize(DFAppPermissions.Aria2.Default)]
+        public async Task<AddDownloadResponseDto> AddDownloadAsync(AddDownloadRequestDto input)
+        {
+            if (input == null || input.Urls == null || input.Urls.Count == 0)
+            {
+                throw new UserFriendlyException("URL列表不能为空");
+            }
+
+            // 从配置获取aria2secret
+            string aria2secret = await _configurationInfoRepository.GetConfigurationInfoValue("aria2secret", "DFApp.Aria2.Aria2Service");
+
+            // 创建Aria2Request - 构造函数会添加token到Params[0]
+            var request = new Aria2Request(Guid.NewGuid().ToString(), aria2secret);
+            request.Method = Aria2Consts.AddUri;
+
+            // 添加URLs数组作为第二个参数
+            // 注意：Params[0]已经是token，我们需要在索引1插入URLs
+            // 但构造函数可能已经添加了token，所以Params.Count为1
+            // 我们需要在索引1插入URLs
+            request.Params.Insert(1, input.Urls);
+
+            // 如果有保存路径，添加options作为第三个参数
+            if (!string.IsNullOrWhiteSpace(input.SavePath))
+            {
+                var options = new Dictionary<string, object>
+                {
+                    ["dir"] = input.SavePath
+                };
+                request.Params.Add(options);
+            }
+
+            // 将请求转换为DTO并添加到队列
+            var requestDto = new Aria2RequestDto
+            {
+                JSONRPC = request.JSONRPC,
+                Method = request.Method,
+                Id = request.Id,
+                Params = request.Params
+            };
+
+            // 添加到队列
+            _queueManagement.AddQueueValue("Aria2RequestQueue", new List<Aria2RequestDto> { requestDto });
+
+            return new AddDownloadResponseDto { Id = request.Id };
         }
 
     }

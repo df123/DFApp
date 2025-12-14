@@ -13,7 +13,7 @@ namespace DFApp.Aria2.Request
         {
             Id = id;
             JSONRPC = Aria2Consts.JSONRPC;
-            Params = new List<string>();
+            Params = new List<object>();
             if (!string.IsNullOrWhiteSpace(token))
             {
                 Params.Add($"token:{token}");
@@ -26,6 +26,6 @@ namespace DFApp.Aria2.Request
 
         public string Id { get; private set; }
 
-        public IList<string> Params { get; set; }
+        public IList<object> Params { get; set; }
     }
 }

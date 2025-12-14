@@ -7,6 +7,8 @@ using Volo.Abp.PermissionManagement;
 using Volo.Abp.SettingManagement;
 using Volo.Abp.TenantManagement;
 using Volo.Abp.BackgroundWorkers.Quartz;
+using DFApp.Queue;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace DFApp;
 
@@ -29,5 +31,7 @@ namespace DFApp;
         {
             options.AddMaps<DFAppApplicationModule>();
         });
+
+        context.Services.AddSingleton<IQueueManagement, QueueManagement>();
     }
 }

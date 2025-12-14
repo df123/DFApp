@@ -27,6 +27,7 @@ namespace DFApp.Background
         private readonly ClientWebSocket _clientWebSocket;
         private readonly Aria2Manager _manager;
         private readonly IObjectMapper _mapper;
+        private readonly IQueueManagement _queueManagement;
         private readonly IQueueBase<List<Aria2RequestDto>> _queueBase;
         private readonly List<Aria2ResponseDto> _responseDtos;
 
@@ -39,7 +40,8 @@ namespace DFApp.Background
 
         public Aria2BackgroundWorker(IServiceScopeFactory serviceScopeFactory
             , Aria2Manager manager
-            , IObjectMapper objectMapper)
+            , IObjectMapper objectMapper
+            , IQueueManagement queueManagement)
         {
             _serviceScopeFactory = serviceScopeFactory;
 
@@ -50,7 +52,8 @@ namespace DFApp.Background
             _clientWebSocket = new ClientWebSocket();
             _manager = manager;
             _mapper = objectMapper;
-            _queueBase = new QueueBase<List<Aria2RequestDto>>();
+            _queueManagement = queueManagement;
+            _queueBase = _queueManagement.GetQueue<List<Aria2RequestDto>>("Aria2RequestQueue");
             _responseDtos = new List<Aria2ResponseDto>();
         }
 
