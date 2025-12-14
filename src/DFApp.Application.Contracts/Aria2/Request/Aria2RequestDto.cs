@@ -19,6 +19,6 @@ namespace DFApp.Aria2.Request
         public string Id { get; set; }
 
         [JsonPropertyName("params")]
-        public IList<string> Params { get; set; }
+        public IList<object> Params { get; set; }
     }
 }

@@ -65,6 +65,10 @@ public class DFAppPermissionDefinitionProvider : PermissionDefinitionProvider
         // 添加LogViewer权限组
         var logViewerGroup = context.AddGroup(DFAppPermissions.LogViewer.Default, L("LogViewer"));
         logViewerGroup.AddPermission(DFAppPermissions.LogViewer.Default, L("LogViewer"));
+
+        // 添加RSS权限组
+        var rssGroup = context.AddGroup(DFAppPermissions.Rss.Default, L("Permission:Rss"));
+        rssGroup.AddPermission(DFAppPermissions.Rss.Default, L("Permission:Rss"));
     }
 
     private static LocalizableString L(string name)
