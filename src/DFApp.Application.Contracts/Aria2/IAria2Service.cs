@@ -13,7 +13,7 @@ namespace DFApp.Aria2
     , TellStatusResultDto>
     {
         Task<string> GetExternalLink(long id);
-        Task<List<string>> GetAllExternalLinks();
+        Task<List<string>> GetAllExternalLinks(bool videoOnly = false);
         Task ClearDownloadDirectoryAsync();
         Task<AddDownloadResponseDto> AddDownloadAsync(AddDownloadRequestDto input);
     }
