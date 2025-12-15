@@ -125,7 +125,7 @@ namespace DFApp.Aria2
         }
 
         [Authorize(DFAppPermissions.Aria2.Link)]
-        public async Task<List<string>> GetAllExternalLinks(bool videoOnly = false)
+        public async Task<List<string>> GetAllExternalLinks(bool videoOnly = true)
         {
             var allResults = await _tellStatusResultRepository.GetListAsync(true);
             List<string> allLinks = new List<string>();
