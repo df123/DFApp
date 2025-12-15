@@ -125,13 +125,21 @@ namespace DFApp.Aria2
         }
 
         [Authorize(DFAppPermissions.Aria2.Link)]
-        public async Task<List<string>> GetAllExternalLinks()
+        public async Task<List<string>> GetAllExternalLinks(bool videoOnly = false)
         {
             var allResults = await _tellStatusResultRepository.GetListAsync(true);
             List<string> allLinks = new List<string>();
 
             string reStr = await _configurationInfoRepository.GetConfigurationInfoValue("replaceString", "DFApp.Aria2.Aria2Service");
             string retUrl = await _configurationInfoRepository.GetConfigurationInfoValue("Aria2BtDownloadUrlPrefix", "DFApp.Aria2.Aria2Service");
+
+            // 视频文件扩展名列表
+            var videoExtensions = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+            {
+                ".mp4", ".mkv", ".avi", ".mov", ".wmv", ".flv", ".webm",
+                ".m4v", ".mpg", ".mpeg", ".3gp", ".ogg", ".ts", ".m2ts",
+                ".vob", ".rm", ".rmvb", ".asf", ".divx", ".xvid"
+            };
 
             foreach (var result in allResults)
             {
@@ -144,6 +152,17 @@ namespace DFApp.Aria2
                         {
                             continue;
                         }
+
+                        // 如果启用VideoOnly过滤，检查文件扩展名
+                        if (videoOnly)
+                        {
+                            var extension = Path.GetExtension(file.Path);
+                            if (!videoExtensions.Contains(extension))
+                            {
+                                continue;
+                            }
+                        }
+
                         string filePath = Path.Combine(retUrl, file.Path.Replace(reStr, string.Empty));
                         if (!allLinks.Contains(filePath))
                         {
