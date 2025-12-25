@@ -69,6 +69,13 @@ public class DFAppPermissionDefinitionProvider : PermissionDefinitionProvider
         // 添加RSS权限组
         var rssGroup = context.AddGroup(DFAppPermissions.Rss.Default, L("Permission:Rss"));
         rssGroup.AddPermission(DFAppPermissions.Rss.Default, L("Permission:Rss"));
+
+        // 添加FileFilter权限组
+        var fileFilterGroup = context.AddGroup(DFAppPermissions.FileFilter.Default, L("Permission:FileFilter"));
+        var fileFilterPermission = fileFilterGroup.AddPermission(DFAppPermissions.FileFilter.Default, L("Permission:FileFilter"));
+        fileFilterPermission.AddChild(DFAppPermissions.FileFilter.Create, L("Permission:FileFilter.Create"));
+        fileFilterPermission.AddChild(DFAppPermissions.FileFilter.Edit, L("Permission:FileFilter.Edit"));
+        fileFilterPermission.AddChild(DFAppPermissions.FileFilter.Delete, L("Permission:FileFilter.Delete"));
     }
 
     private static LocalizableString L(string name)

@@ -15,6 +15,7 @@ using DFApp.Aria2;
 using DFApp.Aria2.Response.TellStatus;
 using DFApp.Aria2.Response;
 using DFApp.Lottery.Simulation;
+using DFApp.FileFilter;
 
 namespace DFApp;
 
@@ -95,6 +96,10 @@ public class DFAppApplicationAutoMapperProfile : Profile
 
         CreateMap<LotterySimulation, Lottery.Simulation.KL8.LotterySimulationDto>();
         CreateMap<Lottery.Simulation.KL8.CreateUpdateLotterySimulationDto, LotterySimulation>();
+
+        CreateMap<KeywordFilterRule, KeywordFilterRuleDto>();
+        CreateMap<KeywordFilterRuleDto, KeywordFilterRule>();
+        CreateMap<CreateUpdateKeywordFilterRuleDto, KeywordFilterRule>();
 
     }
 }

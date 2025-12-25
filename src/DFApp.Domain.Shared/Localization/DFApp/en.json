@@ -4,6 +4,10 @@
     "Menu:Home": "Home",
     "Welcome": "Welcome",
     "LongWelcomeMessage": "Welcome to the application. This is a startup project based on the ABP framework. For more information, visit abp.io.",
-    "Permission:Rss": "RSS Reader"
+    "Permission:Rss": "RSS Reader",
+    "Permission:FileFilter": "File Filter",
+    "Permission:FileFilter.Create": "Create Filter Rule",
+    "Permission:FileFilter.Edit": "Edit Filter Rule",
+    "Permission:FileFilter.Delete": "Delete Filter Rule"
   }
 }

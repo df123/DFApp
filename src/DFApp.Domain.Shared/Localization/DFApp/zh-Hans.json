@@ -11,7 +11,11 @@
     "Common:Column:ModificationTime": "修改时间",
 
     "Menu:Home": "首页",
-    "Permission:Rss": "RSS阅读器"
+    "Permission:Rss": "RSS阅读器",
+    "Permission:FileFilter": "文件过滤",
+    "Permission:FileFilter.Create": "创建过滤规则",
+    "Permission:FileFilter.Edit": "编辑过滤规则",
+    "Permission:FileFilter.Delete": "删除过滤规则"
 
   }
 }

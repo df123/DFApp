@@ -5,6 +5,7 @@ using DFApp.Aria2.Request;
 using DFApp.Aria2.Response.TellStatus;
 using DFApp.CommonDtos;
 using DFApp.Configuration;
+using DFApp.FileFilter;
 using DFApp.Helper;
 using DFApp.Permissions;
 using DFApp.Queue;
@@ -38,15 +39,18 @@ namespace DFApp.Aria2
         private readonly ITellStatusResultRepository _tellStatusResultRepository;
         private readonly IConfigurationInfoRepository _configurationInfoRepository;
         private readonly IQueueManagement _queueManagement;
+        private readonly IKeywordFilterRuleRepository _keywordFilterRuleRepository;
 
         public Aria2Service(ITellStatusResultRepository tellStatusResultRepository
             , IConfigurationInfoRepository configurationInfoRepository
-            , IQueueManagement queueManagement)
+            , IQueueManagement queueManagement
+            , IKeywordFilterRuleRepository keywordFilterRuleRepository)
             : base(tellStatusResultRepository)
         {
             _tellStatusResultRepository = tellStatusResultRepository;
             _configurationInfoRepository = configurationInfoRepository;
             _queueManagement = queueManagement;
+            _keywordFilterRuleRepository = keywordFilterRuleRepository;
             GetPolicyName = DFAppPermissions.Aria2.Default;
             GetListPolicyName = DFAppPermissions.Aria2.Default;
             CreatePolicyName = DFAppPermissions.Aria2.Default;
@@ -292,6 +296,186 @@ namespace DFApp.Aria2
         }
 
         /// <summary>
+        /// 根据VideoOnly和关键词过滤获取torrent文件中过滤后的文件索引
+        /// </summary>
+        private async Task<List<int>> GetFilteredFileIndicesFromTorrentAsync(string torrentUrl, bool videoOnly, bool enableKeywordFilter)
+        {
+            try
+            {
+                // 下载torrent文件
+                using var httpClient = new HttpClient();
+                var torrentBytes = await httpClient.GetByteArrayAsync(torrentUrl);
+
+                // 解析torrent文件
+                using var stream = new MemoryStream(torrentBytes);
+                var parser = new TorrentParser();
+                var torrent = parser.Parse(stream);
+
+                // 获取文件列表
+                var files = torrent.Files;
+
+                // 视频文件扩展名列表
+                var videoExtensions = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+                {
+                    ".mp4", ".mkv", ".avi", ".mov", ".wmv", ".flv", ".webm",
+                    ".m4v", ".mpg", ".mpeg", ".3gp", ".ogg", ".ts", ".m2ts",
+                    ".vob", ".rm", ".rmvb", ".asf", ".divx", ".xvid"
+                };
+
+                // 查找符合条件的文件索引
+                var filteredIndices = new List<int>();
+                for (int i = 0; i < files.Count(); i++)
+                {
+                    var file = files[i];
+                    var fileName = file.FileName;
+                    var extension = Path.GetExtension(fileName);
+
+                    // 检查VideoOnly条件
+                    if (videoOnly && !videoExtensions.Contains(extension))
+                    {
+                        continue; // 不是视频文件，跳过
+                    }
+
+                    // 检查关键词过滤条件
+                    if (enableKeywordFilter)
+                    {
+                        bool shouldFilter = await _keywordFilterRuleRepository.ShouldFilterFileAsync(fileName);
+                        if (shouldFilter)
+                        {
+                            continue; // 被过滤，跳过
+                        }
+                    }
+
+                    // 索引从1开始（Aria2的select-file使用1-based索引）
+                    filteredIndices.Add(i + 1);
+                }
+
+                return filteredIndices;
+            }
+            catch (Exception ex)
+            {
+                Logger.LogWarning(ex, "解析torrent文件失败: {TorrentUrl}", torrentUrl);
+                return new List<int>();
+            }
+        }
+
+        /// <summary>
+        /// 获取过滤描述字符串
+        /// </summary>
+        private string GetFilterDescription(bool videoOnly, bool enableKeywordFilter)
+        {
+            if (videoOnly && enableKeywordFilter)
+            {
+                return "VideoOnly和关键词";
+            }
+            else if (videoOnly)
+            {
+                return "VideoOnly";
+            }
+            else if (enableKeywordFilter)
+            {
+                return "关键词";
+            }
+            else
+            {
+                return "无";
+            }
+        }
+
+        /// <summary>
+        /// 根据关键词过滤规则过滤URL列表
+        /// </summary>
+        private async Task<List<string>> FilterUrlsByKeywordsAsync(List<string> urls)
+        {
+            var filteredUrls = new List<string>();
+
+            foreach (var url in urls)
+            {
+                // 从URL中提取文件名
+                string fileName = ExtractFileNameFromUrl(url);
+                if (string.IsNullOrEmpty(fileName))
+                {
+                    // 无法提取文件名，保留URL
+                    filteredUrls.Add(url);
+                    continue;
+                }
+
+                // 检查是否应该过滤
+                bool shouldFilter = await _keywordFilterRuleRepository.ShouldFilterFileAsync(fileName);
+                if (!shouldFilter)
+                {
+                    filteredUrls.Add(url);
+                }
+            }
+
+            return filteredUrls;
+        }
+
+        /// <summary>
+        /// 从URL中提取文件名
+        /// </summary>
+        private string ExtractFileNameFromUrl(string url)
+        {
+            try
+            {
+                var uri = new Uri(url);
+                string path = uri.AbsolutePath;
+                if (string.IsNullOrEmpty(path))
+                {
+                    return string.Empty;
+                }
+
+                // 获取路径的最后一部分作为文件名
+                string fileName = Path.GetFileName(path);
+                if (string.IsNullOrEmpty(fileName))
+                {
+                    return string.Empty;
+                }
+
+                // 移除查询参数（如果有）
+                int queryIndex = fileName.IndexOf('?');
+                if (queryIndex > 0)
+                {
+                    fileName = fileName.Substring(0, queryIndex);
+                }
+
+                // 移除片段（如果有）
+                int fragmentIndex = fileName.IndexOf('#');
+                if (fragmentIndex > 0)
+                {
+                    fileName = fileName.Substring(0, fragmentIndex);
+                }
+
+                return fileName;
+            }
+            catch (UriFormatException)
+            {
+                // URL格式无效，尝试简单提取
+                int lastSlash = url.LastIndexOf('/');
+                if (lastSlash >= 0 && lastSlash < url.Length - 1)
+                {
+                    string fileName = url.Substring(lastSlash + 1);
+
+                    // 移除查询参数和片段
+                    int queryIndex = fileName.IndexOf('?');
+                    if (queryIndex > 0)
+                    {
+                        fileName = fileName.Substring(0, queryIndex);
+                    }
+
+                    int fragmentIndex = fileName.IndexOf('#');
+                    if (fragmentIndex > 0)
+                    {
+                        fileName = fileName.Substring(0, fragmentIndex);
+                    }
+
+                    return fileName;
+                }
+                return string.Empty;
+            }
+        }
+
+        /// <summary>
         /// 添加选项到Aria2请求
         /// </summary>
         private void AddOptionsToRequest(Aria2Request request, string? savePath, Dictionary<string, object>? customOptions)
@@ -336,17 +520,19 @@ namespace DFApp.Aria2
             bool hasMagnet = input.Urls.Any(url => url.StartsWith("magnet:", StringComparison.OrdinalIgnoreCase));
             bool hasTorrent = hasTorrentFile || hasMagnet;
 
-            // 处理VideoOnly选项
-            if (input.VideoOnly && hasTorrentFile)
+            // 处理过滤选项（VideoOnly和关键词过滤）
+            bool shouldFilterTorrent = (input.VideoOnly || input.EnableKeywordFilter) && hasTorrentFile;
+
+            if (shouldFilterTorrent)
             {
                 // 对于.torrent文件，使用addTorrent方法并设置select-file选项
                 string torrentUrl = input.Urls.First(url => url.EndsWith(".torrent", StringComparison.OrdinalIgnoreCase));
-                var videoIndices = await GetVideoFileIndicesFromTorrentAsync(torrentUrl);
+                var filteredIndices = await GetFilteredFileIndicesFromTorrentAsync(torrentUrl, input.VideoOnly, input.EnableKeywordFilter);
 
-                if (videoIndices.Count > 0)
+                if (filteredIndices.Count > 0)
                 {
                     // 构建select-file字符串，例如"1,3,5"
-                    string selectFile = string.Join(",", videoIndices);
+                    string selectFile = string.Join(",", filteredIndices);
 
                     // 下载torrent文件内容
                     using var httpClient = new HttpClient();
@@ -381,11 +567,12 @@ namespace DFApp.Aria2
                         request.Params.Add(options);
                     }
 
-                    Logger.LogInformation("VideoOnly过滤已应用，选择文件索引: {SelectFile}", selectFile);
+                    string filterDescription = GetFilterDescription(input.VideoOnly, input.EnableKeywordFilter);
+                    Logger.LogInformation("{FilterDescription}过滤已应用，选择文件索引: {SelectFile}", filterDescription, selectFile);
                 }
                 else
                 {
-                    Logger.LogWarning("VideoOnly已启用，但未在torrent文件中找到视频文件，将下载全部文件");
+                    Logger.LogWarning("过滤已启用，但未在torrent文件中找到符合条件的文件，将下载全部文件");
                     // 继续使用AddUri方法
                     request.Method = Aria2Consts.AddUri;
                     request.Params.Insert(1, input.Urls);
@@ -394,9 +581,26 @@ namespace DFApp.Aria2
             }
             else
             {
-                // 普通下载或VideoOnly未启用
+                // 普通下载或没有过滤选项启用
+                // 对于非.torrent文件，应用关键词过滤（如果启用）
+                List<string> filteredUrls = input.Urls;
+                if (input.EnableKeywordFilter && !hasTorrentFile)
+                {
+                    filteredUrls = await FilterUrlsByKeywordsAsync(input.Urls);
+                    if (filteredUrls.Count == 0)
+                    {
+                        Logger.LogWarning("关键词过滤已启用，但所有URL都被过滤，将取消下载");
+                        throw new UserFriendlyException("所有URL都被关键词过滤规则过滤，没有文件可下载");
+                    }
+                    else if (filteredUrls.Count < input.Urls.Count)
+                    {
+                        Logger.LogInformation("关键词过滤已应用，从{OriginalCount}个URL中过滤掉{FilteredCount}个，剩余{RemainingCount}个",
+                            input.Urls.Count, input.Urls.Count - filteredUrls.Count, filteredUrls.Count);
+                    }
+                }
+
                 request.Method = hasTorrent ? Aria2Consts.AddUri : Aria2Consts.AddUri;
-                request.Params.Insert(1, input.Urls);
+                request.Params.Insert(1, filteredUrls);
 
                 // 如果指定了VideoOnly但不是.torrent文件，记录警告
                 if (input.VideoOnly)
@@ -409,6 +613,12 @@ namespace DFApp.Aria2
                     {
                         Logger.LogWarning("VideoOnly选项仅支持.torrent文件，将下载全部文件");
                     }
+                }
+
+                // 如果指定了EnableKeywordFilter但不是.torrent文件，记录信息
+                if (input.EnableKeywordFilter && !hasTorrentFile)
+                {
+                    Logger.LogInformation("关键词过滤已应用于URL列表");
                 }
 
                 // 添加选项
