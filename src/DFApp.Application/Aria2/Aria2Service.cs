@@ -167,6 +167,13 @@ namespace DFApp.Aria2
                             }
                         }
 
+                        // 应用关键词过滤规则
+                        bool shouldFilter = await _keywordFilterRuleRepository.ShouldFilterFileAsync(file.Path);
+                        if (shouldFilter)
+                        {
+                            continue;
+                        }
+
                         string filePath = Path.Combine(retUrl, file.Path.Replace(reStr, string.Empty));
                         if (!allLinks.Contains(filePath))
                         {
@@ -240,59 +247,6 @@ namespace DFApp.Aria2
             }
 
             SpaceHelper.ClearDirectory(downloadDirectory);
-        }
-
-        /// <summary>
-        /// 解析torrent文件并返回视频文件索引
-        /// </summary>
-        /// <param name="torrentUrl">torrent文件URL</param>
-        /// <returns>视频文件索引列表（从1开始）</returns>
-        private async Task<List<int>> GetVideoFileIndicesFromTorrentAsync(string torrentUrl)
-        {
-            try
-            {
-                // 下载torrent文件
-                using var httpClient = new HttpClient();
-                var torrentBytes = await httpClient.GetByteArrayAsync(torrentUrl);
-
-                // 解析torrent文件
-                using var stream = new MemoryStream(torrentBytes);
-                var parser = new TorrentParser();
-                var torrent = parser.Parse(stream);
-
-                // 获取文件列表
-                var files = torrent.Files;
-
-                // 视频文件扩展名列表
-                var videoExtensions = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
-                {
-                    ".mp4", ".mkv", ".avi", ".mov", ".wmv", ".flv", ".webm",
-                    ".m4v", ".mpg", ".mpeg", ".3gp", ".ogg", ".ts", ".m2ts",
-                    ".vob", ".rm", ".rmvb", ".asf", ".divx", ".xvid"
-                };
-
-                // 查找视频文件索引
-                var videoIndices = new List<int>();
-                for (int i = 0; i < files.Count(); i++)
-                {
-                    var file = files[i];
-                    var fileName = file.FileName;
-                    var extension = Path.GetExtension(fileName);
-
-                    if (videoExtensions.Contains(extension))
-                    {
-                        // 索引从1开始（Aria2的select-file使用1-based索引）
-                        videoIndices.Add(i + 1);
-                    }
-                }
-
-                return videoIndices;
-            }
-            catch (Exception ex)
-            {
-                Logger.LogWarning(ex, "解析torrent文件失败: {TorrentUrl}", torrentUrl);
-                return new List<int>();
-            }
         }
 
         /// <summary>
