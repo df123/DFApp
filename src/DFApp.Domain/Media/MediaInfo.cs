@@ -19,7 +19,7 @@ namespace DFApp.Media
         public bool IsDownloadCompleted { get; set; }
         public DateTime CreationTime { get; set; }
         public DateTime? LastModificationTime { get; set; }
-        public required string ConcurrencyStamp { get; set; }
+        public string ConcurrencyStamp { get; set; } = string.Empty;
 
         // 下载速度相关字段
         public long DownloadTimeMs { get; set; }

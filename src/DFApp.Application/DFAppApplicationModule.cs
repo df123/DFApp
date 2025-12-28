@@ -1,5 +1,5 @@
 using Volo.Abp.Account;
-using Volo.Abp.AutoMapper;
+using Volo.Abp.Mapperly;
 using Volo.Abp.FeatureManagement;
 using Volo.Abp.Identity;
 using Volo.Abp.Modularity;
@@ -27,11 +27,6 @@ namespace DFApp;
 {
     public override void ConfigureServices(ServiceConfigurationContext context)
     {
-        Configure<AbpAutoMapperOptions>(options =>
-        {
-            options.AddMaps<DFAppApplicationModule>();
-        });
-
         context.Services.AddSingleton<IQueueManagement, QueueManagement>();
     }
 }
