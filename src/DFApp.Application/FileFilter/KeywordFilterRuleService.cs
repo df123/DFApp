@@ -40,9 +40,9 @@ namespace DFApp.FileFilter
             DeletePolicyName = DFAppPermissions.FileFilter.Delete;
         }
 
-        public async Task<KeywordFilterTestResultDto> TestFilterAsync(string fileName)
+        public async Task<KeywordFilterTestResultDto> TestFilterAsync(TestFilterRequestDto input)
         {
-            if (string.IsNullOrWhiteSpace(fileName))
+            if (string.IsNullOrWhiteSpace(input.FileName))
             {
                 throw new UserFriendlyException("文件名不能为空");
             }
@@ -50,7 +50,7 @@ namespace DFApp.FileFilter
             var rules = await _keywordFilterRuleRepository.GetAllEnabledRulesAsync();
             var result = new KeywordFilterTestResultDto
             {
-                FileName = fileName,
+                FileName = input.FileName,
                 MatchingRules = new List<KeywordFilterMatchResultDto>()
             };
 
@@ -69,7 +69,7 @@ namespace DFApp.FileFilter
 
             foreach (var rule in sortedRules)
             {
-                var matchResult = TestRuleMatch(fileName, rule);
+                var matchResult = TestRuleMatch(input.FileName, rule);
                 if (matchResult != null)
                 {
                     result.MatchingRules.Add(matchResult);

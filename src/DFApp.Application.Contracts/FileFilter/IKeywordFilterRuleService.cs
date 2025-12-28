@@ -15,7 +15,7 @@ namespace DFApp.FileFilter
         /// <summary>
         /// 测试文件名是否会被过滤
         /// </summary>
-        Task<KeywordFilterTestResultDto> TestFilterAsync(string fileName);
+        Task<KeywordFilterTestResultDto> TestFilterAsync(TestFilterRequestDto input);
 
         /// <summary>
         /// 批量测试文件名过滤
