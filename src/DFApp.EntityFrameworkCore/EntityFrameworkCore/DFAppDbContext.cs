@@ -26,6 +26,7 @@ using System.Linq.Expressions;
 using DFApp.FileUploadDownload;
 using DFApp.Configuration;
 using DFApp.Aria2.Response.TellStatus;
+using DFApp.FileFilter;
 
 namespace DFApp.EntityFrameworkCore;
 
@@ -100,6 +101,7 @@ public class DFAppDbContext :
     public DbSet<FilesItem> FilesItems { get; set; }
     public DbSet<UrisItem> UrisItems { get; set; }
     public DbSet<LotterySimulation> LotterySimulations { get; set; }
+    public DbSet<KeywordFilterRule> KeywordFilterRules { get; set; }
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
@@ -249,8 +251,20 @@ public class DFAppDbContext :
         {
             b.ToTable(DFAppConsts.DbTablePrefix + "LotterySimulation", DFAppConsts.DbSchema);
             b.ConfigureByConvention();
-            
+
             b.HasIndex(e => new { e.TermNumber, e.GroupId });
+        });
+
+        builder.Entity<KeywordFilterRule>(b =>
+        {
+            b.ToTable(DFAppConsts.DbTablePrefix + "KeywordFilterRule", DFAppConsts.DbSchema);
+            b.ConfigureByConvention();
+
+            // 添加索引以提高查询性能
+            b.HasIndex(e => e.IsEnabled);
+            b.HasIndex(e => e.FilterType);
+            b.HasIndex(e => e.Priority);
+            b.HasIndex(e => new { e.IsEnabled, e.Priority });
         });
 
     }

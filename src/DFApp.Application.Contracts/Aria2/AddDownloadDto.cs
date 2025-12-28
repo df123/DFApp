@@ -9,6 +9,7 @@ namespace DFApp.Aria2
         public string? SavePath { get; set; }
         public Dictionary<string, object>? Options { get; set; }
         public bool VideoOnly { get; set; }
+        public bool EnableKeywordFilter { get; set; } = true;
     }
 
     public class AddDownloadResponseDto

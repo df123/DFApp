@@ -88,4 +88,12 @@ public static class DFAppPermissions
         public const string Default = GroupName + ".Rss";
     }
 
+    public static class FileFilter
+    {
+        public const string Default = GroupName + ".FileFilter";
+        public const string Create = Default + ".Create";
+        public const string Edit = Default + ".Edit";
+        public const string Delete = Default + ".Delete";
+    }
+
 }
