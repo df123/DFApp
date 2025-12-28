@@ -289,24 +289,5 @@ public class DFAppDbContext :
         return base.ShouldFilterEntity<TEntity>(entityType);
     }
 
-    protected override Expression<Func<TEntity, bool>>? CreateFilterExpression<TEntity>(ModelBuilder modelBuilder)
-    {
-        var expression = base.CreateFilterExpression<TEntity>(modelBuilder);
-
-        if (typeof(ICreatorId).IsAssignableFrom(typeof(TEntity)))
-        {
-            Expression<Func<TEntity, bool>> creatorIdFilter =
-                e => !CreatorIdFilterEnabled
-                || (_currentUserId != null && (EF.Property<Guid>(e, "CreatorId") == _currentUserId));
-
-            expression = expression == null
-                ? creatorIdFilter
-                : QueryFilterExpressionHelper.CombineExpressions(expression, creatorIdFilter);
-        }
-
-        return expression;
-
-    }
-
 
 }

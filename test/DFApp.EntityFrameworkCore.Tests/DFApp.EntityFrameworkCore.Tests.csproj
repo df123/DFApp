@@ -3,7 +3,7 @@
   <Import Project="..\..\common.props" />
 
   <PropertyGroup>
-    <TargetFramework>net9.0</TargetFramework>
+    <TargetFramework>net10.0</TargetFramework>
     <Nullable>enable</Nullable>
     <RootNamespace>DFApp</RootNamespace>
   </PropertyGroup>
@@ -11,7 +11,10 @@
   <ItemGroup>
     <ProjectReference Include="..\..\src\DFApp.EntityFrameworkCore\DFApp.EntityFrameworkCore.csproj" />
     <ProjectReference Include="..\DFApp.Application.Tests\DFApp.Application.Tests.csproj" />
-    <PackageReference Include="Volo.Abp.EntityFrameworkCore.Sqlite" Version="9.3.6" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="10.0.1" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Abstractions" Version="10.0.1" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" Version="10.0.1" />
+    <PackageReference Include="Volo.Abp.EntityFrameworkCore.Sqlite" Version="10.0.1" />
   </ItemGroup>
 
   <ItemGroup>
