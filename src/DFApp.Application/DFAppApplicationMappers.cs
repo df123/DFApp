@@ -376,7 +376,10 @@ public partial class UrisItemDtoToUrisItemMapper : MapperBase<UrisItemDto, UrisI
 [Mapper(RequiredMappingStrategy = RequiredMappingStrategy.Target)]
 public partial class TellStatusResultToTellStatusResultDtoMapper : MapperBase<TellStatusResult, TellStatusResultDto>
 {
+    [MapProperty(nameof(TellStatusResult.Files), nameof(TellStatusResultDto.files))]
     public override partial TellStatusResultDto Map(TellStatusResult source);
+
+    [MapProperty(nameof(TellStatusResult.Files), nameof(TellStatusResultDto.files))]
     public override partial void Map(TellStatusResult source, TellStatusResultDto destination);
 }
 
