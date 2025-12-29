@@ -17,12 +17,5 @@ namespace DFApp.Rss
         /// <param name="input">请求参数</param>
         /// <returns>获取结果</returns>
         Task<RssFetchResponseDto> FetchRssFeed(RssFetchRequestDto input);
-
-        /// <summary>
-        /// 测试RSS Feed连接
-        /// </summary>
-        /// <param name="url">RSS Feed URL</param>
-        /// <returns>测试结果</returns>
-        Task<RssFetchResponseDto> TestRssFeedConnection(string url);
     }
 }

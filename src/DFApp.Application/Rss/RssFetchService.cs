@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Net;
 using System.Net.Http;
 using System.Threading.Tasks;
 using System.Xml.Linq;
@@ -27,17 +28,85 @@ namespace DFApp.Rss
             var response = new RssFetchResponseDto();
             var stopwatch = Stopwatch.StartNew();
 
+            // 创建HttpClientHandler以配置代理
+            var handler = new HttpClientHandler();
+
+            // 配置代理
+            if (!string.IsNullOrWhiteSpace(input.ProxyUrl))
+            {
+                try
+                {
+                    Logger.LogInformation($"使用代理: {input.ProxyUrl}");
+
+                    // 解析代理URL
+                    var proxyUri = new Uri(input.ProxyUrl);
+                    var proxy = new WebProxy
+                    {
+                        Address = proxyUri,
+                        BypassProxyOnLocal = false
+                    };
+
+                    // 设置代理认证
+                    if (!string.IsNullOrWhiteSpace(input.ProxyUsername) &&
+                        !string.IsNullOrWhiteSpace(input.ProxyPassword))
+                    {
+                        proxy.Credentials = new NetworkCredential(
+                            input.ProxyUsername,
+                            input.ProxyPassword
+                        );
+                        Logger.LogInformation($"使用代理认证: {input.ProxyUsername}");
+                    }
+
+                    handler.Proxy = proxy;
+                    handler.UseProxy = true;
+                }
+                catch (Exception ex)
+                {
+                    Logger.LogError(ex, $"配置代理失败: {ex.Message}");
+                    response.Success = false;
+                    response.Message = $"配置代理失败: {ex.Message}";
+                    return response;
+                }
+            }
+
             try
             {
                 Logger.LogInformation($"开始获取RSS Feed - URL: {input.Url}, 最大条目数: {input.MaxItems}");
+                if (!string.IsNullOrWhiteSpace(input.Query))
+                {
+                    Logger.LogInformation($"搜索关键词: {input.Query}");
+                }
 
                 string requestUrl = input.Url;
+
+                // 如果URL中没有任何条目数参数，尝试添加
+                // Nyaa.si可能使用的参数名：n, limit, count
+                bool hasItemCountParam = requestUrl.Contains("&n=") || requestUrl.Contains("?n=") ||
+                                        requestUrl.Contains("&limit=") || requestUrl.Contains("?limit=") ||
+                                        requestUrl.Contains("&count=") || requestUrl.Contains("?count=");
+
+                if (!hasItemCountParam && input.MaxItems > 0)
+                {
+                    string separator = requestUrl.Contains("?") ? "&" : "?";
+                    // 对于Nyaa.si，使用n参数
+                    requestUrl = $"{requestUrl}{separator}n={input.MaxItems}";
+                    Logger.LogInformation($"自动添加条目数参数到URL");
+                }
+
+                // 添加搜索关键词参数
+                if (!string.IsNullOrWhiteSpace(input.Query))
+                {
+                    string separator = requestUrl.Contains("?") ? "&" : "?";
+                    requestUrl = $"{requestUrl}{separator}q={Uri.EscapeDataString(input.Query)}";
+                    Logger.LogInformation($"添加搜索参数到URL: q={input.Query}");
+                }
+
                 response.RequestUrl = requestUrl;
 
                 Logger.LogInformation($"请求URL: {requestUrl}");
 
                 // 创建HTTP客户端
-                using var client = _httpClientFactory.CreateClient();
+                using var client = new HttpClient(handler);
 
                 Logger.LogInformation("发送HTTP请求...");
 
@@ -68,6 +137,7 @@ namespace DFApp.Rss
 
                 // 解析RSS XML
                 var items = ParseRssXml(responseContent, input.MaxItems);
+
                 response.Items = items;
                 response.TotalCount = items.Count;
                 response.Success = true;
@@ -103,19 +173,6 @@ namespace DFApp.Rss
             return response;
         }
 
-        public async Task<RssFetchResponseDto> TestRssFeedConnection(string url)
-        {
-            Logger.LogInformation($"测试RSS Feed连接 - URL: {url}");
-
-            var request = new RssFetchRequestDto
-            {
-                Url = url,
-                MaxItems = 1 // 测试时只获取1条
-            };
-
-            return await FetchRssFeed(request);
-        }
-
         private List<RssItemDto> ParseRssXml(string xmlContent, int maxItems)
         {
             var items = new List<RssItemDto>();
@@ -134,7 +191,12 @@ namespace DFApp.Rss
                 // 获取nyaa命名空间
                 XNamespace nyaaNs = doc.Root?.GetNamespaceOfPrefix("nyaa") ?? "http://www.nyaa.info/xmlns/nyaa";
 
-                var itemElements = channel.Elements("item").Take(maxItems > 0 ? maxItems : int.MaxValue);
+                // 先获取所有的item元素
+                var allItemElements = channel.Elements("item").ToList();
+                Logger.LogInformation($"RSS源返回了 {allItemElements.Count} 个条目，请求的maxItems={maxItems}");
+
+                // 限制数量
+                var itemElements = allItemElements.Take(maxItems > 0 ? maxItems : int.MaxValue);
 
                 foreach (var itemElement in itemElements)
                 {
