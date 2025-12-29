@@ -58,23 +58,7 @@ static void ConfigureServices(WebApplicationBuilder builder)
     if (builder.Environment.IsDevelopment())
     {
         builder.Services.AddEndpointsApiExplorer();
-        builder.Services.AddSwaggerGen(c =>
-        {
-            c.SwaggerDoc("v1", new Microsoft.OpenApi.Models.OpenApiInfo 
-            { 
-                Title = "彩票数据代理API", 
-                Version = "v1",
-                Description = "用于代理中国福利彩票网站数据的API服务"
-            });
-            
-            // 包含XML注释（如果有的话）
-            var xmlFile = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
-            var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
-            if (File.Exists(xmlPath))
-            {
-                c.IncludeXmlComments(xmlPath);
-            }
-        });
+        builder.Services.AddSwaggerGen();
     }
 }
 
