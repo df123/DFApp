@@ -70,11 +70,14 @@ namespace DFApp.Aria2
 
             foreach (var data in datas.Items)
             {
-                foreach (var file in data.files)
+                if (data.files != null)
                 {
-                    if (!string.IsNullOrEmpty(file.Path))
+                    foreach (var file in data.files)
                     {
-                        file.Path = Path.GetFileName(file.Path);
+                        if (!string.IsNullOrEmpty(file.Path))
+                        {
+                            file.Path = Path.GetFileName(file.Path);
+                        }
                     }
                 }
             }
@@ -88,7 +91,7 @@ namespace DFApp.Aria2
 
             foreach (var data in datas.Items)
             {
-                if (data.files != null && data.files.FirstOrDefault(x => x.Path.Contains(input.Filter)) != null)
+                if (data.files != null && data.files.FirstOrDefault(x => x.Path != null && x.Path.Contains(input.Filter)) != null)
                 {
                     resultDtos.Add(data);
                 }
