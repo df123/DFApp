@@ -57,6 +57,21 @@ namespace DFApp.Rss
         public string Category { get; set; } = string.Empty;
 
         /// <summary>
+        /// 做种人数（Seeders）
+        /// </summary>
+        public int? Seeders { get; set; }
+
+        /// <summary>
+        /// 下载人数（Leechers）
+        /// </summary>
+        public int? Leechers { get; set; }
+
+        /// <summary>
+        /// 完成下载次数（Downloads）
+        /// </summary>
+        public int? Downloads { get; set; }
+
+        /// <summary>
         /// 其他扩展字段（如种子信息）
         /// </summary>
         public Dictionary<string, string> Extensions { get; set; } = new Dictionary<string, string>();
