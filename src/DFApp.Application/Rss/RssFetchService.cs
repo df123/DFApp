@@ -131,6 +131,9 @@ namespace DFApp.Rss
                     return items;
                 }
 
+                // 获取nyaa命名空间
+                XNamespace nyaaNs = doc.Root?.GetNamespaceOfPrefix("nyaa") ?? "http://www.nyaa.info/xmlns/nyaa";
+
                 var itemElements = channel.Elements("item").Take(maxItems > 0 ? maxItems : int.MaxValue);
 
                 foreach (var itemElement in itemElements)
@@ -152,6 +155,25 @@ namespace DFApp.Rss
                         {
                             item.PublishDate = pubDate;
                         }
+                    }
+
+                    // 解析nyaa命名空间的种子信息
+                    var seedersElement = itemElement.Element(nyaaNs + "seeders");
+                    if (seedersElement != null && int.TryParse(seedersElement.Value, out var seeders))
+                    {
+                        item.Seeders = seeders;
+                    }
+
+                    var leechersElement = itemElement.Element(nyaaNs + "leechers");
+                    if (leechersElement != null && int.TryParse(leechersElement.Value, out var leechers))
+                    {
+                        item.Leechers = leechers;
+                    }
+
+                    var downloadsElement = itemElement.Element(nyaaNs + "downloads");
+                    if (downloadsElement != null && int.TryParse(downloadsElement.Value, out var downloads))
+                    {
+                        item.Downloads = downloads;
                     }
 
                     // 处理扩展字段（如种子信息）
