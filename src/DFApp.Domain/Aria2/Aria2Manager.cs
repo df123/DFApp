@@ -29,7 +29,7 @@ namespace DFApp.Aria2
             _configurationInfoRepository = configurationInfoRepository;
         }
 
-        public List<Aria2Request> ProcessResponse(ResponseBase? response)
+        public async Task<List<Aria2Request>> ProcessResponseAsync(ResponseBase? response)
         {
             if (response == null)
             {
@@ -38,7 +38,7 @@ namespace DFApp.Aria2
 
             if (response.Id == null)
             {
-                return ProcessNotification(response as Aria2Notification);
+                return await ProcessNotificationAsync(response as Aria2Notification);
             }
             else
             {
@@ -49,9 +49,33 @@ namespace DFApp.Aria2
                     {
                         case Aria2Consts.TellStatus:
                             TellStatusResponse? tellStatusResponse = response as TellStatusResponse;
-                            if (tellStatusResponse != null)
+                            if (tellStatusResponse != null && tellStatusResponse.Result != null)
                             {
-                                _resultRepository.InsertAsync(tellStatusResponse.Result);
+                                var result = tellStatusResponse.Result;
+
+                                // Log detailed information for debugging
+                                Logger.LogInformation($"=== Saving TellStatusResult to Database ===");
+                                Logger.LogInformation($"GID: {result.GID}");
+                                Logger.LogInformation($"Dir: {result.Dir}");
+                                Logger.LogInformation($"Status: {result.Status}");
+                                Logger.LogInformation($"TotalLength: {result.TotalLength}");
+                                Logger.LogInformation($"CompletedLength: {result.CompletedLength}");
+                                Logger.LogInformation($"Files count: {result.Files?.Count ?? 0}");
+
+                                if (result.Files != null && result.Files.Count > 0)
+                                {
+                                    foreach (var file in result.Files)
+                                    {
+                                        Logger.LogInformation($"  File[{file.Index}]: {file.Path}, Length: {file.Length}, Completed: {file.CompletedLength}");
+                                        if (file.Uris != null)
+                                        {
+                                            Logger.LogInformation($"    Uris count: {file.Uris.Count}");
+                                        }
+                                    }
+                                }
+
+                                await _resultRepository.InsertAsync(result);
+                                Logger.LogInformation($"=== Successfully saved TellStatusResult ===");
                             }
                             _requestsHistory.Remove(res);
                             break;
@@ -63,7 +87,7 @@ namespace DFApp.Aria2
             return new List<Aria2Request>();
         }
 
-        public List<Aria2Request> ProcessNotification(Aria2Notification? notification)
+        public async Task<List<Aria2Request>> ProcessNotificationAsync(Aria2Notification? notification)
         {
             if (notification == null)
             {
@@ -86,7 +110,7 @@ namespace DFApp.Aria2
                     break;
                 case Aria2Consts.OnDownloadComplete:
                 case Aria2Consts.OnBtDownloadComplete:
-                    return DownloadCompleteHandler(notification.Params);
+                    return await DownloadCompleteHandlerAsync(notification.Params);
                 default:
                     Logger.LogInformation("default");
                     break;
@@ -95,10 +119,10 @@ namespace DFApp.Aria2
         }
 
 
-        public List<Aria2Request> DownloadCompleteHandler(List<ParamsItem> paramsItems)
+        public async Task<List<Aria2Request>> DownloadCompleteHandlerAsync(List<ParamsItem> paramsItems)
         {
             List<Aria2Request> requests = new List<Aria2Request>();
-            string aria2secret = _configurationInfoRepository.GetConfigurationInfoValue("aria2secret", "DFApp.Aria2.Aria2Service").Result;
+            string aria2secret = await _configurationInfoRepository.GetConfigurationInfoValue("aria2secret", "DFApp.Aria2.Aria2Service");
             foreach (var item in paramsItems)
             {
                 var request = new Aria2Request(Guid.NewGuid().ToString(), "");

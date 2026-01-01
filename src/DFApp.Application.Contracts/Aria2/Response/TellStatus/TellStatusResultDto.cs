@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 using Volo.Abp.Application.Dtos;
 
@@ -10,64 +11,79 @@ namespace DFApp.Aria2.Response.TellStatus
     public class TellStatusResultDto: CreationAuditedEntityDto<long>
     {
         /// <summary>
-        /// 
+        ///
         /// </summary>
-        public string bitfield { get; set; }
+        [JsonPropertyName("bitfield")]
+        public string Bitfield { get; set; }
         /// <summary>
-        /// 
+        ///
         /// </summary>
-        public string completedLength { get; set; }
+        [JsonPropertyName("completedLength")]
+        public string CompletedLength { get; set; }
         /// <summary>
-        /// 
+        ///
         /// </summary>
-        public string connections { get; set; }
+        [JsonPropertyName("connections")]
+        public string Connections { get; set; }
         /// <summary>
-        /// 
+        ///
         /// </summary>
-        public string dir { get; set; }
+        [JsonPropertyName("dir")]
+        public string Dir { get; set; }
         /// <summary>
-        /// 
+        ///
         /// </summary>
-        public string downloadSpeed { get; set; }
+        [JsonPropertyName("downloadSpeed")]
+        public string DownloadSpeed { get; set; }
         /// <summary>
-        /// 
+        ///
         /// </summary>
-        public string errorCode { get; set; }
+        [JsonPropertyName("errorCode")]
+        public string ErrorCode { get; set; }
         /// <summary>
-        /// 
+        ///
         /// </summary>
-        public string errorMessage { get; set; }
+        [JsonPropertyName("errorMessage")]
+        public string ErrorMessage { get; set; }
         /// <summary>
-        /// 
+        ///
         /// </summary>
-        public List<FilesItemDto> files { get; set; }
+        [JsonPropertyName("files")]
+        public List<FilesItemDto> Files { get; set; }
         /// <summary>
-        /// 
+        ///
         /// </summary>
-        public string gid { get; set; }
+        [JsonPropertyName("gid")]
+        public string Gid { get; set; }
         /// <summary>
-        /// 
+        ///
         /// </summary>
-        public string numPieces { get; set; }
+        [JsonPropertyName("numPieces")]
+        public string NumPieces { get; set; }
         /// <summary>
-        /// 
+        ///
         /// </summary>
-        public string pieceLength { get; set; }
+        [JsonPropertyName("pieceLength")]
+        public string PieceLength { get; set; }
         /// <summary>
-        /// 
+        ///
         /// </summary>
-        public string status { get; set; }
+        [JsonPropertyName("status")]
+        public string Status { get; set; }
         /// <summary>
-        /// 
+        ///
         /// </summary>
-        public string totalLength { get; set; }
+        [JsonPropertyName("totalLength")]
+        public string TotalLength { get; set; }
         /// <summary>
-        /// 
+        ///
         /// </summary>
-        public string uploadLength { get; set; }
+        [JsonPropertyName("uploadLength")]
+        public string UploadLength { get; set; }
         /// <summary>
-        /// 
+        ///
         /// </summary>
-        public string uploadSpeed { get; set; }
+        [JsonPropertyName("uploadSpeed")]
+        public string UploadSpeed { get; set; }
     }
 }

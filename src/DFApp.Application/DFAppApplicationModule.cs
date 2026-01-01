@@ -8,6 +8,7 @@ using Volo.Abp.SettingManagement;
 using Volo.Abp.TenantManagement;
 using Volo.Abp.BackgroundWorkers.Quartz;
 using DFApp.Queue;
+using DFApp.Aria2;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace DFApp;
@@ -28,5 +29,6 @@ namespace DFApp;
     public override void ConfigureServices(ServiceConfigurationContext context)
     {
         context.Services.AddSingleton<IQueueManagement, QueueManagement>();
+        context.Services.AddHttpClient<Aria2RpcClient>();
     }
 }
