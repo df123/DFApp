@@ -247,6 +247,16 @@ namespace DFApp.Aria2
         /// Seeder标记（是否拥有完整文件）
         /// </summary>
         public bool Seeder { get; set; }
+
+        /// <summary>
+        /// 国家（通过IP查询获取）
+        /// </summary>
+        public string? Country { get; set; }
+
+        /// <summary>
+        /// 城市（通过IP查询获取）
+        /// </summary>
+        public string? City { get; set; }
     }
 
     /// <summary>
