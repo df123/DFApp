@@ -28,16 +28,23 @@ namespace DFApp.Background
         {
             while (!stoppingToken.IsCancellationRequested)
             {
-
-                var task = await _taskQueue.DequeueAsync(stoppingToken);
-
                 try
                 {
-                    await task(_serviceScopeFactory, stoppingToken);
+                    var task = await _taskQueue.DequeueAsync(stoppingToken);
+
+                    try
+                    {
+                        await task(_serviceScopeFactory, stoppingToken);
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogError(ex, "NotradePurchaseOrder:An error occured during execution of a background task");
+                    }
                 }
-                catch (Exception ex)
+                catch (OperationCanceledException)
                 {
-                    _logger.LogError(ex, "NotradePurchaseOrder:An error occured during execution of a background task");
+                    // 正常关闭，不记录错误
+                    break;
                 }
             }
         }

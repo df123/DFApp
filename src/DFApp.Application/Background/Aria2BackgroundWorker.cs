@@ -109,8 +109,18 @@ namespace DFApp.Background
                             ResponseBase? dto;
                             if (message.Contains("\"id\":") && (!message.Contains("\"error\":")))
                             {
+                                Logger.LogInformation($"=== Received TellStatus Response ===");
+                                Logger.LogInformation($"Raw JSON: {message}");
                                 var data = JsonSerializer.Deserialize<TellStatusResponseDto>(message);
+                                if (data != null && data.Result != null)
+                                {
+                                    Logger.LogInformation($"Deserialized DTO - GID: {data.Result.Gid}, Dir: {data.Result.Dir}, Status: {data.Result.Status}, Files count: {data.Result.Files?.Count ?? 0}");
+                                }
                                 dto = _mapper.Map<TellStatusResponseDto?, TellStatusResponse?>(data);
+                                if (dto != null && dto is TellStatusResponse tellStatusResponse && tellStatusResponse.Result != null)
+                                {
+                                    Logger.LogInformation($"Mapped Entity - GID: {tellStatusResponse.Result.GID}, Dir: {tellStatusResponse.Result.Dir}, Status: {tellStatusResponse.Result.Status}, Files count: {tellStatusResponse.Result.Files?.Count ?? 0}");
+                                }
                             }
                             else if (message.Contains("method"))
                             {
@@ -123,7 +133,7 @@ namespace DFApp.Background
 
                             if (dto != null)
                             {
-                                var data = _manager.ProcessResponse(dto);
+                                var data = await _manager.ProcessResponseAsync(dto);
 
                                 if (data != null)
                                 {

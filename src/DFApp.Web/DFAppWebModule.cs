@@ -1,3 +1,4 @@
+using System;
 using System.IO;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Extensions.DependencyInjection;
@@ -111,6 +112,7 @@ public class DFAppWebModule : AbpModule
         ConfigureNavigationServices();
         ConfigureAutoApiControllers();
         ConfigureSwaggerServices(context.Services);
+        ConfigureSignalR(context.Services);
 
         context.Services.AddCors(options =>
         {
@@ -120,8 +122,8 @@ public class DFAppWebModule : AbpModule
                         "http://localhost:8848",
                         "https://localhost:8848"
                     )
-                    .AllowAnyHeader()
-                    .AllowAnyMethod()
+                    .WithHeaders("Authorization", "Content-Type", "X-Requested-With", "X-SignalR-User-Agent")
+                    .WithMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
                     .AllowCredentials();
             });
         });
@@ -143,6 +145,7 @@ public class DFAppWebModule : AbpModule
         context.Services.AddHostedService<BackgroundQueueHostedService>();
         context.Services.AddHostedService<Aria2BackgroundWorker>();
         context.Services.AddHostedService<ListenTelegramService>();
+        context.Services.AddHostedService<Web.Background.Aria2MonitorWorker>();
     }
 
     private void ConfigureAuthentication(ServiceConfigurationContext context)
@@ -220,6 +223,15 @@ public class DFAppWebModule : AbpModule
         );
     }
 
+    private void ConfigureSignalR(IServiceCollection services)
+    {
+        services.AddSignalR(options =>
+        {
+            options.EnableDetailedErrors = true;
+            options.KeepAliveInterval = TimeSpan.FromSeconds(10);
+        });
+    }
+
     public override void OnApplicationInitialization(ApplicationInitializationContext context)
     {
         var app = context.GetApplicationBuilder();
@@ -265,6 +277,12 @@ public class DFAppWebModule : AbpModule
 
         app.UseAuditing();
         app.UseAbpSerilogEnrichers();
+
+        app.UseEndpoints(endpoints =>
+        {
+            endpoints.MapHub<Hubs.Aria2Hub>(Hubs.Aria2Hub.HubUrl);
+        });
+
         app.UseConfiguredEndpoints();
 
 
