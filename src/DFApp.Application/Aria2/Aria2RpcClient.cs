@@ -161,21 +161,85 @@ namespace DFApp.Aria2
         /// </summary>
         public async Task<Aria2TaskDetailDto> TellStatusWithDetailAsync(string gid)
         {
-            // 指定要获取的字段，包括peers信息
-            var parameters = new List<object?>
-            {
-                gid,
-                new List<string>
-                {
-                    "gid", "status", "totalLength", "completedLength", "uploadLength",
-                    "downloadSpeed", "uploadSpeed", "dir", "connections", "errorCode",
-                    "errorMessage", "files", "btName", "peers"
-                }
-            };
+            // 不指定字段列表，让 Aria2 返回所有可用字段
+            var parameters = new List<object?> { gid };
 
             var result = await SendRequestAsync<Dictionary<string, JsonElement>>(Aria2Consts.TellStatus, parameters);
             if (result == null) throw new Exception("获取任务详情失败");
-            return ConvertToTaskDetail(result);
+
+            // 转换基本信息
+            var taskDetail = ConvertToTaskDetail(result);
+
+            // 尝试使用 getPeers 方法获取 peers（仅适用于 BitTorrent 下载）
+            try
+            {
+                var peersParameters = new List<object?> { gid };
+                var peersResult = await SendRequestAsync<List<JsonElement>>(Aria2Consts.GetPeers, peersParameters);
+
+                if (peersResult != null && peersResult.Count > 0)
+                {
+                    taskDetail.Peers = ParsePeersFromGetPeers(peersResult);
+                    _logger.LogDebug("成功获取 {Gid} 的 {Count} 个 peers", gid, peersResult.Count);
+                }
+                else
+                {
+                    _logger.LogDebug("任务 {Gid} 没有返回 peers 信息", gid);
+                    taskDetail.Peers = new List<Aria2PeerDto>();
+                }
+            }
+            catch (Exception ex)
+            {
+                // getPeers 可能失败（例如非 BT 下载），这不影响基本信息
+                _logger.LogWarning(ex, "获取任务 {Gid} 的 peers 信息失败，这可能不是 BitTorrent 下载", gid);
+                taskDetail.Peers = new List<Aria2PeerDto>();
+            }
+
+            return taskDetail;
+        }
+
+        /// <summary>
+        /// 从 getPeers 响应解析 peers 列表
+        /// </summary>
+        private List<Aria2PeerDto> ParsePeersFromGetPeers(List<JsonElement> peersList)
+        {
+            var peers = new List<Aria2PeerDto>();
+
+            foreach (var peerElement in peersList)
+            {
+                if (peerElement.ValueKind == JsonValueKind.Object)
+                {
+                    var peer = new Aria2PeerDto
+                    {
+                        PeerId = peerElement.TryGetProperty("peerId", out var peerId) ? peerId.GetString() ?? string.Empty : string.Empty,
+                        Ip = peerElement.TryGetProperty("ip", out var ip) ? ip.GetString() ?? string.Empty : string.Empty,
+                        Port = peerElement.TryGetProperty("port", out var port) ? GetInt32FromElement(port) ?? 0 : 0,
+                        Client = peerElement.TryGetProperty("client", out var client) ? client.GetString() : null,
+                        AmChoking = peerElement.TryGetProperty("amChoking", out var amChoking) && GetBooleanFromElement(amChoking),
+                        PeerChoking = peerElement.TryGetProperty("peerChoking", out var peerChoking) && GetBooleanFromElement(peerChoking),
+                        DownloadSpeed = peerElement.TryGetProperty("downloadSpeed", out var downloadSpeed) ? GetInt64FromElement(downloadSpeed) : 0,
+                        UploadSpeed = peerElement.TryGetProperty("uploadSpeed", out var uploadSpeed) ? GetInt64FromElement(uploadSpeed) : 0,
+                        Seeder = peerElement.TryGetProperty("seeder", out var seeder) ? GetBooleanFromElement(seeder) : false
+                    };
+
+                    // Aria2 返回的进度是字符串 "0.1234" 格式
+                    if (peerElement.TryGetProperty("progress", out var progress))
+                    {
+                        if (progress.ValueKind == JsonValueKind.String)
+                        {
+                            var progressStr = progress.GetString();
+                            peer.Progress = decimal.TryParse(progressStr, out var progressValue) ? progressValue : 0;
+                        }
+                        else
+                        {
+                            peer.Progress = progress.GetDecimal();
+                        }
+                    }
+
+                    peers.Add(peer);
+                }
+            }
+
+            return peers;
         }
 
         /// <summary>
