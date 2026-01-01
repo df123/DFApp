@@ -99,5 +99,10 @@ namespace DFApp.Aria2
         /// 获取 Aria2 连接状态
         /// </summary>
         Task<Aria2ConnectionStatusDto> GetConnectionStatusAsync();
+
+        /// <summary>
+        /// 批量查询 IP 地理位置（通过后端代理调用 ip-api.com，解决 HTTPS 页面调用 HTTP API 的混合内容问题）
+        /// </summary>
+        Task<List<IpGeolocationDto>> GetIpGeolocationAsync(List<string> ips);
     }
 }
