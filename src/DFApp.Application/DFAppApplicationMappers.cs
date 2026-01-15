@@ -495,3 +495,10 @@ public partial class RssWordSegmentToRssWordSegmentDtoMapper : MapperBase<RssWor
     public override partial RssWordSegmentDto Map(RssWordSegment source);
     public override partial void Map(RssWordSegment source, RssWordSegmentDto destination);
 }
+
+[Mapper(RequiredMappingStrategy = RequiredMappingStrategy.Target)]
+public partial class RssWordSegmentToRssWordSegmentWithItemDtoMapper : MapperBase<RssWordSegment, RssWordSegmentWithItemDto>
+{
+    public override partial RssWordSegmentWithItemDto Map(RssWordSegment source);
+    public override partial void Map(RssWordSegment source, RssWordSegmentWithItemDto destination);
+}

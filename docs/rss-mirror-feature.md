@@ -345,6 +345,28 @@ public class RssMirrorItemAppService : ApplicationService, IRssMirrorItemAppServ
 }
 ```
 
+**RssWordSegmentAppService.cs**
+```csharp
+/// <summary>
+/// RSS分词应用服务
+/// </summary>
+[Authorize(DFAppPermissions.Rss.Default)]
+public class RssWordSegmentAppService : ApplicationService
+{
+    // 获取分词列表（分页）
+    Task<PagedResultDto<RssWordSegmentWithItemDto>> GetListAsync(
+        GetRssWordSegmentsRequestDto input);
+
+    // 获取分词统计
+    Task<List<WordSegmentStatisticsDto>> GetStatisticsAsync(
+        long? rssSourceId, int? languageType, int top);
+
+    // 删除操作
+    Task DeleteByItemAsync(long rssMirrorItemId);
+    Task DeleteBySourceAsync(long rssSourceId);
+}
+```
+
 #### `/src/DFApp.Application/Background/`
 - **RssMirrorFetchWorker.cs** - Quartz后台任务，定时抓取RSS源
 
@@ -594,6 +616,86 @@ POST /api/app/rss-mirror-item/{id}/download-to-aria2
 **响应**: Aria2任务GID
 
 **说明**: 会将条目标记为已下载
+
+---
+
+### RSS分词统计 API
+
+#### 1. 获取分词列表（分页）
+```http
+GET /api/app/rss-word-segment
+```
+
+**Query参数**:
+- `skipCount`: 跳过条数（分页）
+- `maxResultCount`: 最大返回条数（分页）
+- `sorting`: 排序（例如：`"CreationTime desc"`）
+- `filter`: 过滤关键词（搜索分词）
+- `rssSourceId`: RSS源ID筛选（可选）
+- `languageType`: 语言类型（0=中文, 1=英文, 2=日文，可选）
+- `word`: 分词文本精确匹配（可选）
+
+**响应**:
+```json
+{
+  "totalCount": 1000,
+  "items": [
+    {
+      "id": 1,
+      "rssMirrorItemId": 10,
+      "rssMirrorItemTitle": "[Example] Title Here",
+      "rssMirrorItemLink": "https://example.com/download/123",
+      "rssSourceId": 1,
+      "rssSourceName": "Sukebei Nyaa",
+      "word": "example",
+      "languageType": 1,
+      "count": 2,
+      "partOfSpeech": "noun",
+      "creationTime": "2026-01-14T10:00:00Z"
+    }
+  ]
+}
+```
+
+#### 2. 获取分词统计（Top N）
+```http
+GET /api/app/rss-word-segment/statistics
+```
+
+**Query参数**:
+- `rssSourceId`: RSS源ID筛选（可选）
+- `languageType`: 语言类型（0=中文, 1=英文, 2=日文，可选）
+- `top`: 返回Top N（默认100）
+
+**响应**:
+```json
+[
+  {
+    "word": "example",
+    "totalCount": 150,
+    "itemCount": 80,
+    "languageType": 1
+  }
+]
+```
+
+**说明**:
+- `totalCount`: 该词在所有条目中出现的总次数
+- `itemCount`: 包含该词的不同条目数量
+
+#### 3. 删除指定条目的所有分词
+```http
+DELETE /api/app/rss-word-segment/by-item/{rssMirrorItemId}
+```
+
+**权限**: `DFAppPermissions.Rss.Delete`
+
+#### 4. 删除指定RSS源的所有分词
+```http
+DELETE /api/app/rss-word-segment/by-source/{rssSourceId}
+```
+
+**权限**: `DFAppPermissions.Rss.Delete`
 
 ---
 
