@@ -1,6 +1,7 @@
 using DFApp.IP;
 using DFApp.Lottery;
 using DFApp.Media;
+using DFApp.Rss;
 using Microsoft.EntityFrameworkCore;
 using Volo.Abp.AuditLogging.EntityFrameworkCore;
 using Volo.Abp.BackgroundJobs.EntityFrameworkCore;
@@ -102,6 +103,9 @@ public class DFAppDbContext :
     public DbSet<UrisItem> UrisItems { get; set; }
     public DbSet<LotterySimulation> LotterySimulations { get; set; }
     public DbSet<KeywordFilterRule> KeywordFilterRules { get; set; }
+    public DbSet<RssSource> RssSources { get; set; }
+    public DbSet<RssMirrorItem> RssMirrorItems { get; set; }
+    public DbSet<RssWordSegment> RssWordSegments { get; set; }
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
@@ -265,6 +269,40 @@ public class DFAppDbContext :
             b.HasIndex(e => e.FilterType);
             b.HasIndex(e => e.Priority);
             b.HasIndex(e => new { e.IsEnabled, e.Priority });
+        });
+
+        builder.Entity<RssMirrorItem>(b =>
+        {
+            b.ToTable(DFAppConsts.DbTablePrefix + "RssMirrorItem", DFAppConsts.DbSchema);
+            b.ConfigureByConvention();
+
+            // 添加索引以提高查询性能
+            b.HasIndex(e => e.RssSourceId);
+            b.HasIndex(e => e.PublishDate);
+            b.HasIndex(e => e.CreationTime);
+            b.HasIndex(e => e.IsDownloaded);
+        });
+
+        builder.Entity<RssWordSegment>(b =>
+        {
+            b.ToTable(DFAppConsts.DbTablePrefix + "RssWordSegment", DFAppConsts.DbSchema);
+            b.ConfigureByConvention();
+
+            // 添加索引以提高查询性能
+            b.HasIndex(e => e.RssMirrorItemId);
+            b.HasIndex(e => e.Word);
+            b.HasIndex(e => e.LanguageType);
+            b.HasIndex(e => e.Count);
+        });
+
+        builder.Entity<RssSource>(b =>
+        {
+            b.ToTable(DFAppConsts.DbTablePrefix + "RssSource", DFAppConsts.DbSchema);
+            b.ConfigureByConvention();
+
+            // 添加索引以提高查询性能
+            b.HasIndex(e => e.IsEnabled);
+            b.HasIndex(e => e.FetchStatus);
         });
 
     }

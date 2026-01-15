@@ -68,7 +68,11 @@ public class DFAppPermissionDefinitionProvider : PermissionDefinitionProvider
 
         // 添加RSS权限组
         var rssGroup = context.AddGroup(DFAppPermissions.Rss.Default, L("Permission:Rss"));
-        rssGroup.AddPermission(DFAppPermissions.Rss.Default, L("Permission:Rss"));
+        var rssPermission = rssGroup.AddPermission(DFAppPermissions.Rss.Default, L("Permission:Rss"));
+        rssPermission.AddChild(DFAppPermissions.Rss.Create, L("Permission:Rss.Create"));
+        rssPermission.AddChild(DFAppPermissions.Rss.Update, L("Permission:Rss.Update"));
+        rssPermission.AddChild(DFAppPermissions.Rss.Delete, L("Permission:Rss.Delete"));
+        rssPermission.AddChild(DFAppPermissions.Rss.Download, L("Permission:Rss.Download"));
 
         // 添加FileFilter权限组
         var fileFilterGroup = context.AddGroup(DFAppPermissions.FileFilter.Default, L("Permission:FileFilter"));
