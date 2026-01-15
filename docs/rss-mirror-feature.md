@@ -702,101 +702,83 @@ public override async Task Execute(IJobExecutionContext context)
 
 private async Task FetchRssSource(RssSource source)
 {
-    try
+    using (var unitOfWork = _unitOfWorkManager.Begin())
     {
-        // 1. 更新状态为"抓取中"
-        source.FetchStatus = 1;
-        source.LastFetchTime = DateTime.Now;
-        await _rssSourceRepository.UpdateAsync(source);
-
-        // 2. 设置代理（如果配置）
-        var httpClient = CreateHttpClient(source);
-
-        // 3. 下载RSS Feed
-        var feedXml = await httpClient.GetStringAsync(source.Url);
-
-        // 4. 解析RSS/Atom
-        var feed = ParseFeed(feedXml);
-
-        // 5. 应用关键词过滤（如果配置了Query）
-        var filteredItems = ApplyQueryFilter(feed.Items, source.Query);
-
-        // 6. 限制条目数
-        var itemsToProcess = filteredItems.Take(source.MaxItems).ToList();
-
-        // 7. 处理每个条目
-        foreach (var item in itemsToProcess)
+        try
         {
-            await ProcessFeedItem(item, source);
+            // 1. 创建HttpClient并配置代理
+            var httpClient = CreateHttpClient(source);
+
+            // 2. 下载RSS Feed
+            var feedXml = await httpClient.GetStringAsync(source.Url);
+
+            // 3. 解析RSS XML
+            var items = ParseRssXml(feedXml, source);
+
+            // 4. 四步处理流程（避免外键约束问题）
+            // 第一步：检查并准备新条目
+            var newItems = new List<RssMirrorItem>();
+            foreach (var item in items)
+            {
+                var existing = await _rssMirrorItemRepository.FirstOrDefaultAsync(i => i.Link == item.Link);
+                if (existing == null)
+                {
+                    item.RssSourceId = source.Id;
+                    item.CreationTime = DateTime.Now;
+                    newItems.Add(item);
+                }
+            }
+
+            // 第二步：批量插入镜像条目
+            foreach (var item in newItems)
+            {
+                await _rssMirrorItemRepository.InsertAsync(item);
+            }
+
+            // 第三步：保存更改以生成ID
+            await unitOfWork.SaveChangesAsync();
+
+            // 第四步：插入分词数据
+            foreach (var item in newItems)
+            {
+                var wordSegments = _wordSegmentService.Segment(item.Title);
+                var segmentDict = _wordSegmentService.SegmentAndCount(item.Title);
+
+                foreach (var segment in wordSegments)
+                {
+                    var rssWordSegment = new RssWordSegment
+                    {
+                        RssMirrorItemId = item.Id,  // ID已生成
+                        Word = segment.Word,
+                        LanguageType = segment.LanguageType,
+                        Count = segmentDict.TryGetValue(segment.Word.ToLower(), out var count) ? count : 1,
+                        CreationTime = DateTime.Now
+                    };
+                    await _rssWordSegmentRepository.InsertAsync(rssWordSegment);
+                }
+            }
+
+            // 5. 更新RSS源状态（重新获取以避免并发问题）
+            var currentSource = await _rssSourceRepository.GetAsync(source.Id);
+            currentSource.LastFetchTime = DateTime.Now;
+            currentSource.FetchStatus = 0;  // 成功
+            currentSource.ErrorMessage = null;
+            await _rssSourceRepository.UpdateAsync(currentSource);
+
+            await unitOfWork.CompleteAsync();
+
+            Logger.LogInformation("RSS源 {Name} 抓取完成，新增 {Count} 条记录", source.Name, newItems.Count);
         }
-
-        // 8. 更新状态为"正常"
-        source.FetchStatus = 0;
-        source.ErrorMessage = null;
-        await _rssSourceRepository.UpdateAsync(source);
-
-        Logger.LogInformation(
-            "成功抓取RSS源 {Name}: {Count} 个条目",
-            source.Name,
-            itemsToProcess.Count
-        );
-    }
-    catch (Exception ex)
-    {
-        // 更新状态为"失败"
-        source.FetchStatus = 2;
-        source.ErrorMessage = ex.Message;
-        await _rssSourceRepository.UpdateAsync(source);
-
-        Logger.LogError(ex, "抓取RSS源 {Name} 失败", source.Name);
-    }
-}
-
-private async Task ProcessFeedItem(SyndicationItem item, RssSource source)
-{
-    // 1. 检查是否已存在（根据链接）
-    var existing = await _rssMirrorItemRepository.FirstOrDefaultAsync(
-        x => x.Link == item.Links.First().Uri.ToString()
-    );
-
-    if (existing != null)
-        return;  // 已存在，跳过
-
-    // 2. 创建镜像条目
-    var mirrorItem = new RssMirrorItem
-    {
-        RssSourceId = source.Id,
-        Title = item.Title.Text,
-        Link = item.Links.First().Uri.ToString(),
-        Description = item.Summary?.Text,
-        Author = item.Authors.FirstOrDefault()?.Name,
-        Category = item.Categories.FirstOrDefault()?.Name,
-        PublishDate = item.PublishDate,
-        CreationTime = DateTime.Now
-    };
-
-    // 3. 提取扩展信息（如BT种子的Seeders等）
-    mirrorItem.Extensions = ExtractExtensions(item);
-
-    // 4. 保存到数据库
-    await _rssMirrorItemRepository.InsertAsync(mirrorItem);
-
-    // 5. 分词处理
-    var wordSegments = _wordSegmentService.SegmentAndCount(mirrorItem.Title);
-
-    // 6. 保存分词结果
-    foreach (var (word, count) in wordSegments)
-    {
-        var segment = new RssWordSegment
+        catch (Exception ex)
         {
-            RssMirrorItemId = mirrorItem.Id,
-            Word = word,
-            LanguageType = DetectLanguage(word),
-            Count = count,
-            CreationTime = DateTime.Now
-        };
+            // 更新失败状态
+            var currentSource = await _rssSourceRepository.GetAsync(source.Id);
+            currentSource.FetchStatus = 2;  // 失败
+            currentSource.ErrorMessage = ex.Message;
+            await _rssSourceRepository.UpdateAsync(currentSource);
 
-        await _rssWordSegmentRepository.InsertAsync(segment);
+            Logger.LogError(ex, "抓取RSS源 {Name} 失败", source.Name);
+        }
     }
 }
 ```
@@ -1106,12 +1088,75 @@ public async Task<RssSourceDto> UpdateAsync(long id, CreateUpdateRssSourceDto in
 }
 ```
 
-**说明**:
-- 每次更新时自动生成新的Guid
-- ABP框架会自动检查并发冲突
-- 如果检测到冲突，会抛出异常
+**并发异常处理**:
+在后台任务中，直接更新从UnitOfWork开始前查询的实体会导致并发异常：
+```csharp
+// ❌ 错误做法
+source.FetchStatus = 0;
+await _rssSourceRepository.UpdateAsync(source);  // 可能抛出并发异常
 
-### 4. 关键词过滤
+// ✅ 正确做法
+var currentSource = await _rssSourceRepository.GetAsync(source.Id);
+currentSource.FetchStatus = 0;
+await _rssSourceRepository.UpdateAsync(currentSource);  // 使用最新实体
+```
+
+### 4. UnitOfWork和ID生成
+
+**问题**: 在ABP的UnitOfWork中，`InsertAsync` 不会立即执行SQL INSERT，而是在 `CompleteAsync()` 时批量保存。这导致插入后实体的ID还未生成。
+
+**解决方案**: 使用四步处理流程
+
+```csharp
+using (var unitOfWork = _unitOfWorkManager.Begin())
+{
+    var newItems = new List<RssMirrorItem>();
+
+    // 第一步：准备数据
+    foreach (var item in items)
+    {
+        var existing = await _repository.FirstOrDefaultAsync(i => i.Link == item.Link);
+        if (existing == null)
+        {
+            item.RssSourceId = source.Id;
+            item.CreationTime = DateTime.Now;
+            newItems.Add(item);
+        }
+    }
+
+    // 第二步：批量插入
+    foreach (var item in newItems)
+    {
+        await _repository.InsertAsync(item);
+    }
+
+    // 第三步：保存更改以生成ID ⚠️ 关键步骤
+    await unitOfWork.SaveChangesAsync();
+
+    // 第四步：使用已生成的ID插入关联数据
+    foreach (var item in newItems)
+    {
+        var segment = new RssWordSegment
+        {
+            RssMirrorItemId = item.Id,  // ✅ ID已生成
+            Word = word,
+            Count = 1
+        };
+        await _wordSegmentRepository.InsertAsync(segment);
+    }
+
+    await unitOfWork.CompleteAsync();
+}
+```
+
+**关键点**:
+- `SaveChangesAsync()` 会触发数据库INSERT语句，生成自增ID
+- 调用后，实体的 `Id` 属性会被填充
+- 之后才能使用该ID插入关联数据
+- `CompleteAsync()` 提交UnitOfWork事务
+
+
+### 5. 关键词过滤
 
 **Query字段**:
 ```csharp
@@ -1125,7 +1170,7 @@ public class RssSource
 - 如果Query设置为 `"-raw -censored"`
 - 抓取时会过滤标题中包含"raw"或"censored"的条目
 
-### 5. 分词去重
+### 6. 分词去重
 
 **分词表索引**:
 ```sql
@@ -1270,6 +1315,73 @@ Logs/DFApp.log
 2. 尝试使用分词的一部分搜索
 3. 检查镜像条目的分词详情（点击"查看分词"）
 4. 如果分词表为空，重新触发RSS抓取
+
+### 6. 权限未定义错误
+
+**症状**: 启动后出现权限错误，类似：
+```
+System.InvalidOperationException: The AuthorizationPolicy named: 'DFApp.Rss.Create' was not found.
+```
+
+**可能原因**:
+- 权限常量已定义但未在权限定义提供者中注册
+- 本地化资源文件中缺少权限翻译
+
+**解决方案**:
+1. 确认 `DFAppPermissions.cs` 中定义了权限常量
+2. 在 `DFAppPermissionDefinitionProvider.cs` 中注册权限子权限：
+   ```csharp
+   var rssPermission = rssGroup.AddPermission(DFAppPermissions.Rss.Default, L("Permission:Rss"));
+   rssPermission.AddChild(DFAppPermissions.Rss.Create, L("Permission:Rss.Create"));
+   rssPermission.AddChild(DFAppPermissions.Rss.Update, L("Permission:Rss.Update"));
+   rssPermission.AddChild(DFAppPermissions.Rss.Delete, L("Permission:Rss.Delete"));
+   rssPermission.AddChild(DFAppPermissions.Rss.Download, L("Permission:Rss.Download"));
+   ```
+3. 在本地化文件中添加翻译：
+   - `src/DFApp.Domain.Shared/Localization/DFApp/zh-Hans.json`
+   - `src/DFApp.Domain.Shared/Localization/DFApp/en.json`
+
+**相关文件**:
+- `/src/DFApp.Application.Contracts/Permissions/DFAppPermissionDefinitionProvider.cs`
+- `/src/DFApp.Application.Contracts/Permissions/DFAppPermissions.cs`
+- `/src/DFApp.Domain.Shared/Localization/DFApp/zh-Hans.json`
+- `/src/DFApp.Domain.Shared/Localization/DFApp/en.json`
+
+### 7. 外键约束失败和并发异常
+
+**症状**:
+1. 插入分词数据时出现外键约束错误：
+```
+SQLite Error 19: 'FOREIGN KEY constraint failed'
+INSERT INTO "AppRssWordSegment" ...
+```
+
+2. 更新RSS源状态时出现并发异常：
+```
+Volo.Abp.Data.AbpDbConcurrencyException: The database operation was expected to affect 1 row(s), but actually affected 0 row(s)
+```
+
+**可能原因**:
+- 在UnitOfWork中，`InsertAsync` 不会立即生成ID
+- 直接更新从UnitOfWork开始前查询的实体导致并发标记冲突
+
+**解决方案**:
+已修复 `RssMirrorFetchWorker.cs`，采用四步处理流程：
+
+1. **检查并准备新条目** - 过滤重复条目
+2. **批量插入镜像条目** - 调用 `InsertAsync`
+3. **保存更改生成ID** - 调用 `SaveChangesAsync()` 确保ID生成
+4. **插入分词数据** - 使用已生成的ID
+
+对于并发问题，在更新前重新从数据库获取最新实体：
+```csharp
+var currentSource = await _rssSourceRepository.GetAsync(source.Id);
+currentSource.LastFetchTime = DateTime.Now;
+await _rssSourceRepository.UpdateAsync(currentSource);
+```
+
+**相关代码**:
+- `/src/DFApp.Application/Background/RssMirrorFetchWorker.cs:148-197`
 
 ---
 
