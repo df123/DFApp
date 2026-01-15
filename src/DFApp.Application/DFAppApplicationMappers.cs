@@ -19,6 +19,7 @@ using DFApp.Aria2.Response.TellStatus;
 using DFApp.Aria2.Response;
 using DFApp.Lottery.Simulation;
 using DFApp.FileFilter;
+using DFApp.Rss;
 
 namespace DFApp;
 
@@ -457,4 +458,40 @@ public partial class CreateUpdateKeywordFilterRuleDtoToKeywordFilterRuleMapper :
 
     [MapperIgnoreTarget(nameof(KeywordFilterRule.ConcurrencyStamp))]
     public override partial void Map(CreateUpdateKeywordFilterRuleDto source, KeywordFilterRule destination);
+}
+
+[Mapper(RequiredMappingStrategy = RequiredMappingStrategy.Target)]
+public partial class RssSourceToRssSourceDtoMapper : MapperBase<RssSource, RssSourceDto>
+{
+    public override partial RssSourceDto Map(RssSource source);
+    public override partial void Map(RssSource source, RssSourceDto destination);
+}
+
+[Mapper(RequiredMappingStrategy = RequiredMappingStrategy.Target)]
+public partial class CreateUpdateRssSourceDtoToRssSourceMapper : MapperBase<CreateUpdateRssSourceDto, RssSource>
+{
+    [MapperIgnoreTarget(nameof(RssSource.ConcurrencyStamp))]
+    [MapperIgnoreTarget(nameof(RssSource.CreationTime))]
+    [MapperIgnoreTarget(nameof(RssSource.CreatorId))]
+    public override partial RssSource Map(CreateUpdateRssSourceDto source);
+    [MapperIgnoreTarget(nameof(RssSource.ConcurrencyStamp))]
+    [MapperIgnoreTarget(nameof(RssSource.CreationTime))]
+    [MapperIgnoreTarget(nameof(RssSource.CreatorId))]
+    public override partial void Map(CreateUpdateRssSourceDto source, RssSource destination);
+}
+
+[Mapper(RequiredMappingStrategy = RequiredMappingStrategy.Target)]
+public partial class RssMirrorItemToRssMirrorItemDtoMapper : MapperBase<RssMirrorItem, RssMirrorItemDto>
+{
+    [MapperIgnoreTarget(nameof(RssMirrorItemDto.WordSegments))]
+    public override partial RssMirrorItemDto Map(RssMirrorItem source);
+    [MapperIgnoreTarget(nameof(RssMirrorItemDto.WordSegments))]
+    public override partial void Map(RssMirrorItem source, RssMirrorItemDto destination);
+}
+
+[Mapper(RequiredMappingStrategy = RequiredMappingStrategy.Target)]
+public partial class RssWordSegmentToRssWordSegmentDtoMapper : MapperBase<RssWordSegment, RssWordSegmentDto>
+{
+    public override partial RssWordSegmentDto Map(RssWordSegment source);
+    public override partial void Map(RssWordSegment source, RssWordSegmentDto destination);
 }

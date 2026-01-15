@@ -12,6 +12,10 @@
 
     "Menu:Home": "首页",
     "Permission:Rss": "RSS阅读器",
+    "Permission:Rss.Create": "创建RSS源",
+    "Permission:Rss.Update": "更新RSS源",
+    "Permission:Rss.Delete": "删除RSS源和条目",
+    "Permission:Rss.Download": "下载到Aria2",
     "Permission:FileFilter": "文件过滤",
     "Permission:FileFilter.Create": "创建过滤规则",
     "Permission:FileFilter.Edit": "编辑过滤规则",
