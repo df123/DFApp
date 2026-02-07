@@ -20,7 +20,19 @@ using DFApp.Aria2.Response;
 using DFApp.Lottery.Simulation;
 using DFApp.FileFilter;
 using DFApp.Rss;
-
+using DFApp.ElectricVehicle;
+using EV = DFApp.ElectricVehicle.ElectricVehicle;
+using EVCost = DFApp.ElectricVehicle.ElectricVehicleCost;
+using EVCharging = DFApp.ElectricVehicle.ElectricVehicleChargingRecord;
+using GasPrice = DFApp.ElectricVehicle.GasolinePrice;
+using EVDto = DFApp.ElectricVehicle.ElectricVehicleDto;
+using EVCostDto = DFApp.ElectricVehicle.ElectricVehicleCostDto;
+using EVChargingDto = DFApp.ElectricVehicle.ElectricVehicleChargingRecordDto;
+using GasPriceDto = DFApp.ElectricVehicle.GasolinePriceDto;
+using CreateUpdateEVDto = DFApp.ElectricVehicle.CreateUpdateElectricVehicleDto;
+using CreateUpdateEVCostDto = DFApp.ElectricVehicle.CreateUpdateElectricVehicleCostDto;
+using CreateUpdateEVChargingDto = DFApp.ElectricVehicle.CreateUpdateElectricVehicleChargingRecordDto;
+ 
 namespace DFApp;
 
 [Mapper(RequiredMappingStrategy = RequiredMappingStrategy.Target)]
@@ -501,4 +513,73 @@ public partial class RssWordSegmentToRssWordSegmentWithItemDtoMapper : MapperBas
 {
     public override partial RssWordSegmentWithItemDto Map(RssWordSegment source);
     public override partial void Map(RssWordSegment source, RssWordSegmentWithItemDto destination);
+}
+[Mapper(RequiredMappingStrategy = RequiredMappingStrategy.Target)]
+public partial class EVEntityToEVDtoMapper : MapperBase<EV, EVDto>
+{
+    public override partial EVDto Map(EV source);
+    public override partial void Map(EV source, EVDto destination);
+}
+
+[Mapper(RequiredMappingStrategy = RequiredMappingStrategy.Target)]
+public partial class CreateUpdateEVDtoToEVMapper : MapperBase<CreateUpdateEVDto, EV>
+{
+    [MapperIgnoreTarget(nameof(EV.ConcurrencyStamp))]
+    [MapperIgnoreTarget(nameof(EV.CreationTime))]
+    [MapperIgnoreTarget(nameof(EV.LastModificationTime))]
+    public override partial EV Map(CreateUpdateEVDto source);
+
+    [MapperIgnoreTarget(nameof(EV.ConcurrencyStamp))]
+    [MapperIgnoreTarget(nameof(EV.CreationTime))]
+    [MapperIgnoreTarget(nameof(EV.LastModificationTime))]
+    public override partial void Map(CreateUpdateEVDto source, EV destination);
+}
+
+[Mapper(RequiredMappingStrategy = RequiredMappingStrategy.Target)]
+public partial class EVCostEntityToEVCostDtoMapper : MapperBase<EVCost, EVCostDto>
+{
+    public override partial EVCostDto Map(EVCost source);
+    public override partial void Map(EVCost source, EVCostDto destination);
+}
+
+[Mapper(RequiredMappingStrategy = RequiredMappingStrategy.Target)]
+public partial class CreateUpdateEVCostDtoToEVCostMapper : MapperBase<CreateUpdateEVCostDto, EVCost>
+{
+    [MapperIgnoreTarget(nameof(EVCost.ConcurrencyStamp))]
+    [MapperIgnoreTarget(nameof(EVCost.CreationTime))]
+    [MapperIgnoreTarget(nameof(EVCost.LastModificationTime))]
+    public override partial EVCost Map(CreateUpdateEVCostDto source);
+
+    [MapperIgnoreTarget(nameof(EVCost.ConcurrencyStamp))]
+    [MapperIgnoreTarget(nameof(EVCost.CreationTime))]
+    [MapperIgnoreTarget(nameof(EVCost.LastModificationTime))]
+    public override partial void Map(CreateUpdateEVCostDto source, EVCost destination);
+}
+
+[Mapper(RequiredMappingStrategy = RequiredMappingStrategy.Target)]
+public partial class EVChargingEntityToEVChargingDtoMapper : MapperBase<EVCharging, EVChargingDto>
+{
+    public override partial EVChargingDto Map(EVCharging source);
+    public override partial void Map(EVCharging source, EVChargingDto destination);
+}
+
+[Mapper(RequiredMappingStrategy = RequiredMappingStrategy.Target)]
+public partial class CreateUpdateEVChargingDtoToEVChargingMapper : MapperBase<CreateUpdateEVChargingDto, EVCharging>
+{
+    [MapperIgnoreTarget(nameof(EVCharging.ConcurrencyStamp))]
+    [MapperIgnoreTarget(nameof(EVCharging.CreationTime))]
+    [MapperIgnoreTarget(nameof(EVCharging.LastModificationTime))]
+    public override partial EVCharging Map(CreateUpdateEVChargingDto source);
+
+    [MapperIgnoreTarget(nameof(EVCharging.ConcurrencyStamp))]
+    [MapperIgnoreTarget(nameof(EVCharging.CreationTime))]
+    [MapperIgnoreTarget(nameof(EVCharging.LastModificationTime))]
+    public override partial void Map(CreateUpdateEVChargingDto source, EVCharging destination);
+}
+
+[Mapper(RequiredMappingStrategy = RequiredMappingStrategy.Target)]
+public partial class GasPriceEntityToGasPriceDtoMapper : MapperBase<GasPrice, GasPriceDto>
+{
+    public override partial GasPriceDto Map(GasPrice source);
+    public override partial void Map(GasPrice source, GasPriceDto destination);
 }

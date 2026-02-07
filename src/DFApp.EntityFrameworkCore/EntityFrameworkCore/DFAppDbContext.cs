@@ -23,11 +23,11 @@ using System;
 using Volo.Abp.Users;
 using DFApp.Bookkeeping;
 using Microsoft.EntityFrameworkCore.Metadata;
-using System.Linq.Expressions;
+ using System.Linq.Expressions;
 using DFApp.FileUploadDownload;
 using DFApp.Configuration;
 using DFApp.Aria2.Response.TellStatus;
-using DFApp.FileFilter;
+ using DFApp.FileFilter;
 
 namespace DFApp.EntityFrameworkCore;
 
@@ -103,9 +103,14 @@ public class DFAppDbContext :
     public DbSet<UrisItem> UrisItems { get; set; }
     public DbSet<LotterySimulation> LotterySimulations { get; set; }
     public DbSet<KeywordFilterRule> KeywordFilterRules { get; set; }
-    public DbSet<RssSource> RssSources { get; set; }
-    public DbSet<RssMirrorItem> RssMirrorItems { get; set; }
-    public DbSet<RssWordSegment> RssWordSegments { get; set; }
+     public DbSet<RssSource> RssSources { get; set; }
+     public DbSet<RssMirrorItem> RssMirrorItems { get; set; }
+     public DbSet<RssWordSegment> RssWordSegments { get; set; }
+      
+      public DbSet<DFApp.ElectricVehicle.ElectricVehicle> ElectricVehicles { get; set; }
+      public DbSet<DFApp.ElectricVehicle.ElectricVehicleCost> ElectricVehicleCosts { get; set; }
+      public DbSet<DFApp.ElectricVehicle.ElectricVehicleChargingRecord> ElectricVehicleChargingRecords { get; set; }
+      public DbSet<DFApp.ElectricVehicle.GasolinePrice> GasolinePrices { get; set; }
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
@@ -299,10 +304,59 @@ public class DFAppDbContext :
         {
             b.ToTable(DFAppConsts.DbTablePrefix + "RssSource", DFAppConsts.DbSchema);
             b.ConfigureByConvention();
-
+ 
             // 添加索引以提高查询性能
             b.HasIndex(e => e.IsEnabled);
             b.HasIndex(e => e.FetchStatus);
+        });
+
+        builder.Entity<DFApp.ElectricVehicle.ElectricVehicle>(b =>
+        {
+            b.ToTable(DFAppConsts.DbTablePrefix + "ElectricVehicle", DFAppConsts.DbSchema);
+            b.Property(e => e.TotalMileage)
+            .HasDefaultValue(0);
+            b.ConfigureByConvention();
+        });
+
+        builder.Entity<DFApp.ElectricVehicle.ElectricVehicleCost>(b =>
+        {
+            b.ToTable(DFAppConsts.DbTablePrefix + "ElectricVehicleCost", DFAppConsts.DbSchema);
+            b.Property(e => e.IsBelongToSelf)
+            .HasDefaultValue(true);
+
+            b.HasOne(e => e.Vehicle)
+            .WithMany(e => e.Costs)
+            .HasForeignKey(e => e.VehicleId);
+
+            b.HasIndex(e => e.CostDate);
+            b.HasIndex(e => e.CostType);
+            b.HasIndex(e => e.VehicleId);
+            b.ConfigureByConvention();
+        });
+
+        builder.Entity<DFApp.ElectricVehicle.ElectricVehicleChargingRecord>(b =>
+        {
+            b.ToTable(DFAppConsts.DbTablePrefix + "ElectricVehicleChargingRecord", DFAppConsts.DbSchema);
+            b.Property(e => e.IsBelongToSelf)
+            .HasDefaultValue(true);
+
+            b.HasOne(e => e.Vehicle)
+            .WithMany(e => e.ChargingRecords)
+            .HasForeignKey(e => e.VehicleId);
+
+            b.HasIndex(e => e.ChargingDate);
+            b.HasIndex(e => e.VehicleId);
+            b.ConfigureByConvention();
+        });
+
+        builder.Entity<DFApp.ElectricVehicle.GasolinePrice>(b =>
+        {
+            b.ToTable(DFAppConsts.DbTablePrefix + "GasolinePrice", DFAppConsts.DbSchema);
+
+            b.HasIndex(e => e.Province);
+            b.HasIndex(e => e.Date);
+            b.HasIndex(e => new { e.Province, e.Date });
+            b.ConfigureByConvention();
         });
 
     }

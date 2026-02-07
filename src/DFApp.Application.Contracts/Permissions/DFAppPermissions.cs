@@ -1,4 +1,4 @@
-﻿namespace DFApp.Permissions;
+namespace DFApp.Permissions;
 
 public static class DFAppPermissions
 {
@@ -98,6 +98,37 @@ public static class DFAppPermissions
         public const string Create = Default + ".Create";
         public const string Edit = Default + ".Edit";
         public const string Delete = Default + ".Delete";
+    }
+
+    public static class ElectricVehicle
+    {
+        public const string Default = GroupName + ".ElectricVehicle";
+        public const string Create = Default + ".Create";
+        public const string Edit = Default + ".Edit";
+        public const string Delete = Default + ".Delete";
+        public const string Statistics = Default + ".Statistics";
+    }
+
+    public static class ElectricVehicleCost
+    {
+        public const string Default = ElectricVehicle.Default + ".Cost";
+        public const string Create = Default + ".Create";
+        public const string Edit = Default + ".Edit";
+        public const string Delete = Default + ".Delete";
+        public const string Analysis = Default + ".Analysis";
+    }
+
+    public static class ElectricVehicleChargingRecord
+    {
+        public const string Default = ElectricVehicle.Default + ".ChargingRecord";
+        public const string Create = Default + ".Create";
+        public const string Edit = Default + ".Edit";
+        public const string Delete = Default + ".Delete";
+    }
+
+    public static class GasolinePrice
+    {
+        public const string Default = ElectricVehicle.Default + ".GasolinePrice";
     }
 
 }
