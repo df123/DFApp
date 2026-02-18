@@ -337,12 +337,6 @@ public class DFAppDbContext :
         builder.Entity<DFApp.ElectricVehicle.ElectricVehicleChargingRecord>(b =>
         {
             b.ToTable(DFAppConsts.DbTablePrefix + "ElectricVehicleChargingRecord", DFAppConsts.DbSchema);
-            b.Property(e => e.IsBelongToSelf)
-            .HasDefaultValue(true);
-
-            b.HasOne(e => e.Vehicle)
-            .WithMany(e => e.ChargingRecords)
-            .HasForeignKey(e => e.VehicleId);
 
             b.HasIndex(e => e.ChargingDate);
             b.HasIndex(e => e.VehicleId);

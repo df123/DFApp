@@ -132,7 +132,7 @@ public class DFAppWebModule : AbpModule
         {
             builder.AddValidation(options =>
             {
-                options.AddAudiences("DFApp_Web");
+                options.AddAudiences("DFApp");
                 options.UseLocalServer();
                 options.UseAspNetCore();
             });

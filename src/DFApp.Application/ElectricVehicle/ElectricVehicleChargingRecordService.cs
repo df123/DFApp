@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Authorization;
 using Volo.Abp.Application.Dtos;
 using Volo.Abp.Application.Services;
 using Volo.Abp.Domain.Repositories;
+using Volo.Abp.Uow;
 
 namespace DFApp.ElectricVehicle
 {
@@ -19,9 +20,17 @@ namespace DFApp.ElectricVehicle
         FilterAndPagedAndSortedResultRequestDto,
         CreateUpdateElectricVehicleChargingRecordDto>, IElectricVehicleChargingRecordService
     {
-        public ElectricVehicleChargingRecordService(IRepository<ElectricVehicleChargingRecord, Guid> repository) 
+        private readonly IRepository<ElectricVehicleCost, Guid> _costRepository;
+        private readonly IUnitOfWorkManager _unitOfWorkManager;
+
+        public ElectricVehicleChargingRecordService(
+            IRepository<ElectricVehicleChargingRecord, Guid> repository,
+            IRepository<ElectricVehicleCost, Guid> costRepository,
+            IUnitOfWorkManager unitOfWorkManager)
             : base(repository)
         {
+            _costRepository = costRepository;
+            _unitOfWorkManager = unitOfWorkManager;
             GetPolicyName = DFAppPermissions.ElectricVehicleChargingRecord.Default;
             GetListPolicyName = DFAppPermissions.ElectricVehicleChargingRecord.Default;
             CreatePolicyName = DFAppPermissions.ElectricVehicleChargingRecord.Create;
@@ -31,17 +40,83 @@ namespace DFApp.ElectricVehicle
 
         protected override async Task<System.Linq.IQueryable<ElectricVehicleChargingRecord>> CreateFilteredQueryAsync(FilterAndPagedAndSortedResultRequestDto input)
         {
-            var query = await Repository.WithDetailsAsync();
-            
-            if (!string.IsNullOrWhiteSpace(input.Filter))
-            {
-                var filter = input.Filter.ToLower();
-                query = query.Where(x => 
-                    (x.StationName != null && x.StationName.ToLower().Contains(filter)) ||
-                    (x.Vehicle.Name != null && x.Vehicle.Name.ToLower().Contains(filter)));
-            }
-            
+            var query = await Repository.GetQueryableAsync();
+
             return query;
+        }
+
+        public override async Task<ElectricVehicleChargingRecordDto> CreateAsync(CreateUpdateElectricVehicleChargingRecordDto input)
+        {
+            var chargingRecordDto = await base.CreateAsync(input);
+            var chargingRecordId = chargingRecordDto.Id;
+
+            await CreateOrUpdateCostRecordAsync(chargingRecordId, input.ChargingDate, input.Amount, input.VehicleId, input.Energy);
+
+            var chargingRecordEntity = await Repository.GetAsync(chargingRecordId);
+            return await MapToGetOutputDtoAsync(chargingRecordEntity);
+        }
+
+        public override async Task<ElectricVehicleChargingRecordDto> UpdateAsync(Guid id, CreateUpdateElectricVehicleChargingRecordDto input)
+        {
+            await base.UpdateAsync(id, input);
+
+            await CreateOrUpdateCostRecordAsync(id, input.ChargingDate, input.Amount, input.VehicleId, input.Energy);
+
+            var chargingRecordEntity = await Repository.GetAsync(id);
+            return await MapToGetOutputDtoAsync(chargingRecordEntity);
+        }
+
+        public override async Task DeleteAsync(Guid id)
+        {
+            await DeleteRelatedCostRecordAsync(id);
+            await base.DeleteAsync(id);
+        }
+
+        private async Task CreateOrUpdateCostRecordAsync(Guid chargingRecordId, DateTime chargingDate, decimal amount, Guid vehicleId, decimal? energy)
+        {
+            using (var uow = _unitOfWorkManager.Begin(requiresNew: true))
+            {
+                var costQuery = await _costRepository.GetQueryableAsync();
+                var existingCost = costQuery.FirstOrDefault(c => c.Remark != null && c.Remark.Contains($"ChargingRecord:{chargingRecordId}"));
+
+                if (existingCost != null)
+                {
+                    existingCost.CostDate = chargingDate;
+                    existingCost.Amount = amount;
+                    existingCost.VehicleId = vehicleId;
+                    existingCost.Remark = $"ChargingRecord:{chargingRecordId}|充电：{energy?.ToString("0.0")}kWh";
+                    await _costRepository.UpdateAsync(existingCost);
+                }
+                else
+                {
+                    var cost = new ElectricVehicleCost
+                    {
+                        VehicleId = vehicleId,
+                        CostType = CostType.Charging,
+                        CostDate = chargingDate,
+                        Amount = amount,
+                        IsBelongToSelf = true,
+                        Remark = $"ChargingRecord:{chargingRecordId}|充电：{energy?.ToString("0.0")}kWh"
+                    };
+                    await _costRepository.InsertAsync(cost);
+                }
+
+                await uow.CompleteAsync();
+            }
+        }
+
+        private async Task DeleteRelatedCostRecordAsync(Guid chargingRecordId)
+        {
+            using (var uow = _unitOfWorkManager.Begin(requiresNew: true))
+            {
+                var costQuery = await _costRepository.GetQueryableAsync();
+                var cost = costQuery.FirstOrDefault(c => c.Remark != null && c.Remark.Contains($"ChargingRecord:{chargingRecordId}"));
+                if (cost != null)
+                {
+                    await _costRepository.DeleteAsync(cost);
+                }
+                await uow.CompleteAsync();
+            }
         }
     }
 }

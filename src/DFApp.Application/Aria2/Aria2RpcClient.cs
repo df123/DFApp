@@ -79,15 +79,11 @@ namespace DFApp.Aria2
                 };
 
                 var json = JsonSerializer.Serialize(requestBody);
-                _logger.LogDebug("发送 Aria2 RPC 请求: {Method} 到 {Url}", method, _rpcUrl);
-                _logger.LogDebug("请求内容: {Json}", json);
 
                 var content = new StringContent(json, Encoding.UTF8, "application/json");
 
                 var response = await _httpClient.PostAsync(_rpcUrl, content);
                 var responseContent = await response.Content.ReadAsStringAsync();
-
-                _logger.LogDebug("响应内容: {Response}", responseContent);
 
                 var rpcResponse = JsonSerializer.Deserialize<Aria2RpcResponse<T>>(responseContent, _jsonOptions);
 

@@ -7,14 +7,8 @@ namespace DFApp.ElectricVehicle
         public Guid Id { get; set; }
         public Guid VehicleId { get; set; }
         public DateTime ChargingDate { get; set; }
-        public string? StationName { get; set; }
-        public int? ChargingDuration { get; set; }
         public decimal? Energy { get; set; }
         public decimal Amount { get; set; }
-        public int? StartSOC { get; set; }
-        public int? EndSOC { get; set; }
-        public bool IsBelongToSelf { get; set; }
-        public string? Remark { get; set; }
         public ElectricVehicleDto? Vehicle { get; set; }
         public DateTime CreationTime { get; set; }
         public DateTime? LastModificationTime { get; set; }
@@ -24,13 +18,7 @@ namespace DFApp.ElectricVehicle
     {
         public Guid VehicleId { get; set; }
         public DateTime ChargingDate { get; set; }
-        public string? StationName { get; set; }
-        public int? ChargingDuration { get; set; }
         public decimal? Energy { get; set; }
         public decimal Amount { get; set; }
-        public int? StartSOC { get; set; }
-        public int? EndSOC { get; set; }
-        public bool IsBelongToSelf { get; set; }
-        public string? Remark { get; set; }
     }
 }

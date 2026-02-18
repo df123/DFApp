@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations.Schema;
 using Volo.Abp.Domain.Entities.Auditing;
 
 namespace DFApp.ElectricVehicle
@@ -15,8 +14,7 @@ namespace DFApp.ElectricVehicle
         public decimal? BatteryCapacity { get; set; }
         public decimal TotalMileage { get; set; }
         public string? Remark { get; set; }
-        
+
         public List<ElectricVehicleCost> Costs { get; set; }
-        public List<ElectricVehicleChargingRecord> ChargingRecords { get; set; }
     }
 }
