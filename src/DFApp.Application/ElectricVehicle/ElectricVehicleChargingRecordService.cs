@@ -21,15 +21,18 @@ namespace DFApp.ElectricVehicle
         CreateUpdateElectricVehicleChargingRecordDto>, IElectricVehicleChargingRecordService
     {
         private readonly IRepository<ElectricVehicleCost, Guid> _costRepository;
+        private readonly IRepository<ElectricVehicle, Guid> _vehicleRepository;
         private readonly IUnitOfWorkManager _unitOfWorkManager;
 
         public ElectricVehicleChargingRecordService(
             IRepository<ElectricVehicleChargingRecord, Guid> repository,
             IRepository<ElectricVehicleCost, Guid> costRepository,
+            IRepository<ElectricVehicle, Guid> vehicleRepository,
             IUnitOfWorkManager unitOfWorkManager)
             : base(repository)
         {
             _costRepository = costRepository;
+            _vehicleRepository = vehicleRepository;
             _unitOfWorkManager = unitOfWorkManager;
             GetPolicyName = DFAppPermissions.ElectricVehicleChargingRecord.Default;
             GetListPolicyName = DFAppPermissions.ElectricVehicleChargingRecord.Default;
@@ -52,6 +55,11 @@ namespace DFApp.ElectricVehicle
 
             await CreateOrUpdateCostRecordAsync(chargingRecordId, input.ChargingDate, input.Amount, input.VehicleId, input.Energy);
 
+            if (input.CurrentMileage.HasValue)
+            {
+                await UpdateVehicleTotalMileageAsync(input.VehicleId, input.CurrentMileage.Value);
+            }
+
             var chargingRecordEntity = await Repository.GetAsync(chargingRecordId);
             return await MapToGetOutputDtoAsync(chargingRecordEntity);
         }
@@ -61,6 +69,11 @@ namespace DFApp.ElectricVehicle
             await base.UpdateAsync(id, input);
 
             await CreateOrUpdateCostRecordAsync(id, input.ChargingDate, input.Amount, input.VehicleId, input.Energy);
+
+            if (input.CurrentMileage.HasValue)
+            {
+                await UpdateVehicleTotalMileageAsync(input.VehicleId, input.CurrentMileage.Value);
+            }
 
             var chargingRecordEntity = await Repository.GetAsync(id);
             return await MapToGetOutputDtoAsync(chargingRecordEntity);
@@ -115,6 +128,17 @@ namespace DFApp.ElectricVehicle
                 {
                     await _costRepository.DeleteAsync(cost);
                 }
+                await uow.CompleteAsync();
+            }
+        }
+
+        private async Task UpdateVehicleTotalMileageAsync(Guid vehicleId, decimal mileage)
+        {
+            using (var uow = _unitOfWorkManager.Begin(requiresNew: true))
+            {
+                var vehicle = await _vehicleRepository.GetAsync(vehicleId);
+                vehicle.TotalMileage = mileage;
+                await _vehicleRepository.UpdateAsync(vehicle);
                 await uow.CompleteAsync();
             }
         }

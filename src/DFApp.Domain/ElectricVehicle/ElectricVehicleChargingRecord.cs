@@ -9,5 +9,6 @@ namespace DFApp.ElectricVehicle
         public DateTime ChargingDate { get; set; }
         public decimal? Energy { get; set; }
         public decimal Amount { get; set; }
+        public decimal? CurrentMileage { get; set; }
     }
 }
