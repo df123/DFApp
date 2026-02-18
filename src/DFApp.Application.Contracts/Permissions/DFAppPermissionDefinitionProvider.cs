@@ -1,4 +1,4 @@
-﻿using DFApp.Localization;
+using DFApp.Localization;
 using Volo.Abp.Authorization.Permissions;
 using Volo.Abp.Localization;
 
@@ -80,6 +80,27 @@ public class DFAppPermissionDefinitionProvider : PermissionDefinitionProvider
         fileFilterPermission.AddChild(DFAppPermissions.FileFilter.Create, L("Permission:FileFilter.Create"));
         fileFilterPermission.AddChild(DFAppPermissions.FileFilter.Edit, L("Permission:FileFilter.Edit"));
         fileFilterPermission.AddChild(DFAppPermissions.FileFilter.Delete, L("Permission:FileFilter.Delete"));
+
+        // 添加ElectricVehicle权限组
+        var electricVehicleGroup = context.AddGroup(DFAppPermissions.ElectricVehicle.Default, L("Permission:ElectricVehicle"));
+        var electricVehiclePermission = electricVehicleGroup.AddPermission(DFAppPermissions.ElectricVehicle.Default, L("Permission:ElectricVehicle"));
+        electricVehiclePermission.AddChild(DFAppPermissions.ElectricVehicle.Create, L("Permission:ElectricVehicle.Create"));
+        electricVehiclePermission.AddChild(DFAppPermissions.ElectricVehicle.Edit, L("Permission:ElectricVehicle.Edit"));
+        electricVehiclePermission.AddChild(DFAppPermissions.ElectricVehicle.Delete, L("Permission:ElectricVehicle.Delete"));
+        electricVehiclePermission.AddChild(DFAppPermissions.ElectricVehicle.Statistics, L("Permission:ElectricVehicle.Statistics"));
+
+        var electricVehicleCostPermission = electricVehiclePermission.AddChild(DFAppPermissions.ElectricVehicleCost.Default, L("Permission:ElectricVehicleCost"));
+        electricVehicleCostPermission.AddChild(DFAppPermissions.ElectricVehicleCost.Create, L("Permission:ElectricVehicleCost.Create"));
+        electricVehicleCostPermission.AddChild(DFAppPermissions.ElectricVehicleCost.Edit, L("Permission:ElectricVehicleCost.Edit"));
+        electricVehicleCostPermission.AddChild(DFAppPermissions.ElectricVehicleCost.Delete, L("Permission:ElectricVehicleCost.Delete"));
+        electricVehicleCostPermission.AddChild(DFAppPermissions.ElectricVehicleCost.Analysis, L("Permission:ElectricVehicleCost.Analysis"));
+
+        var electricVehicleChargingRecordPermission = electricVehiclePermission.AddChild(DFAppPermissions.ElectricVehicleChargingRecord.Default, L("Permission:ElectricVehicleChargingRecord"));
+        electricVehicleChargingRecordPermission.AddChild(DFAppPermissions.ElectricVehicleChargingRecord.Create, L("Permission:ElectricVehicleChargingRecord.Create"));
+        electricVehicleChargingRecordPermission.AddChild(DFAppPermissions.ElectricVehicleChargingRecord.Edit, L("Permission:ElectricVehicleChargingRecord.Edit"));
+        electricVehicleChargingRecordPermission.AddChild(DFAppPermissions.ElectricVehicleChargingRecord.Delete, L("Permission:ElectricVehicleChargingRecord.Delete"));
+
+        electricVehiclePermission.AddChild(DFAppPermissions.GasolinePrice.Default, L("Permission:GasolinePrice"));
     }
 
     private static LocalizableString L(string name)

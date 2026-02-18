@@ -3,6 +3,7 @@ using System;
 using DFApp.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Volo.Abp.EntityFrameworkCore;
 
@@ -11,9 +12,11 @@ using Volo.Abp.EntityFrameworkCore;
 namespace DFApp.Migrations
 {
     [DbContext(typeof(DFAppDbContext))]
-    partial class DFAppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260204083829_AddElectricVehicles")]
+    partial class AddElectricVehicles
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -442,6 +445,9 @@ namespace DFApp.Migrations
                     b.Property<DateTime>("ChargingDate")
                         .HasColumnType("TEXT");
 
+                    b.Property<int?>("ChargingDuration")
+                        .HasColumnType("INTEGER");
+
                     b.Property<string>("ConcurrencyStamp")
                         .IsConcurrencyToken()
                         .IsRequired()
@@ -457,8 +463,8 @@ namespace DFApp.Migrations
                         .HasColumnType("TEXT")
                         .HasColumnName("CreatorId");
 
-                    b.Property<decimal?>("CurrentMileage")
-                        .HasColumnType("TEXT");
+                    b.Property<int?>("EndSOC")
+                        .HasColumnType("INTEGER");
 
                     b.Property<decimal?>("Energy")
                         .HasColumnType("TEXT");
@@ -468,6 +474,11 @@ namespace DFApp.Migrations
                         .HasColumnType("TEXT")
                         .HasColumnName("ExtraProperties");
 
+                    b.Property<bool>("IsBelongToSelf")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER")
+                        .HasDefaultValue(true);
+
                     b.Property<DateTime?>("LastModificationTime")
                         .HasColumnType("TEXT")
                         .HasColumnName("LastModificationTime");
@@ -475,6 +486,15 @@ namespace DFApp.Migrations
                     b.Property<Guid?>("LastModifierId")
                         .HasColumnType("TEXT")
                         .HasColumnName("LastModifierId");
+
+                    b.Property<string>("Remark")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int?>("StartSOC")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("StationName")
+                        .HasColumnType("TEXT");
 
                     b.Property<Guid>("VehicleId")
                         .HasColumnType("TEXT");
@@ -3298,6 +3318,17 @@ namespace DFApp.Migrations
                     b.Navigation("Category");
                 });
 
+            modelBuilder.Entity("DFApp.ElectricVehicle.ElectricVehicleChargingRecord", b =>
+                {
+                    b.HasOne("DFApp.ElectricVehicle.ElectricVehicle", "Vehicle")
+                        .WithMany("ChargingRecords")
+                        .HasForeignKey("VehicleId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Vehicle");
+                });
+
             modelBuilder.Entity("DFApp.ElectricVehicle.ElectricVehicleCost", b =>
                 {
                     b.HasOne("DFApp.ElectricVehicle.ElectricVehicle", "Vehicle")
@@ -3499,6 +3530,8 @@ namespace DFApp.Migrations
 
             modelBuilder.Entity("DFApp.ElectricVehicle.ElectricVehicle", b =>
                 {
+                    b.Navigation("ChargingRecords");
+
                     b.Navigation("Costs");
                 });
 

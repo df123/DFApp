@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json;
@@ -64,6 +64,13 @@ public class OpenIddictDataSeedContributor : IDataSeedContributor, ITransientDep
                 Name = "DFApp", DisplayName = "DFApp API", Resources = { "DFApp" }
             });
         }
+
+        if (await _openIddictScopeRepository.FindByNameAsync("DFApp_Web") == null)
+        {
+            await _scopeManager.CreateAsync(new OpenIddictScopeDescriptor {
+                Name = "DFApp_Web", DisplayName = "DFApp Web Client", Resources = { "DFApp" }
+            });
+        }
     }
 
     private async Task CreateApplicationsAsync()
@@ -74,7 +81,8 @@ public class OpenIddictDataSeedContributor : IDataSeedContributor, ITransientDep
             OpenIddictConstants.Permissions.Scopes.Phone,
             OpenIddictConstants.Permissions.Scopes.Profile,
             OpenIddictConstants.Permissions.Scopes.Roles,
-            "DFApp"
+            "DFApp",
+            "DFApp_Web"
         };
 
         var configurationSection = _configuration.GetSection("OpenIddict:Applications");
