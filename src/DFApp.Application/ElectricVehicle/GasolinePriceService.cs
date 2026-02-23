@@ -51,9 +51,24 @@ namespace DFApp.ElectricVehicle
             return ObjectMapper.Map<GasolinePrice, GasolinePriceDto>(price);
         }
 
-        public async Task<PagedResultDto<GasolinePriceDto>> GetListAsync(PagedAndSortedResultRequestDto input)
+        public async Task<PagedResultDto<GasolinePriceDto>> GetListAsync(GetGasolinePricesDto input)
         {
             var queryable = await _repository.GetQueryableAsync();
+
+            if (!string.IsNullOrWhiteSpace(input.Province))
+            {
+                queryable = queryable.Where(x => x.Province == input.Province);
+            }
+
+            if (input.StartDate.HasValue)
+            {
+                queryable = queryable.Where(x => x.Date >= input.StartDate.Value);
+            }
+
+            if (input.EndDate.HasValue)
+            {
+                queryable = queryable.Where(x => x.Date <= input.EndDate.Value);
+            }
 
             queryable = queryable.OrderByDescending(x => x.Date);
             
@@ -67,11 +82,10 @@ namespace DFApp.ElectricVehicle
             return new PagedResultDto<GasolinePriceDto>(totalCount, dtos);
         }
 
-        public async Task RefreshGasolinePricesAsync(RefreshGasolinePriceDto input)
+        public async Task RefreshGasolinePricesAsync()
         {
-            var province = input.Province ?? "山东";
-            _logger.LogInformation("开始刷新油价数据，省份：{Province}", province);
-            
+            _logger.LogInformation("开始刷新油价数据（全部省份）");
+
             try
             {
                 // 1. 从配置获取API Key
@@ -88,36 +102,37 @@ namespace DFApp.ElectricVehicle
                 {
                     throw new UserFriendlyException("未配置油价API Key，请在系统配置中添加 GasPriceApiKey");
                 }
-                
-                // 2. 调用API
+
+                // 2. 调用API（API返回全部省份的数据）
                 var apiUrl = $"https://api.tanshuapi.com/api/youjia/v1/index?key={apiKey}";
-                
+
                 using var httpClient = _httpClientFactory.CreateClient();
                 var response = await httpClient.GetAsync(apiUrl);
-                
+
                 if (!response.IsSuccessStatusCode)
                 {
                     throw new UserFriendlyException($"获取油价失败：HTTP {response.StatusCode}");
                 }
-                
+
                 var json = await response.Content.ReadAsStringAsync();
                 var apiResponse = JsonSerializer.Deserialize<TanshuApiResponse>(json);
-                
+
                 if (apiResponse?.code != 1)
                 {
                     throw new UserFriendlyException($"获取油价失败：{apiResponse?.msg}");
                 }
-                
+
                 _logger.LogInformation("API返回数据：{Count} 条", apiResponse?.data?.list?.Count);
-                
+
                 // 3. 保存到数据库
                 var savedCount = 0;
+                var repository = (IGasolinePriceRepository)_repository;
+
                 foreach (var item in apiResponse.data.list)
                 {
                     // 检查是否已存在
-                    var repository = (IGasolinePriceRepository)_repository;
                     var existing = await repository.GetPriceByDateAsync(item.province, DateTime.Parse(item.date));
-                    
+
                     if (existing == null)
                     {
                         var gasolinePrice = new GasolinePrice
@@ -133,7 +148,7 @@ namespace DFApp.ElectricVehicle
                             Price97H = ParseDecimal(item.price97h),
                             Price98H = ParseDecimal(item.price98h)
                         };
-                        
+
                         await _repository.InsertAsync(gasolinePrice);
                         savedCount++;
                         _logger.LogInformation("保存油价数据：{Province} {Date}", item.province, item.date);
@@ -143,7 +158,7 @@ namespace DFApp.ElectricVehicle
                         _logger.LogDebug("油价数据已存在：{Province} {Date}", item.province, item.date);
                     }
                 }
-                
+
                 _logger.LogInformation("油价刷新完成，新增 {Count} 条记录", savedCount);
             }
             catch (UserFriendlyException)
