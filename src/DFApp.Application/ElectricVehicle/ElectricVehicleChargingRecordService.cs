@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using System.Linq;
 using DFApp.ElectricVehicle;
@@ -46,6 +47,36 @@ namespace DFApp.ElectricVehicle
             var query = await Repository.GetQueryableAsync();
 
             return query;
+        }
+
+        public override async Task<PagedResultDto<ElectricVehicleChargingRecordDto>> GetListAsync(FilterAndPagedAndSortedResultRequestDto input)
+        {
+            var query = await CreateFilteredQueryAsync(input);
+
+            var totalCount = await AsyncExecuter.CountAsync(query);
+
+            query = ApplySorting(query, input);
+            query = ApplyPaging(query, input);
+
+            var items = await AsyncExecuter.ToListAsync(query);
+
+            var vehicleIds = items.Select(x => x.VehicleId).Distinct().ToList();
+            var vehicles = await _vehicleRepository.GetListAsync(x => vehicleIds.Contains(x.Id));
+
+            var vehicleMap = vehicles.ToDictionary(x => x.Id);
+
+            var dtos = new List<ElectricVehicleChargingRecordDto>();
+            foreach (var item in items)
+            {
+                var dto = ObjectMapper.Map<ElectricVehicleChargingRecord, ElectricVehicleChargingRecordDto>(item);
+                if (dto.VehicleId != Guid.Empty && vehicleMap.TryGetValue(dto.VehicleId, out var vehicle))
+                {
+                    dto.Vehicle = ObjectMapper.Map<DFApp.ElectricVehicle.ElectricVehicle, ElectricVehicleDto>(vehicle);
+                }
+                dtos.Add(dto);
+            }
+
+            return new PagedResultDto<ElectricVehicleChargingRecordDto>(totalCount, dtos);
         }
 
         public override async Task<ElectricVehicleChargingRecordDto> CreateAsync(CreateUpdateElectricVehicleChargingRecordDto input)

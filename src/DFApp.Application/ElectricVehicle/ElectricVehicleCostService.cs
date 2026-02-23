@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Threading.Tasks;
@@ -60,6 +61,46 @@ namespace DFApp.ElectricVehicle
             }
             
             return query;
+        }
+
+        public override async Task<PagedResultDto<ElectricVehicleCostDto>> GetListAsync(FilterAndPagedAndSortedResultRequestDto input)
+        {
+            var query = await CreateFilteredQueryAsync(input);
+            var totalCount = await AsyncExecuter.CountAsync(query);
+
+            query = ApplySorting(query, input);
+            query = ApplyPaging(query, input);
+
+            var entities = await AsyncExecuter.ToListAsync(query);
+
+            var vehicleIds = entities.Select(x => x.VehicleId).Distinct().ToList();
+            var vehicles = await _vehicleRepository.GetListAsync(x => vehicleIds.Contains(x.Id));
+            var vehicleDict = vehicles.ToDictionary(x => x.Id);
+
+            var dtos = new List<ElectricVehicleCostDto>();
+            foreach (var entity in entities)
+            {
+                var dto = await MapToGetListOutputDtoAsync(entity);
+                if (vehicleDict.TryGetValue(entity.VehicleId, out var vehicle))
+                {
+                    dto.Vehicle = new ElectricVehicleDto
+                    {
+                        Id = vehicle.Id,
+                        Name = vehicle.Name,
+                        Brand = vehicle.Brand,
+                        Model = vehicle.Model,
+                        LicensePlate = vehicle.LicensePlate,
+                        PurchaseDate = vehicle.PurchaseDate,
+                        BatteryCapacity = vehicle.BatteryCapacity,
+                        TotalMileage = vehicle.TotalMileage,
+                        Remark = vehicle.Remark,
+                        CreationTime = vehicle.CreationTime
+                    };
+                }
+                dtos.Add(dto);
+            }
+
+            return new PagedResultDto<ElectricVehicleCostDto>(totalCount, dtos);
         }
 
         public async Task<OilCostComparisonDto> GetOilCostComparisonAsync(OilCostComparisonRequestDto input)
@@ -131,20 +172,65 @@ namespace DFApp.ElectricVehicle
                 .Sum(x => x.Amount);
             
             var electricVehicleTotalCost = electricCosts.Sum(x => x.Amount);
-            
-            // 获取总里程
+
+            // 判断是否是"全部时间"（开始日期很早）
+            var isAllTime = input.StartDate.Year <= 2000;
+
+            // 获取选定日期范围内的行驶里程
             decimal electricVehicleMileage = 0;
-            if (input.VehicleId.HasValue)
+
+            if (isAllTime)
             {
-                var vehicle = await _vehicleRepository.GetAsync(input.VehicleId.Value);
-                electricVehicleMileage = vehicle.TotalMileage;
+                // 全部时间：直接使用车辆总里程
+                if (input.VehicleId.HasValue)
+                {
+                    var vehicle = await _vehicleRepository.GetAsync(input.VehicleId.Value);
+                    electricVehicleMileage = vehicle.TotalMileage;
+                }
+                else if (electricCosts.Any())
+                {
+                    var vehicle = await _vehicleRepository.GetAsync(electricCosts.First().VehicleId);
+                    electricVehicleMileage = vehicle.TotalMileage;
+                }
             }
-            else if (electricCosts.Any())
+            else
             {
-                var vehicle = await _vehicleRepository.GetAsync(electricCosts.First().VehicleId);
-                electricVehicleMileage = vehicle.TotalMileage;
+                // 特定时间范围：计算该范围内的里程差
+                var mileageQuery = await _chargingRecordRepository.GetQueryableAsync();
+                if (input.VehicleId.HasValue)
+                {
+                    mileageQuery = mileageQuery.Where(x => x.VehicleId == input.VehicleId.Value);
+                }
+                var chargingRecordsInPeriod = mileageQuery
+                    .Where(x => x.ChargingDate >= input.StartDate && x.ChargingDate <= input.EndDate && x.CurrentMileage.HasValue)
+                    .OrderBy(x => x.ChargingDate)
+                    .ToList();
+
+                if (chargingRecordsInPeriod.Count >= 2)
+                {
+                    electricVehicleMileage = chargingRecordsInPeriod.Last().CurrentMileage.Value - chargingRecordsInPeriod.First().CurrentMileage.Value;
+                }
+                else if (chargingRecordsInPeriod.Count == 1)
+                {
+                    electricVehicleMileage = chargingRecordsInPeriod[0].CurrentMileage.Value;
+                }
+
+                // 如果没有充电记录，使用车辆总里程
+                if (electricVehicleMileage == 0)
+                {
+                    if (input.VehicleId.HasValue)
+                    {
+                        var vehicle = await _vehicleRepository.GetAsync(input.VehicleId.Value);
+                        electricVehicleMileage = vehicle.TotalMileage;
+                    }
+                    else if (electricCosts.Any())
+                    {
+                        var vehicle = await _vehicleRepository.GetAsync(electricCosts.First().VehicleId);
+                        electricVehicleMileage = vehicle.TotalMileage;
+                    }
+                }
             }
-            
+
             var electricVehicleCostPerKm = electricVehicleMileage > 0 ? electricVehicleTotalCost / electricVehicleMileage : 0;
 
             // 获取充电记录，用于计算对应时间段的油价
@@ -165,6 +251,10 @@ namespace DFApp.ElectricVehicle
                     .Where(x => x.Province == province)
                     .OrderByDescending(x => x.Date)
                     .ToList();
+
+                // 获取最新油价作为默认值
+                var latestPrice = allPrices.FirstOrDefault();
+                var defaultGasolinePrice = latestPrice != null ? GetGasolinePriceByGrade(latestPrice, gasolineGrade) : 0;
 
                 // 计算油车在相同里程下的油费
                 decimal previousMileage = 0;
@@ -190,9 +280,14 @@ namespace DFApp.ElectricVehicle
                         .OrderByDescending(x => x.Date)
                         .FirstOrDefault();
 
+                    var gasolinePrice = defaultGasolinePrice;
                     if (price != null)
                     {
-                        var gasolinePrice = GetGasolinePriceByGrade(price, gasolineGrade);
+                        gasolinePrice = GetGasolinePriceByGrade(price, gasolineGrade);
+                    }
+
+                    if (gasolinePrice > 0)
+                    {
                         var oilCost = mileage / 100 * fuelConsumption * gasolinePrice;
                         oilVehicleTotalCost += oilCost;
                     }
@@ -202,15 +297,10 @@ namespace DFApp.ElectricVehicle
 
                 // 如果有剩余里程没有充电记录覆盖，使用最新油价计算
                 var remainingMileage = electricVehicleMileage - totalCalculatedMileage;
-                if (remainingMileage > 0)
+                if (remainingMileage > 0 && defaultGasolinePrice > 0)
                 {
-                    var latestPrice = allPrices.FirstOrDefault();
-                    if (latestPrice != null)
-                    {
-                        var gasolinePrice = GetGasolinePriceByGrade(latestPrice, gasolineGrade);
-                        var oilCost = remainingMileage / 100 * fuelConsumption * gasolinePrice;
-                        oilVehicleTotalCost += oilCost;
-                    }
+                    var oilCost = remainingMileage / 100 * fuelConsumption * defaultGasolinePrice;
+                    oilVehicleTotalCost += oilCost;
                 }
 
                 oilVehicleFuelCost = oilVehicleTotalCost;

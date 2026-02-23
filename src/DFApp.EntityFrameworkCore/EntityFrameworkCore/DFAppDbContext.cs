@@ -340,6 +340,10 @@ public class DFAppDbContext :
 
             b.HasIndex(e => e.ChargingDate);
             b.HasIndex(e => e.VehicleId);
+            b.HasOne(e => e.Vehicle)
+                .WithMany()
+                .HasForeignKey(e => e.VehicleId)
+                .OnDelete(DeleteBehavior.Restrict);
             b.ConfigureByConvention();
         });
 

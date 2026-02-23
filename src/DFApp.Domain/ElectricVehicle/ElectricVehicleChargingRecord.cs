@@ -10,5 +10,7 @@ namespace DFApp.ElectricVehicle
         public decimal? Energy { get; set; }
         public decimal Amount { get; set; }
         public decimal? CurrentMileage { get; set; }
+        
+        public ElectricVehicle Vehicle { get; set; }
     }
 }
