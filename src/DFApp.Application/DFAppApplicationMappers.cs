@@ -517,7 +517,10 @@ public partial class RssWordSegmentToRssWordSegmentWithItemDtoMapper : MapperBas
 [Mapper(RequiredMappingStrategy = RequiredMappingStrategy.Target)]
 public partial class EVEntityToEVDtoMapper : MapperBase<EV, EVDto>
 {
+    [MapperIgnoreSource(nameof(EV.Costs))]
     public override partial EVDto Map(EV source);
+
+    [MapperIgnoreSource(nameof(EV.Costs))]
     public override partial void Map(EV source, EVDto destination);
 }
 
@@ -538,7 +541,10 @@ public partial class CreateUpdateEVDtoToEVMapper : MapperBase<CreateUpdateEVDto,
 [Mapper(RequiredMappingStrategy = RequiredMappingStrategy.Target)]
 public partial class EVCostEntityToEVCostDtoMapper : MapperBase<EVCost, EVCostDto>
 {
+    [MapperIgnoreSource(nameof(EVCost.Vehicle))]
     public override partial EVCostDto Map(EVCost source);
+
+    [MapperIgnoreSource(nameof(EVCost.Vehicle))]
     public override partial void Map(EVCost source, EVCostDto destination);
 }
 
@@ -559,7 +565,10 @@ public partial class CreateUpdateEVCostDtoToEVCostMapper : MapperBase<CreateUpda
 [Mapper(RequiredMappingStrategy = RequiredMappingStrategy.Target)]
 public partial class EVChargingEntityToEVChargingDtoMapper : MapperBase<EVCharging, EVChargingDto>
 {
+    [MapperIgnoreSource(nameof(EVCharging.Vehicle))]
     public override partial EVChargingDto Map(EVCharging source);
+
+    [MapperIgnoreSource(nameof(EVCharging.Vehicle))]
     public override partial void Map(EVCharging source, EVChargingDto destination);
 }
 
