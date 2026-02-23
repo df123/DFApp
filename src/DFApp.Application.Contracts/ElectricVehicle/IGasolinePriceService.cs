@@ -9,12 +9,7 @@ namespace DFApp.ElectricVehicle
     {
         Task<GasolinePriceDto?> GetLatestPriceAsync(string province);
         Task<GasolinePriceDto?> GetPriceByDateAsync(string province, DateTime date);
-        Task RefreshGasolinePricesAsync(RefreshGasolinePriceDto input);
-        Task<PagedResultDto<GasolinePriceDto>> GetListAsync(PagedAndSortedResultRequestDto input);
-    }
-
-    public class RefreshGasolinePriceDto
-    {
-        public string Province { get; set; } = "山东";
+        Task RefreshGasolinePricesAsync();
+        Task<PagedResultDto<GasolinePriceDto>> GetListAsync(GetGasolinePricesDto input);
     }
 }

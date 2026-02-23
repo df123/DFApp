@@ -25,18 +25,21 @@ namespace DFApp.ElectricVehicle
         private readonly IRepository<DFApp.ElectricVehicle.ElectricVehicle, Guid> _vehicleRepository;
         private readonly IGasolinePriceRepository _gasolinePriceRepository;
         private readonly IConfigurationInfoRepository _configurationInfoRepository;
+        private readonly IRepository<ElectricVehicleChargingRecord, Guid> _chargingRecordRepository;
 
         public ElectricVehicleCostService(
             IRepository<ElectricVehicleCost, Guid> repository,
             IRepository<DFApp.ElectricVehicle.ElectricVehicle, Guid> vehicleRepository,
             IGasolinePriceRepository gasolinePriceRepository,
-            IConfigurationInfoRepository configurationInfoRepository) 
+            IConfigurationInfoRepository configurationInfoRepository,
+            IRepository<ElectricVehicleChargingRecord, Guid> chargingRecordRepository)
             : base(repository)
         {
             _vehicleRepository = vehicleRepository;
             _gasolinePriceRepository = gasolinePriceRepository;
             _configurationInfoRepository = configurationInfoRepository;
-            
+            _chargingRecordRepository = chargingRecordRepository;
+
             GetPolicyName = DFAppPermissions.ElectricVehicleCost.Default;
             GetListPolicyName = DFAppPermissions.ElectricVehicleCost.Default;
             CreatePolicyName = DFAppPermissions.ElectricVehicleCost.Create;
@@ -143,23 +146,91 @@ namespace DFApp.ElectricVehicle
             }
             
             var electricVehicleCostPerKm = electricVehicleMileage > 0 ? electricVehicleTotalCost / electricVehicleMileage : 0;
-            
-            // 获取最新油价
-            var latestPrice = await _gasolinePriceRepository.GetLatestPriceAsync(province);
-            
-            if (latestPrice == null)
+
+            // 获取充电记录，用于计算对应时间段的油价
+            var chargingQuery = await _chargingRecordRepository.GetQueryableAsync();
+            var chargingRecords = chargingQuery
+                .Where(x => x.ChargingDate >= input.StartDate && x.ChargingDate <= input.EndDate)
+                .OrderBy(x => x.ChargingDate)
+                .ToList();
+
+            decimal oilVehicleTotalCost = 0;
+            decimal oilVehicleFuelCost = 0;
+
+            if (electricVehicleMileage > 0 && chargingRecords.Any())
             {
-                throw new UserFriendlyException($"未找到{province}的油价数据，请刷新油价");
+                // 获取所有油价数据
+                var priceQuery = await _gasolinePriceRepository.GetQueryableAsync();
+                var allPrices = priceQuery
+                    .Where(x => x.Province == province)
+                    .OrderByDescending(x => x.Date)
+                    .ToList();
+
+                // 计算油车在相同里程下的油费
+                decimal previousMileage = 0;
+                decimal totalCalculatedMileage = 0;
+
+                for (int i = 0; i < chargingRecords.Count; i++)
+                {
+                    var record = chargingRecords[i];
+                    var currentMileage = record.CurrentMileage ?? 0;
+
+                    if (currentMileage <= previousMileage)
+                    {
+                        continue;
+                    }
+
+                    var mileage = currentMileage - previousMileage;
+                    totalCalculatedMileage += mileage;
+
+                    // 查找充电日期对应的油价（最接近的历史油价）
+                    var chargingDate = record.ChargingDate;
+                    var price = allPrices
+                        .Where(x => x.Date <= chargingDate)
+                        .OrderByDescending(x => x.Date)
+                        .FirstOrDefault();
+
+                    if (price != null)
+                    {
+                        var gasolinePrice = GetGasolinePriceByGrade(price, gasolineGrade);
+                        var oilCost = mileage / 100 * fuelConsumption * gasolinePrice;
+                        oilVehicleTotalCost += oilCost;
+                    }
+
+                    previousMileage = currentMileage;
+                }
+
+                // 如果有剩余里程没有充电记录覆盖，使用最新油价计算
+                var remainingMileage = electricVehicleMileage - totalCalculatedMileage;
+                if (remainingMileage > 0)
+                {
+                    var latestPrice = allPrices.FirstOrDefault();
+                    if (latestPrice != null)
+                    {
+                        var gasolinePrice = GetGasolinePriceByGrade(latestPrice, gasolineGrade);
+                        var oilCost = remainingMileage / 100 * fuelConsumption * gasolinePrice;
+                        oilVehicleTotalCost += oilCost;
+                    }
+                }
+
+                oilVehicleFuelCost = oilVehicleTotalCost;
             }
-            
-            // 获取对应标号的油价
-            decimal currentGasolinePrice = GetGasolinePriceByGrade(latestPrice, gasolineGrade);
-            
-            // 计算油车数据
-            var oilVehicleCostPerKm = fuelConsumption * currentGasolinePrice / 100;
-            var oilVehicleTotalCost = electricVehicleMileage * oilVehicleCostPerKm;
-            var oilVehicleFuelCost = oilVehicleTotalCost;
-            
+
+            // 计算油车每公里成本（基于总油费和总里程）
+            var oilVehicleCostPerKm = electricVehicleMileage > 0 ? oilVehicleTotalCost / electricVehicleMileage : 0;
+
+            // 获取最新油价用于显示
+            var currentGasolinePrice = 0m;
+            try
+            {
+                var latestPrice = await _gasolinePriceRepository.GetLatestPriceAsync(province);
+                if (latestPrice != null)
+                {
+                    currentGasolinePrice = GetGasolinePriceByGrade(latestPrice, gasolineGrade);
+                }
+            }
+            catch { }
+
             // 计算对比
             var savings = oilVehicleTotalCost - electricVehicleTotalCost;
             var savingsPercentage = oilVehicleTotalCost > 0 ? (savings / oilVehicleTotalCost * 100) : 0;

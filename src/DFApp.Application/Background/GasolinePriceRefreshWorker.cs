@@ -1,4 +1,3 @@
-using DFApp.Configuration;
 using DFApp.ElectricVehicle;
 using Microsoft.Extensions.Logging;
 using Quartz;
@@ -11,16 +10,13 @@ namespace DFApp.Background
     public class GasolinePriceRefreshWorker : QuartzBackgroundWorkerBase
     {
         private readonly IGasolinePriceService _gasolinePriceService;
-        private readonly IConfigurationInfoRepository _configurationInfoRepository;
         private readonly ILogger<GasolinePriceRefreshWorker> _logger;
 
         public GasolinePriceRefreshWorker(
             IGasolinePriceService gasolinePriceService,
-            IConfigurationInfoRepository configurationInfoRepository,
             ILogger<GasolinePriceRefreshWorker> logger)
         {
             _gasolinePriceService = gasolinePriceService;
-            _configurationInfoRepository = configurationInfoRepository;
             _logger = logger;
 
             JobDetail = JobBuilder
@@ -28,37 +24,22 @@ namespace DFApp.Background
                 .WithIdentity(nameof(GasolinePriceRefreshWorker))
                 .Build();
 
-            // 每天凌晨2点执行
+            // 每天晚上9点执行
             Trigger = TriggerBuilder
                 .Create()
                 .WithIdentity(nameof(GasolinePriceRefreshWorker))
-                .WithCronSchedule("0 0 2 * * ?")
+                .WithCronSchedule("0 0 21 * * ?")
                 .Build();
         }
 
         public override async Task Execute(IJobExecutionContext context)
         {
-            _logger.LogInformation("开始执行油价刷新任务");
-            
+            _logger.LogInformation("开始执行油价刷新任务（刷新全部省份）");
+
             try
             {
-                // 从配置获取默认省份
-                string defaultProvince = "山东";
-                try
-                {
-                    defaultProvince = await _configurationInfoRepository.GetConfigurationInfoValue("OilProvince", "DFApp.ElectricVehicle");
-                    if (string.IsNullOrWhiteSpace(defaultProvince))
-                    {
-                        defaultProvince = "山东";
-                    }
-                }
-                catch
-                {
-                    defaultProvince = "山东";
-                }
+                await _gasolinePriceService.RefreshGasolinePricesAsync();
 
-                await _gasolinePriceService.RefreshGasolinePricesAsync(new RefreshGasolinePriceDto { Province = defaultProvince });
-                
                 _logger.LogInformation("油价刷新任务执行成功");
             }
             catch (Exception ex)
