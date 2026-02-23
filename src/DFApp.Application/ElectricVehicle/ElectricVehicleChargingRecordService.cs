@@ -92,7 +92,15 @@ namespace DFApp.ElectricVehicle
             }
 
             var chargingRecordEntity = await Repository.GetAsync(chargingRecordId);
-            return await MapToGetOutputDtoAsync(chargingRecordEntity);
+
+            var dto = ObjectMapper.Map<ElectricVehicleChargingRecord, ElectricVehicleChargingRecordDto>(chargingRecordEntity);
+            if (dto.VehicleId != Guid.Empty)
+            {
+                var vehicle = await _vehicleRepository.GetAsync(dto.VehicleId);
+                dto.Vehicle = ObjectMapper.Map<DFApp.ElectricVehicle.ElectricVehicle, ElectricVehicleDto>(vehicle);
+            }
+
+            return dto;
         }
 
         public override async Task<ElectricVehicleChargingRecordDto> UpdateAsync(Guid id, CreateUpdateElectricVehicleChargingRecordDto input)
@@ -107,7 +115,29 @@ namespace DFApp.ElectricVehicle
             }
 
             var chargingRecordEntity = await Repository.GetAsync(id);
-            return await MapToGetOutputDtoAsync(chargingRecordEntity);
+
+            var dto = ObjectMapper.Map<ElectricVehicleChargingRecord, ElectricVehicleChargingRecordDto>(chargingRecordEntity);
+            if (dto.VehicleId != Guid.Empty)
+            {
+                var vehicle = await _vehicleRepository.GetAsync(dto.VehicleId);
+                dto.Vehicle = ObjectMapper.Map<DFApp.ElectricVehicle.ElectricVehicle, ElectricVehicleDto>(vehicle);
+            }
+
+            return dto;
+        }
+
+        public override async Task<ElectricVehicleChargingRecordDto> GetAsync(Guid id)
+        {
+            var entity = await Repository.GetAsync(id);
+
+            var dto = ObjectMapper.Map<ElectricVehicleChargingRecord, ElectricVehicleChargingRecordDto>(entity);
+            if (dto.VehicleId != Guid.Empty)
+            {
+                var vehicle = await _vehicleRepository.GetAsync(dto.VehicleId);
+                dto.Vehicle = ObjectMapper.Map<DFApp.ElectricVehicle.ElectricVehicle, ElectricVehicleDto>(vehicle);
+            }
+
+            return dto;
         }
 
         public override async Task DeleteAsync(Guid id)
