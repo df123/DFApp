@@ -67,6 +67,31 @@ namespace DFApp.Bookkeeping.Expenditure
             return result;
         }
 
+        public async Task<decimal> GetTotalExpenditureAsync(string? filter = null, long? categoryId = null, bool? isBelongToSelf = null)
+        {
+            var query = await ReadOnlyRepository.GetQueryableAsync();
+
+            if (!string.IsNullOrWhiteSpace(filter))
+            {
+                query = query.Where(x => x.Category!.Category.Contains(filter)
+                    || x.Remark!.Contains(filter)
+                    || x.Expenditure.ToString().Contains(filter));
+            }
+
+            if (categoryId.HasValue)
+            {
+                query = query.Where(x => x.CategoryId == categoryId.Value);
+            }
+
+            if (isBelongToSelf.HasValue)
+            {
+                query = query.Where(x => x.IsBelongToSelf == isBelongToSelf.Value);
+            }
+
+            var total = await AsyncExecuter.SumAsync(query, x => x.Expenditure);
+            return total;
+        }
+
         [Authorize(DFAppPermissions.BookkeepingExpenditure.Analysis)]
         public async Task<ChartJSDto> GetChartJSDto(DateTime start, DateTime end
             , CompareType compareType, NumberType numberType, bool? isBelongToSelf)

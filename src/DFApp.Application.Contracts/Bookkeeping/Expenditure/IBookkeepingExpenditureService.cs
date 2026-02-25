@@ -16,6 +16,8 @@ namespace DFApp.Bookkeeping.Expenditure
     {
         Task<List<BookkeepingCategoryLookupDto>> GetCategoryLookupDto();
 
+        Task<decimal> GetTotalExpenditureAsync(string? filter = null, long? categoryId = null, bool? isBelongToSelf = null);
+
         Task<ChartJSDto> GetChartJSDto(DateTime start
             , DateTime end
             , CompareType compareType
