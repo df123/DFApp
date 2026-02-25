@@ -2,6 +2,7 @@ using DFApp.Aria2;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using Volo.Abp.DependencyInjection;
@@ -163,6 +164,9 @@ namespace DFApp.Rss
             return results;
         }
 
+        private const long MinDiskSpaceGB = 2;
+        private const long MinDiskSpaceBytes = MinDiskSpaceGB * 1024 * 1024 * 1024;
+
         public async Task CreateDownloadTaskAsync(long subscriptionId, long rssMirrorItemId)
         {
             var subscription = await _rssSubscriptionRepository.GetAsync(subscriptionId);
@@ -175,6 +179,27 @@ namespace DFApp.Rss
             {
                 _logger.LogInformation("订阅 {SubscriptionName} 的下载任务已存在: {Title}", 
                     subscription.Name, item.Title);
+                return;
+            }
+
+            var availableSpace = GetAvailableDiskSpace();
+
+            if (availableSpace < MinDiskSpaceBytes)
+            {
+                _logger.LogWarning("磁盘空间不足 {MinGB} GB，暂存订阅 {SubscriptionName} 的下载: {Title}", 
+                    MinDiskSpaceGB, subscription.Name, item.Title);
+
+                var pendingRecord = new RssSubscriptionDownload
+                {
+                    SubscriptionId = subscriptionId,
+                    RssMirrorItemId = rssMirrorItemId,
+                    Aria2Gid = string.Empty,
+                    DownloadStatus = 0,
+                    IsPendingDueToLowDiskSpace = true,
+                    CreationTime = DateTime.Now
+                };
+
+                await _rssSubscriptionDownloadRepository.InsertAsync(pendingRecord);
                 return;
             }
 
@@ -202,6 +227,76 @@ namespace DFApp.Rss
 
             _logger.LogInformation("订阅 {SubscriptionName} 自动下载: {Title} (GID: {Gid})", 
                 subscription.Name, item.Title, result.Id);
+        }
+
+        private long GetAvailableDiskSpace()
+        {
+            try
+            {
+                var currentDirectory = Directory.GetCurrentDirectory();
+                var driveInfo = new DriveInfo(Path.GetPathRoot(currentDirectory)!);
+                return driveInfo.AvailableFreeSpace;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "获取磁盘空间失败");
+                return 0;
+            }
+        }
+
+        public async Task ProcessPendingDownloadsAsync()
+        {
+            var availableSpace = GetAvailableDiskSpace();
+
+            if (availableSpace < MinDiskSpaceBytes)
+            {
+                _logger.LogInformation("磁盘空间不足 {MinGB} GB，跳过暂存下载处理", MinDiskSpaceGB);
+                return;
+            }
+
+            var pendingDownloads = await _rssSubscriptionDownloadRepository.GetListAsync(
+                d => d.IsPendingDueToLowDiskSpace && d.DownloadStatus == 0);
+
+            if (!pendingDownloads.Any())
+            {
+                return;
+            }
+
+            _logger.LogInformation("找到 {Count} 个暂存的下载任务", pendingDownloads.Count);
+
+            foreach (var download in pendingDownloads)
+            {
+                try
+                {
+                    var subscription = await _rssSubscriptionRepository.GetAsync(download.SubscriptionId);
+                    var item = await _rssMirrorItemRepository.GetAsync(download.RssMirrorItemId);
+
+                    var downloadRequest = new AddDownloadRequestDto
+                    {
+                        Urls = new List<string> { item.Link },
+                        VideoOnly = subscription.VideoOnly,
+                        EnableKeywordFilter = subscription.EnableKeywordFilter,
+                        SavePath = subscription.SavePath
+                    };
+
+                    var result = await _aria2Service.AddDownloadAsync(downloadRequest);
+
+                    download.Aria2Gid = result.Id;
+                    download.DownloadStatus = 1;
+                    download.DownloadStartTime = DateTime.Now;
+                    download.IsPendingDueToLowDiskSpace = false;
+
+                    await _rssSubscriptionDownloadRepository.UpdateAsync(download);
+
+                    _logger.LogInformation("已处理暂存下载: {Id} (GID: {Gid})", download.Id, result.Id);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "处理暂存下载失败: {Id}", download.Id);
+                }
+            }
+
+            _logger.LogInformation("已处理 {Count} 个暂存下载任务", pendingDownloads.Count);
         }
     }
 }
