@@ -18,7 +18,7 @@ namespace DFApp.Bookkeeping.Expenditure
         BookkeepingExpenditure
         , BookkeepingExpenditureDto
         , long
-        , FilterAndPagedAndSortedResultRequestDto
+        , GetExpendituresRequestDto
         , CreateUpdateBookkeepingExpenditureDto>, IBookkeepingExpenditureService
     {
         private readonly IRepository<BookkeepingCategory, long> _categoryRepository;
@@ -34,18 +34,33 @@ namespace DFApp.Bookkeeping.Expenditure
             DeletePolicyName = DFAppPermissions.BookkeepingExpenditure.Delete;
         }
 
-        protected override async Task<IQueryable<BookkeepingExpenditure>> CreateFilteredQueryAsync(FilterAndPagedAndSortedResultRequestDto input)
+        protected override async Task<IQueryable<BookkeepingExpenditure>> CreateFilteredQueryAsync(GetExpendituresRequestDto input)
         {
-            if(!string.IsNullOrWhiteSpace(input.Filter)){
-                var query = await Repository.WithDetailsAsync();
-                return query.Where(x => x.Category!.Category.Contains(input.Filter) 
-                || x.Remark!.Contains(input.Filter)
-                || x.Expenditure.ToString().Contains(input.Filter));
+            var query = await Repository.WithDetailsAsync();
+
+            if (!string.IsNullOrWhiteSpace(input.Filter))
+            {
+                query = query.Where(x => x.Category!.Category.Contains(input.Filter)
+                    || x.Remark!.Contains(input.Filter)
+                    || x.Expenditure.ToString().Contains(input.Filter));
             }
-            else{
-                return await Repository.WithDetailsAsync();
+
+            if (input.CategoryId.HasValue)
+            {
+                query = query.Where(x => x.CategoryId == input.CategoryId.Value);
             }
-            
+
+            if (input.IsBelongToSelf.HasValue)
+            {
+                query = query.Where(x => x.IsBelongToSelf == input.IsBelongToSelf.Value);
+            }
+
+            if (string.IsNullOrWhiteSpace(input.Sorting))
+            {
+                query = query.OrderByDescending(x => x.ExpenditureDate);
+            }
+
+            return query;
         }
 
         public async Task<List<BookkeepingCategoryLookupDto>> GetCategoryLookupDto()
@@ -55,6 +70,31 @@ namespace DFApp.Bookkeeping.Expenditure
             var result = ObjectMapper.Map<List<BookkeepingCategory>, List<BookkeepingCategoryLookupDto>>(categorys);
 
             return result;
+        }
+
+        public async Task<decimal> GetTotalExpenditureAsync(string? filter = null, long? categoryId = null, bool? isBelongToSelf = null)
+        {
+            var query = await ReadOnlyRepository.GetQueryableAsync();
+
+            if (!string.IsNullOrWhiteSpace(filter))
+            {
+                query = query.Where(x => x.Category!.Category.Contains(filter)
+                    || x.Remark!.Contains(filter)
+                    || x.Expenditure.ToString().Contains(filter));
+            }
+
+            if (categoryId.HasValue)
+            {
+                query = query.Where(x => x.CategoryId == categoryId.Value);
+            }
+
+            if (isBelongToSelf.HasValue)
+            {
+                query = query.Where(x => x.IsBelongToSelf == isBelongToSelf.Value);
+            }
+
+            var total = await AsyncExecuter.SumAsync(query, x => x.Expenditure);
+            return total;
         }
 
         [Authorize(DFAppPermissions.BookkeepingExpenditure.Analysis)]

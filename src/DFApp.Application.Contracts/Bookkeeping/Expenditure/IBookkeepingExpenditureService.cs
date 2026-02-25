@@ -11,10 +11,12 @@ namespace DFApp.Bookkeeping.Expenditure
     public interface IBookkeepingExpenditureService : ICrudAppService<
         BookkeepingExpenditureDto
         , long
-        , FilterAndPagedAndSortedResultRequestDto
+        , GetExpendituresRequestDto
         , CreateUpdateBookkeepingExpenditureDto>
     {
         Task<List<BookkeepingCategoryLookupDto>> GetCategoryLookupDto();
+
+        Task<decimal> GetTotalExpenditureAsync(string? filter = null, long? categoryId = null, bool? isBelongToSelf = null);
 
         Task<ChartJSDto> GetChartJSDto(DateTime start
             , DateTime end
