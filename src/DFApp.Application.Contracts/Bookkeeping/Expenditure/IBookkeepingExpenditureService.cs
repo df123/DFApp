@@ -11,7 +11,7 @@ namespace DFApp.Bookkeeping.Expenditure
     public interface IBookkeepingExpenditureService : ICrudAppService<
         BookkeepingExpenditureDto
         , long
-        , FilterAndPagedAndSortedResultRequestDto
+        , GetExpendituresRequestDto
         , CreateUpdateBookkeepingExpenditureDto>
     {
         Task<List<BookkeepingCategoryLookupDto>> GetCategoryLookupDto();
