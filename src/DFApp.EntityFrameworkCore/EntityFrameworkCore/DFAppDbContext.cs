@@ -106,6 +106,8 @@ public class DFAppDbContext :
      public DbSet<RssSource> RssSources { get; set; }
      public DbSet<RssMirrorItem> RssMirrorItems { get; set; }
      public DbSet<RssWordSegment> RssWordSegments { get; set; }
+     public DbSet<RssSubscription> RssSubscriptions { get; set; }
+     public DbSet<RssSubscriptionDownload> RssSubscriptionDownloads { get; set; }
       
       public DbSet<DFApp.ElectricVehicle.ElectricVehicle> ElectricVehicles { get; set; }
       public DbSet<DFApp.ElectricVehicle.ElectricVehicleCost> ElectricVehicleCosts { get; set; }
@@ -304,10 +306,31 @@ public class DFAppDbContext :
         {
             b.ToTable(DFAppConsts.DbTablePrefix + "RssSource", DFAppConsts.DbSchema);
             b.ConfigureByConvention();
- 
+
             // 添加索引以提高查询性能
             b.HasIndex(e => e.IsEnabled);
             b.HasIndex(e => e.FetchStatus);
+        });
+
+        builder.Entity<RssSubscription>(b =>
+        {
+            b.ToTable(DFAppConsts.DbTablePrefix + "RssSubscriptions", DFAppConsts.DbSchema);
+            b.ConfigureByConvention();
+
+            b.HasIndex(e => e.IsEnabled);
+            b.HasIndex(e => e.RssSourceId);
+            b.HasIndex(e => e.CreationTime);
+        });
+
+        builder.Entity<RssSubscriptionDownload>(b =>
+        {
+            b.ToTable(DFAppConsts.DbTablePrefix + "RssSubscriptionDownloads", DFAppConsts.DbSchema);
+            b.ConfigureByConvention();
+
+            b.HasIndex(e => e.SubscriptionId);
+            b.HasIndex(e => e.RssMirrorItemId);
+            b.HasIndex(e => e.DownloadStatus);
+            b.HasIndex(e => e.Aria2Gid);
         });
 
         builder.Entity<DFApp.ElectricVehicle.ElectricVehicle>(b =>

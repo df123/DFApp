@@ -22,27 +22,33 @@ namespace DFApp.Background
         private readonly IRepository<RssSource, long> _rssSourceRepository;
         private readonly IRepository<RssMirrorItem, long> _rssMirrorItemRepository;
         private readonly IRepository<RssWordSegment, long> _rssWordSegmentRepository;
+        private readonly IRepository<RssSubscription, long> _rssSubscriptionRepository;
         private readonly IWordSegmentService _wordSegmentService;
         private readonly IHttpClientFactory _httpClientFactory;
         private readonly IUnitOfWorkManager _unitOfWorkManager;
         private readonly IObjectMapper _objectMapper;
+        private readonly IRssSubscriptionService _rssSubscriptionService;
 
         public RssMirrorFetchWorker(
             IRepository<RssSource, long> rssSourceRepository,
             IRepository<RssMirrorItem, long> rssMirrorItemRepository,
             IRepository<RssWordSegment, long> rssWordSegmentRepository,
+            IRepository<RssSubscription, long> rssSubscriptionRepository,
             IWordSegmentService wordSegmentService,
             IHttpClientFactory httpClientFactory,
             IUnitOfWorkManager unitOfWorkManager,
-            IObjectMapper objectMapper)
+            IObjectMapper objectMapper,
+            IRssSubscriptionService rssSubscriptionService)
         {
             _rssSourceRepository = rssSourceRepository;
             _rssMirrorItemRepository = rssMirrorItemRepository;
             _rssWordSegmentRepository = rssWordSegmentRepository;
+            _rssSubscriptionRepository = rssSubscriptionRepository;
             _wordSegmentService = wordSegmentService;
             _httpClientFactory = httpClientFactory;
             _unitOfWorkManager = unitOfWorkManager;
             _objectMapper = objectMapper;
+            _rssSubscriptionService = rssSubscriptionService;
 
             // 设置Job和Trigger
             JobDetail = JobBuilder
@@ -206,6 +212,8 @@ namespace DFApp.Background
                     await unitOfWork.CompleteAsync();
 
                     Logger.LogInformation("RSS源 {Name} 抓取完成，新增 {Count} 条记录", source.Name, newItemCount);
+
+                    await ProcessSubscriptionsAsync(newItems);
                 }
             }
             catch (Exception ex)
@@ -326,6 +334,32 @@ namespace DFApp.Background
                 "title", "link", "description", "pubDate", "author", "category", "guid", "comments"
             };
             return standardElements.Contains(elementName);
+        }
+
+        private async Task ProcessSubscriptionsAsync(List<RssMirrorItem> newItems)
+        {
+            var enabledSubscriptions = await _rssSubscriptionRepository.GetListAsync(s => s.IsEnabled);
+
+            if (!enabledSubscriptions.Any())
+            {
+                return;
+            }
+
+            foreach (var item in newItems)
+            {
+                var matchResults = await _rssSubscriptionService.MatchSubscriptionsAsync(item);
+
+                foreach (var matchResult in matchResults.Where(r => r.Matched))
+                {
+                    var subscription = enabledSubscriptions.FirstOrDefault(s => s.Id == matchResult.SubscriptionId);
+                    if (subscription != null && subscription.AutoDownload)
+                    {
+                        await _rssSubscriptionService.CreateDownloadTaskAsync(matchResult.SubscriptionId, item.Id);
+                        Logger.LogInformation("订阅 {SubscriptionName} 匹配并自动下载: {Title}", 
+                            subscription.Name, item.Title);
+                    }
+                }
+            }
         }
     }
 }

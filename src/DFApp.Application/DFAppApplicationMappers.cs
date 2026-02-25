@@ -592,3 +592,44 @@ public partial class GasPriceEntityToGasPriceDtoMapper : MapperBase<GasPrice, Ga
     public override partial GasPriceDto Map(GasPrice source);
     public override partial void Map(GasPrice source, GasPriceDto destination);
 }
+
+[Mapper(RequiredMappingStrategy = RequiredMappingStrategy.Target)]
+public partial class RssSubscriptionToRssSubscriptionDtoMapper : MapperBase<RssSubscription, RssSubscriptionDto>
+{
+    [MapperIgnoreTarget(nameof(RssSubscriptionDto.RssSourceName))]
+    public override partial RssSubscriptionDto Map(RssSubscription source);
+    [MapperIgnoreTarget(nameof(RssSubscriptionDto.RssSourceName))]
+    public override partial void Map(RssSubscription source, RssSubscriptionDto destination);
+}
+
+[Mapper(RequiredMappingStrategy = RequiredMappingStrategy.Target)]
+public partial class CreateUpdateRssSubscriptionDtoToRssSubscriptionMapper : MapperBase<CreateUpdateRssSubscriptionDto, RssSubscription>
+{
+    [MapperIgnoreTarget(nameof(RssSubscription.ConcurrencyStamp))]
+    [MapperIgnoreTarget(nameof(RssSubscription.CreationTime))]
+    [MapperIgnoreTarget(nameof(RssSubscription.CreatorId))]
+    [MapperIgnoreTarget(nameof(RssSubscription.LastModificationTime))]
+    public override partial RssSubscription Map(CreateUpdateRssSubscriptionDto source);
+    [MapperIgnoreTarget(nameof(RssSubscription.ConcurrencyStamp))]
+    [MapperIgnoreTarget(nameof(RssSubscription.CreationTime))]
+    [MapperIgnoreTarget(nameof(RssSubscription.CreatorId))]
+    [MapperIgnoreTarget(nameof(RssSubscription.LastModificationTime))]
+    public override partial void Map(CreateUpdateRssSubscriptionDto source, RssSubscription destination);
+}
+
+[Mapper(RequiredMappingStrategy = RequiredMappingStrategy.Target)]
+public partial class RssSubscriptionDownloadToRssSubscriptionDownloadDtoMapper : MapperBase<RssSubscriptionDownload, RssSubscriptionDownloadDto>
+{
+    [MapperIgnoreTarget(nameof(RssSubscriptionDownloadDto.SubscriptionName))]
+    [MapperIgnoreTarget(nameof(RssSubscriptionDownloadDto.RssMirrorItemTitle))]
+    [MapperIgnoreTarget(nameof(RssSubscriptionDownloadDto.RssMirrorItemLink))]
+    [MapperIgnoreTarget(nameof(RssSubscriptionDownloadDto.RssSourceName))]
+    [MapperIgnoreTarget(nameof(RssSubscriptionDownloadDto.DownloadStatusText))]
+    public override partial RssSubscriptionDownloadDto Map(RssSubscriptionDownload source);
+    [MapperIgnoreTarget(nameof(RssSubscriptionDownloadDto.SubscriptionName))]
+    [MapperIgnoreTarget(nameof(RssSubscriptionDownloadDto.RssMirrorItemTitle))]
+    [MapperIgnoreTarget(nameof(RssSubscriptionDownloadDto.RssMirrorItemLink))]
+    [MapperIgnoreTarget(nameof(RssSubscriptionDownloadDto.RssSourceName))]
+    [MapperIgnoreTarget(nameof(RssSubscriptionDownloadDto.DownloadStatusText))]
+    public override partial void Map(RssSubscriptionDownload source, RssSubscriptionDownloadDto destination);
+}

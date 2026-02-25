@@ -101,6 +101,13 @@ public class DFAppPermissionDefinitionProvider : PermissionDefinitionProvider
         electricVehicleChargingRecordPermission.AddChild(DFAppPermissions.ElectricVehicleChargingRecord.Delete, L("Permission:ElectricVehicleChargingRecord.Delete"));
 
         electricVehiclePermission.AddChild(DFAppPermissions.GasolinePrice.Default, L("Permission:GasolinePrice"));
+
+        var rssSubscriptionGroup = context.AddGroup(DFAppPermissions.RssSubscription.Default, L("Permission:RssSubscription"));
+        var rssSubscriptionPermission = rssSubscriptionGroup.AddPermission(DFAppPermissions.RssSubscription.Default, L("Permission:RssSubscription"));
+        rssSubscriptionPermission.AddChild(DFAppPermissions.RssSubscription.Create, L("Permission:RssSubscription.Create"));
+        rssSubscriptionPermission.AddChild(DFAppPermissions.RssSubscription.Update, L("Permission:RssSubscription.Update"));
+        rssSubscriptionPermission.AddChild(DFAppPermissions.RssSubscription.Delete, L("Permission:RssSubscription.Delete"));
+        rssSubscriptionPermission.AddChild(DFAppPermissions.RssSubscription.Download, L("Permission:RssSubscription.Download"));
     }
 
     private static LocalizableString L(string name)
