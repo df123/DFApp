@@ -131,4 +131,13 @@ public static class DFAppPermissions
         public const string Default = ElectricVehicle.Default + ".GasolinePrice";
     }
 
+    public static class RssSubscription
+    {
+        public const string Default = GroupName + ".RssSubscription";
+        public const string Create = Default + ".Create";
+        public const string Update = Default + ".Update";
+        public const string Delete = Default + ".Delete";
+        public const string Download = Default + ".Download";
+    }
+
 }

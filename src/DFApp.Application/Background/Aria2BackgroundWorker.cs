@@ -5,7 +5,9 @@ using DFApp.Aria2.Response;
 using DFApp.Aria2.Response.TellStatus;
 using DFApp.Configuration;
 using DFApp.Queue;
+using DFApp.Rss;
 using Microsoft.Extensions.DependencyInjection;
+using System.Linq;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -35,15 +37,18 @@ namespace DFApp.Background
         private readonly IServiceScope _serviceScope;
         private readonly ILoggerFactory _loggerFactory;
         private readonly IConfigurationInfoRepository _configurationInfoRepository;
+        private readonly IServiceProvider _serviceProvider;
 
         private ILogger Logger => _loggerFactory.CreateLogger(GetType().FullName!) ?? NullLogger.Instance;
 
         public Aria2BackgroundWorker(IServiceScopeFactory serviceScopeFactory
             , Aria2Manager manager
             , IObjectMapper objectMapper
-            , IQueueManagement queueManagement)
+            , IQueueManagement queueManagement
+            , IServiceProvider serviceProvider)
         {
             _serviceScopeFactory = serviceScopeFactory;
+            _serviceProvider = serviceProvider;
 
             _serviceScope = _serviceScopeFactory.CreateScope();
             _loggerFactory = _serviceScope.ServiceProvider.GetRequiredService<ILoggerFactory>();
@@ -124,7 +129,13 @@ namespace DFApp.Background
                             }
                             else if (message.Contains("method"))
                             {
-                                dto = _mapper.Map<Aria2NotificationDto?, Aria2Notification?>(JsonSerializer.Deserialize<Aria2NotificationDto>(message));
+                                var notification = JsonSerializer.Deserialize<Aria2NotificationDto>(message);
+                                dto = _mapper.Map<Aria2NotificationDto?, Aria2Notification?>(notification);
+                                
+                                if (notification != null && notification.Method == "aria2.onDownloadComplete")
+                                {
+                                    await UpdateDownloadRecordStatusAsync(notification);
+                                }
                             }
                             else
                             {
@@ -198,6 +209,33 @@ namespace DFApp.Background
         {
             _serviceScope.Dispose();
             base.Dispose();
+        }
+
+        private async Task UpdateDownloadRecordStatusAsync(Aria2NotificationDto notification)
+        {
+            using var scope = _serviceScopeFactory.CreateScope();
+            var repository = scope.ServiceProvider.GetRequiredService<IRepository<RssSubscriptionDownload, long>>();
+
+            if (notification.Params != null && notification.Params.Count > 0)
+            {
+                var gid = notification.Params[0].ToString();
+                if (!string.IsNullOrEmpty(gid))
+                {
+                    var downloads = await repository.GetListAsync(d => d.Aria2Gid == gid);
+                    
+                    foreach (var download in downloads)
+                    {
+                        download.DownloadStatus = 2;
+                        download.DownloadCompleteTime = DateTime.Now;
+                        await repository.UpdateAsync(download);
+                    }
+                    
+                    if (downloads.Any())
+                    {
+                        Logger.LogInformation("更新订阅下载记录状态: {Gid} -> 完成", gid);
+                    }
+                }
+            }
         }
 
 
