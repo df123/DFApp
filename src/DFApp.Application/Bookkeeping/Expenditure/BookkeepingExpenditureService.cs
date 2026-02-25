@@ -41,8 +41,8 @@ namespace DFApp.Bookkeeping.Expenditure
             if (!string.IsNullOrWhiteSpace(input.Filter))
             {
                 query = query.Where(x => x.Category!.Category.Contains(input.Filter)
-                || x.Remark!.Contains(input.Filter)
-                || x.Expenditure.ToString().Contains(input.Filter));
+                    || x.Remark!.Contains(input.Filter)
+                    || x.Expenditure.ToString().Contains(input.Filter));
             }
 
             if (input.CategoryId.HasValue)
@@ -53,6 +53,11 @@ namespace DFApp.Bookkeeping.Expenditure
             if (input.IsBelongToSelf.HasValue)
             {
                 query = query.Where(x => x.IsBelongToSelf == input.IsBelongToSelf.Value);
+            }
+
+            if (string.IsNullOrWhiteSpace(input.Sorting))
+            {
+                query = query.OrderByDescending(x => x.ExpenditureDate);
             }
 
             return query;
