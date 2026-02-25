@@ -22,6 +22,8 @@ namespace DFApp.Rss
 
         public DateTime? DownloadCompleteTime { get; set; }
 
+        public bool IsPendingDueToLowDiskSpace { get; set; }
+
         public DateTime CreationTime { get; set; }
 
         public Guid? CreatorId { get; set; }

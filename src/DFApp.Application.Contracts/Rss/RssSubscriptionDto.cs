@@ -111,6 +111,8 @@ namespace DFApp.Rss
 
         public string? DownloadStatusText { get; set; }
 
+        public bool IsPendingDueToLowDiskSpace { get; set; }
+
         public string? ErrorMessage { get; set; }
 
         public DateTime? DownloadStartTime { get; set; }

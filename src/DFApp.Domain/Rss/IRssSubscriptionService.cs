@@ -8,6 +8,7 @@ namespace DFApp.Rss
     {
         Task<List<RssSubscriptionMatchResult>> MatchSubscriptionsAsync(RssMirrorItem item);
         Task CreateDownloadTaskAsync(long subscriptionId, long rssMirrorItemId);
+        Task ProcessPendingDownloadsAsync();
     }
 
     public class RssSubscriptionMatchResult
