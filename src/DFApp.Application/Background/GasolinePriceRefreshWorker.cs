@@ -9,14 +9,14 @@ namespace DFApp.Background
 {
     public class GasolinePriceRefreshWorker : QuartzBackgroundWorkerBase
     {
-        private readonly IGasolinePriceService _gasolinePriceService;
+        private readonly GasolinePriceRefresher _gasolinePriceRefresher;
         private readonly ILogger<GasolinePriceRefreshWorker> _logger;
 
         public GasolinePriceRefreshWorker(
-            IGasolinePriceService gasolinePriceService,
+            GasolinePriceRefresher gasolinePriceRefresher,
             ILogger<GasolinePriceRefreshWorker> logger)
         {
-            _gasolinePriceService = gasolinePriceService;
+            _gasolinePriceRefresher = gasolinePriceRefresher;
             _logger = logger;
 
             JobDetail = JobBuilder
@@ -38,7 +38,7 @@ namespace DFApp.Background
 
             try
             {
-                await _gasolinePriceService.RefreshGasolinePricesAsync();
+                await _gasolinePriceRefresher.RefreshGasolinePricesAsync();
 
                 _logger.LogInformation("油价刷新任务执行成功");
             }
