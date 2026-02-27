@@ -125,7 +125,11 @@ public enum GasolineGrade
 **GasolinePriceService.cs**
 - CRUD 操作
 - **GetLatestPriceAsync** - 获取最新油价
-- **RefreshGasolinePricesAsync** - 刷新油价（调用 Tanshu API）
+- **RefreshGasolinePricesAsync** - 刷新油价（调用 GasolinePriceRefresher）
+
+**GasolinePriceRefresher.cs**
+- 内部服务（不暴露为 HTTP API）
+- **RefreshGasolinePricesAsync** - 调用 Tanshu API 刷新油价，供后台任务使用
 
 #### 油电对比算法
 
@@ -406,9 +410,10 @@ export default {
 ## 后台任务
 
 **GasolinePriceRefreshWorker**
-- 执行时间：每天凌晨 2:00
+- 执行时间：每天晚上 21:00
 - 功能：刷新全国各省市油价数据
 - 数据源：Tanshu API (https://api.tanshuapi.com/api/youjia/v1/index)
+- 权限：`RefreshGasolinePricesAsync` 方法添加 `[AllowAnonymous]` 属性，允许后台任务调用
 
 ## 构建状态
 
