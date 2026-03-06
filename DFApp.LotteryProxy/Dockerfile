@@ -1,10 +1,10 @@
-# 使用官方.NET 8运行时作为基础镜像
-FROM mcr.microsoft.com/dotnet/aspnet:9.0 AS base
+# 使用官方.NET 10运行时作为基础镜像
+FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS base
 WORKDIR /app
 EXPOSE 5000
 
-# 使用.NET 9 SDK作为构建镜像
-FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
+# 使用.NET 10 SDK作为构建镜像
+FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 WORKDIR /src
 
 # 复制项目文件
