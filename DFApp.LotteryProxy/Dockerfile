@@ -27,7 +27,7 @@ FROM base AS final
 WORKDIR /app
 
 # 创建非root用户
-RUN adduser --disabled-password --gecos '' appuser && chown -R appuser /app
+RUN useradd -m -s /bin/bash appuser && chown -R appuser /app
 USER appuser
 
 # 复制发布的应用
