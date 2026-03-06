@@ -1,7 +1,6 @@
 # 使用官方.NET 10运行时作为基础镜像
 FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS base
 WORKDIR /app
-EXPOSE 5000
 
 # 使用.NET 10 SDK作为构建镜像
 FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
@@ -25,6 +24,9 @@ RUN dotnet publish "DFApp.LotteryProxy.csproj" -c Release -o /app/publish /p:Use
 # 构建最终镜像
 FROM base AS final
 WORKDIR /app
+
+# 安装 curl（用于健康检查）
+RUN apt-get update && apt-get install -y curl && rm -rf /var/lib/apt/lists/*
 
 # 创建非root用户
 RUN useradd -m -s /bin/bash appuser && chown -R appuser /app
