@@ -75,11 +75,18 @@ public class IpWhitelistMiddleware
             return false;
         }
 
-        // 如果允许列表为空，则允许所有IP（开发环境）
+        // 默认允许本地访问（127.0.0.1 和 ::1）
+        if (clientIp == "127.0.0.1" || clientIp == "::1")
+        {
+            _logger.LogInformation("本地IP访问，自动允许: {IP}", clientIp);
+            return true;
+        }
+
+        // 如果允许列表为空，则拒绝所有IP（生产环境）
         if (_proxySettings.AllowedIPs == null || _proxySettings.AllowedIPs.Count == 0)
         {
-            _logger.LogDebug("IP白名单为空，允许所有IP访问");
-            return true;
+            _logger.LogInformation("IP白名单为空，拒绝所有IP访问（除本地外）");
+            return false;
         }
 
         return _proxySettings.AllowedIPs.Contains(clientIp);
