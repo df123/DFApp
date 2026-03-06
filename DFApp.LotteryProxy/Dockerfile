@@ -33,9 +33,5 @@ USER appuser
 # 复制发布的应用
 COPY --from=publish /app/publish .
 
-# 设置健康检查
-HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-  CMD curl -f http://localhost:5000/api/health || exit 1
-
 # 启动应用
 ENTRYPOINT ["dotnet", "DFApp.LotteryProxy.dll"]
