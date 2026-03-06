@@ -26,12 +26,16 @@ public class IpWhitelistMiddleware
     public async Task InvokeAsync(HttpContext context)
     {
         var clientIp = GetClientIpAddress(context);
-        
-        _logger.LogDebug("客户端IP: {ClientIP}", clientIp);
+
+        _logger.LogInformation("客户端IP: {ClientIP}", clientIp);
+        _logger.LogInformation("允许的IP列表: {AllowedIPs}", string.Join(", ", _proxySettings.AllowedIPs));
+        _logger.LogInformation("允许的IP数量: {Count}", _proxySettings.AllowedIPs?.Count ?? 0);
 
         if (!IsIpAllowed(clientIp))
         {
             _logger.LogWarning("未授权的IP访问尝试: {ClientIP}", clientIp);
+            _logger.LogWarning("请求路径: {Path}", context.Request.Path);
+            _logger.LogWarning("请求方法: {Method}", context.Request.Method);
             context.Response.StatusCode = (int)HttpStatusCode.Forbidden;
             await context.Response.WriteAsync("403 Forbidden: IP地址不在允许列表中");
             return;
@@ -44,7 +48,8 @@ public class IpWhitelistMiddleware
     {
         // 尝试从各种头部获取真实IP
         var ip = context.Request.Headers["X-Forwarded-For"].FirstOrDefault();
-        
+        _logger.LogInformation("X-Forwarded-For: {IP}", ip);
+
         if (!string.IsNullOrEmpty(ip))
         {
             // X-Forwarded-For可能包含多个IP，取第一个
@@ -52,25 +57,36 @@ public class IpWhitelistMiddleware
             if (ips.Length > 0)
             {
                 ip = ips[0].Trim();
+                _logger.LogInformation("从X-Forwarded-For获取IP: {IP}", ip);
             }
         }
-        
+
         if (string.IsNullOrEmpty(ip))
         {
             ip = context.Request.Headers["X-Real-IP"].FirstOrDefault();
+            _logger.LogInformation("X-Real-IP: {IP}", ip);
         }
-        
+
         if (string.IsNullOrEmpty(ip))
         {
             ip = context.Connection.RemoteIpAddress?.ToString();
+            _logger.LogInformation("RemoteIpAddress: {IP}", ip);
         }
 
         // 如果是IPv6回环地址，转换为IPv4
         if (ip == "::1")
         {
             ip = "127.0.0.1";
+            _logger.LogInformation("IPv6回环地址转换为IPv4: {IP}", ip);
+        }
+        // 如果是IPv4映射的IPv6地址（::ffff:x.x.x.x），提取IPv4部分
+        else if (ip != null && ip.StartsWith("::ffff:"))
+        {
+            ip = ip.Substring(7); // 移除 "::ffff:" 前缀
+            _logger.LogInformation("IPv6映射的IPv4地址转换为IPv4: {IP}", ip);
         }
 
+        _logger.LogInformation("最终获取的客户端IP: {IP}", ip);
         return ip ?? "unknown";
     }
 
