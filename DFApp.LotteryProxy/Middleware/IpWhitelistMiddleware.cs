@@ -46,32 +46,10 @@ public class IpWhitelistMiddleware
 
     private string GetClientIpAddress(HttpContext context)
     {
-        // 尝试从各种头部获取真实IP
-        var ip = context.Request.Headers["X-Forwarded-For"].FirstOrDefault();
-        _logger.LogInformation("X-Forwarded-For: {IP}", ip);
-
-        if (!string.IsNullOrEmpty(ip))
-        {
-            // X-Forwarded-For可能包含多个IP，取第一个
-            var ips = ip.Split(',');
-            if (ips.Length > 0)
-            {
-                ip = ips[0].Trim();
-                _logger.LogInformation("从X-Forwarded-For获取IP: {IP}", ip);
-            }
-        }
-
-        if (string.IsNullOrEmpty(ip))
-        {
-            ip = context.Request.Headers["X-Real-IP"].FirstOrDefault();
-            _logger.LogInformation("X-Real-IP: {IP}", ip);
-        }
-
-        if (string.IsNullOrEmpty(ip))
-        {
-            ip = context.Connection.RemoteIpAddress?.ToString();
-            _logger.LogInformation("RemoteIpAddress: {IP}", ip);
-        }
+        // 仅使用 RemoteIpAddress，因为它来自TCP连接，无法被客户端伪造
+        // 不使用 X-Forwarded-For 和 X-Real-IP 头部，因为它们可以被伪造
+        var ip = context.Connection.RemoteIpAddress?.ToString();
+        _logger.LogInformation("RemoteIpAddress: {IP}", ip);
 
         // 如果是IPv6回环地址，转换为IPv4
         if (ip == "::1")
