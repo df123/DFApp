@@ -26,12 +26,16 @@ public class IpWhitelistMiddleware
     public async Task InvokeAsync(HttpContext context)
     {
         var clientIp = GetClientIpAddress(context);
-        
-        _logger.LogDebug("客户端IP: {ClientIP}", clientIp);
+
+        _logger.LogInformation("客户端IP: {ClientIP}", clientIp);
+        _logger.LogInformation("允许的IP列表: {AllowedIPs}", string.Join(", ", _proxySettings.AllowedIPs));
+        _logger.LogInformation("允许的IP数量: {Count}", _proxySettings.AllowedIPs?.Count ?? 0);
 
         if (!IsIpAllowed(clientIp))
         {
             _logger.LogWarning("未授权的IP访问尝试: {ClientIP}", clientIp);
+            _logger.LogWarning("请求路径: {Path}", context.Request.Path);
+            _logger.LogWarning("请求方法: {Method}", context.Request.Method);
             context.Response.StatusCode = (int)HttpStatusCode.Forbidden;
             await context.Response.WriteAsync("403 Forbidden: IP地址不在允许列表中");
             return;
@@ -42,35 +46,25 @@ public class IpWhitelistMiddleware
 
     private string GetClientIpAddress(HttpContext context)
     {
-        // 尝试从各种头部获取真实IP
-        var ip = context.Request.Headers["X-Forwarded-For"].FirstOrDefault();
-        
-        if (!string.IsNullOrEmpty(ip))
-        {
-            // X-Forwarded-For可能包含多个IP，取第一个
-            var ips = ip.Split(',');
-            if (ips.Length > 0)
-            {
-                ip = ips[0].Trim();
-            }
-        }
-        
-        if (string.IsNullOrEmpty(ip))
-        {
-            ip = context.Request.Headers["X-Real-IP"].FirstOrDefault();
-        }
-        
-        if (string.IsNullOrEmpty(ip))
-        {
-            ip = context.Connection.RemoteIpAddress?.ToString();
-        }
+        // 仅使用 RemoteIpAddress，因为它来自TCP连接，无法被客户端伪造
+        // 不使用 X-Forwarded-For 和 X-Real-IP 头部，因为它们可以被伪造
+        var ip = context.Connection.RemoteIpAddress?.ToString();
+        _logger.LogInformation("RemoteIpAddress: {IP}", ip);
 
         // 如果是IPv6回环地址，转换为IPv4
         if (ip == "::1")
         {
             ip = "127.0.0.1";
+            _logger.LogInformation("IPv6回环地址转换为IPv4: {IP}", ip);
+        }
+        // 如果是IPv4映射的IPv6地址（::ffff:x.x.x.x），提取IPv4部分
+        else if (ip != null && ip.StartsWith("::ffff:"))
+        {
+            ip = ip.Substring(7); // 移除 "::ffff:" 前缀
+            _logger.LogInformation("IPv6映射的IPv4地址转换为IPv4: {IP}", ip);
         }
 
+        _logger.LogInformation("最终获取的客户端IP: {IP}", ip);
         return ip ?? "unknown";
     }
 
@@ -81,11 +75,18 @@ public class IpWhitelistMiddleware
             return false;
         }
 
-        // 如果允许列表为空，则允许所有IP（开发环境）
+        // 默认允许本地访问（127.0.0.1 和 ::1）
+        if (clientIp == "127.0.0.1" || clientIp == "::1")
+        {
+            _logger.LogInformation("本地IP访问，自动允许: {IP}", clientIp);
+            return true;
+        }
+
+        // 如果允许列表为空，则拒绝所有IP（生产环境）
         if (_proxySettings.AllowedIPs == null || _proxySettings.AllowedIPs.Count == 0)
         {
-            _logger.LogDebug("IP白名单为空，允许所有IP访问");
-            return true;
+            _logger.LogInformation("IP白名单为空，拒绝所有IP访问（除本地外）");
+            return false;
         }
 
         return _proxySettings.AllowedIPs.Contains(clientIp);
