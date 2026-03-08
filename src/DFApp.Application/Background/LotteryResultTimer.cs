@@ -64,7 +64,7 @@ namespace DFApp.Background
         private async Task StartWork(string lotteryType, string lotteryTypeEng, string code)
         {
             Logger.LogInformation($"开始任务......{lotteryType} (英文类型: {lotteryTypeEng}, 起始代码: {code})");
-            
+
             try
             {
                 // 检查是否已有数据
@@ -91,7 +91,7 @@ namespace DFApp.Background
                     || DateTime.Now.DayOfWeek == DayOfWeek.Thursday
                     || DateTime.Now.DayOfWeek == DayOfWeek.Tuesday
                     || lotteryType == LotteryConst.KL8;
-                
+
                 Logger.LogInformation($"是否需要获取最新数据: {shouldFetchLatest} (当前星期: {DateTime.Now.DayOfWeek})");
 
                 if (shouldFetchLatest)
@@ -100,7 +100,7 @@ namespace DFApp.Background
                     Logger.LogInformation($"检查今天 ({day}) 是否已有数据");
                     List<LotteryResult> result1 = await _resultReadOnly.GetListAsync(item => item.Date != null && item.Date.StartsWith(day));
                     Logger.LogInformation($"今天的数据条数: {result1?.Count ?? 0}");
-                    
+
                     if (result1 == null || result1.Count <= 0)
                     {
                         Logger.LogInformation("今天没有数据，开始获取最新数据");
@@ -110,13 +110,12 @@ namespace DFApp.Background
                             {
                                 Logger.LogInformation("开始更新奖级信息");
                                 await UpdatePrizegrades(lotteryType, lotteryTypeEng);
-                                
+
                                 Logger.LogInformation("获取最新一期开奖结果作为起始点");
                                 LotteryResult lotteryResult = (await _resultReadOnly.GetQueryableAsync()).OrderByDescending(x => x.Code).First();
                                 string dayStart = (lotteryResult.Date!.Split('('))[0];
-                                dayStart = DateTime.Parse(dayStart).AddDays(1).ToString("yyyy-MM-dd");
                                 Logger.LogInformation($"从 {dayStart} 开始获取最新数据");
-                                
+
                                 await GetCurrentLotteryResult(dayStart, 0, lotteryTypeEng);
                                 await uom.CompleteAsync();
                                 Logger.LogInformation("最新数据获取完成并提交事务");
@@ -149,9 +148,9 @@ namespace DFApp.Background
         {
             string dayEnd = DateTime.Now.ToString("yyyy-MM-dd");
             Logger.LogInformation($"获取当前彩票结果 - 起始日期: {dayStart}, 结束日期: {dayEnd}, 彩票类型: {lotteryType}, 页码: {pageNo}");
-            
-            LotteryInputDto dto = await GetLotteryResult(dayStart, dayEnd, 1, lotteryType);
-            
+
+            LotteryInputDto dto = await GetLotteryResult(dayStart, dayEnd, pageNo, lotteryType);
+
             if (dto.Result != null && dto.Result.Count > 0)
             {
                 Logger.LogInformation($"获取到 {dto.Result.Count} 条数据，开始映射并保存到数据库");
@@ -188,9 +187,9 @@ namespace DFApp.Background
         private async Task GetAllLotteryResults(string dayStart, string dayEnd, int pageNo, string lotteryType)
         {
             Logger.LogInformation($"获取所有历史彩票结果 - 起始日期: {dayStart}, 结束日期: {dayEnd}, 彩票类型: {lotteryType}, 页码: {pageNo}");
-            
+
             LotteryInputDto dto = await GetLotteryResult(dayStart, dayEnd, pageNo, lotteryType);
-            
+
             if (dto.Result != null && dto.Result.Count > 0)
             {
                 Logger.LogInformation($"获取到 {dto.Result.Count} 条历史数据，开始映射并保存到数据库");
@@ -227,7 +226,7 @@ namespace DFApp.Background
         private async Task UpdatePrizegrades(string lotteryType, string lotteryTypeEng)
         {
             Logger.LogInformation($"开始更新奖级信息 - 彩票类型: {lotteryType} (英文: {lotteryTypeEng})");
-            
+
             try
             {
                 // 查询没有奖级信息的彩票结果
@@ -241,7 +240,7 @@ namespace DFApp.Background
 
                 var queryList = query.ToList();
                 Logger.LogInformation($"查询到 {queryList.Count} 条彩票结果记录");
-                
+
                 int noPrizeCount = queryList.Count(x => x.prize == null);
                 Logger.LogInformation($"其中 {noPrizeCount} 条记录没有奖级信息");
 
@@ -251,7 +250,7 @@ namespace DFApp.Background
                     if (item.prize == null)
                     {
                         Logger.LogInformation($"处理彩票结果 ID: {item.result.Id}, 代码: {item.result.Code}, 日期: {item.result.Date}");
-                        
+
                         try
                         {
                             string dayStart = (item.result.Date!.Split('('))[0];
@@ -269,7 +268,7 @@ namespace DFApp.Background
                                     if (prize.Prizegrades != null && prize.Prizegrades.Count > 0)
                                     {
                                         Logger.LogInformation($"为彩票结果 ID: {item.result.Id} 添加 {prize.Prizegrades.Count} 条奖级信息");
-                                        
+
                                         foreach (var prizeId in prize.Prizegrades)
                                         {
                                             prizeId.LotteryResultId = item.result.Id;
@@ -295,7 +294,7 @@ namespace DFApp.Background
                         }
                     }
                 }
-                
+
                 Logger.LogInformation($"奖级信息更新完成，共处理 {processedCount} 条记录");
             }
             catch (Exception ex)
@@ -310,27 +309,27 @@ namespace DFApp.Background
             // 使用代理服务器获取数据
             string proxyServerUrl = LotteryConst.GetLotteryProxyUrl(_configuration);
             string requestUrl = $"{proxyServerUrl}/api/proxy/lottery/findDrawNotice?name={lotteryType}&dayStart={dayStart}&dayEnd={dayEnd}&pageNo={pageNo}&pageSize=30&week=&systemType=PC";
-            
+
             Logger.LogInformation($"开始通过代理获取彩票数据 - 彩票类型: {lotteryType}, 开始日期: {dayStart}, 结束日期: {dayEnd}, 页码: {pageNo}");
             Logger.LogInformation($"代理请求URL: {requestUrl}");
-            
+
             try
             {
                 using var client = _httpClientFactory.CreateClient();
                 // 设置超时时间
                 client.Timeout = TimeSpan.FromSeconds(60);
-                
+
                 Logger.LogInformation("发送代理HTTP请求...");
-                
+
                 HttpResponseMessage message = await client.GetAsync(requestUrl);
-                
+
                 Logger.LogInformation($"代理HTTP响应状态码: {(int)message.StatusCode} ({message.StatusCode})");
-                
+
                 message.EnsureSuccessStatusCode();
-                
+
                 string responseContent = await message.Content.ReadAsStringAsync();
                 Logger.LogInformation($"代理响应内容长度: {responseContent.Length} 字符");
-                
+
                 // 记录响应内容（仅前500字符，避免日志过长）
                 if (responseContent.Length > 500)
                 {
@@ -340,9 +339,9 @@ namespace DFApp.Background
                 {
                     Logger.LogInformation($"代理响应内容: {responseContent}");
                 }
-                
+
                 LotteryInputDto? dto = JsonSerializer.Deserialize<LotteryInputDto>(responseContent);
-                
+
                 if (dto == null)
                 {
                     Logger.LogWarning("反序列化代理响应失败，响应为null，创建空对象");
@@ -351,11 +350,11 @@ namespace DFApp.Background
                 else
                 {
                     Logger.LogInformation($"反序列化代理响应成功 - 总数据量: {dto.Total}, 当前页: {dto.PageNo}/{dto.PageNum}, 每页大小: {dto.PageSize}");
-                    
+
                     if (dto.Result != null)
                     {
                         Logger.LogInformation($"当前页数据条数: {dto.Result.Count}");
-                        
+
                         // 记录第一条数据的详细信息
                         if (dto.Result.Count > 0)
                         {
