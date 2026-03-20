@@ -1,66 +1,111 @@
 using System;
-using System.ComponentModel.DataAnnotations;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.Tokens;
 using Volo.Abp;
-using Volo.Abp.Account;
 using Volo.Abp.Application.Services;
 using Volo.Abp.Identity;
-using Volo.Abp.Users;
 
 namespace DFApp.Account;
 
-public class AccountAppService : ApplicationService
+/// <summary>
+/// 账户应用服务
+/// </summary>
+public class AccountAppService : ApplicationService, IAccountAppService
 {
     private readonly IdentityUserManager _userManager;
     private readonly IConfiguration _configuration;
+    private readonly IMemoryCache _cache;
 
     public AccountAppService(
         IdentityUserManager userManager,
-        IConfiguration configuration)
+        IConfiguration configuration,
+        IMemoryCache cache)
     {
         _userManager = userManager;
         _configuration = configuration;
+        _cache = cache;
     }
 
+    /// <summary>
+    /// 用户登录
+    /// </summary>
     [AllowAnonymous]
     public async Task<LoginResultDto> LoginAsync(LoginDto input)
     {
-        var user = await _userManager.FindByNameAsync(input.Username);
-        if (user == null)
+        try
         {
-            Logger.LogWarning($"登录失败：用户名 '{input.Username}' 不存在");
-            throw new UserFriendlyException("用户名或密码错误");
+            // 检查登录尝试次数
+            var cacheKey = $"LoginAttempts_{input.Username}";
+            var attempts = _cache.GetOrCreate(cacheKey, entry =>
+            {
+                entry.AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(15);
+                return 0;
+            });
+
+            if (attempts >= 5)
+            {
+                Logger.LogWarning($"登录失败：用户尝试次数过多");
+                throw new UserFriendlyException("登录尝试次数过多，请15分钟后再试");
+            }
+
+            var user = await _userManager.FindByNameAsync(input.Username);
+            if (user == null)
+            {
+                Logger.LogWarning($"登录失败：用户名不存在");
+                throw new UserFriendlyException("用户名或密码错误");
+            }
+
+            var result = await _userManager.CheckPasswordAsync(user, input.Password);
+            if (!result)
+            {
+                Logger.LogWarning($"登录失败：密码错误");
+                throw new UserFriendlyException("用户名或密码错误");
+            }
+
+            // 登录成功，清除尝试次数
+            _cache.Remove(cacheKey);
+
+            var token = GenerateJwtToken(user);
+
+            return new LoginResultDto
+            {
+                AccessToken = token,
+                ExpiresAt = DateTimeOffset.UtcNow.AddMinutes(
+                    _configuration.GetValue<int>("Jwt:ExpirationMinutes"))
+                    .ToUnixTimeSeconds(),
+                Username = user.UserName,
+                Email = user.Email
+            };
         }
-
-        var result = await _userManager.CheckPasswordAsync(user, input.Password);
-        if (!result)
+        catch (UserFriendlyException)
         {
-            Logger.LogWarning($"登录失败：用户 '{input.Username}' 密码错误");
-            throw new UserFriendlyException("用户名或密码错误");
+            throw; // 重新抛出业务异常
         }
-
-        var token = GenerateJwtToken(user);
-
-        return new LoginResultDto
+        catch (Exception ex)
         {
-            AccessToken = token,
-            ExpiresAt = DateTimeOffset.UtcNow.AddMinutes(
-                _configuration.GetValue<int>("Jwt:ExpirationMinutes"))
-                .ToUnixTimeSeconds(),
-            Username = user.UserName,
-            Email = user.Email
-        };
+            Logger.LogError(ex, "登录过程中发生未知错误");
+            throw new UserFriendlyException("登录失败，请稍后再试");
+        }
     }
 
+    /// <summary>
+    /// 生成 JWT 令牌
+    /// </summary>
     private string GenerateJwtToken(IdentityUser user)
     {
+        var secretKey = _configuration["Jwt:SecretKey"];
+        if (string.IsNullOrEmpty(secretKey))
+        {
+            throw new InvalidOperationException("JWT Secret Key 未配置，请设置环境变量 JWT_SECRET_KEY");
+        }
+
         var claims = new[]
         {
             new Claim(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
@@ -69,8 +114,7 @@ public class AccountAppService : ApplicationService
             new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
         };
 
-        var key = new SymmetricSecurityKey(
-            Encoding.UTF8.GetBytes(_configuration["Jwt:SecretKey"]!));
+        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey));
         var credentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
         var token = new JwtSecurityToken(
@@ -84,23 +128,4 @@ public class AccountAppService : ApplicationService
 
         return new JwtSecurityTokenHandler().WriteToken(token);
     }
-}
-
-public class LoginDto
-{
-    [Required]
-    [StringLength(50, MinimumLength = 3)]
-    public string Username { get; set; } = string.Empty;
-
-    [Required]
-    [StringLength(100, MinimumLength = 6)]
-    public string Password { get; set; } = string.Empty;
-}
-
-public class LoginResultDto
-{
-    public string AccessToken { get; set; } = string.Empty;
-    public long ExpiresAt { get; set; }
-    public string Username { get; set; } = string.Empty;
-    public string Email { get; set; } = string.Empty;
 }

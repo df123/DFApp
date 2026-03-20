@@ -1,4 +1,3 @@
-using Volo.Abp.Account;
 using Volo.Abp.Mapperly;
 using Volo.Abp.FeatureManagement;
 using Volo.Abp.Identity;
@@ -15,7 +14,6 @@ namespace DFApp;
 
 [DependsOn(
     typeof(DFAppDomainModule),
-    typeof(AbpAccountApplicationModule),
     typeof(DFAppApplicationContractsModule),
     typeof(AbpIdentityApplicationModule),
     typeof(AbpPermissionManagementApplicationModule),
@@ -23,8 +21,8 @@ namespace DFApp;
     typeof(AbpFeatureManagementApplicationModule),
     typeof(AbpSettingManagementApplicationModule)
     )]
-    [DependsOn(typeof(AbpBackgroundWorkersQuartzModule))]
-    public class DFAppApplicationModule : AbpModule
+[DependsOn(typeof(AbpBackgroundWorkersQuartzModule))]
+public class DFAppApplicationModule : AbpModule
 {
     public override void ConfigureServices(ServiceConfigurationContext context)
     {
