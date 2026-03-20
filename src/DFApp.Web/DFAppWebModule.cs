@@ -1,16 +1,18 @@
 using System;
 using System.IO;
+using System.Text;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Extensions.DependencyInjection;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.IdentityModel.Tokens;
 using DFApp.EntityFrameworkCore;
 using DFApp.Localization;
 using DFApp.Web.Menus;
 using Microsoft.OpenApi.Models;
-using OpenIddict.Validation.AspNetCore;
 using Volo.Abp;
 using Volo.Abp.Account.Web;
 using Volo.Abp.AspNetCore.Mvc;
@@ -28,7 +30,6 @@ using Volo.Abp.Security.Claims;
 using Volo.Abp.SettingManagement.Web;
 using Volo.Abp.Swashbuckle;
 using Volo.Abp.TenantManagement.Web;
-using Volo.Abp.OpenIddict;
 using Volo.Abp.UI.Navigation.Urls;
 using Volo.Abp.UI.Navigation;
 using Volo.Abp.VirtualFileSystem;
@@ -47,7 +48,7 @@ namespace DFApp.Web;
     typeof(AbpAutofacModule),
     typeof(AbpIdentityWebModule),
     typeof(AbpSettingManagementWebModule),
-    typeof(AbpAccountWebOpenIddictModule),
+    typeof(AbpAccountWebModule),
     typeof(AbpAspNetCoreMvcUiLeptonXLiteThemeModule),
     typeof(AbpTenantManagementWebModule),
     typeof(AbpAspNetCoreSerilogModule),
@@ -75,29 +76,6 @@ public class DFAppWebModule : AbpModule
                 typeof(DFAppWebModule).Assembly
             );
         });
-
-        PreConfigure<OpenIddictBuilder>(builder =>
-        {
-            builder.AddValidation(options =>
-            {
-                options.AddAudiences("DFApp");
-                options.UseLocalServer();
-                options.UseAspNetCore();
-            });
-        });
-
-        if (!hostingEnvironment.IsDevelopment())
-        {
-            PreConfigure<AbpOpenIddictAspNetCoreOptions>(options =>
-            {
-                options.AddDevelopmentEncryptionAndSigningCertificate = false;
-            });
-
-            PreConfigure<OpenIddictServerBuilder>(serverBuilder =>
-            {
-                serverBuilder.AddProductionEncryptionAndSigningCertificate("openiddict.pfx", "6a19a84a-f89a-466c-861b-37c3ddf30da2");
-            });
-        }
     }
 
     public override void ConfigureServices(ServiceConfigurationContext context)
@@ -128,16 +106,6 @@ public class DFAppWebModule : AbpModule
             });
         });
 
-        PreConfigure<OpenIddictBuilder>(builder =>
-        {
-            builder.AddValidation(options =>
-            {
-                options.AddAudiences("DFApp");
-                options.UseLocalServer();
-                options.UseAspNetCore();
-            });
-        });
-
         context.Services.AddSingleton(new AppsettingsHelper(context.Services.GetConfiguration()));
         context.Services.AddHttpClient();
 
@@ -150,7 +118,24 @@ public class DFAppWebModule : AbpModule
 
     private void ConfigureAuthentication(ServiceConfigurationContext context)
     {
-        context.Services.ForwardIdentityAuthenticationForBearer(OpenIddictValidationAspNetCoreDefaults.AuthenticationScheme);
+        var configuration = context.Services.GetConfiguration();
+
+        context.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+            .AddJwtBearer(options =>
+            {
+                options.TokenValidationParameters = new TokenValidationParameters
+                {
+                    ValidateIssuer = true,
+                    ValidateAudience = true,
+                    ValidateLifetime = true,
+                    ValidateIssuerSigningKey = true,
+                    ValidIssuer = configuration["Jwt:Issuer"],
+                    ValidAudience = configuration["Jwt:Audience"],
+                    IssuerSigningKey = new SymmetricSecurityKey(
+                        Encoding.UTF8.GetBytes(configuration["Jwt:SecretKey"]!))
+                };
+            });
+
         context.Services.Configure<AbpClaimsPrincipalFactoryOptions>(options =>
         {
             options.IsDynamicClaimsEnabled = true;
@@ -263,7 +248,6 @@ public class DFAppWebModule : AbpModule
         }
 
         app.UseAuthentication();
-        app.UseAbpOpenIddictValidation();
 
         app.UseUnitOfWork();
         app.UseDynamicClaims();

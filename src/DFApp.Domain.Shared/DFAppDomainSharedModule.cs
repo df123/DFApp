@@ -6,7 +6,6 @@ using Volo.Abp.Identity;
 using Volo.Abp.Localization;
 using Volo.Abp.Localization.ExceptionHandling;
 using Volo.Abp.Modularity;
-using Volo.Abp.OpenIddict;
 using Volo.Abp.PermissionManagement;
 using Volo.Abp.SettingManagement;
 using Volo.Abp.TenantManagement;
@@ -20,7 +19,6 @@ namespace DFApp;
     typeof(AbpBackgroundJobsDomainSharedModule),
     typeof(AbpFeatureManagementDomainSharedModule),
     typeof(AbpIdentityDomainSharedModule),
-    typeof(AbpOpenIddictDomainSharedModule),
     typeof(AbpPermissionManagementDomainSharedModule),
     typeof(AbpSettingManagementDomainSharedModule),
     typeof(AbpTenantManagementDomainSharedModule)

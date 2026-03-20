@@ -12,7 +12,6 @@ using Volo.Abp.EntityFrameworkCore.Modeling;
 using Volo.Abp.FeatureManagement.EntityFrameworkCore;
 using Volo.Abp.Identity;
 using Volo.Abp.Identity.EntityFrameworkCore;
-using Volo.Abp.OpenIddict.EntityFrameworkCore;
 using Volo.Abp.PermissionManagement.EntityFrameworkCore;
 using Volo.Abp.SettingManagement.EntityFrameworkCore;
 using Volo.Abp.TenantManagement;
@@ -23,11 +22,11 @@ using System;
 using Volo.Abp.Users;
 using DFApp.Bookkeeping;
 using Microsoft.EntityFrameworkCore.Metadata;
- using System.Linq.Expressions;
+using System.Linq.Expressions;
 using DFApp.FileUploadDownload;
 using DFApp.Configuration;
 using DFApp.Aria2.Response.TellStatus;
- using DFApp.FileFilter;
+using DFApp.FileFilter;
 
 namespace DFApp.EntityFrameworkCore;
 
@@ -103,16 +102,16 @@ public class DFAppDbContext :
     public DbSet<UrisItem> UrisItems { get; set; }
     public DbSet<LotterySimulation> LotterySimulations { get; set; }
     public DbSet<KeywordFilterRule> KeywordFilterRules { get; set; }
-     public DbSet<RssSource> RssSources { get; set; }
-     public DbSet<RssMirrorItem> RssMirrorItems { get; set; }
-     public DbSet<RssWordSegment> RssWordSegments { get; set; }
-     public DbSet<RssSubscription> RssSubscriptions { get; set; }
-     public DbSet<RssSubscriptionDownload> RssSubscriptionDownloads { get; set; }
-      
-      public DbSet<DFApp.ElectricVehicle.ElectricVehicle> ElectricVehicles { get; set; }
-      public DbSet<DFApp.ElectricVehicle.ElectricVehicleCost> ElectricVehicleCosts { get; set; }
-      public DbSet<DFApp.ElectricVehicle.ElectricVehicleChargingRecord> ElectricVehicleChargingRecords { get; set; }
-      public DbSet<DFApp.ElectricVehicle.GasolinePrice> GasolinePrices { get; set; }
+    public DbSet<RssSource> RssSources { get; set; }
+    public DbSet<RssMirrorItem> RssMirrorItems { get; set; }
+    public DbSet<RssWordSegment> RssWordSegments { get; set; }
+    public DbSet<RssSubscription> RssSubscriptions { get; set; }
+    public DbSet<RssSubscriptionDownload> RssSubscriptionDownloads { get; set; }
+
+    public DbSet<DFApp.ElectricVehicle.ElectricVehicle> ElectricVehicles { get; set; }
+    public DbSet<DFApp.ElectricVehicle.ElectricVehicleCost> ElectricVehicleCosts { get; set; }
+    public DbSet<DFApp.ElectricVehicle.ElectricVehicleChargingRecord> ElectricVehicleChargingRecords { get; set; }
+    public DbSet<DFApp.ElectricVehicle.GasolinePrice> GasolinePrices { get; set; }
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
@@ -125,7 +124,6 @@ public class DFAppDbContext :
         builder.ConfigureBackgroundJobs();
         builder.ConfigureAuditLogging();
         builder.ConfigureIdentity();
-        builder.ConfigureOpenIddict();
         builder.ConfigureFeatureManagement();
         builder.ConfigureTenantManagement();
 
@@ -213,7 +211,7 @@ public class DFAppDbContext :
         builder.Entity<MediaExternalLink>(b =>
         {
             b.ToTable(DFAppConsts.DbTablePrefix + "MediaExternalLink", DFAppConsts.DbSchema);
-            
+
             b.HasMany(e => e.MediaIds)
             .WithOne(e => e.ExternalLink)
             .HasForeignKey(e => e.MediaExternalLinkId)

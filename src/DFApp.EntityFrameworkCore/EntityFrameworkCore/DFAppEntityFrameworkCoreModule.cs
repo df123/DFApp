@@ -9,7 +9,6 @@ using Volo.Abp.EntityFrameworkCore.Sqlite;
 using Volo.Abp.FeatureManagement.EntityFrameworkCore;
 using Volo.Abp.Identity.EntityFrameworkCore;
 using Volo.Abp.Modularity;
-using Volo.Abp.OpenIddict.EntityFrameworkCore;
 using Volo.Abp.PermissionManagement.EntityFrameworkCore;
 using Volo.Abp.SettingManagement.EntityFrameworkCore;
 using Volo.Abp.TenantManagement.EntityFrameworkCore;
@@ -20,7 +19,6 @@ namespace DFApp.EntityFrameworkCore;
 [DependsOn(
     typeof(DFAppDomainModule),
     typeof(AbpIdentityEntityFrameworkCoreModule),
-    typeof(AbpOpenIddictEntityFrameworkCoreModule),
     typeof(AbpPermissionManagementEntityFrameworkCoreModule),
     typeof(AbpSettingManagementEntityFrameworkCoreModule),
     typeof(AbpBackgroundJobsEntityFrameworkCoreModule),
@@ -32,12 +30,12 @@ namespace DFApp.EntityFrameworkCore;
 
 #if DEBUG
 
-    #if SQLSERVER
+#if SQLSERVER
 [DependsOn(typeof(AbpEntityFrameworkCoreSqlServerModule))]
 
-    #else
+#else
 [DependsOn(typeof(AbpEntityFrameworkCoreSqliteModule))]
-    #endif
+#endif
 
 #else
 [DependsOn(typeof(AbpEntityFrameworkCoreSqliteModule))]
@@ -66,12 +64,12 @@ public class DFAppEntityFrameworkCoreModule : AbpModule
 
 #if DEBUG
 
-    #if SQLSERVER
+#if SQLSERVER
             options.UseSqlServer();
-    #else
+#else
             options.UseSqlite();
-    #endif
-            
+#endif
+
 #else
 
      
