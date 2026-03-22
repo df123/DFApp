@@ -57,8 +57,25 @@ namespace DFApp.Background
 
         public override async Task Execute(IJobExecutionContext context)
         {
-            await StartWork(LotteryConst.SSQ, LotteryConst.SSQ_ENG, LotteryConst.SSQ_START_CODE);
-            await StartWork(LotteryConst.KL8, LotteryConst.KL8_ENG, LotteryConst.KL8_STRAT_CODE);
+            // 处理双色球（SSQ），失败不影响其他彩票类型
+            try
+            {
+                await StartWork(LotteryConst.SSQ, LotteryConst.SSQ_ENG, LotteryConst.SSQ_START_CODE);
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, $"处理双色球(SSQ)时发生异常，将继续处理其他彩票类型");
+            }
+
+            // 处理快乐8（KL8），失败不影响其他彩票类型
+            try
+            {
+                await StartWork(LotteryConst.KL8, LotteryConst.KL8_ENG, LotteryConst.KL8_STRAT_CODE);
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, $"处理快乐8(KL8)时发生异常，将继续处理其他彩票类型");
+            }
         }
 
         private async Task StartWork(string lotteryType, string lotteryTypeEng, string code)
