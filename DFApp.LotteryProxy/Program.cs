@@ -9,18 +9,17 @@ using Microsoft.Extensions.Options;
 using DFApp.LotteryProxy.Middleware;
 using Serilog;
 
-// 配置Serilog从配置文件读取
-Log.Logger = new LoggerConfiguration()
-    .ReadFrom.Configuration(new ConfigurationBuilder()
-        .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
-        .Build())
-    .CreateLogger();
-
 try
 {
-    Log.Information("启动彩票代理服务");
-
     var builder = WebApplication.CreateBuilder(args);
+
+    // 配置 Serilog 作为日志提供程序
+    builder.Host.UseSerilog((context, services, configuration) => configuration
+        .ReadFrom.Configuration(context.Configuration)
+        .ReadFrom.Services(services)
+        .Enrich.FromLogContext());
+
+    Log.Information("启动彩票代理服务");
 
     // 配置服务
     ConfigureServices(builder);
