@@ -1,5 +1,4 @@
 using Microsoft.Extensions.DependencyInjection;
-using Volo.Abp.Account;
 using Volo.Abp.FeatureManagement;
 using Volo.Abp.Modularity;
 using Volo.Abp.PermissionManagement;
@@ -12,7 +11,6 @@ namespace DFApp;
 
 [DependsOn(
     typeof(DFAppApplicationContractsModule),
-    typeof(AbpAccountHttpApiClientModule),
     typeof(AbpPermissionManagementHttpApiClientModule),
     typeof(AbpTenantManagementHttpApiClientModule),
     typeof(AbpFeatureManagementHttpApiClientModule),
