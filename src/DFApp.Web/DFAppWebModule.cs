@@ -23,7 +23,6 @@ using Volo.Abp.AspNetCore.Mvc.UI.Theme.Shared;
 using Volo.Abp.AspNetCore.Serilog;
 using Volo.Abp.Autofac;
 using Volo.Abp.Mapperly;
-using Volo.Abp.Identity.Web;
 using Volo.Abp.Modularity;
 using Volo.Abp.Security.Claims;
 using Volo.Abp.SettingManagement.Web;
@@ -45,7 +44,6 @@ namespace DFApp.Web;
     typeof(DFAppApplicationModule),
     typeof(DFAppEntityFrameworkCoreModule),
     typeof(AbpAutofacModule),
-    typeof(AbpIdentityWebModule),
     typeof(AbpSettingManagementWebModule),
     typeof(AbpAspNetCoreMvcUiLeptonXLiteThemeModule),
     typeof(AbpTenantManagementWebModule),

@@ -1,7 +1,6 @@
 using Localization.Resources.AbpUi;
 using DFApp.Localization;
 using Volo.Abp.FeatureManagement;
-using Volo.Abp.Identity;
 using Volo.Abp.Localization;
 using Volo.Abp.Modularity;
 using Volo.Abp.PermissionManagement.HttpApi;
@@ -12,7 +11,6 @@ namespace DFApp;
 
 [DependsOn(
     typeof(DFAppApplicationContractsModule),
-    typeof(AbpIdentityHttpApiModule),
     typeof(AbpPermissionManagementHttpApiModule),
     typeof(AbpTenantManagementHttpApiModule),
     typeof(AbpFeatureManagementHttpApiModule),
