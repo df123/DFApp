@@ -1,15 +1,18 @@
 using System;
 using System.IdentityModel.Tokens.Jwt;
+using System.Linq;
 using System.Security.Claims;
 using System.Text;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.Tokens;
 using Volo.Abp;
 using Volo.Abp.Application.Services;
+using Volo.Abp.Domain.Repositories;
 using Volo.Abp.Identity;
 
 namespace DFApp.Account;
@@ -19,18 +22,21 @@ namespace DFApp.Account;
 /// </summary>
 public class AccountAppService : ApplicationService, IAccountAppService
 {
-    private readonly IdentityUserManager _userManager;
+    private readonly IRepository<IdentityUser, Guid> _userRepository;
     private readonly IConfiguration _configuration;
     private readonly IMemoryCache _cache;
+    private readonly IPasswordHasher<IdentityUser> _passwordHasher;
 
     public AccountAppService(
-        IdentityUserManager userManager,
+        IRepository<IdentityUser, Guid> userRepository,
         IConfiguration configuration,
-        IMemoryCache cache)
+        IMemoryCache cache,
+        IPasswordHasher<IdentityUser> passwordHasher)
     {
-        _userManager = userManager;
+        _userRepository = userRepository;
         _configuration = configuration;
         _cache = cache;
+        _passwordHasher = passwordHasher;
     }
 
     /// <summary>
@@ -55,15 +61,20 @@ public class AccountAppService : ApplicationService, IAccountAppService
                 throw new UserFriendlyException("登录尝试次数过多，请15分钟后再试");
             }
 
-            var user = await _userManager.FindByNameAsync(input.Username);
+            // 查找用户
+            var queryable = await _userRepository.GetQueryableAsync();
+            var user = await AsyncExecuter.FirstOrDefaultAsync(
+                queryable.Where(u => u.UserName == input.Username));
+
             if (user == null)
             {
                 Logger.LogWarning($"登录失败：用户名不存在");
                 throw new UserFriendlyException("用户名或密码错误");
             }
 
-            var result = await _userManager.CheckPasswordAsync(user, input.Password);
-            if (!result)
+            // 验证密码
+            var result = _passwordHasher.VerifyHashedPassword(user, user.PasswordHash ?? "", input.Password);
+            if (result != PasswordVerificationResult.Success)
             {
                 Logger.LogWarning($"登录失败：密码错误");
                 throw new UserFriendlyException("用户名或密码错误");

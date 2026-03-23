@@ -2,7 +2,6 @@
 using System.Threading.Tasks;
 using DFApp.Localization;
 using DFApp.Permissions;
-using Volo.Abp.Identity.Web.Navigation;
 using Volo.Abp.SettingManagement.Web.Navigation;
 using Volo.Abp.TenantManagement.Web.Navigation;
 using Volo.Abp.UI.Navigation;
@@ -36,8 +35,7 @@ public class DFAppMenuContributor : IMenuContributor
         );
 
         administration.TryRemoveMenuItem(TenantManagementMenuNames.GroupName);
-        administration.SetSubItemOrder(IdentityMenuNames.GroupName, 2);
-        administration.SetSubItemOrder(SettingManagementMenuNames.GroupName, 3);
+        administration.SetSubItemOrder(SettingManagementMenuNames.GroupName, 2);
 
         return;
     }

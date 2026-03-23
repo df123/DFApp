@@ -1,4 +1,3 @@
-using Volo.Abp.Account;
 using Volo.Abp.FeatureManagement;
 using Volo.Abp.Modularity;
 using Volo.Abp.ObjectExtending;
@@ -10,7 +9,6 @@ namespace DFApp;
 
 [DependsOn(
     typeof(DFAppDomainSharedModule),
-    typeof(AbpAccountApplicationContractsModule),
     typeof(AbpFeatureManagementApplicationContractsModule),
     typeof(AbpPermissionManagementApplicationContractsModule),
     typeof(AbpSettingManagementApplicationContractsModule),
