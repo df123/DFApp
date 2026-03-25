@@ -7,6 +7,8 @@ using Volo.Abp.TenantManagement;
 using Volo.Abp.BackgroundWorkers.Quartz;
 using DFApp.Queue;
 using DFApp.Aria2;
+using DFApp.Account;
+using Volo.Abp.Authorization.Permissions;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace DFApp;
@@ -26,5 +28,11 @@ public class DFAppApplicationModule : AbpModule
     {
         context.Services.AddSingleton<IQueueManagement, QueueManagement>();
         context.Services.AddHttpClient<Aria2RpcClient>();
+
+        // 注册 JWT 权限值提供者
+        Configure<AbpPermissionOptions>(options =>
+        {
+            options.ValueProviders.Add<JwtPermissionValueProvider>();
+        });
     }
 }
