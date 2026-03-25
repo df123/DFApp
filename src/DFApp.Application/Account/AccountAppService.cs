@@ -24,23 +24,23 @@ namespace DFApp.Account;
 public class AccountAppService : ApplicationService, IAccountAppService
 {
     private readonly IRepository<IdentityUser, Guid> _userRepository;
+    private readonly IRepository<PermissionGrant, Guid> _permissionGrantRepository;
     private readonly IConfiguration _configuration;
     private readonly IMemoryCache _cache;
     private readonly IPasswordHasher _passwordHasher;
-    private readonly IPermissionManager _permissionManager;
 
     public AccountAppService(
         IRepository<IdentityUser, Guid> userRepository,
+        IRepository<PermissionGrant, Guid> permissionGrantRepository,
         IConfiguration configuration,
         IMemoryCache cache,
-        IPasswordHasher passwordHasher,
-        IPermissionManager permissionManager)
+        IPasswordHasher passwordHasher)
     {
         _userRepository = userRepository;
+        _permissionGrantRepository = permissionGrantRepository;
         _configuration = configuration;
         _cache = cache;
         _passwordHasher = passwordHasher;
-        _permissionManager = permissionManager;
     }
 
     /// <summary>
@@ -129,11 +129,28 @@ public class AccountAppService : ApplicationService, IAccountAppService
             new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
         };
 
-        // 获取用户的所有权限
-        var permissions = await _permissionManager.GetAllForUserAsync(user.Id);
+        // 直接从数据库中查询用户的权限
+        var userQueryable = await _userRepository.GetQueryableAsync();
+        var userRoleIds = await AsyncExecuter.ToListAsync(
+            userQueryable.Where(u => u.Id == user.Id)
+                .SelectMany(u => u.Roles)
+                .Select(r => r.RoleId));
+
+        // 将角色ID转换为字符串列表
+        var userRoleIdStrings = userRoleIds.Select(id => id.ToString()).ToList();
+
+        // 查询权限授予记录
+        var permissionGrantQueryable = await _permissionGrantRepository.GetQueryableAsync();
+        var permissions = await AsyncExecuter.ToListAsync(
+            permissionGrantQueryable.Where(pg =>
+                (pg.ProviderName == "U" && pg.ProviderKey == user.Id.ToString()) ||
+                (pg.ProviderName == "R" && userRoleIdStrings.Contains(pg.ProviderKey))
+            ).Select(pg => pg.Name));
+
+        // 将权限添加到JWT claims中
         foreach (var permission in permissions)
         {
-            claims.Add(new Claim("Permission", permission.Name));
+            claims.Add(new Claim("Permission", permission));
         }
 
         var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey));
