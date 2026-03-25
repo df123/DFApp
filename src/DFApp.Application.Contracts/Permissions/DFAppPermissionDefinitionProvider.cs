@@ -8,6 +8,14 @@ public class DFAppPermissionDefinitionProvider : PermissionDefinitionProvider
 {
     public override void Define(IPermissionDefinitionContext context)
     {
+        // 添加用户管理权限组
+        var userManagementGroup = context.AddGroup(DFAppPermissions.UserManagement.Default, L("Permission:UserManagement"));
+        var userManagementPermission = userManagementGroup.AddPermission(DFAppPermissions.UserManagement.Default, L("Permission:UserManagement"));
+        userManagementPermission.AddChild(DFAppPermissions.UserManagement.Create, L("Permission:UserManagement.Create"));
+        userManagementPermission.AddChild(DFAppPermissions.UserManagement.Update, L("Permission:UserManagement.Update"));
+        userManagementPermission.AddChild(DFAppPermissions.UserManagement.Delete, L("Permission:UserManagement.Delete"));
+        userManagementPermission.AddChild(DFAppPermissions.UserManagement.ChangePassword, L("Permission:UserManagement.ChangePassword"));
+
         var meidaGroup = context.AddGroup(DFAppPermissions.Medias.Default, L("Permission:MediaTelegaram"));
 
         var mediaPermisson = meidaGroup.AddPermission(DFAppPermissions.Medias.Default, L("Permission:Medias"));

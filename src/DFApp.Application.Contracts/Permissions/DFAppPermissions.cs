@@ -4,6 +4,15 @@ public static class DFAppPermissions
 {
     public const string GroupName = "DFApp";
 
+    public static class UserManagement
+    {
+        public const string Default = GroupName + ".UserManagement";
+        public const string Create = Default + ".Create";
+        public const string Update = Default + ".Update";
+        public const string Delete = Default + ".Delete";
+        public const string ChangePassword = Default + ".ChangePassword";
+    }
+
     public static class Medias
     {
         public const string Default = GroupName + ".Medias";
@@ -72,7 +81,8 @@ public static class DFAppPermissions
         public const string Delete = Default + ".Delete";
     }
 
-    public static class Aria2 {
+    public static class Aria2
+    {
         public const string Default = GroupName + ".Aria2";
         public const string Link = Default + ".Link";
         public const string Delete = Default + ".Delete";

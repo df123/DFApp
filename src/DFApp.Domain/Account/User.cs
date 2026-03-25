@@ -26,8 +26,16 @@ public class User : FullAuditedAggregateRoot<Guid>
     /// <summary>
     /// 密码哈希
     /// </summary>
-    [MaxLength(256)]
     public string? PasswordHash { get; set; }
+
+    /// <summary>
+    /// 用户名
+    /// </summary>
+    public User(Guid id, string userName, string email) : base(id)
+    {
+        UserName = userName;
+        Email = email;
+    }
 
     /// <summary>
     /// 是否激活
@@ -36,11 +44,5 @@ public class User : FullAuditedAggregateRoot<Guid>
 
     public User()
     {
-    }
-
-    public User(Guid id, string userName, string email) : base(id)
-    {
-        UserName = userName;
-        Email = email;
     }
 }
