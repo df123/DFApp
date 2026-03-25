@@ -8,8 +8,6 @@ using Volo.Abp.BackgroundWorkers.Quartz;
 using DFApp.Queue;
 using DFApp.Aria2;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.AspNetCore.Identity;
-using Volo.Abp.Identity;
 
 namespace DFApp;
 
@@ -28,6 +26,5 @@ public class DFAppApplicationModule : AbpModule
     {
         context.Services.AddSingleton<IQueueManagement, QueueManagement>();
         context.Services.AddHttpClient<Aria2RpcClient>();
-        context.Services.AddScoped<IPasswordHasher<IdentityUser>, PasswordHasher<IdentityUser>>();
     }
 }

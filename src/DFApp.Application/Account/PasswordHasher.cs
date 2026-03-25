@@ -1,31 +1,34 @@
 using System;
 using System.Security.Cryptography;
-using System.Text;
 using Volo.Abp.DependencyInjection;
 
 namespace DFApp.Account;
 
 /// <summary>
 /// 密码哈希服务实现
+/// 使用 PBKDF2 with HMAC-SHA256 算法
 /// </summary>
 public class PasswordHasher : IPasswordHasher, ITransientDependency
 {
+    private const int SaltSize = 16;
+    private const int HashSize = 32;
+    private const int Iterations = 10000;
+
     /// <summary>
     /// 哈希密码
     /// </summary>
     public string HashPassword(string password)
     {
-        // 使用 PBKDF2 算法进行密码哈希
         using var rng = RandomNumberGenerator.Create();
-        byte[] salt = new byte[16];
+        byte[] salt = new byte[SaltSize];
         rng.GetBytes(salt);
 
-        var pbkdf2 = new Rfc2898DeriveBytes(password, salt, 10000, HashAlgorithmName.SHA256);
-        byte[] hash = pbkdf2.GetBytes(32);
+        using var pbkdf2 = new Rfc2898DeriveBytes(password, salt, Iterations, HashAlgorithmName.SHA256);
+        byte[] hash = pbkdf2.GetBytes(HashSize);
 
-        byte[] hashBytes = new byte[48];
-        Array.Copy(salt, 0, hashBytes, 0, 16);
-        Array.Copy(hash, 0, hashBytes, 16, 32);
+        byte[] hashBytes = new byte[SaltSize + HashSize];
+        Array.Copy(salt, 0, hashBytes, 0, SaltSize);
+        Array.Copy(hash, 0, hashBytes, SaltSize, HashSize);
 
         return Convert.ToBase64String(hashBytes);
     }
@@ -44,20 +47,20 @@ public class PasswordHasher : IPasswordHasher, ITransientDependency
         {
             byte[] hashBytes = Convert.FromBase64String(hashedPassword);
 
-            if (hashBytes.Length != 48)
+            if (hashBytes.Length < SaltSize + HashSize)
             {
                 return false;
             }
 
-            byte[] salt = new byte[16];
-            Array.Copy(hashBytes, 0, salt, 0, 16);
+            byte[] salt = new byte[SaltSize];
+            Array.Copy(hashBytes, 0, salt, 0, SaltSize);
 
-            var pbkdf2 = new Rfc2898DeriveBytes(providedPassword, salt, 10000, HashAlgorithmName.SHA256);
-            byte[] hash = pbkdf2.GetBytes(32);
+            using var pbkdf2 = new Rfc2898DeriveBytes(providedPassword, salt, Iterations, HashAlgorithmName.SHA256);
+            byte[] hash = pbkdf2.GetBytes(HashSize);
 
-            for (int i = 0; i < 32; i++)
+            for (int i = 0; i < HashSize; i++)
             {
-                if (hashBytes[i + 16] != hash[i])
+                if (hashBytes[i + SaltSize] != hash[i])
                 {
                     return false;
                 }
