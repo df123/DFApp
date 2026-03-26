@@ -1,9 +1,10 @@
 ﻿using System.Threading.Tasks;
 using DFApp.Configuration;
+using Microsoft.AspNetCore.Mvc.RazorPages;
 
 namespace DFApp.Web.Pages;
 
-public class IndexModel : DFAppPageModel
+public class IndexModel : PageModel
 {
     public string? RemainingDiskSpace { get; private set; }
 

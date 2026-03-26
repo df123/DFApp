@@ -4,26 +4,30 @@
 
 ## 项目概览
 
-这是一个全栈彩票管理 Web 应用：
-- **后端**：基于 ASP.NET Core 10.0 与 ABP Framework（领域驱动设计的单体应用）
+这是一个多功能 Web 应用：
+- **后端**：基于 ASP.NET Core 10.0 的轻量级单体应用（已移除 ABP Framework）
 - **前端**：Vue 3 + Element Plus 管理后台（Pure Admin Thin 模板）
 - **附加服务**：用于访问中国福利彩票网站的 Lottery proxy 服务（运行在端口 5000）
 
 ## 重要说明
 
-- **框架迁移状态**：项目正处于 ABP Framework 逐步移除的演进阶段。当前重点在于移除 ABP 的登录功能模块，相关变更历史可通过 Git 日志追踪查看。
+- **框架迁移状态**：项目正在移除 ABP Framework，现已迁移为轻量级 ASP.NET Core 架构，使用 SqlSugar ORM、传统 Controller 和直接 Quartz.NET 调度
+- **开发模式变更**：原 ABP 框架采用领域驱动设计（DDD）架构，迁移后将采用测试驱动开发（TDD）模式
 
 ## 架构
 
-### 后端结构（ABP 分层架构）
-- `src/DFApp.Domain` - 实体、领域服务
-- `src/DFApp.Application` - 应用服务、DTO（控制器由此自动生成）
-- `src/DFApp.EntityFrameworkCore` - EF Core 数据访问
-- `src/DFApp.Web` - ASP.NET Core MVC Web 应用（用于托管前端静态文件）
-- `src/DFApp.HttpApi` - HTTP API 层（自动生成）
-- `src/DFApp.Application.Contracts` - 服务契约与 DTO
-- `src/DFApp.DbMigrator` - 数据库迁移控制台应用
-- `test/` - xUnit 测试项目
+### 后端结构（轻量级单体架构）
+- `DFApp.Web/` ← 唯一后端项目
+  - `Domain/` - 实体（自定义基类，替代 ABP 实体）
+  - `Services/` - 应用服务（原 Application 层）
+  - `Controllers/` - API 控制器（手动创建，路由保持 /api/app/）
+  - `DTOs/` - DTO（原 Application.Contracts）
+  - `Permissions/` - 权限定义与授权处理器
+  - `Background/` - 后台任务（Quartz.NET Jobs）
+  - `Hubs/` - SignalR Hub
+  - `Mapping/` - Mapperly 映射器
+  - `Data/` - SqlSugar 配置与仓储
+  - `Infrastructure/` - 中间件、过滤器、异常处理
 
 ### 前端结构（Vue 3）
 - `src/views/` - 页面组件
@@ -46,20 +50,17 @@
 ## 重要约束
 
 ### 被禁止的操作
-- **不要在** `src/DFApp.HttpApi` 或 `src/DFApp.Web` 目录中添加控制器（controllers）
+- **不要在**已废弃的 `src/DFApp.HttpApi` 目录中添加控制器（该目录已废弃）
 - **不要添加** Razor 页面（`.cshtml` 文件）
-- **不要执行** ef迁移数据库命令
+- **不要执行** EF Core 迁移数据库命令（已改用 SqlSugar）
 
 ### 必须遵循的模式
-- 控制器由 `src/DFApp.Application` 中的应用服务自动生成：
-  - 继承自 `DFAppAppService`、`ApplicationService` 或 `CrudAppService` 的服务将自动生成控制器
-  - 非特殊要求不允许自定义 Repository
-  - 只读查询操作使用 `IReadOnlyRepository<TEntity>` 或 `IReadOnlyRepository<TEntity, TKey>`
-  - 需要修改的操作使用 `IRepository<TEntity>` 或 `IRepository<TEntity, TKey>`
-  - 优先使用 ABP 提供的 `IRepository` 和 `IReadOnlyRepository`
-- 前端页面位于 `DFApp.Vue` 项目中
-- 数据库操作在application层进行，使用linq查询表达式配合GetQueryableAsync和AsyncExecuter
-- 所有数据库修改生成sql文件
+- 每个应用服务需要手动创建对应的 Controller，路由采用 `/api/app/{kebab-case-entity}` 模式
+- 使用 SqlSugar 仓储（`ISqlSugarRepository` 和 `ISqlSugarReadOnlyRepository`），特殊业务需求可创建自定义仓储
+- 只读查询操作使用 `ISqlSugarReadOnlyRepository<TEntity>` 或 `ISqlSugarReadOnlyRepository<TEntity, TKey>`
+- 需要修改的操作使用 `ISqlSugarRepository<TEntity>` 或 `ISqlSugarRepository<TEntity, TKey>`
+- 数据库操作在 Service 层进行，使用 SqlSugar 的 LINQ 表达式和 `.ToListAsync()` 等方法
+- 所有数据库修改生成 sql 文件
 
 ### 代码注释
 - **注释语言**: 所有注释必须使用中文

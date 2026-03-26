@@ -63,19 +63,24 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<PackageReference Include="Volo.Abp.AspNetCore.Mvc.UI.Theme.LeptonXLite" Version="5.0.1" />
-	</ItemGroup>
-
-	<ItemGroup>
 		<ProjectReference Include="..\DFApp.Application\DFApp.Application.csproj" />
 		<ProjectReference Include="..\DFApp.HttpApi\DFApp.HttpApi.csproj" />
 		<ProjectReference Include="..\DFApp.EntityFrameworkCore\DFApp.EntityFrameworkCore.csproj" />
-		<PackageReference Include="Volo.Abp.Autofac" Version="10.0.1" />
-		<PackageReference Include="Volo.Abp.Swashbuckle" Version="10.0.1" />
-		<PackageReference Include="Volo.Abp.AspNetCore.Serilog" Version="10.0.1" />
-		<PackageReference Include="Volo.Abp.TenantManagement.Web" Version="10.0.1" />
-		<PackageReference Include="Volo.Abp.SettingManagement.Web" Version="10.0.1" />
-		<PackageReference Include="Volo.Abp.Mapperly" Version="10.0.1" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<PackageReference Include="SqlSugarCore" Version="5.1.4.160" />
+		<PackageReference Include="Quartz" Version="3.15.0" />
+		<PackageReference Include="Quartz.Extensions.Hosting" Version="3.15.0" />
+		<PackageReference Include="Swashbuckle.AspNetCore" Version="8.0.0" />
+		<PackageReference Include="Riok.Mapperly" Version="4.3.0" />
+		<PackageReference Include="WTelegramClient" Version="4.3.12" />
+		<PackageReference Include="Microsoft.AspNetCore.SignalR.Client" Version="10.0.0" />
+		<PackageReference Include="HtmlAgilityPack" Version="1.11.71" />
+		<PackageReference Include="AngleSharp" Version="1.1.2" />
+		<PackageReference Include="SixLabors.ImageSharp" Version="3.1.6" />
+		<PackageReference Include="SixLabors.ImageSharp.Drawing" Version="2.1.4" />
+		<PackageReference Include="SixLabors.Fonts" Version="2.0.8" />
 	</ItemGroup>
 
 	<ItemGroup>
