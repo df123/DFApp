@@ -94,6 +94,55 @@ public class SqlSugarRepository<T, TKey> : ISqlSugarRepository<T, TKey> where T 
     }
 
     /// <summary>
+    /// 分页查询（带排序）
+    /// </summary>
+    /// <param name="pageIndex">页码（从 1 开始）</param>
+    /// <param name="pageSize">每页大小</param>
+    /// <param name="orderByExpression">排序表达式</param>
+    /// <param name="orderByType">排序类型（升序或降序）</param>
+    /// <returns>分页结果</returns>
+    public async Task<(List<T> Items, int TotalCount)> GetPagedListAsync(int pageIndex, int pageSize, Expression<Func<T, object>> orderByExpression, OrderByType orderByType = OrderByType.Asc)
+    {
+        RefAsync<int> totalCount = 0;
+        var query = _db.Queryable<T>();
+        if (orderByType == OrderByType.Asc)
+        {
+            query = query.OrderBy(orderByExpression, OrderByType.Asc);
+        }
+        else
+        {
+            query = query.OrderBy(orderByExpression, OrderByType.Desc);
+        }
+        var items = await query.ToPageListAsync(pageIndex, pageSize, totalCount);
+        return (items, totalCount.Value);
+    }
+
+    /// <summary>
+    /// 根据条件分页查询（带排序）
+    /// </summary>
+    /// <param name="expression">查询条件</param>
+    /// <param name="pageIndex">页码（从 1 开始）</param>
+    /// <param name="pageSize">每页大小</param>
+    /// <param name="orderByExpression">排序表达式</param>
+    /// <param name="orderByType">排序类型（升序或降序）</param>
+    /// <returns>分页结果</returns>
+    public async Task<(List<T> Items, int TotalCount)> GetPagedListAsync(Expression<Func<T, bool>> expression, int pageIndex, int pageSize, Expression<Func<T, object>> orderByExpression, OrderByType orderByType = OrderByType.Asc)
+    {
+        RefAsync<int> totalCount = 0;
+        var query = _db.Queryable<T>().Where(expression);
+        if (orderByType == OrderByType.Asc)
+        {
+            query = query.OrderBy(orderByExpression, OrderByType.Asc);
+        }
+        else
+        {
+            query = query.OrderBy(orderByExpression, OrderByType.Desc);
+        }
+        var items = await query.ToPageListAsync(pageIndex, pageSize, totalCount);
+        return (items, totalCount.Value);
+    }
+
+    /// <summary>
     /// 插入实体
     /// </summary>
     /// <param name="entity">实体</param>
@@ -182,52 +231,6 @@ public class SqlSugarRepository<T, TKey> : ISqlSugarRepository<T, TKey> where T 
     public async Task<int> DeleteAsync(Expression<Func<T, bool>> expression)
     {
         return await _db.Deleteable<T>().Where(expression).ExecuteCommandAsync();
-    }
-
-    /// <summary>
-    /// 软删除实体
-    /// </summary>
-    /// <param name="entity">实体</param>
-    /// <returns>删除的行数</returns>
-    public async Task<int> SoftDeleteAsync(T entity)
-    {
-        return await _db.Updateable(entity).ExecuteCommandAsync();
-    }
-
-    /// <summary>
-    /// 根据 ID 软删除实体
-    /// </summary>
-    /// <param name="id">主键 ID</param>
-    /// <returns>删除的行数</returns>
-    public async Task<int> SoftDeleteAsync(TKey id)
-    {
-        var entity = await GetByIdAsync(id);
-        if (entity == null)
-        {
-            return 0;
-        }
-        return await SoftDeleteAsync(entity);
-    }
-
-    /// <summary>
-    /// 批量软删除实体
-    /// </summary>
-    /// <param name="entities">实体列表</param>
-    /// <returns>删除的行数</returns>
-    public async Task<int> SoftDeleteAsync(List<T> entities)
-    {
-        return await _db.Updateable(entities).ExecuteCommandAsync();
-    }
-
-    /// <summary>
-    /// 根据条件软删除实体
-    /// </summary>
-    /// <param name="expression">删除条件</param>
-    /// <returns>删除的行数</returns>
-    public async Task<int> SoftDeleteAsync(Expression<Func<T, bool>> expression)
-    {
-        var entities = await GetListAsync(expression);
-        return await SoftDeleteAsync(entities);
     }
 
     /// <summary>

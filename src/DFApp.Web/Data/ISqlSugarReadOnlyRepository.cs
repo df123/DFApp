@@ -58,6 +58,27 @@ public interface ISqlSugarReadOnlyRepository<T, TKey> where T : class, new()
     Task<(List<T> Items, int TotalCount)> GetPagedListAsync(Expression<Func<T, bool>> expression, int pageIndex, int pageSize);
 
     /// <summary>
+    /// 分页查询（带排序）
+    /// </summary>
+    /// <param name="pageIndex">页码（从 1 开始）</param>
+    /// <param name="pageSize">每页大小</param>
+    /// <param name="orderByExpression">排序表达式</param>
+    /// <param name="orderByType">排序类型（升序或降序）</param>
+    /// <returns>分页结果</returns>
+    Task<(List<T> Items, int TotalCount)> GetPagedListAsync(int pageIndex, int pageSize, Expression<Func<T, object>> orderByExpression, OrderByType orderByType = OrderByType.Asc);
+
+    /// <summary>
+    /// 根据条件分页查询（带排序）
+    /// </summary>
+    /// <param name="expression">查询条件</param>
+    /// <param name="pageIndex">页码（从 1 开始）</param>
+    /// <param name="pageSize">每页大小</param>
+    /// <param name="orderByExpression">排序表达式</param>
+    /// <param name="orderByType">排序类型（升序或降序）</param>
+    /// <returns>分页结果</returns>
+    Task<(List<T> Items, int TotalCount)> GetPagedListAsync(Expression<Func<T, bool>> expression, int pageIndex, int pageSize, Expression<Func<T, object>> orderByExpression, OrderByType orderByType = OrderByType.Asc);
+
+    /// <summary>
     /// 获取可查询对象
     /// </summary>
     /// <returns>可查询对象</returns>
