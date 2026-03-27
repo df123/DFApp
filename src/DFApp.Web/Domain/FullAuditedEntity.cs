@@ -1,3 +1,6 @@
+// TODO: 已废弃 - 软删除功能已废除
+// 建议使用 AuditedEntity<TKey> 替代此基类
+
 using System;
 using SqlSugar;
 

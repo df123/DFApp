@@ -184,7 +184,9 @@ public class SqlSugarConfig
     /// <param name="db">SqlSugar 客户端</param>
     private void ConfigureSoftDeleteFilter(ISqlSugarClient db)
     {
-        db.QueryFilter.Add(new TableFilterItem<ISoftDelete>(it => it.IsDeleted == false));
+        // 软删除功能已废除，不再配置软删除过滤器
+        return;
+        // db.QueryFilter.Add(new TableFilterItem<ISoftDelete>(it => it.IsDeleted == false));
     }
 
     /// <summary>

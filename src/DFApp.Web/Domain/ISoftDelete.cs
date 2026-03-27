@@ -1,3 +1,5 @@
+// TODO: 已废弃 - 软删除功能已废除
+
 namespace DFApp.Web.Domain;
 
 /// <summary>
