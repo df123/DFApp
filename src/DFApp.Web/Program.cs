@@ -75,6 +75,10 @@ public class Program
             builder.Services.AddScoped(typeof(ISqlSugarRepository<,>), typeof(SqlSugarRepository<,>));
             builder.Services.AddScoped(typeof(ISqlSugarReadOnlyRepository<,>), typeof(SqlSugarReadOnlyRepository<,>));
 
+            // 注册自定义仓储
+            builder.Services.AddScoped<DFApp.FileFilter.IKeywordFilterRuleRepository, DFApp.FileFilter.KeywordFilterRuleRepository>();
+            builder.Services.AddScoped<DFApp.Web.Data.ElectricVehicle.IGasolinePriceRepository, DFApp.Web.Data.ElectricVehicle.GasolinePriceRepository>();
+
             // 配置 HttpClient
             builder.Services.AddHttpClient();
 

@@ -7,9 +7,9 @@ namespace DFApp.Configuration
     public class ConfigurationInfo : AuditedEntity<long>
     {
 
-        public required string ModuleName { get; set; }
-        public required string ConfigurationName { get; set; }
-        public required string ConfigurationValue { get; set; }
-        public required string Remark { get; set; }
+        public string ModuleName { get; set; } = string.Empty;
+        public string ConfigurationName { get; set; } = string.Empty;
+        public string ConfigurationValue { get; set; } = string.Empty;
+        public string Remark { get; set; } = string.Empty;
     }
 }

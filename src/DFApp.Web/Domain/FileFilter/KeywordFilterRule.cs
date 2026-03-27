@@ -14,7 +14,7 @@ namespace DFApp.FileFilter
         /// 关键词文本
         /// </summary>
         [SugarColumn(ColumnName = "Keyword")]
-        public required string Keyword { get; set; }
+        public string Keyword { get; set; } = string.Empty;
 
         /// <summary>
         /// 匹配模式

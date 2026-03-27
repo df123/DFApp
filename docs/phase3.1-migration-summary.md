@@ -443,12 +443,38 @@ var result = await repository.GetPagedListAsync(x => x.IsEnabled, 1, 10, x => x.
 
 Phase 3.2 将迁移 6 个自定义仓储，保留业务方法：
 
-1. **EfCoreKeywordFilterRuleRepository** - 包含复杂的业务逻辑（文件过滤规则）
-2. **EfCoreGasolinePriceRepository** - 包含自定义业务逻辑（油价查询）
-3. **EfCoreBookkeepingExpenditureRepository** - 简单的 Repository（包含导航查询）
+1. **EfCoreKeywordFilterRuleRepository** - 包含复杂的业务逻辑（文件过滤规则）✅ 已完成
+2. **EfCoreGasolinePriceRepository** - 包含自定义业务逻辑（油价查询）✅ 已完成
+3. **EfCoreBookkeepingExpenditureRepository** - 简单的 Repository（包含导航查询）✅ 已完成
 4. **EfCoreConfigurationInfoRepository** - 包含自定义业务逻辑（配置信息查询）
 5. **TellStatusResultRepository** - Aria2 相关
 6. **FilesItemRepository** - Aria2 相关
+
+#### 已完成的迁移
+
+**EfCoreKeywordFilterRuleRepository**（子任务 1）
+- 决定创建自定义仓储
+- 保留了所有业务方法和逻辑
+- 详见：[phase3.2-keyword-filter-rule-repository-migration.md](phase3.2-keyword-filter-rule-repository-migration.md)
+
+**EfCoreGasolinePriceRepository**（子任务 2）
+- 决定创建自定义仓储
+- 保留了所有业务方法和逻辑
+- 详见：[phase3.2-gasoline-price-repository-migration.md](phase3.2-gasoline-price-repository-migration.md)
+
+**EfCoreBookkeepingExpenditureRepository**（子任务 3）
+- 决定使用通用仓储，不创建自定义仓储
+- 原因：只包含导航查询方法，没有复杂业务逻辑
+- 移除了导航查询（`WithDetailsAsync` 方法）
+- 详见：[phase3.2-bookkeeping-expenditure-repository-migration.md](phase3.2-bookkeeping-expenditure-repository-migration.md)
+
+#### 迁移决策对比
+
+| 迁移任务 | 是否创建自定义仓储 | 原因 |
+|---------|------------------|------|
+| EfCoreKeywordFilterRuleRepository | ✅ 是 | 包含复杂的业务逻辑（文件名匹配、过滤规则处理） |
+| EfCoreGasolinePriceRepository | ✅ 是 | 包含特定的业务方法（获取最新价格、按日期获取价格） |
+| EfCoreBookkeepingExpenditureRepository | ❌ 否 | 只包含导航查询方法，没有复杂业务逻辑 |
 
 迁移时需要：
 - 保留业务方法（如 `GetAllParametersInModule`）
@@ -486,6 +512,9 @@ Phase 3.3 将替换所有服务中的仓储注入：
 - [`phase2.1-migration-summary.md`](phase2.1-migration-summary.md) - Phase 2.1 迁移总结
 - [`soft-delete-removal.md`](soft-delete-removal.md) - 软删除废除说明
 - [`backend-tdd-testing-guide.md`](backend-tdd-testing-guide.md) - 后端 TDD 测试指南
+- [`phase3.2-keyword-filter-rule-repository-migration.md`](phase3.2-keyword-filter-rule-repository-migration.md) - Phase 3.2 子任务 1：迁移 EfCoreKeywordFilterRuleRepository
+- [`phase3.2-gasoline-price-repository-migration.md`](phase3.2-gasoline-price-repository-migration.md) - Phase 3.2 子任务 2：迁移 EfCoreGasolinePriceRepository
+- [`phase3.2-bookkeeping-expenditure-repository-migration.md`](phase3.2-bookkeeping-expenditure-repository-migration.md) - Phase 3.2 子任务 3：迁移 EfCoreBookkeepingExpenditureRepository
 
 ### 8.2 相关文件
 
