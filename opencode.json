@@ -7,6 +7,18 @@
       "mode": "primary",
       "temperature": 0.3,
       "prompt": "{file:./.opencode/prompts/orchestrator.txt}",
+      "tools": {
+        "task": true,
+        "bash": false,
+        "read": true,
+        "grep": true,
+        "glob": true,
+        "write": false,
+        "edit": false,
+        "webfetch": true,
+        "websearch": true,
+        "question": true
+      },
       "permission": {
         "task": {
           "*": "deny",
