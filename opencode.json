@@ -1,0 +1,22 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "agent": {
+    "orchestrator": {
+      "name": "orchestrator",
+      "description": "协调复杂任务，将任务分配给专门的子模式",
+      "mode": "primary",
+      "temperature": 0.3,
+      "prompt": "{file:./.opencode/prompts/orchestrator.txt}",
+      "permission": {
+        "task": {
+          "*": "deny",
+          "architect": "allow",
+          "code": "allow",
+          "ask": "allow",
+          "debug": "allow",
+          "review": "allow"
+        }
+      }
+    }
+  }
+}
