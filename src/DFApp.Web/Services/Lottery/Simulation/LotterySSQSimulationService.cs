@@ -7,6 +7,7 @@ using DFApp.Lottery.Simulation.SSQ;
 using DFApp.Web.Data;
 using DFApp.Web.Domain;
 using DFApp.Web.Infrastructure;
+using DFApp.Web.Mapping;
 using DFApp.Web.Permissions;
 using Volo.Abp.Application.Dtos;
 
@@ -17,6 +18,7 @@ namespace DFApp.Web.Services.Lottery.Simulation;
 /// </summary>
 public class LotterySSQSimulationService : CrudServiceBase<LotterySimulation, Guid, LotterySimulationDto, CreateUpdateLotterySimulationDto, CreateUpdateLotterySimulationDto>
 {
+    private readonly LotteryMapper _mapper = new();
     private readonly ISqlSugarRepository<LotteryResult, long> _lotteryResultRepository;
     private readonly ISqlSugarRepository<LotteryPrizegrades, long> _lotteryPrizegradesRepository;
 
@@ -262,19 +264,7 @@ public class LotterySSQSimulationService : CrudServiceBase<LotterySimulation, Gu
     /// </summary>
     protected override LotterySimulationDto MapToGetOutputDto(LotterySimulation entity)
     {
-        // TODO: 使用 Mapperly 映射
-        return new LotterySimulationDto
-        {
-            Id = entity.Id,
-            TermNumber = entity.TermNumber,
-            BallType = entity.BallType,
-            GameType = entity.GameType,
-            GroupId = entity.GroupId,
-            CreationTime = entity.CreationTime,
-            CreatorId = entity.CreatorId,
-            LastModificationTime = entity.LastModificationTime,
-            LastModifierId = entity.LastModifierId
-        };
+        return _mapper.MapToExternalSSQDto(entity);
     }
 
     /// <summary>
@@ -282,15 +272,7 @@ public class LotterySSQSimulationService : CrudServiceBase<LotterySimulation, Gu
     /// </summary>
     protected override LotterySimulation MapToEntity(CreateUpdateLotterySimulationDto input)
     {
-        // TODO: 使用 Mapperly 映射
-        return new LotterySimulation
-        {
-            TermNumber = input.TermNumber,
-            Number = input.Number,
-            BallType = input.BallType,
-            GameType = input.GameType,
-            GroupId = input.GroupId
-        };
+        return _mapper.MapToEntityFromExternalSSQ(input);
     }
 
     /// <summary>
@@ -298,11 +280,6 @@ public class LotterySSQSimulationService : CrudServiceBase<LotterySimulation, Gu
     /// </summary>
     protected override void MapToEntity(CreateUpdateLotterySimulationDto input, LotterySimulation entity)
     {
-        // TODO: 使用 Mapperly 映射
-        entity.TermNumber = input.TermNumber;
-        entity.Number = input.Number;
-        entity.BallType = input.BallType;
-        entity.GameType = input.GameType;
-        entity.GroupId = input.GroupId;
+        _mapper.MapToEntityFromExternalSSQ(input, entity);
     }
 }

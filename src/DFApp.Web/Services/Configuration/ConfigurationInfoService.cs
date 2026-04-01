@@ -1,9 +1,11 @@
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using DFApp.Configuration;
 using DFApp.Helper;
 using DFApp.Web.Data;
 using DFApp.Web.Infrastructure;
+using DFApp.Web.Mapping;
 using DFApp.Web.Permissions;
 
 namespace DFApp.Web.Services.Configuration;
@@ -14,6 +16,7 @@ namespace DFApp.Web.Services.Configuration;
 public class ConfigurationInfoService : CrudServiceBase<ConfigurationInfo, long, ConfigurationInfoDto, CreateUpdateConfigurationInfoDto, CreateUpdateConfigurationInfoDto>
 {
     private readonly IConfigurationInfoRepository _configurationInfoRepository;
+    private readonly ConfigurationMapper _mapper = new();
 
     /// <summary>
     /// 构造函数
@@ -68,26 +71,7 @@ public class ConfigurationInfoService : CrudServiceBase<ConfigurationInfo, long,
     public async Task<List<ConfigurationInfoDto>> GetAllParametersInModule(string moduleName)
     {
         var datas = await _configurationInfoRepository.GetAllParametersInModule(moduleName);
-
-        // TODO: 使用 Mapperly 映射实体到 DTO
-        var dtos = new List<ConfigurationInfoDto>();
-        foreach (var data in datas)
-        {
-            dtos.Add(new ConfigurationInfoDto
-            {
-                Id = data.Id,
-                ModuleName = data.ModuleName,
-                ConfigurationName = data.ConfigurationName,
-                ConfigurationValue = data.ConfigurationValue,
-                Remark = data.Remark,
-                CreationTime = data.CreationTime,
-                CreatorId = data.CreatorId,
-                LastModificationTime = data.LastModificationTime,
-                LastModifierId = data.LastModifierId
-            });
-        }
-
-        return dtos;
+        return datas.Select(d => _mapper.MapToDto(d)).ToList();
     }
 
     /// <summary>
@@ -107,19 +91,7 @@ public class ConfigurationInfoService : CrudServiceBase<ConfigurationInfo, long,
     /// <returns>配置信息 DTO</returns>
     protected override ConfigurationInfoDto MapToGetOutputDto(ConfigurationInfo entity)
     {
-        // TODO: 使用 Mapperly 映射实体到 DTO
-        return new ConfigurationInfoDto
-        {
-            Id = entity.Id,
-            ModuleName = entity.ModuleName,
-            ConfigurationName = entity.ConfigurationName,
-            ConfigurationValue = entity.ConfigurationValue,
-            Remark = entity.Remark,
-            CreationTime = entity.CreationTime,
-            CreatorId = entity.CreatorId,
-            LastModificationTime = entity.LastModificationTime,
-            LastModifierId = entity.LastModifierId
-        };
+        return _mapper.MapToDto(entity);
     }
 
     /// <summary>
@@ -129,14 +101,10 @@ public class ConfigurationInfoService : CrudServiceBase<ConfigurationInfo, long,
     /// <returns>配置信息实体</returns>
     protected override ConfigurationInfo MapToEntity(CreateUpdateConfigurationInfoDto input)
     {
-        // TODO: 使用 Mapperly 映射 DTO 到实体
-        return new ConfigurationInfo
-        {
-            ModuleName = input.ModuleName ?? string.Empty,
-            ConfigurationName = input.ConfigurationName,
-            ConfigurationValue = input.ConfigurationValue,
-            Remark = input.Remark ?? string.Empty
-        };
+        var entity = _mapper.MapToEntity(input);
+        entity.ModuleName = input.ModuleName ?? string.Empty;
+        entity.Remark = input.Remark ?? string.Empty;
+        return entity;
     }
 
     /// <summary>
@@ -146,10 +114,10 @@ public class ConfigurationInfoService : CrudServiceBase<ConfigurationInfo, long,
     /// <param name="entity">配置信息实体</param>
     protected override void MapToEntity(CreateUpdateConfigurationInfoDto input, ConfigurationInfo entity)
     {
-        // TODO: 使用 Mapperly 映射 DTO 到实体
-        entity.ModuleName = input.ModuleName ?? string.Empty;
-        entity.ConfigurationName = input.ConfigurationName;
-        entity.ConfigurationValue = input.ConfigurationValue;
-        entity.Remark = input.Remark ?? string.Empty;
+        var mapped = _mapper.MapToEntity(input);
+        entity.ModuleName = mapped.ModuleName ?? string.Empty;
+        entity.ConfigurationName = mapped.ConfigurationName;
+        entity.ConfigurationValue = mapped.ConfigurationValue;
+        entity.Remark = mapped.Remark ?? string.Empty;
     }
 }

@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using DFApp.Lottery;
 using DFApp.Web.Data;
 using DFApp.Web.Infrastructure;
+using DFApp.Web.Mapping;
 using DFApp.Web.Permissions;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
@@ -19,6 +20,7 @@ namespace DFApp.Web.Services.Lottery;
 /// </summary>
 public class LotteryDataFetchService : AppServiceBase
 {
+    private readonly LotteryMapper _mapper = new();
     private readonly ISqlSugarRepository<LotteryResult, long> _lotteryResultRepository;
     private readonly ISqlSugarRepository<LotteryPrizegrades, long> _lotteryPrizegradesRepository;
     private readonly IHttpClientFactory _httpClientFactory;
@@ -129,24 +131,14 @@ public class LotteryDataFetchService : AppServiceBase
 
                         foreach (var item in dto.Result)
                         {
-                            // TODO: 使用 Mapperly 映射
-                            var lotteryResult = MapResultItemToLotteryResult(item);
+                            var lotteryResult = _mapper.MapToEntityFromExternalResultItem(item);
 
-                            // 手动处理Prizegrades映射
+                            // 使用映射器处理 Prizegrades
                             if (item.Prizegrades != null && item.Prizegrades.Count > 0)
                             {
-                                lotteryResult.Prizegrades = new List<LotteryPrizegrades>();
-                                foreach (var prizegrade in item.Prizegrades)
-                                {
-                                    var lotteryPrizegrade = new LotteryPrizegrades
-                                    {
-                                        Type = prizegrade.Type,
-                                        TypeNum = prizegrade.TypeNum,
-                                        TypeMoney = prizegrade.TypeMoney,
-                                        LotteryResultId = 0 // 插入后更新
-                                    };
-                                    lotteryResult.Prizegrades.Add(lotteryPrizegrade);
-                                }
+                                lotteryResult.Prizegrades = item.Prizegrades
+                                    .Select(p => _mapper.MapToEntityFromExternalPrizegradesItem(p))
+                                    .ToList();
                             }
 
                             results.Add(lotteryResult);
@@ -283,31 +275,4 @@ public class LotteryDataFetchService : AppServiceBase
         return await FetchLotteryData(request);
     }
 
-    /// <summary>
-    /// 将 ResultItemDto 手动映射为 LotteryResult 实体
-    /// </summary>
-    private LotteryResult MapResultItemToLotteryResult(ResultItemDto item)
-    {
-        // TODO: 使用 Mapperly 映射
-        return new LotteryResult
-        {
-            Name = item.Name,
-            Code = item.Code,
-            DetailsLink = item.DetailsLink,
-            VideoLink = item.VideoLink,
-            Date = item.Date,
-            Week = item.Week,
-            Red = item.Red,
-            Blue = item.Blue,
-            Blue2 = item.Blue2,
-            Sales = item.Sales,
-            PoolMoney = item.PoolMoney,
-            Content = item.Content,
-            AddMoney = item.AddMoney,
-            AddMoney2 = item.AddMoney2,
-            Msg = item.Msg,
-            Z2Add = item.Z2Add,
-            M2Add = item.M2Add
-        };
-    }
 }

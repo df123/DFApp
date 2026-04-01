@@ -82,7 +82,7 @@ public class RssSubscriptionAppService : AppServiceBase
             .Take(input.MaxResultCount)
             .ToListAsync();
 
-        // TODO: 使用 Mapperly 映射实体列表到 DTO 列表
+        // TODO: 使用 Mapperly 映射（命名空间冲突，暂保留手动映射）
         var dtos = items.Select(MapToDto).ToList();
 
         // 填充RSS源名称
@@ -105,7 +105,7 @@ public class RssSubscriptionAppService : AppServiceBase
         var subscription = await _rssSubscriptionRepository.GetByIdAsync(id);
         EnsureEntityExists(subscription, id);
 
-        // TODO: 使用 Mapperly 映射实体到 DTO
+        // TODO: 使用 Mapperly 映射（命名空间冲突，暂保留手动映射）
         var dto = MapToDto(subscription);
 
         // 填充RSS源名称
@@ -125,7 +125,7 @@ public class RssSubscriptionAppService : AppServiceBase
     /// <returns>订阅DTO</returns>
     public async Task<RssSubscriptionDto> CreateAsync(CreateUpdateRssSubscriptionDto input)
     {
-        // TODO: 使用 Mapperly 映射 DTO 到实体
+        // TODO: 使用 Mapperly 映射（命名空间冲突，暂保留手动映射）
         var subscription = new RssSubscription
         {
             Name = input.Name,
@@ -154,7 +154,7 @@ public class RssSubscriptionAppService : AppServiceBase
 
         _logger.LogInformation("创建RSS订阅: {Name}", input.Name);
 
-        // TODO: 使用 Mapperly 映射实体到 DTO
+        // TODO: 使用 Mapperly 映射（命名空间冲突，暂保留手动映射）
         return MapToDto(subscription);
     }
 
@@ -174,7 +174,7 @@ public class RssSubscriptionAppService : AppServiceBase
         _logger.LogInformation("获取到的实体，最后修改时间: {Time}",
             subscription.LastModificationTime);
 
-        // TODO: 使用 Mapperly 映射 DTO 到实体
+        // TODO: 使用 Mapperly 映射（命名空间冲突，暂保留手动映射）
         MapToEntity(input, subscription);
         subscription.LastModificationTime = DateTime.Now;
 
@@ -182,7 +182,7 @@ public class RssSubscriptionAppService : AppServiceBase
 
         _logger.LogInformation("更新RSS订阅成功: {Name}", input.Name);
 
-        // TODO: 使用 Mapperly 映射实体到 DTO
+        // TODO: 使用 Mapperly 映射（命名空间冲突，暂保留手动映射）
         return MapToDto(subscription);
     }
 
@@ -221,7 +221,7 @@ public class RssSubscriptionAppService : AppServiceBase
     /// <returns>订阅DTO</returns>
     private static RssSubscriptionDto MapToDto(RssSubscription entity)
     {
-        // TODO: 使用 Mapperly 映射实体到 DTO
+        // TODO: 使用 Mapperly 映射（命名空间冲突，暂保留手动映射）
         return new RssSubscriptionDto
         {
             Id = entity.Id,
@@ -256,7 +256,7 @@ public class RssSubscriptionAppService : AppServiceBase
     /// <param name="entity">目标实体</param>
     private static void MapToEntity(CreateUpdateRssSubscriptionDto input, RssSubscription entity)
     {
-        // TODO: 使用 Mapperly 映射 DTO 到实体
+        // TODO: 使用 Mapperly 映射（命名空间冲突，暂保留手动映射）
         entity.Name = input.Name;
         entity.Keywords = input.Keywords;
         entity.IsEnabled = input.IsEnabled;

@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using DFApp.FileFilter;
 using DFApp.Web.Data;
 using DFApp.Web.Infrastructure;
+using DFApp.Web.Mapping;
 using DFApp.Web.Permissions;
 using Microsoft.Extensions.Logging;
 
@@ -18,6 +19,7 @@ public class KeywordFilterRuleService : CrudServiceBase<KeywordFilterRule, long,
 {
     private readonly IKeywordFilterRuleRepository _keywordFilterRuleRepository;
     private readonly ILogger<KeywordFilterRuleService> _logger;
+    private readonly FileFilterMapper _mapper = new();
 
     /// <summary>
     /// 构造函数
@@ -317,20 +319,7 @@ public class KeywordFilterRuleService : CrudServiceBase<KeywordFilterRule, long,
     /// <returns>关键词过滤规则 DTO</returns>
     protected override KeywordFilterRuleDto MapToGetOutputDto(KeywordFilterRule entity)
     {
-        // TODO: 使用 Mapperly 映射实体到 DTO
-        return new KeywordFilterRuleDto
-        {
-            Id = entity.Id,
-            Keyword = entity.Keyword,
-            MatchMode = entity.MatchMode,
-            FilterType = entity.FilterType,
-            IsEnabled = entity.IsEnabled,
-            Priority = entity.Priority,
-            Remark = entity.Remark,
-            IsCaseSensitive = entity.IsCaseSensitive,
-            CreationTime = entity.CreationTime,
-            CreatorId = entity.CreatorId
-        };
+        return _mapper.MapToDto(entity);
     }
 
     /// <summary>
@@ -340,17 +329,7 @@ public class KeywordFilterRuleService : CrudServiceBase<KeywordFilterRule, long,
     /// <returns>关键词过滤规则实体</returns>
     protected override KeywordFilterRule MapToEntity(CreateUpdateKeywordFilterRuleDto input)
     {
-        // TODO: 使用 Mapperly 映射 DTO 到实体
-        return new KeywordFilterRule
-        {
-            Keyword = input.Keyword,
-            MatchMode = input.MatchMode,
-            FilterType = input.FilterType,
-            IsEnabled = input.IsEnabled,
-            Priority = input.Priority,
-            Remark = input.Remark,
-            IsCaseSensitive = input.IsCaseSensitive
-        };
+        return _mapper.MapToEntity(input);
     }
 
     /// <summary>
@@ -360,13 +339,13 @@ public class KeywordFilterRuleService : CrudServiceBase<KeywordFilterRule, long,
     /// <param name="entity">关键词过滤规则实体</param>
     protected override void MapToEntity(CreateUpdateKeywordFilterRuleDto input, KeywordFilterRule entity)
     {
-        // TODO: 使用 Mapperly 映射 DTO 到实体
-        entity.Keyword = input.Keyword;
-        entity.MatchMode = input.MatchMode;
-        entity.FilterType = input.FilterType;
-        entity.IsEnabled = input.IsEnabled;
-        entity.Priority = input.Priority;
-        entity.Remark = input.Remark;
-        entity.IsCaseSensitive = input.IsCaseSensitive;
+        var mapped = _mapper.MapToEntity(input);
+        entity.Keyword = mapped.Keyword;
+        entity.MatchMode = mapped.MatchMode;
+        entity.FilterType = mapped.FilterType;
+        entity.IsEnabled = mapped.IsEnabled;
+        entity.Priority = mapped.Priority;
+        entity.Remark = mapped.Remark;
+        entity.IsCaseSensitive = mapped.IsCaseSensitive;
     }
 }

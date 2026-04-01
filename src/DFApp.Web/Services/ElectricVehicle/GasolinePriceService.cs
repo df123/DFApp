@@ -5,9 +5,12 @@ using System.Threading.Tasks;
 using DFApp.ElectricVehicle;
 using DFApp.Web.Data;
 using DFApp.Web.Infrastructure;
+using DFApp.Web.Mapping;
 using DFApp.Web.Permissions;
 using Microsoft.Extensions.Logging;
 using SqlSugar;
+using GasolinePriceDto = DFApp.Web.DTOs.ElectricVehicle.GasolinePriceDto;
+using GetGasolinePricesDto = DFApp.Web.DTOs.ElectricVehicle.GetGasolinePricesDto;
 
 namespace DFApp.Web.Services.ElectricVehicle;
 
@@ -19,6 +22,7 @@ public class GasolinePriceService : AppServiceBase
     private readonly IGasolinePriceRepository _repository;
     private readonly ILogger<GasolinePriceService> _logger;
     private readonly GasolinePriceRefresher _gasolinePriceRefresher;
+    private readonly ElectricVehicleMapper _mapper = new();
 
     /// <summary>
     /// 构造函数
@@ -55,22 +59,7 @@ public class GasolinePriceService : AppServiceBase
             return null;
         }
 
-        // TODO: 使用 Mapperly 映射实体到 DTO
-        return new GasolinePriceDto
-        {
-            Id = price.Id,
-            Province = price.Province,
-            Date = price.Date,
-            Price0H = price.Price0H,
-            Price89H = price.Price89H,
-            Price90H = price.Price90H,
-            Price92H = price.Price92H,
-            Price93H = price.Price93H,
-            Price95H = price.Price95H,
-            Price97H = price.Price97H,
-            Price98H = price.Price98H,
-            CreationTime = price.CreationTime
-        };
+        return _mapper.MapToDto(price);
     }
 
     /// <summary>
@@ -88,22 +77,7 @@ public class GasolinePriceService : AppServiceBase
             return null;
         }
 
-        // TODO: 使用 Mapperly 映射实体到 DTO
-        return new GasolinePriceDto
-        {
-            Id = price.Id,
-            Province = price.Province,
-            Date = price.Date,
-            Price0H = price.Price0H,
-            Price89H = price.Price89H,
-            Price90H = price.Price90H,
-            Price92H = price.Price92H,
-            Price93H = price.Price93H,
-            Price95H = price.Price95H,
-            Price97H = price.Price97H,
-            Price98H = price.Price98H,
-            CreationTime = price.CreationTime
-        };
+        return _mapper.MapToDto(price);
     }
 
     /// <summary>
@@ -138,22 +112,7 @@ public class GasolinePriceService : AppServiceBase
             .Take(input.MaxResultCount)
             .ToListAsync();
 
-        // TODO: 使用 Mapperly 映射实体列表到 DTO 列表
-        var dtos = items.Select(item => new GasolinePriceDto
-        {
-            Id = item.Id,
-            Province = item.Province,
-            Date = item.Date,
-            Price0H = item.Price0H,
-            Price89H = item.Price89H,
-            Price90H = item.Price90H,
-            Price92H = item.Price92H,
-            Price93H = item.Price93H,
-            Price95H = item.Price95H,
-            Price97H = item.Price97H,
-            Price98H = item.Price98H,
-            CreationTime = item.CreationTime
-        }).ToList();
+        var dtos = items.Select(item => _mapper.MapToDto(item)).ToList();
 
         return new PagedResultDto<GasolinePriceDto>(totalCount, dtos);
     }

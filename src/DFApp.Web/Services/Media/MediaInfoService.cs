@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using DFApp.Media;
 using DFApp.Web.Data;
 using DFApp.Web.Infrastructure;
+using DFApp.Web.Mapping;
 using DFApp.Web.Permissions;
 
 namespace DFApp.Web.Services.Media;
@@ -15,6 +16,8 @@ namespace DFApp.Web.Services.Media;
 /// </summary>
 public class MediaInfoService : CrudServiceBase<MediaInfo, long, MediaInfoDto, CreateUpdateMediaInfoDto, CreateUpdateMediaInfoDto>
 {
+    private readonly MediaMapper _mapper = new();
+
     /// <summary>
     /// 构造函数
     /// </summary>
@@ -100,27 +103,7 @@ public class MediaInfoService : CrudServiceBase<MediaInfo, long, MediaInfoDto, C
     /// <returns>媒体信息 DTO</returns>
     protected override MediaInfoDto MapToGetOutputDto(MediaInfo entity)
     {
-        // TODO: 使用 Mapperly 映射实体到 DTO
-        return new MediaInfoDto
-        {
-            Id = entity.Id,
-            MediaId = entity.MediaId.ToString(),
-            ChatId = entity.ChatId,
-            ChatTitle = entity.ChatTitle,
-            Message = entity.Message,
-            Size = entity.Size,
-            SavePath = entity.SavePath,
-            MD5 = entity.MD5,
-            MimeType = entity.MimeType,
-            IsExternalLinkGenerated = entity.IsExternalLinkGenerated,
-            IsDownloadCompleted = entity.IsDownloadCompleted,
-            DownloadTimeMs = entity.DownloadTimeMs,
-            DownloadSpeedBps = entity.DownloadSpeedBps,
-            CreationTime = entity.CreationTime,
-            CreatorId = entity.CreatorId,
-            LastModificationTime = entity.LastModificationTime,
-            LastModifierId = entity.LastModifierId
-        };
+        return _mapper.MapToDto(entity);
     }
 
     /// <summary>
@@ -130,7 +113,6 @@ public class MediaInfoService : CrudServiceBase<MediaInfo, long, MediaInfoDto, C
     /// <returns>媒体信息实体</returns>
     protected override MediaInfo MapToEntity(CreateUpdateMediaInfoDto input)
     {
-        // TODO: 使用 Mapperly 映射 DTO 到实体
         return new MediaInfo
         {
             MediaId = input.MediaId,
@@ -139,7 +121,6 @@ public class MediaInfoService : CrudServiceBase<MediaInfo, long, MediaInfoDto, C
             Message = input.Message,
             Size = input.Size,
             SavePath = input.SavePath,
-            MD5 = input.MD5,
             MimeType = input.MimeType,
             IsExternalLinkGenerated = input.IsExternalLinkGenerated
         };
@@ -152,14 +133,12 @@ public class MediaInfoService : CrudServiceBase<MediaInfo, long, MediaInfoDto, C
     /// <param name="entity">媒体信息实体</param>
     protected override void MapToEntity(CreateUpdateMediaInfoDto input, MediaInfo entity)
     {
-        // TODO: 使用 Mapperly 映射 DTO 到实体
         entity.MediaId = input.MediaId;
         entity.ChatId = input.ChatId;
         entity.ChatTitle = input.ChatTitle;
         entity.Message = input.Message;
         entity.Size = input.Size;
         entity.SavePath = input.SavePath;
-        entity.MD5 = input.MD5;
         entity.MimeType = input.MimeType;
         entity.IsExternalLinkGenerated = input.IsExternalLinkGenerated;
     }

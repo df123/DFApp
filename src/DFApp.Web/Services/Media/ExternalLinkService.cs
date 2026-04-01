@@ -15,6 +15,7 @@ using DFApp.Queue;
 using DFApp.Web.Data;
 using DFApp.Web.Data.Configuration;
 using DFApp.Web.Infrastructure;
+using DFApp.Web.Mapping;
 using DFApp.Web.Permissions;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -32,6 +33,7 @@ public class ExternalLinkService : CrudServiceBase<
 {
     private readonly IBackgroundTaskQueue _backgroundTaskQueue;
     private readonly IConfigurationInfoRepository _configurationInfoRepository;
+    private readonly MediaMapper _mapper = new();
 
     /// <summary>
     /// 构造函数
@@ -264,20 +266,7 @@ public class ExternalLinkService : CrudServiceBase<
     /// <returns>外链 DTO</returns>
     protected override ExternalLinkDto MapToGetOutputDto(MediaExternalLink entity)
     {
-        // TODO: 使用 Mapperly 映射实体到 DTO
-        return new ExternalLinkDto
-        {
-            Id = entity.Id,
-            Name = entity.Name,
-            Size = entity.Size.ToString(),
-            TimeConsumed = entity.TimeConsumed.ToString(),
-            IsRemove = entity.IsRemove,
-            LinkContent = entity.LinkContent,
-            CreationTime = entity.CreationTime,
-            CreatorId = entity.CreatorId,
-            LastModificationTime = entity.LastModificationTime,
-            LastModifierId = entity.LastModifierId
-        };
+        return _mapper.MapToDto(entity);
     }
 
     /// <summary>
@@ -287,16 +276,9 @@ public class ExternalLinkService : CrudServiceBase<
     /// <returns>外链实体</returns>
     protected override MediaExternalLink MapToEntity(CreateUpdateExternalLinkDto input)
     {
-        // TODO: 使用 Mapperly 映射 DTO 到实体
-        return new MediaExternalLink
-        {
-            Name = input.Name,
-            Size = input.Size,
-            TimeConsumed = long.Parse(input.TimeConsumed),
-            IsRemove = input.IsRemove,
-            LinkContent = input.LinkContent,
-            MediaIds = new List<MediaExternalLinkMediaIds>()
-        };
+        var entity = _mapper.MapToEntity(input);
+        entity.MediaIds = new List<MediaExternalLinkMediaIds>();
+        return entity;
     }
 
     /// <summary>
@@ -306,11 +288,11 @@ public class ExternalLinkService : CrudServiceBase<
     /// <param name="entity">外链实体</param>
     protected override void MapToEntity(CreateUpdateExternalLinkDto input, MediaExternalLink entity)
     {
-        // TODO: 使用 Mapperly 映射 DTO 到实体
-        entity.Name = input.Name;
-        entity.Size = input.Size;
-        entity.TimeConsumed = long.Parse(input.TimeConsumed);
-        entity.IsRemove = input.IsRemove;
-        entity.LinkContent = input.LinkContent;
+        var mapped = _mapper.MapToEntity(input);
+        entity.Name = mapped.Name;
+        entity.Size = mapped.Size;
+        entity.TimeConsumed = mapped.TimeConsumed;
+        entity.IsRemove = mapped.IsRemove;
+        entity.LinkContent = mapped.LinkContent;
     }
 }

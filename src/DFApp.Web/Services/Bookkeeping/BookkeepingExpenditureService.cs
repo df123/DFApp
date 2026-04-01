@@ -4,13 +4,16 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Threading.Tasks;
 using DFApp.Bookkeeping;
-using DFApp.Bookkeeping.Category;
 using DFApp.Bookkeeping.Expenditure;
 using DFApp.Bookkeeping.Expenditure.Analysis;
-using DFApp.Bookkeeping.Expenditure.Lookup;
 using DFApp.Web.Data;
 using DFApp.Web.Infrastructure;
+using DFApp.Web.Mapping;
 using DFApp.Web.Permissions;
+using BookkeepingExpenditureDto = DFApp.Web.DTOs.Bookkeeping.BookkeepingExpenditureDto;
+using CreateUpdateBookkeepingExpenditureDto = DFApp.Web.DTOs.Bookkeeping.CreateUpdateBookkeepingExpenditureDto;
+using BookkeepingCategoryLookupDto = DFApp.Web.DTOs.Bookkeeping.BookkeepingCategoryLookupDto;
+using BookkeepingCategoryDto = DFApp.Web.DTOs.Bookkeeping.BookkeepingCategoryDto;
 
 namespace DFApp.Web.Services.Bookkeeping;
 
@@ -25,6 +28,7 @@ public class BookkeepingExpenditureService : CrudServiceBase<
     CreateUpdateBookkeepingExpenditureDto>
 {
     private readonly ISqlSugarRepository<BookkeepingCategory, long> _categoryRepository;
+    private readonly BookkeepingMapper _mapper = new();
 
     /// <summary>
     /// 构造函数
@@ -118,19 +122,7 @@ public class BookkeepingExpenditureService : CrudServiceBase<
     public async Task<List<BookkeepingCategoryLookupDto>> GetCategoryLookupDto()
     {
         var categories = await _categoryRepository.GetListAsync();
-
-        // TODO: 使用 Mapperly 映射实体到 DTO
-        var result = new List<BookkeepingCategoryLookupDto>();
-        foreach (var category in categories)
-        {
-            result.Add(new BookkeepingCategoryLookupDto
-            {
-                CategoryId = category.Id,
-                Category = category.Category
-            });
-        }
-
-        return result;
+        return categories.Select(c => _mapper.MapToLookupDto(c)).ToList();
     }
 
     /// <summary>
@@ -396,20 +388,7 @@ public class BookkeepingExpenditureService : CrudServiceBase<
     /// <returns>支出 DTO</returns>
     protected override BookkeepingExpenditureDto MapToGetOutputDto(BookkeepingExpenditure entity)
     {
-        // TODO: 使用 Mapperly 映射实体到 DTO
-        return new BookkeepingExpenditureDto
-        {
-            Id = entity.Id,
-            ExpenditureDate = entity.ExpenditureDate,
-            Expenditure = entity.Expenditure,
-            Remark = entity.Remark,
-            IsBelongToSelf = entity.IsBelongToSelf,
-            CategoryId = entity.CategoryId,
-            CreationTime = entity.CreationTime,
-            CreatorId = entity.CreatorId,
-            LastModificationTime = entity.LastModificationTime,
-            LastModifierId = entity.LastModifierId
-        };
+        return _mapper.MapToExpenditureDto(entity);
     }
 
     /// <summary>
@@ -419,15 +398,7 @@ public class BookkeepingExpenditureService : CrudServiceBase<
     /// <returns>支出实体</returns>
     protected override BookkeepingExpenditure MapToEntity(CreateUpdateBookkeepingExpenditureDto input)
     {
-        // TODO: 使用 Mapperly 映射 DTO 到实体
-        return new BookkeepingExpenditure
-        {
-            ExpenditureDate = input.ExpenditureDate,
-            Expenditure = input.Expenditure,
-            Remark = input.Remark,
-            IsBelongToSelf = input.IsBelongToSelf,
-            CategoryId = input.CategoryId
-        };
+        return _mapper.MapToEntity(input);
     }
 
     /// <summary>
@@ -437,12 +408,12 @@ public class BookkeepingExpenditureService : CrudServiceBase<
     /// <param name="entity">支出实体</param>
     protected override void MapToEntity(CreateUpdateBookkeepingExpenditureDto input, BookkeepingExpenditure entity)
     {
-        // TODO: 使用 Mapperly 映射 DTO 到实体
-        entity.ExpenditureDate = input.ExpenditureDate;
-        entity.Expenditure = input.Expenditure;
-        entity.Remark = input.Remark;
-        entity.IsBelongToSelf = input.IsBelongToSelf;
-        entity.CategoryId = input.CategoryId;
+        var mapped = _mapper.MapToEntity(input);
+        entity.ExpenditureDate = mapped.ExpenditureDate;
+        entity.Expenditure = mapped.Expenditure;
+        entity.Remark = mapped.Remark;
+        entity.IsBelongToSelf = mapped.IsBelongToSelf;
+        entity.CategoryId = mapped.CategoryId;
     }
 
     /// <summary>
@@ -452,15 +423,6 @@ public class BookkeepingExpenditureService : CrudServiceBase<
     /// <returns>分类 DTO</returns>
     private BookkeepingCategoryDto MapCategoryToDto(BookkeepingCategory category)
     {
-        // TODO: 使用 Mapperly 映射实体到 DTO
-        return new BookkeepingCategoryDto
-        {
-            Id = category.Id,
-            Category = category.Category,
-            CreationTime = category.CreationTime,
-            CreatorId = category.CreatorId,
-            LastModificationTime = category.LastModificationTime,
-            LastModifierId = category.LastModifierId
-        };
+        return _mapper.MapToDto(category);
     }
 }

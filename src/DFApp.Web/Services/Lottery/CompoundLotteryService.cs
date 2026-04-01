@@ -6,6 +6,7 @@ using DFApp.Lottery;
 using DFApp.Lottery.Consts;
 using DFApp.Web.Data;
 using DFApp.Web.Infrastructure;
+using DFApp.Web.Mapping;
 using DFApp.Web.Permissions;
 using Microsoft.Extensions.Logging;
 
@@ -16,6 +17,7 @@ namespace DFApp.Web.Services.Lottery;
 /// </summary>
 public class CompoundLotteryService : AppServiceBase
 {
+    private readonly LotteryMapper _mapper = new();
     private readonly ISqlSugarRepository<LotteryInfo, long> _lotteryInfoRepository;
     private readonly ILogger<CompoundLotteryService> _logger;
 
@@ -353,28 +355,6 @@ public class CompoundLotteryService : AppServiceBase
             x.LotteryType == dto.LotteryType &&
             x.GroupId >= nextGroupId);
 
-        // TODO: 使用 Mapperly 映射
-        return savedLotteries.Select(MapToLotteryDto).ToList();
-    }
-
-    /// <summary>
-    /// 将 LotteryInfo 实体映射为 LotteryDto
-    /// </summary>
-    private LotteryDto MapToLotteryDto(LotteryInfo entity)
-    {
-        // TODO: 使用 Mapperly 映射
-        return new LotteryDto
-        {
-            Id = entity.Id,
-            IndexNo = entity.IndexNo,
-            Number = entity.Number,
-            ColorType = entity.ColorType,
-            LotteryType = entity.LotteryType,
-            GroupId = entity.GroupId,
-            CreationTime = entity.CreationTime,
-            CreatorId = entity.CreatorId,
-            LastModificationTime = entity.LastModificationTime,
-            LastModifierId = entity.LastModifierId
-        };
+        return savedLotteries.Select(_mapper.MapToExternalLotteryDto).ToList();
     }
 }

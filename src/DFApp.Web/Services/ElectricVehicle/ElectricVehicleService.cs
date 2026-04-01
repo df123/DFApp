@@ -3,7 +3,10 @@ using System.Threading.Tasks;
 using DFApp.ElectricVehicle;
 using DFApp.Web.Data;
 using DFApp.Web.Infrastructure;
+using DFApp.Web.Mapping;
 using DFApp.Web.Permissions;
+using ElectricVehicleDto = DFApp.Web.DTOs.ElectricVehicle.ElectricVehicleDto;
+using CreateUpdateElectricVehicleDto = DFApp.Web.DTOs.ElectricVehicle.CreateUpdateElectricVehicleDto;
 
 namespace DFApp.Web.Services.ElectricVehicle;
 
@@ -12,6 +15,7 @@ namespace DFApp.Web.Services.ElectricVehicle;
 /// </summary>
 public class ElectricVehicleService : CrudServiceBase<DFApp.ElectricVehicle.ElectricVehicle, Guid, ElectricVehicleDto, CreateUpdateElectricVehicleDto, CreateUpdateElectricVehicleDto>
 {
+    private readonly ElectricVehicleMapper _mapper = new();
     /// <summary>
     /// 构造函数
     /// </summary>
@@ -33,21 +37,7 @@ public class ElectricVehicleService : CrudServiceBase<DFApp.ElectricVehicle.Elec
     /// <returns>电动车 DTO</returns>
     protected override ElectricVehicleDto MapToGetOutputDto(DFApp.ElectricVehicle.ElectricVehicle entity)
     {
-        // TODO: 使用 Mapperly 映射实体到 DTO
-        return new ElectricVehicleDto
-        {
-            Id = entity.Id,
-            Name = entity.Name,
-            Brand = entity.Brand,
-            Model = entity.Model,
-            LicensePlate = entity.LicensePlate,
-            PurchaseDate = entity.PurchaseDate,
-            BatteryCapacity = entity.BatteryCapacity,
-            TotalMileage = entity.TotalMileage,
-            Remark = entity.Remark,
-            CreationTime = entity.CreationTime,
-            LastModificationTime = entity.LastModificationTime
-        };
+        return _mapper.MapToDto(entity);
     }
 
     /// <summary>
@@ -57,18 +47,7 @@ public class ElectricVehicleService : CrudServiceBase<DFApp.ElectricVehicle.Elec
     /// <returns>电动车实体</returns>
     protected override DFApp.ElectricVehicle.ElectricVehicle MapToEntity(CreateUpdateElectricVehicleDto input)
     {
-        // TODO: 使用 Mapperly 映射 DTO 到实体
-        return new DFApp.ElectricVehicle.ElectricVehicle
-        {
-            Name = input.Name,
-            Brand = input.Brand,
-            Model = input.Model,
-            LicensePlate = input.LicensePlate,
-            PurchaseDate = input.PurchaseDate,
-            BatteryCapacity = input.BatteryCapacity,
-            TotalMileage = input.TotalMileage,
-            Remark = input.Remark
-        };
+        return _mapper.MapToEntity(input);
     }
 
     /// <summary>
@@ -78,14 +57,14 @@ public class ElectricVehicleService : CrudServiceBase<DFApp.ElectricVehicle.Elec
     /// <param name="entity">电动车实体</param>
     protected override void MapToEntity(CreateUpdateElectricVehicleDto input, DFApp.ElectricVehicle.ElectricVehicle entity)
     {
-        // TODO: 使用 Mapperly 映射 DTO 到实体
-        entity.Name = input.Name;
-        entity.Brand = input.Brand;
-        entity.Model = input.Model;
-        entity.LicensePlate = input.LicensePlate;
-        entity.PurchaseDate = input.PurchaseDate;
-        entity.BatteryCapacity = input.BatteryCapacity;
-        entity.TotalMileage = input.TotalMileage;
-        entity.Remark = input.Remark;
+        var mapped = _mapper.MapToEntity(input);
+        entity.Name = mapped.Name;
+        entity.Brand = mapped.Brand;
+        entity.Model = mapped.Model;
+        entity.LicensePlate = mapped.LicensePlate;
+        entity.PurchaseDate = mapped.PurchaseDate;
+        entity.BatteryCapacity = mapped.BatteryCapacity;
+        entity.TotalMileage = mapped.TotalMileage;
+        entity.Remark = mapped.Remark;
     }
 }

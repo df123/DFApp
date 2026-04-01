@@ -121,7 +121,7 @@ public class RssMirrorItemAppService : AppServiceBase
         var wordSegments = await _rssWordSegmentRepository.GetListAsync(x => itemIds.Contains(x.RssMirrorItemId));
         var sources = await _rssSourceRepository.GetListAsync();
 
-        // TODO: 使用 Mapperly 映射实体列表到 DTO 列表
+        // TODO: 使用 Mapperly 映射（命名空间冲突，暂保留手动映射）
         var dtos = items.Select(MapToDto).ToList();
 
         // 填充分词和RSS源名称
@@ -154,12 +154,12 @@ public class RssMirrorItemAppService : AppServiceBase
         var item = await _rssMirrorItemRepository.GetByIdAsync(id);
         EnsureEntityExists(item, id);
 
-        // TODO: 使用 Mapperly 映射实体到 DTO
+        // TODO: 使用 Mapperly 映射（命名空间冲突，暂保留手动映射）
         var dto = MapToDto(item!);
 
         // 加载分词
         var wordSegments = await _rssWordSegmentRepository.GetListAsync(x => x.RssMirrorItemId == id);
-        // TODO: 使用 Mapperly 映射分词列表到 DTO 列表
+        // TODO: 使用 Mapperly 映射（命名空间冲突，暂保留手动映射）
         dto.WordSegments = wordSegments.Select(MapWordSegmentToDto).ToList();
 
         // 加载RSS源名称
@@ -332,7 +332,7 @@ public class RssMirrorItemAppService : AppServiceBase
     /// <returns>镜像条目DTO</returns>
     private static RssMirrorItemDto MapToDto(RssMirrorItem entity)
     {
-        // TODO: 使用 Mapperly 映射实体到 DTO
+        // TODO: 使用 Mapperly 映射（命名空间冲突，暂保留手动映射）
         return new RssMirrorItemDto
         {
             Id = entity.Id,
@@ -359,7 +359,7 @@ public class RssMirrorItemAppService : AppServiceBase
     /// <returns>分词DTO</returns>
     private static RssWordSegmentDto MapWordSegmentToDto(RssWordSegment entity)
     {
-        // TODO: 使用 Mapperly 映射实体到 DTO
+        // TODO: 使用 Mapperly 映射（命名空间冲突，暂保留手动映射）
         return new RssWordSegmentDto
         {
             Id = entity.Id,

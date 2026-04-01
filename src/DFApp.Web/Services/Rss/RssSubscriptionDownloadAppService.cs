@@ -107,7 +107,7 @@ public class RssSubscriptionDownloadAppService : AppServiceBase
             .Take(input.MaxResultCount)
             .ToListAsync();
 
-        // TODO: 使用 Mapperly 映射实体列表到 DTO 列表
+        // TODO: 使用 Mapperly 映射（命名空间冲突，暂保留手动映射）
         var dtos = items.Select(MapToDto).ToList();
 
         // 加载关联数据（替代导航属性查询）
@@ -148,7 +148,7 @@ public class RssSubscriptionDownloadAppService : AppServiceBase
         var download = await _rssSubscriptionDownloadRepository.GetByIdAsync(id);
         EnsureEntityExists(download, id);
 
-        // TODO: 使用 Mapperly 映射实体到 DTO
+        // TODO: 使用 Mapperly 映射（命名空间冲突，暂保留手动映射）
         var dto = MapToDto(download!);
 
         // 加载关联数据（替代导航属性查询）
@@ -260,7 +260,7 @@ public class RssSubscriptionDownloadAppService : AppServiceBase
     /// <returns>下载记录DTO</returns>
     private static RssSubscriptionDownloadDto MapToDto(RssSubscriptionDownload entity)
     {
-        // TODO: 使用 Mapperly 映射实体到 DTO
+        // TODO: 使用 Mapperly 映射（命名空间冲突，暂保留手动映射）
         return new RssSubscriptionDownloadDto
         {
             Id = entity.Id,

@@ -105,7 +105,7 @@ public class RssWordSegmentAppService : AppServiceBase
         var mirrorItems = await _rssMirrorItemRepository.GetListAsync(x => itemIds.Contains(x.Id));
         var sources = await _rssSourceRepository.GetListAsync();
 
-        // TODO: 使用 Mapperly 映射实体列表到 DTO 列表
+        // TODO: 使用 Mapperly 映射（命名空间冲突，暂保留手动映射）
         var dtos = items.Select(MapToDto).ToList();
 
         // 填充关联信息
@@ -230,7 +230,7 @@ public class RssWordSegmentAppService : AppServiceBase
     /// <returns>带镜像条目信息的分词DTO</returns>
     private static RssWordSegmentWithItemDto MapToDto(RssWordSegment entity)
     {
-        // TODO: 使用 Mapperly 映射实体到 DTO
+        // TODO: 使用 Mapperly 映射（命名空间冲突，暂保留手动映射）
         return new RssWordSegmentWithItemDto
         {
             Id = entity.Id,

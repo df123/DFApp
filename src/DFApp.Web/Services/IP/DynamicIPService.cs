@@ -3,6 +3,7 @@ using System.Threading.Tasks;
 using DFApp.IP;
 using DFApp.Web.Data;
 using DFApp.Web.Infrastructure;
+using DFApp.Web.Mapping;
 using DFApp.Web.Permissions;
 
 namespace DFApp.Web.Services.IP;
@@ -12,6 +13,8 @@ namespace DFApp.Web.Services.IP;
 /// </summary>
 public class DynamicIPService : CrudServiceBase<DynamicIP, Guid, DynamicIPDto, CreateUpdateDynamicIPDto, CreateUpdateDynamicIPDto>
 {
+    private readonly IPMapper _mapper = new();
+
     /// <summary>
     /// 构造函数
     /// </summary>
@@ -33,17 +36,7 @@ public class DynamicIPService : CrudServiceBase<DynamicIP, Guid, DynamicIPDto, C
     /// <returns>动态 IP DTO</returns>
     protected override DynamicIPDto MapToGetOutputDto(DynamicIP entity)
     {
-        // TODO: 使用 Mapperly 映射实体到 DTO
-        return new DynamicIPDto
-        {
-            Id = entity.Id,
-            IP = entity.IP,
-            Port = entity.Port,
-            CreationTime = entity.CreationTime,
-            CreatorId = entity.CreatorId,
-            LastModificationTime = entity.LastModificationTime,
-            LastModifierId = entity.LastModifierId
-        };
+        return _mapper.MapToDto(entity);
     }
 
     /// <summary>
@@ -53,12 +46,10 @@ public class DynamicIPService : CrudServiceBase<DynamicIP, Guid, DynamicIPDto, C
     /// <returns>动态 IP 实体</returns>
     protected override DynamicIP MapToEntity(CreateUpdateDynamicIPDto input)
     {
-        // TODO: 使用 Mapperly 映射 DTO 到实体
-        return new DynamicIP
-        {
-            IP = input.IP!,
-            Port = input.Port!
-        };
+        var entity = _mapper.MapToEntity(input);
+        entity.IP = input.IP ?? string.Empty;
+        entity.Port = input.Port ?? string.Empty;
+        return entity;
     }
 
     /// <summary>
@@ -68,8 +59,7 @@ public class DynamicIPService : CrudServiceBase<DynamicIP, Guid, DynamicIPDto, C
     /// <param name="entity">动态 IP 实体</param>
     protected override void MapToEntity(CreateUpdateDynamicIPDto input, DynamicIP entity)
     {
-        // TODO: 使用 Mapperly 映射 DTO 到实体
-        entity.IP = input.IP!;
-        entity.Port = input.Port!;
+        entity.IP = input.IP ?? string.Empty;
+        entity.Port = input.Port ?? string.Empty;
     }
 }

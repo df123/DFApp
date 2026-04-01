@@ -448,6 +448,9 @@ public class Aria2Service : CrudServiceBase<
         }
 
         // 将请求转换为 DTO 并添加到队列
+        // Aria2RequestDto 来自 DFApp.Aria2.Request 命名空间，
+        // 与 Mapperly 映射器的 DFApp.Web.DTOs.Aria2.Aria2RequestDto 类型不同，
+        // 因此保留手动映射
         var requestDto = new Aria2RequestDto
         {
             JSONRPC = request.JSONRPC,
@@ -689,7 +692,9 @@ public class Aria2Service : CrudServiceBase<
     /// <returns>TellStatusResult DTO</returns>
     protected override TellStatusResultDto MapToGetOutputDto(TellStatusResult entity)
     {
-        // TODO: 使用 Mapperly 映射实体到 DTO
+        // CrudServiceBase 使用 DFApp.Aria2.Response.TellStatus.TellStatusResultDto，
+        // 与 Mapperly 映射器的 DFApp.Web.DTOs.Aria2.TellStatusResultDto 类型不同，
+        // 因此保留手动映射
         return new TellStatusResultDto
         {
             Id = entity.Id,
@@ -717,7 +722,9 @@ public class Aria2Service : CrudServiceBase<
     /// </summary>
     protected override TellStatusResult MapToEntity(TellStatusResultDto input)
     {
-        // TODO: 使用 Mapperly 映射 DTO 到实体
+        // CrudServiceBase 使用 DFApp.Aria2.Response.TellStatus.TellStatusResultDto，
+        // 与 Mapperly 映射器的 DFApp.Web.DTOs.Aria2.TellStatusResultDto 类型不同，
+        // 因此保留手动映射
         return new TellStatusResult
         {
             Bitfield = input.Bitfield,
@@ -742,7 +749,9 @@ public class Aria2Service : CrudServiceBase<
     /// </summary>
     protected override void MapToEntity(TellStatusResultDto input, TellStatusResult entity)
     {
-        // TODO: 使用 Mapperly 映射 DTO 到实体
+        // CrudServiceBase 使用 DFApp.Aria2.Response.TellStatus.TellStatusResultDto，
+        // 与 Mapperly 映射器的 DFApp.Web.DTOs.Aria2.TellStatusResultDto 类型不同，
+        // 因此保留手动映射
         entity.Bitfield = input.Bitfield;
         entity.CompletedLength = long.TryParse(input.CompletedLength, out var cl) ? cl : null;
         entity.Connections = long.TryParse(input.Connections, out var conn) ? conn : null;
@@ -766,7 +775,9 @@ public class Aria2Service : CrudServiceBase<
     /// <returns>文件项 DTO</returns>
     private FilesItemDto MapFilesItemToDto(FilesItem file)
     {
-        // TODO: 使用 Mapperly 映射实体到 DTO
+        // FilesItemDto 来自 DFApp.Aria2.Response.TellStatus 命名空间，
+        // 与 Mapperly 映射器的 DFApp.Web.DTOs.Aria2.FilesItemDto 类型不同，
+        // 因此保留手动映射
         return new FilesItemDto
         {
             CompletedLength = file.CompletedLength?.ToString(),

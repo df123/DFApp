@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using DFApp.FileUploadDownload;
 using DFApp.Web.Data;
 using DFApp.Web.Infrastructure;
+using DFApp.Web.Mapping;
 using DFApp.Web.Permissions;
 
 using IConfigurationInfoRepository = DFApp.Web.Data.Configuration.IConfigurationInfoRepository;
@@ -17,6 +18,7 @@ public class FileUploadInfoService : CrudServiceBase<FileUploadInfo, long, FileU
 {
     private readonly string _moduleName;
     private readonly IConfigurationInfoRepository _configurationInfoRepository;
+    private readonly FileUploadDownloadMapper _mapper = new();
 
     /// <summary>
     /// 构造函数
@@ -91,15 +93,12 @@ public class FileUploadInfoService : CrudServiceBase<FileUploadInfo, long, FileU
     {
         var data = await _configurationInfoRepository.GetAllParametersInModule(_moduleName + ".ContentType");
 
-        // TODO: 使用 Mapperly 映射实体到 DTO
+        // 使用 ConfigurationMapper 映射实体到 DTO
+        var configMapper = new ConfigurationMapper();
         var result = new List<CustomFileTypeDto>();
         foreach (var item in data)
         {
-            result.Add(new CustomFileTypeDto
-            {
-                ConfigurationName = item.ConfigurationName,
-                ConfigurationValue = item.ConfigurationValue
-            });
+            result.Add(configMapper.MapToCustomFileTypeDto(item));
         }
 
         return result;
@@ -112,19 +111,7 @@ public class FileUploadInfoService : CrudServiceBase<FileUploadInfo, long, FileU
     /// <returns>文件上传信息 DTO</returns>
     protected override FileUploadInfoDto MapToGetOutputDto(FileUploadInfo entity)
     {
-        // TODO: 使用 Mapperly 映射实体到 DTO
-        return new FileUploadInfoDto
-        {
-            Id = entity.Id,
-            FileName = entity.FileName,
-            Path = entity.Path,
-            Sha1 = entity.Sha1,
-            FileSize = entity.FileSize,
-            CreationTime = entity.CreationTime,
-            CreatorId = entity.CreatorId,
-            LastModificationTime = entity.LastModificationTime,
-            LastModifierId = entity.LastModifierId
-        };
+        return _mapper.MapToDto(entity);
     }
 
     /// <summary>
@@ -134,14 +121,7 @@ public class FileUploadInfoService : CrudServiceBase<FileUploadInfo, long, FileU
     /// <returns>文件上传信息实体</returns>
     protected override FileUploadInfo MapToEntity(CreateUpdateFileUploadInfoDto input)
     {
-        // TODO: 使用 Mapperly 映射 DTO 到实体
-        return new FileUploadInfo
-        {
-            FileName = input.FileName,
-            Path = input.Path,
-            Sha1 = input.Sha1,
-            FileSize = input.FileSize
-        };
+        return _mapper.MapToEntity(input);
     }
 
     /// <summary>
@@ -151,10 +131,10 @@ public class FileUploadInfoService : CrudServiceBase<FileUploadInfo, long, FileU
     /// <param name="entity">文件上传信息实体</param>
     protected override void MapToEntity(CreateUpdateFileUploadInfoDto input, FileUploadInfo entity)
     {
-        // TODO: 使用 Mapperly 映射 DTO 到实体
-        entity.FileName = input.FileName;
-        entity.Path = input.Path;
-        entity.Sha1 = input.Sha1;
-        entity.FileSize = input.FileSize;
+        var mapped = _mapper.MapToEntity(input);
+        entity.FileName = mapped.FileName;
+        entity.Path = mapped.Path;
+        entity.Sha1 = mapped.Sha1;
+        entity.FileSize = mapped.FileSize;
     }
 }

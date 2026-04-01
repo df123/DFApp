@@ -1,8 +1,9 @@
 using System.Threading.Tasks;
 using DFApp.Bookkeeping;
-using DFApp.Bookkeeping.Category;
 using DFApp.Web.Data;
+using DFApp.Web.DTOs.Bookkeeping;
 using DFApp.Web.Infrastructure;
+using DFApp.Web.Mapping;
 using DFApp.Web.Permissions;
 
 namespace DFApp.Web.Services.Bookkeeping;
@@ -13,6 +14,7 @@ namespace DFApp.Web.Services.Bookkeeping;
 public class BookkeepingCategoryService : CrudServiceBase<BookkeepingCategory, long, BookkeepingCategoryDto, CreateUpdateBookkeepingCategoryDto, CreateUpdateBookkeepingCategoryDto>
 {
     private readonly IBookkeepingExpenditureRepository _bookkeepingExpenditureRepository;
+    private readonly BookkeepingMapper _mapper = new();
 
     /// <summary>
     /// 构造函数
@@ -70,16 +72,7 @@ public class BookkeepingCategoryService : CrudServiceBase<BookkeepingCategory, l
     /// <returns>记账分类 DTO</returns>
     protected override BookkeepingCategoryDto MapToGetOutputDto(BookkeepingCategory entity)
     {
-        // TODO: 使用 Mapperly 映射实体到 DTO
-        return new BookkeepingCategoryDto
-        {
-            Id = entity.Id,
-            Category = entity.Category,
-            CreationTime = entity.CreationTime,
-            CreatorId = entity.CreatorId,
-            LastModificationTime = entity.LastModificationTime,
-            LastModifierId = entity.LastModifierId
-        };
+        return _mapper.MapToDto(entity);
     }
 
     /// <summary>
@@ -89,11 +82,7 @@ public class BookkeepingCategoryService : CrudServiceBase<BookkeepingCategory, l
     /// <returns>记账分类实体</returns>
     protected override BookkeepingCategory MapToEntity(CreateUpdateBookkeepingCategoryDto input)
     {
-        // TODO: 使用 Mapperly 映射 DTO 到实体
-        return new BookkeepingCategory
-        {
-            Category = input.Category
-        };
+        return _mapper.MapToEntity(input);
     }
 
     /// <summary>
@@ -103,7 +92,7 @@ public class BookkeepingCategoryService : CrudServiceBase<BookkeepingCategory, l
     /// <param name="entity">记账分类实体</param>
     protected override void MapToEntity(CreateUpdateBookkeepingCategoryDto input, BookkeepingCategory entity)
     {
-        // TODO: 使用 Mapperly 映射 DTO 到实体
-        entity.Category = input.Category;
+        var mapped = _mapper.MapToEntity(input);
+        entity.Category = mapped.Category;
     }
 }

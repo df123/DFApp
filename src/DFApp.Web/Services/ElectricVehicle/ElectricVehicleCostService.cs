@@ -7,7 +7,13 @@ using DFApp.ElectricVehicle;
 using DFApp.Web.Data;
 using DFApp.Web.Data.Configuration;
 using DFApp.Web.Infrastructure;
+using DFApp.Web.Mapping;
 using DFApp.Web.Permissions;
+using ElectricVehicleCostDto = DFApp.Web.DTOs.ElectricVehicle.ElectricVehicleCostDto;
+using CreateUpdateElectricVehicleCostDto = DFApp.Web.DTOs.ElectricVehicle.CreateUpdateElectricVehicleCostDto;
+using ElectricVehicleDto = DFApp.Web.DTOs.ElectricVehicle.ElectricVehicleDto;
+using OilCostComparisonDto = DFApp.Web.DTOs.ElectricVehicle.OilCostComparisonDto;
+using OilCostComparisonRequestDto = DFApp.Web.DTOs.ElectricVehicle.OilCostComparisonRequestDto;
 
 using ElectricVehicleEntity = DFApp.ElectricVehicle.ElectricVehicle;
 
@@ -27,6 +33,7 @@ public class ElectricVehicleCostService : CrudServiceBase<
     private readonly ISqlSugarRepository<GasolinePrice, Guid> _gasolinePriceRepository;
     private readonly IConfigurationInfoRepository _configurationInfoRepository;
     private readonly ISqlSugarRepository<ElectricVehicleChargingRecord, Guid> _chargingRecordRepository;
+    private readonly ElectricVehicleMapper _mapper = new();
 
     /// <summary>
     /// 构造函数
@@ -425,19 +432,7 @@ public class ElectricVehicleCostService : CrudServiceBase<
     /// <returns>成本记录 DTO</returns>
     protected override ElectricVehicleCostDto MapToGetOutputDto(ElectricVehicleCost entity)
     {
-        // TODO: 使用 Mapperly 映射实体到 DTO
-        return new ElectricVehicleCostDto
-        {
-            Id = entity.Id,
-            VehicleId = entity.VehicleId,
-            CostType = entity.CostType,
-            CostDate = entity.CostDate,
-            Amount = entity.Amount,
-            IsBelongToSelf = entity.IsBelongToSelf,
-            Remark = entity.Remark,
-            CreationTime = entity.CreationTime,
-            LastModificationTime = entity.LastModificationTime
-        };
+        return _mapper.MapToCostDto(entity);
     }
 
     /// <summary>
@@ -447,16 +442,7 @@ public class ElectricVehicleCostService : CrudServiceBase<
     /// <returns>成本记录实体</returns>
     protected override ElectricVehicleCost MapToEntity(CreateUpdateElectricVehicleCostDto input)
     {
-        // TODO: 使用 Mapperly 映射 DTO 到实体
-        return new ElectricVehicleCost
-        {
-            VehicleId = input.VehicleId,
-            CostType = input.CostType,
-            CostDate = input.CostDate,
-            Amount = input.Amount,
-            IsBelongToSelf = input.IsBelongToSelf,
-            Remark = input.Remark
-        };
+        return _mapper.MapToEntity(input);
     }
 
     /// <summary>
@@ -466,13 +452,13 @@ public class ElectricVehicleCostService : CrudServiceBase<
     /// <param name="entity">成本记录实体</param>
     protected override void MapToEntity(CreateUpdateElectricVehicleCostDto input, ElectricVehicleCost entity)
     {
-        // TODO: 使用 Mapperly 映射 DTO 到实体
-        entity.VehicleId = input.VehicleId;
-        entity.CostType = input.CostType;
-        entity.CostDate = input.CostDate;
-        entity.Amount = input.Amount;
-        entity.IsBelongToSelf = input.IsBelongToSelf;
-        entity.Remark = input.Remark;
+        var mapped = _mapper.MapToEntity(input);
+        entity.VehicleId = mapped.VehicleId;
+        entity.CostType = mapped.CostType;
+        entity.CostDate = mapped.CostDate;
+        entity.Amount = mapped.Amount;
+        entity.IsBelongToSelf = mapped.IsBelongToSelf;
+        entity.Remark = mapped.Remark;
     }
 
     /// <summary>
@@ -482,20 +468,6 @@ public class ElectricVehicleCostService : CrudServiceBase<
     /// <returns>车辆 DTO</returns>
     private ElectricVehicleDto MapVehicleToDto(ElectricVehicleEntity vehicle)
     {
-        // TODO: 使用 Mapperly 映射实体到 DTO
-        return new ElectricVehicleDto
-        {
-            Id = vehicle.Id,
-            Name = vehicle.Name,
-            Brand = vehicle.Brand,
-            Model = vehicle.Model,
-            LicensePlate = vehicle.LicensePlate,
-            PurchaseDate = vehicle.PurchaseDate,
-            BatteryCapacity = vehicle.BatteryCapacity,
-            TotalMileage = vehicle.TotalMileage,
-            Remark = vehicle.Remark,
-            CreationTime = vehicle.CreationTime,
-            LastModificationTime = vehicle.LastModificationTime
-        };
+        return _mapper.MapToDto(vehicle);
     }
 }

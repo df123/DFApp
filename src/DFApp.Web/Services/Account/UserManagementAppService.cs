@@ -49,12 +49,13 @@ public class UserManagementAppService : AppServiceBase
             .Take(input.MaxResultCount)
             .ToListAsync();
 
-        // TODO: 使用 Mapperly 映射实体列表到 DTO 列表
+        // TODO: 使用 Mapperly 映射（AccountMapper 返回 DFApp.Web.DTOs.Account.UserDto，
+        // 但此服务使用 DFApp.Account.UserDto，存在命名空间冲突，暂保留手动映射）
         var dtos = users.Select(u => new UserDto
         {
             Id = u.Id,
-            UserName = u.UserName ?? string.Empty,
-            Email = u.Email ?? string.Empty,
+            UserName = u.UserName,
+            Email = u.Email,
             IsActive = u.IsActive,
             CreationTime = u.CreationTime,
             LastModificationTime = u.LastModificationTime
@@ -73,12 +74,12 @@ public class UserManagementAppService : AppServiceBase
         var user = await _userRepository.GetByIdAsync(id);
         EnsureEntityExists(user, id);
 
-        // TODO: 使用 Mapperly 映射实体到 DTO
+        // TODO: 使用 Mapperly 映射（命名空间冲突，暂保留手动映射）
         return new UserDto
         {
             Id = user.Id,
-            UserName = user.UserName ?? string.Empty,
-            Email = user.Email ?? string.Empty,
+            UserName = user.UserName,
+            Email = user.Email,
             IsActive = user.IsActive,
             CreationTime = user.CreationTime,
             LastModificationTime = user.LastModificationTime
@@ -115,12 +116,12 @@ public class UserManagementAppService : AppServiceBase
 
         await _userRepository.InsertAsync(user);
 
-        // TODO: 使用 Mapperly 映射实体到 DTO
+        // TODO: 使用 Mapperly 映射（命名空间冲突，暂保留手动映射）
         return new UserDto
         {
             Id = user.Id,
-            UserName = user.UserName ?? string.Empty,
-            Email = user.Email ?? string.Empty,
+            UserName = user.UserName,
+            Email = user.Email,
             IsActive = user.IsActive,
             CreationTime = user.CreationTime,
             LastModificationTime = user.LastModificationTime
@@ -157,12 +158,12 @@ public class UserManagementAppService : AppServiceBase
 
         await _userRepository.UpdateAsync(user);
 
-        // TODO: 使用 Mapperly 映射实体到 DTO
+        // TODO: 使用 Mapperly 映射（命名空间冲突，暂保留手动映射）
         return new UserDto
         {
             Id = user.Id,
-            UserName = user.UserName ?? string.Empty,
-            Email = user.Email ?? string.Empty,
+            UserName = user.UserName,
+            Email = user.Email,
             IsActive = user.IsActive,
             CreationTime = user.CreationTime,
             LastModificationTime = user.LastModificationTime

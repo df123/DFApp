@@ -5,7 +5,11 @@ using System.Threading.Tasks;
 using DFApp.ElectricVehicle;
 using DFApp.Web.Data;
 using DFApp.Web.Infrastructure;
+using DFApp.Web.Mapping;
 using DFApp.Web.Permissions;
+using ElectricVehicleChargingRecordDto = DFApp.Web.DTOs.ElectricVehicle.ElectricVehicleChargingRecordDto;
+using CreateUpdateElectricVehicleChargingRecordDto = DFApp.Web.DTOs.ElectricVehicle.CreateUpdateElectricVehicleChargingRecordDto;
+using ElectricVehicleDto = DFApp.Web.DTOs.ElectricVehicle.ElectricVehicleDto;
 
 using ElectricVehicleEntity = DFApp.ElectricVehicle.ElectricVehicle;
 
@@ -23,6 +27,7 @@ public class ElectricVehicleChargingRecordService : CrudServiceBase<
 {
     private readonly ISqlSugarRepository<ElectricVehicleCost, Guid> _costRepository;
     private readonly ISqlSugarRepository<ElectricVehicleEntity, Guid> _vehicleRepository;
+    private readonly ElectricVehicleMapper _mapper = new();
 
     /// <summary>
     /// 构造函数
@@ -260,18 +265,7 @@ public class ElectricVehicleChargingRecordService : CrudServiceBase<
     /// <returns>充电记录 DTO</returns>
     protected override ElectricVehicleChargingRecordDto MapToGetOutputDto(ElectricVehicleChargingRecord entity)
     {
-        // TODO: 使用 Mapperly 映射实体到 DTO
-        return new ElectricVehicleChargingRecordDto
-        {
-            Id = entity.Id,
-            VehicleId = entity.VehicleId,
-            ChargingDate = entity.ChargingDate,
-            Energy = entity.Energy,
-            Amount = entity.Amount,
-            CurrentMileage = entity.CurrentMileage,
-            CreationTime = entity.CreationTime,
-            LastModificationTime = entity.LastModificationTime
-        };
+        return _mapper.MapToChargingDto(entity);
     }
 
     /// <summary>
@@ -281,15 +275,7 @@ public class ElectricVehicleChargingRecordService : CrudServiceBase<
     /// <returns>充电记录实体</returns>
     protected override ElectricVehicleChargingRecord MapToEntity(CreateUpdateElectricVehicleChargingRecordDto input)
     {
-        // TODO: 使用 Mapperly 映射 DTO 到实体
-        return new ElectricVehicleChargingRecord
-        {
-            VehicleId = input.VehicleId,
-            ChargingDate = input.ChargingDate,
-            Energy = input.Energy,
-            Amount = input.Amount,
-            CurrentMileage = input.CurrentMileage
-        };
+        return _mapper.MapToEntity(input);
     }
 
     /// <summary>
@@ -299,12 +285,12 @@ public class ElectricVehicleChargingRecordService : CrudServiceBase<
     /// <param name="entity">充电记录实体</param>
     protected override void MapToEntity(CreateUpdateElectricVehicleChargingRecordDto input, ElectricVehicleChargingRecord entity)
     {
-        // TODO: 使用 Mapperly 映射 DTO 到实体
-        entity.VehicleId = input.VehicleId;
-        entity.ChargingDate = input.ChargingDate;
-        entity.Energy = input.Energy;
-        entity.Amount = input.Amount;
-        entity.CurrentMileage = input.CurrentMileage;
+        var mapped = _mapper.MapToEntity(input);
+        entity.VehicleId = mapped.VehicleId;
+        entity.ChargingDate = mapped.ChargingDate;
+        entity.Energy = mapped.Energy;
+        entity.Amount = mapped.Amount;
+        entity.CurrentMileage = mapped.CurrentMileage;
     }
 
     /// <summary>
@@ -314,20 +300,6 @@ public class ElectricVehicleChargingRecordService : CrudServiceBase<
     /// <returns>车辆 DTO</returns>
     private ElectricVehicleDto MapVehicleToDto(ElectricVehicleEntity vehicle)
     {
-        // TODO: 使用 Mapperly 映射实体到 DTO
-        return new ElectricVehicleDto
-        {
-            Id = vehicle.Id,
-            Name = vehicle.Name,
-            Brand = vehicle.Brand,
-            Model = vehicle.Model,
-            LicensePlate = vehicle.LicensePlate,
-            PurchaseDate = vehicle.PurchaseDate,
-            BatteryCapacity = vehicle.BatteryCapacity,
-            TotalMileage = vehicle.TotalMileage,
-            Remark = vehicle.Remark,
-            CreationTime = vehicle.CreationTime,
-            LastModificationTime = vehicle.LastModificationTime
-        };
+        return _mapper.MapToDto(vehicle);
     }
 }

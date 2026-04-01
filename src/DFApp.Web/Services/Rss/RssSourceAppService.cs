@@ -64,7 +64,8 @@ public class RssSourceAppService : AppServiceBase
             .Take(input.MaxResultCount)
             .ToListAsync();
 
-        // TODO: 使用 Mapperly 映射实体列表到 DTO 列表
+        // TODO: 使用 Mapperly 映射（RssMapper 返回 DFApp.Web.DTOs.Rss.RssSourceDto，
+        // 但此服务使用 DFApp.Rss.RssSourceDto，存在命名空间冲突，暂保留手动映射）
         var dtos = items.Select(MapToDto).ToList();
 
         return new PagedResultDto<RssSourceDto>(totalCount, dtos);
@@ -80,7 +81,7 @@ public class RssSourceAppService : AppServiceBase
         var source = await _rssSourceRepository.GetByIdAsync(id);
         EnsureEntityExists(source, id);
 
-        // TODO: 使用 Mapperly 映射实体到 DTO
+        // TODO: 使用 Mapperly 映射（命名空间冲突，暂保留手动映射）
         return MapToDto(source);
     }
 
@@ -98,7 +99,7 @@ public class RssSourceAppService : AppServiceBase
             throw new BusinessException("该RSS源URL已存在");
         }
 
-        // TODO: 使用 Mapperly 映射 DTO 到实体
+        // TODO: 使用 Mapperly 映射（命名空间冲突，暂保留手动映射）
         var source = new RssSource
         {
             Name = input.Name,
@@ -120,7 +121,7 @@ public class RssSourceAppService : AppServiceBase
 
         _logger.LogInformation("创建RSS源: {Name} ({Url})", input.Name, input.Url);
 
-        // TODO: 使用 Mapperly 映射实体到 DTO
+        // TODO: 使用 Mapperly 映射（命名空间冲突，暂保留手动映射）
         return MapToDto(source);
     }
 
@@ -142,7 +143,7 @@ public class RssSourceAppService : AppServiceBase
             throw new BusinessException("该RSS源URL已被其他源使用");
         }
 
-        // TODO: 使用 Mapperly 映射 DTO 到实体
+        // TODO: 使用 Mapperly 映射（命名空间冲突，暂保留手动映射）
         source.Name = input.Name;
         source.Url = input.Url;
         source.ProxyUrl = input.ProxyUrl;
@@ -158,7 +159,7 @@ public class RssSourceAppService : AppServiceBase
 
         _logger.LogInformation("更新RSS源: {Name} ({Url})", input.Name, input.Url);
 
-        // TODO: 使用 Mapperly 映射实体到 DTO
+        // TODO: 使用 Mapperly 映射（命名空间冲突，暂保留手动映射）
         return MapToDto(source);
     }
 
@@ -203,7 +204,7 @@ public class RssSourceAppService : AppServiceBase
     /// <returns>RSS源DTO</returns>
     private static RssSourceDto MapToDto(RssSource entity)
     {
-        // TODO: 使用 Mapperly 映射实体到 DTO
+        // TODO: 使用 Mapperly 映射（命名空间冲突，暂保留手动映射）
         return new RssSourceDto
         {
             Id = entity.Id,

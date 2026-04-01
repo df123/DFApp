@@ -11,9 +11,12 @@ using DFApp.Lottery.Statistics;
 using DFApp.Web.Data;
 using DFApp.Web.Domain;
 using DFApp.Web.Infrastructure;
+using DFApp.Web.Mapping;
 using DFApp.Web.Permissions;
 using Microsoft.Extensions.Logging;
 using Volo.Abp.Application.Dtos;
+using LotteryDto = DFApp.Web.DTOs.Lottery.LotteryDto;
+using CreateUpdateLotteryDto = DFApp.Web.DTOs.Lottery.CreateUpdateLotteryDto;
 
 namespace DFApp.Web.Services.Lottery;
 
@@ -22,6 +25,7 @@ namespace DFApp.Web.Services.Lottery;
 /// </summary>
 public class LotteryService : CrudServiceBase<LotteryInfo, long, LotteryDto, CreateUpdateLotteryDto, CreateUpdateLotteryDto>
 {
+    private readonly LotteryMapper _mapper = new();
     private readonly ISqlSugarRepository<LotteryResult, long> _lotteryResultRepository;
     private readonly ISqlSugarRepository<LotteryPrizegrades, long> _lotteryPrizegradesRepository;
     private readonly ILogger<LotteryService> _logger;
@@ -353,15 +357,7 @@ public class LotteryService : CrudServiceBase<LotteryInfo, long, LotteryDto, Cre
         if (dtos == null || dtos.Count == 0)
             throw new BusinessException(nameof(dtos) + " 不能为空");
 
-        // TODO: 使用 Mapperly 映射
-        List<LotteryInfo> info = dtos.Select(d => new LotteryInfo
-        {
-            IndexNo = d.IndexNo,
-            Number = d.Number,
-            ColorType = d.ColorType,
-            LotteryType = d.LotteryType,
-            GroupId = d.GroupId
-        }).ToList();
+        List<LotteryInfo> info = dtos.Select(d => _mapper.MapToEntity(d)).ToList();
 
         var queryable = Repository.GetQueryable();
         LotteryInfo? startInfo = queryable
@@ -401,7 +397,6 @@ public class LotteryService : CrudServiceBase<LotteryInfo, long, LotteryDto, Cre
 
         if (startInfo == null || startInfo.Id < endInfo.Id)
         {
-            // TODO: 使用 Mapperly 映射
             return MapToGetOutputDto(endInfo);
         }
         else
@@ -502,7 +497,6 @@ public class LotteryService : CrudServiceBase<LotteryInfo, long, LotteryDto, Cre
         List<LotteryInfo> returnInfos = await Repository.GetListAsync(x =>
             x.IndexNo == dto.Period && x.GroupId >= (infoGroupId == null ? 0 : infoGroupId.GroupId));
 
-        // TODO: 使用 Mapperly 映射
         return returnInfos.Select(MapToGetOutputDto).ToList();
     }
 
@@ -676,20 +670,7 @@ public class LotteryService : CrudServiceBase<LotteryInfo, long, LotteryDto, Cre
     /// </summary>
     protected override LotteryDto MapToGetOutputDto(LotteryInfo entity)
     {
-        // TODO: 使用 Mapperly 映射
-        return new LotteryDto
-        {
-            Id = entity.Id,
-            IndexNo = entity.IndexNo,
-            Number = entity.Number,
-            ColorType = entity.ColorType,
-            LotteryType = entity.LotteryType,
-            GroupId = entity.GroupId,
-            CreationTime = entity.CreationTime,
-            CreatorId = entity.CreatorId,
-            LastModificationTime = entity.LastModificationTime,
-            LastModifierId = entity.LastModifierId
-        };
+        return _mapper.MapToDto(entity);
     }
 
     /// <summary>
@@ -697,15 +678,7 @@ public class LotteryService : CrudServiceBase<LotteryInfo, long, LotteryDto, Cre
     /// </summary>
     protected override LotteryInfo MapToEntity(CreateUpdateLotteryDto input)
     {
-        // TODO: 使用 Mapperly 映射
-        return new LotteryInfo
-        {
-            IndexNo = input.IndexNo,
-            Number = input.Number,
-            ColorType = input.ColorType,
-            LotteryType = input.LotteryType,
-            GroupId = input.GroupId
-        };
+        return _mapper.MapToEntity(input);
     }
 
     /// <summary>
@@ -713,11 +686,6 @@ public class LotteryService : CrudServiceBase<LotteryInfo, long, LotteryDto, Cre
     /// </summary>
     protected override void MapToEntity(CreateUpdateLotteryDto input, LotteryInfo entity)
     {
-        // TODO: 使用 Mapperly 映射
-        entity.IndexNo = input.IndexNo;
-        entity.Number = input.Number;
-        entity.ColorType = input.ColorType;
-        entity.LotteryType = input.LotteryType;
-        entity.GroupId = input.GroupId;
+        _mapper.MapToEntity(input, entity);
     }
 }
