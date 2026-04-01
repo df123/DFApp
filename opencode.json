@@ -10,13 +10,13 @@
       "tools": {
         "task": true,
         "bash": false,
-        "read": true,
-        "grep": true,
-        "glob": true,
+        "read": false,
+        "grep": false,
+        "glob": false,
         "write": false,
         "edit": false,
-        "webfetch": true,
-        "websearch": true,
+        "webfetch": false,
+        "websearch": false,
         "question": true
       },
       "permission": {
