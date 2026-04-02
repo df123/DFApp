@@ -8,7 +8,7 @@ using DFApp.Rss;
 using DFApp.Web.Data;
 using DFApp.Web.Infrastructure;
 using DFApp.Web.Permissions;
-using DFApp.Web.Services.ElectricVehicle;
+using DFApp.Web.DTOs;
 using Microsoft.Extensions.Logging;
 using SqlSugar;
 

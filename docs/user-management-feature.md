@@ -31,14 +31,14 @@
 ## 后端实现
 
 ### DTO
-- [`UserDto`](src/DFApp.Application.Contracts/Account/UserDto.cs) - 用户信息DTO
-- [`CreateUserDto`](src/DFApp.Application.Contracts/Account/CreateUserDto.cs) - 创建用户DTO
-- [`UpdateUserDto`](src/DFApp.Application.Contracts/Account/UpdateUserDto.cs) - 更新用户DTO
-- [`ChangePasswordDto`](src/DFApp.Application.Contracts/Account/ChangePasswordDto.cs) - 修改密码DTO
+- [`UserDto`](src/DFApp.Web/DTOs/Account/UserDto.cs) - 用户信息DTO
+- [`CreateUserDto`](src/DFApp.Web/DTOs/Account/CreateUserDto.cs) - 创建用户DTO
+- [`UpdateUserDto`](src/DFApp.Web/DTOs/Account/UpdateUserDto.cs) - 更新用户DTO
+- [`ChangePasswordDto`](src/DFApp.Web/DTOs/Account/ChangePasswordDto.cs) - 修改密码DTO
 
 ### 应用服务
-- [`IUserManagementAppService`](src/DFApp.Application.Contracts/Account/IUserManagementAppService.cs) - 用户管理服务接口
-- [`UserManagementAppService`](src/DFApp.Application/Account/UserManagementAppService.cs) - 用户管理服务实现
+- [`IUserManagementAppService`](src/DFApp.Application.Contracts/Account/IUserManagementAppService.cs) - 用户管理服务接口（旧，待迁移）
+- [`UserManagementAppService`](src/DFApp.Web/Services/Account/UserManagementAppService.cs) - 用户管理服务实现
 
 ### 权限定义
 - [`DFAppPermissions.UserManagement`](src/DFApp.Application.Contracts/Permissions/DFAppPermissions.cs) - 用户管理权限常量

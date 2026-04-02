@@ -79,6 +79,9 @@ public class Program
             builder.Services.AddScoped<DFApp.FileFilter.IKeywordFilterRuleRepository, DFApp.FileFilter.KeywordFilterRuleRepository>();
             builder.Services.AddScoped<DFApp.Web.Data.ElectricVehicle.IGasolinePriceRepository, DFApp.Web.Data.ElectricVehicle.GasolinePriceRepository>();
 
+            // 注册密码哈希服务（无状态，使用 Transient）
+            builder.Services.AddTransient<IPasswordHasher, PasswordHasher>();
+
             // 配置 HttpClient
             builder.Services.AddHttpClient();
 

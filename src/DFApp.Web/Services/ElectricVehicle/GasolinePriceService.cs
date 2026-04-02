@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using DFApp.ElectricVehicle;
 using DFApp.Web.Data;
+using DFApp.Web.DTOs;
 using DFApp.Web.Infrastructure;
 using DFApp.Web.Mapping;
 using DFApp.Web.Permissions;
@@ -123,41 +124,5 @@ public class GasolinePriceService : AppServiceBase
     public async Task RefreshGasolinePricesAsync()
     {
         await _gasolinePriceRefresher.RefreshGasolinePricesAsync();
-    }
-}
-
-/// <summary>
-/// 分页结果 DTO
-/// </summary>
-/// <typeparam name="TItem">项目类型</typeparam>
-public class PagedResultDto<TItem>
-{
-    /// <summary>
-    /// 总记录数
-    /// </summary>
-    public int TotalCount { get; set; }
-
-    /// <summary>
-    /// 项目列表
-    /// </summary>
-    public List<TItem> Items { get; set; }
-
-    /// <summary>
-    /// 构造函数
-    /// </summary>
-    public PagedResultDto()
-    {
-        Items = new List<TItem>();
-    }
-
-    /// <summary>
-    /// 构造函数
-    /// </summary>
-    /// <param name="totalCount">总记录数</param>
-    /// <param name="items">项目列表</param>
-    public PagedResultDto(int totalCount, List<TItem> items)
-    {
-        TotalCount = totalCount;
-        Items = items;
     }
 }

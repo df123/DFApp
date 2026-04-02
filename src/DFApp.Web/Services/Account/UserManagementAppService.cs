@@ -1,11 +1,12 @@
 using System;
 using System.Linq;
 using System.Threading.Tasks;
-using DFApp.Account;
+using User = DFApp.Account.User;
 using DFApp.Web.Data;
+using DFApp.Web.DTOs.Account;
 using DFApp.Web.Infrastructure;
 using DFApp.Web.Permissions;
-using DFApp.Web.Services.ElectricVehicle;
+using DFApp.Web.DTOs;
 using Microsoft.Extensions.Logging;
 
 namespace DFApp.Web.Services.Account;
@@ -49,8 +50,7 @@ public class UserManagementAppService : AppServiceBase
             .Take(input.MaxResultCount)
             .ToListAsync();
 
-        // TODO: 使用 Mapperly 映射（AccountMapper 返回 DFApp.Web.DTOs.Account.UserDto，
-        // 但此服务使用 DFApp.Account.UserDto，存在命名空间冲突，暂保留手动映射）
+        // TODO: 使用 Mapperly 映射，暂保留手动映射
         var dtos = users.Select(u => new UserDto
         {
             Id = u.Id,
@@ -74,7 +74,7 @@ public class UserManagementAppService : AppServiceBase
         var user = await _userRepository.GetByIdAsync(id);
         EnsureEntityExists(user, id);
 
-        // TODO: 使用 Mapperly 映射（命名空间冲突，暂保留手动映射）
+        // TODO: 使用 Mapperly 映射，暂保留手动映射
         return new UserDto
         {
             Id = user.Id,
@@ -116,7 +116,7 @@ public class UserManagementAppService : AppServiceBase
 
         await _userRepository.InsertAsync(user);
 
-        // TODO: 使用 Mapperly 映射（命名空间冲突，暂保留手动映射）
+        // TODO: 使用 Mapperly 映射，暂保留手动映射
         return new UserDto
         {
             Id = user.Id,
@@ -158,7 +158,7 @@ public class UserManagementAppService : AppServiceBase
 
         await _userRepository.UpdateAsync(user);
 
-        // TODO: 使用 Mapperly 映射（命名空间冲突，暂保留手动映射）
+        // TODO: 使用 Mapperly 映射，暂保留手动映射
         return new UserDto
         {
             Id = user.Id,

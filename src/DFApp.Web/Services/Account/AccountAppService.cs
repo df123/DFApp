@@ -5,10 +5,19 @@ using System.Linq;
 using System.Security.Claims;
 using System.Text;
 using System.Threading.Tasks;
+using DFApp.Account;
 using DFApp.Identity;
 using DFApp.Web.Data;
 using DFApp.Web.Infrastructure;
 using DFApp.Web.Permissions;
+
+// 使用别名明确引用新 DTO，避免与 ABP 层旧类型冲突
+using LoginDto = DFApp.Web.DTOs.Account.LoginDto;
+using LoginResultDto = DFApp.Web.DTOs.Account.LoginResultDto;
+using SendPasswordResetCodeDto = DFApp.Web.DTOs.Account.SendPasswordResetCodeDto;
+using VerifyPasswordResetTokenDto = DFApp.Web.DTOs.Account.VerifyPasswordResetTokenDto;
+using ResetPasswordDto = DFApp.Web.DTOs.Account.ResetPasswordDto;
+using IPasswordHasher = DFApp.Web.Infrastructure.IPasswordHasher;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Configuration;

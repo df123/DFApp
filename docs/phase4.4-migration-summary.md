@@ -581,4 +581,5 @@ src/DFApp.Web/Mapping/
 | [Phase 3.3 + 4.1 迁移总结](phase3.3-4.1-migration-summary.md) | Phase 3.3 + 4.1 迁移详情 |
 | [Phase 3.3 + 4.2 最终迁移总结](phase3.3-4.2-final-migration-summary.md) | Phase 3.3 + 4.2 CrudAppService 迁移详情 |
 | [Phase 3.3 + 4.3 最终迁移总结](phase3.3-4.3-final-migration-summary.md) | Phase 3.3 + 4.3 ApplicationService 迁移详情 |
+| [Phase 4.5 迁移总结](phase4.5-migration-summary.md) | Phase 4.5 账户服务迁移详情 |
 | [执行进度](执行进度.md) | 迁移执行进度跟踪 |
