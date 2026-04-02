@@ -119,6 +119,9 @@ public class Program
             builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
                 .AddJwtBearer(options =>
                 {
+                    // 禁用 Claim 映射，保留短格式（如 "sub"、"unique_name"），与 Token 生成端一致
+                    options.MapInboundClaims = false;
+
                     options.TokenValidationParameters = new TokenValidationParameters
                     {
                         ValidateIssuer = true,
@@ -127,7 +130,9 @@ public class Program
                         ValidateIssuerSigningKey = true,
                         ValidIssuer = builder.Configuration["Jwt:Issuer"],
                         ValidAudience = builder.Configuration["Jwt:Audience"],
-                        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey))
+                        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey)),
+                        RoleClaimType = DFAppClaimTypes.Role,
+                        ClockSkew = TimeSpan.Zero
                     };
                 });
 
@@ -221,8 +226,8 @@ public class Program
 
             app.UseCors();
 
-            app.UseMiddleware<CurrentUserMiddleware>();
             app.UseAuthentication();
+            app.UseMiddleware<CurrentUserMiddleware>();
             app.UseAuthorization();
 
             app.UseSwagger();

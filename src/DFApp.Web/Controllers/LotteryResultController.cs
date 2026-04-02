@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using CreateUpdateLotteryResultDto = DFApp.Web.DTOs.Lottery.CreateUpdateLotteryResultDto;
 using LotteryResultDto = DFApp.Web.DTOs.Lottery.LotteryResultDto;
+using DFApp.Web.Infrastructure;
 
 namespace DFApp.Web.Controllers;
 

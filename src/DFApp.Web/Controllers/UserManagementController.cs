@@ -20,7 +20,7 @@ public class UserManagementController : DFAppControllerBase
 
     public UserManagementController(
         UserManagementAppService userManagementAppService,
-        DFApp.Web.Data.ICurrentUser currentUser,
+        DFApp.Web.Infrastructure.ICurrentUser currentUser,
         DFApp.Web.Permissions.IPermissionChecker permissionChecker)
         : base(currentUser, permissionChecker)
     {

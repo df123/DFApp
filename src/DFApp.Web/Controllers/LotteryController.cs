@@ -12,6 +12,7 @@ using Volo.Abp.Application.Dtos;
 using CreateUpdateLotteryDto = DFApp.Web.DTOs.Lottery.CreateUpdateLotteryDto;
 using LotteryDto = DFApp.Web.DTOs.Lottery.LotteryDto;
 using LotteryService = DFApp.Web.Services.Lottery.LotteryService;
+using DFApp.Web.Infrastructure;
 
 namespace DFApp.Web.Controllers;
 

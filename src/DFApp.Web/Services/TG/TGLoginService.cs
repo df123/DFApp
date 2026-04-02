@@ -6,6 +6,7 @@ using DFApp.Web.Data;
 using DFApp.Web.Permissions;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using DFApp.Web.Infrastructure;
 
 namespace DFApp.Web.Services.TG;
 

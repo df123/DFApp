@@ -49,7 +49,7 @@ public class PermissionChecker : IPermissionChecker
         var user = httpContext.User;
 
         // 从 JWT Token 的 Claims 中读取权限
-        var permissionClaims = user.FindAll("Permission");
+        var permissionClaims = user.FindAll(DFAppClaimTypes.Permission);
         if (permissionClaims == null || !permissionClaims.Any())
         {
             _logger.LogDebug("用户没有权限声明");

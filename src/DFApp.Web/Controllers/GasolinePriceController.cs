@@ -6,6 +6,7 @@ using DFApp.Web.Permissions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using GasolinePriceService = DFApp.Web.Services.ElectricVehicle.GasolinePriceService;
+using DFApp.Web.Infrastructure;
 
 namespace DFApp.Web.Controllers;
 

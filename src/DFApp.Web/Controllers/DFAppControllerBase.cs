@@ -1,8 +1,8 @@
 using System;
 using System.Threading.Tasks;
-using DFApp.Web.Data;
 using DFApp.Web.Infrastructure;
 using DFApp.Web.Permissions;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace DFApp.Web.Controllers;
@@ -12,6 +12,7 @@ namespace DFApp.Web.Controllers;
 /// </summary>
 [ApiController]
 [Route("api/app/[controller]")]
+[Authorize]
 public abstract class DFAppControllerBase : ControllerBase
 {
     /// <summary>

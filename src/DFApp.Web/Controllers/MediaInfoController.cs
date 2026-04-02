@@ -9,6 +9,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.StaticFiles;
 using MediaInfoService = DFApp.Web.Services.Media.MediaInfoService;
+using DFApp.Web.Infrastructure;
 
 namespace DFApp.Web.Controllers;
 

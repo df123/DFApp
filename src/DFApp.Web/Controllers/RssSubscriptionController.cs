@@ -6,6 +6,7 @@ using DFApp.Web.Permissions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using RssSubscriptionAppService = DFApp.Web.Services.Rss.RssSubscriptionAppService;
+using DFApp.Web.Infrastructure;
 
 namespace DFApp.Web.Controllers;
 

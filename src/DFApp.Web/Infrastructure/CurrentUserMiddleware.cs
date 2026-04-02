@@ -1,5 +1,4 @@
 using System;
-using System.Security.Claims;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
@@ -29,23 +28,22 @@ public class CurrentUserMiddleware
     /// <returns>异步任务</returns>
     public async Task InvokeAsync(HttpContext context)
     {
-        var currentUser = context.RequestServices.GetRequiredService<Data.ICurrentUser>();
+        var currentUser = context.RequestServices.GetRequiredService<ICurrentUser>();
         var user = context.User;
 
         if (user?.Identity?.IsAuthenticated == true)
         {
-            // 从 JWT Token 的 Claims 中提取用户信息
-            // 优先使用自定义的 claim 类型，如果不存在则使用标准的 claim 类型
-            var userIdClaim = user.FindFirst("sub") ?? user.FindFirst(ClaimTypes.NameIdentifier);
-            var userNameClaim = user.FindFirst("unique_name") ?? user.FindFirst(ClaimTypes.Name);
+            // 从 JWT Token 的 Claims 中提取用户信息（使用短格式，与 Token 生成端一致）
+            var userIdClaim = user.FindFirst("sub");
+            var userNameClaim = user.FindFirst("unique_name");
 
             if (userIdClaim != null && Guid.TryParse(userIdClaim.Value, out var userId))
             {
-                ((Data.CurrentUser)currentUser).Id = userId;
+                ((CurrentUser)currentUser).Id = userId;
             }
             if (userNameClaim != null)
             {
-                ((Data.CurrentUser)currentUser).UserName = userNameClaim.Value;
+                ((CurrentUser)currentUser).UserName = userNameClaim.Value;
             }
         }
 

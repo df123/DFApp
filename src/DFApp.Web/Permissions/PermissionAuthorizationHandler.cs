@@ -37,7 +37,7 @@ public class PermissionAuthorizationHandler : AuthorizationHandler<PermissionReq
         }
 
         // 从 JWT Token 的 Claims 中读取权限
-        var permissionClaims = context.User.FindAll("Permission");
+        var permissionClaims = context.User.FindAll(DFAppClaimTypes.Permission);
         if (permissionClaims == null || !permissionClaims.Any())
         {
             _logger.LogDebug("用户 {UserName} 没有权限声明", context.User.Identity?.Name ?? "Unknown");

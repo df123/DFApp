@@ -145,10 +145,6 @@ public class AccountAppService : AppServiceBase
         };
 
         // 从用户角色关联表查询角色 ID
-        var userRoles = await _userRepository.GetQueryable()
-            .Where(u => u.Id == user.Id)
-            .ToListAsync();
-
         var userRoleIds = await _userRoleRepository.GetQueryable()
             .Where(ur => ur.UserId == user.Id)
             .Select(ur => ur.RoleId)
@@ -156,6 +152,12 @@ public class AccountAppService : AppServiceBase
 
         // 将角色ID转换为字符串列表
         var userRoleIdStrings = userRoleIds.Select(id => id.ToString()).ToList();
+
+        // 将角色 ID 添加到 JWT claims 中
+        foreach (var roleId in userRoleIdStrings)
+        {
+            claims.Add(new Claim(DFAppClaimTypes.Role, roleId));
+        }
 
         // 查询权限授予记录
         var permissions = await _permissionGrantRepository.GetQueryable()
@@ -166,10 +168,10 @@ public class AccountAppService : AppServiceBase
             .Select(pg => pg.Name)
             .ToListAsync();
 
-        // 将权限添加到JWT claims中
-        foreach (var permission in permissions)
+        // 将权限添加到JWT claims中（去重，避免用户和角色授予相同权限时重复写入）
+        foreach (var permission in permissions.Distinct())
         {
-            claims.Add(new Claim("Permission", permission));
+            claims.Add(new Claim(DFAppClaimTypes.Permission, permission));
         }
 
         var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey));

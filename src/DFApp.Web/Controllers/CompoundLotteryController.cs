@@ -5,6 +5,7 @@ using DFApp.Web.Permissions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using CompoundLotteryService = DFApp.Web.Services.Lottery.CompoundLotteryService;
+using DFApp.Web.Infrastructure;
 
 namespace DFApp.Web.Controllers;
 

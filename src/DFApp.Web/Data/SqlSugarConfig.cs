@@ -2,6 +2,7 @@ using System;
 using System.Linq;
 using System.Reflection;
 using DFApp.Web.Domain;
+using DFApp.Web.Infrastructure;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using SqlSugar;
@@ -201,36 +202,4 @@ public class SqlSugarConfig
             db.QueryFilter.Add(new TableFilterItem<ICreatorId>(it => it.CreatorId == currentUser.Id.Value));
         }
     }
-}
-
-/// <summary>
-/// 当前用户接口，用于获取当前登录用户信息
-/// </summary>
-public interface ICurrentUser
-{
-    /// <summary>
-    /// 当前用户 ID
-    /// </summary>
-    Guid? Id { get; }
-
-    /// <summary>
-    /// 当前用户名
-    /// </summary>
-    string? UserName { get; }
-}
-
-/// <summary>
-/// 当前用户实现
-/// </summary>
-public class CurrentUser : ICurrentUser
-{
-    /// <summary>
-    /// 当前用户 ID
-    /// </summary>
-    public Guid? Id { get; set; }
-
-    /// <summary>
-    /// 当前用户名
-    /// </summary>
-    public string? UserName { get; set; }
 }
