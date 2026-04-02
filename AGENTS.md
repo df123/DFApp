@@ -5,29 +5,46 @@
 ## 项目概览
 
 这是一个多功能 Web 应用：
-- **后端**：基于 ASP.NET Core 10.0 的轻量级单体应用（已移除 ABP Framework）
+- **后端**：基于 ASP.NET Core 10.0 的轻量级单体应用
 - **前端**：Vue 3 + Element Plus 管理后台（Pure Admin Thin 模板）
-- **附加服务**：用于访问中国福利彩票网站的 Lottery proxy 服务（运行在端口 5000）
+- **附加服务**：Lottery proxy 服务（端口 5000），用于访问中国福利彩票网站
+- **ORM**：SqlSugar（已替代 EF Core）
+- **解决方案**：包含 3 个项目 — DFApp.Web、DFApp.LotteryProxy、DFApp.Web.Tests
 
-## 重要说明
+## 技术栈
 
-- **框架迁移状态**：项目正在移除 ABP Framework，现已迁移为轻量级 ASP.NET Core 架构，使用 SqlSugar ORM、传统 Controller 和直接 Quartz.NET 调度
-- **开发模式变更**：原 ABP 框架采用领域驱动设计（DDD）架构，迁移后将采用测试驱动开发（TDD）模式
+- ASP.NET Core 10.0
+- SqlSugar ORM + SQLite
+- JWT Bearer 认证
+- Quartz.NET 定时任务
+- SignalR 实时通信
+- Mapperly 对象映射
+- Serilog 日志
+- Swagger API 文档
+
+## 已完成迁移
+
+项目已完成从 ABP Framework 到轻量级 ASP.NET Core 的全面迁移（Phase 1-9）。迁移详情参见：
+- `docs/framework-migration-plan.md` — 迁移总计划
+- `docs/framework-migration-summary-phase-1~9.md` — 各阶段迁移总结
 
 ## 架构
 
 ### 后端结构（轻量级单体架构）
 - `DFApp.Web/` ← 唯一后端项目
-  - `Domain/` - 实体（自定义基类，替代 ABP 实体）
-  - `Services/` - 应用服务（原 Application 层）
-  - `Controllers/` - API 控制器（手动创建，路由保持 /api/app/）
-  - `DTOs/` - DTO（原 Application.Contracts）
+  - `Domain/` - 实体和自定义基类
+  - `Services/` - 应用服务
+  - `Controllers/` - API 控制器（路由模式：`/api/app/{kebab-case-entity}`）
+  - `DTOs/` - 数据传输对象
   - `Permissions/` - 权限定义与授权处理器
-  - `Background/` - 后台任务（Quartz.NET Jobs）
+  - `Background/` - Quartz.NET 后台任务
   - `Hubs/` - SignalR Hub
   - `Mapping/` - Mapperly 映射器
   - `Data/` - SqlSugar 配置与仓储
-  - `Infrastructure/` - 中间件、过滤器、异常处理
+  - `Infrastructure/` - 中间件、过滤器、异常处理、密码哈希
+  - `Utilities/` - 工具类
+- `DFApp.LotteryProxy/` ← 彩票代理服务（端口 5000）
+- `test/DFApp.Web.Tests/` ← 单元测试
 
 ### 前端结构（Vue 3）
 - `src/views/` - 页面组件
@@ -50,9 +67,7 @@
 ## 重要约束
 
 ### 被禁止的操作
-- **不要在**已废弃的 `src/DFApp.HttpApi` 目录中添加控制器（该目录已废弃）
 - **不要添加** Razor 页面（`.cshtml` 文件）
-- **不要执行** EF Core 迁移数据库命令（已改用 SqlSugar）
 
 ### 必须遵循的模式
 - 每个应用服务需要手动创建对应的 Controller，路由采用 `/api/app/{kebab-case-entity}` 模式
