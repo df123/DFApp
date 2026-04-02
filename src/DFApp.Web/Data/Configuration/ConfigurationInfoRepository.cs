@@ -3,8 +3,8 @@ using System.Linq;
 using System.Threading.Tasks;
 using DFApp.Configuration;
 using DFApp.Web.Data;
+using DFApp.Web.Infrastructure;
 using SqlSugar;
-using Volo.Abp;
 
 namespace DFApp.Web.Data.Configuration
 {
@@ -33,12 +33,12 @@ namespace DFApp.Web.Data.Configuration
 
             if (info == null)
             {
-                throw new UserFriendlyException("配置参数不存在");
+                throw new BusinessException("配置参数不存在");
             }
 
             if (info.ConfigurationValue == null)
             {
-                throw new UserFriendlyException("配置参数值不存在");
+                throw new BusinessException("配置参数值不存在");
             }
 
             return info.ConfigurationValue;
@@ -55,7 +55,7 @@ namespace DFApp.Web.Data.Configuration
 
             if (infos == null || infos.Count <= 0)
             {
-                throw new UserFriendlyException("配置参数不存在");
+                throw new BusinessException("配置参数不存在");
             }
 
             return infos;

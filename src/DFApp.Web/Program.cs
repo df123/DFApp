@@ -21,6 +21,7 @@ using DFApp.Web.Permissions;
 using DFApp.Queue;
 using DFApp.Helper;
 using DFApp.Background;
+using DFApp.Web.Services.ElectricVehicle;
 
 namespace DFApp.Web;
 
@@ -81,6 +82,9 @@ public class Program
 
             // 注册密码哈希服务（无状态，使用 Transient）
             builder.Services.AddTransient<IPasswordHasher, PasswordHasher>();
+
+            // 注册油价刷新器（无状态，使用 Transient）
+            builder.Services.AddTransient<GasolinePriceRefresher>();
 
             // 配置 HttpClient
             builder.Services.AddHttpClient();
@@ -193,13 +197,29 @@ public class Program
             Quartz.Logging.LogProvider.IsDisabled = true;
             builder.Services.AddQuartz(q =>
             {
-                // 这里可以配置 Quartz 作业
-                // q.AddJob<YourJob>(opts => opts.WithIdentity("job1"));
-                // q.AddTrigger(opts => opts
-                //     .ForJob("job1")
-                //     .WithIdentity("trigger1")
-                //     .StartNow()
-                //     .WithSimpleSchedule(x => x.WithIntervalInSeconds(10).RepeatForever()));
+                // GasolinePriceRefreshJob — 每晚21:00执行
+                q.ScheduleJob<Background.GasolinePriceRefreshJob>(trigger => trigger
+                    .WithIdentity("GasolinePriceRefreshJob-trigger")
+                    .WithCronSchedule("0 0 21 * * ?"));
+
+                // DiskSpaceCheckJob — 每10分钟执行
+                q.ScheduleJob<Background.DiskSpaceCheckJob>(trigger => trigger
+                    .WithIdentity("DiskSpaceCheckJob-trigger")
+                    .WithSimpleSchedule(x => x
+                        .WithIntervalInMinutes(10)
+                        .RepeatForever()));
+
+                // LotteryResultJob — 每晚23:00执行
+                q.ScheduleJob<Background.LotteryResultJob>(trigger => trigger
+                    .WithIdentity("LotteryResultJob-trigger")
+                    .WithCronSchedule("0 0 23 * * ?"));
+
+                // RssMirrorFetchJob — 每5分钟执行
+                q.ScheduleJob<Background.RssMirrorFetchJob>(trigger => trigger
+                    .WithIdentity("RssMirrorFetchJob-trigger")
+                    .WithSimpleSchedule(x => x
+                        .WithIntervalInMinutes(5)
+                        .RepeatForever()));
             });
             builder.Services.AddQuartzHostedService(q => q.WaitForJobsToComplete = true);
 
