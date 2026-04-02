@@ -1,6 +1,7 @@
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Net;
-using System.Text.Json;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
 using Microsoft.Extensions.DependencyInjection;
@@ -34,21 +35,14 @@ public class GlobalExceptionFilter : IExceptionFilter
             _ => HttpStatusCode.InternalServerError
         };
 
-        // 构建错误响应
-        var errorResponse = new ErrorResponse
+        // 使用统一响应格式构建错误响应
+        var errorResponse = new ApiResponse<object>
         {
-            Code = GetErrorCode(context.Exception),
+            Success = false,
+            Code = ((int)statusCode).ToString(),
             Message = GetErrorMessage(context.Exception),
-            Details = GetErrorDetails(context.Exception),
-            Timestamp = DateTime.UtcNow
+            Data = null
         };
-
-        // 如果是开发环境，添加堆栈跟踪
-        var env = context.HttpContext.RequestServices.GetRequiredService<Microsoft.AspNetCore.Hosting.IWebHostEnvironment>();
-        if (env.EnvironmentName == Microsoft.AspNetCore.Hosting.EnvironmentName.Development)
-        {
-            errorResponse.StackTrace = context.Exception.StackTrace;
-        }
 
         // 设置响应
         context.Result = new ObjectResult(errorResponse)
@@ -57,20 +51,6 @@ public class GlobalExceptionFilter : IExceptionFilter
         };
 
         context.ExceptionHandled = true;
-    }
-
-    /// <summary>
-    /// 获取错误代码
-    /// </summary>
-    /// <param name="exception">异常</param>
-    /// <returns>错误代码</returns>
-    private static string GetErrorCode(Exception exception)
-    {
-        return exception switch
-        {
-            BusinessException businessException => businessException.Code,
-            _ => exception.GetType().Name
-        };
     }
 
     /// <summary>
@@ -83,53 +63,21 @@ public class GlobalExceptionFilter : IExceptionFilter
         return exception switch
         {
             BusinessException businessException when !string.IsNullOrEmpty(businessException.Message) => businessException.Message,
+            ValidationException validationException when validationException.ValidationErrors.Count > 0
+                => FormatValidationErrors(validationException.Message, validationException.ValidationErrors),
             _ => "服务器内部错误，请稍后重试"
         };
     }
 
     /// <summary>
-    /// 获取错误详细信息
+    /// 格式化验证错误信息
     /// </summary>
-    /// <param name="exception">异常</param>
-    /// <returns>错误详细信息</returns>
-    private static object? GetErrorDetails(Exception exception)
+    /// <param name="message">主消息</param>
+    /// <param name="validationErrors">验证错误字典</param>
+    /// <returns>格式化后的错误消息</returns>
+    private static string FormatValidationErrors(string message, IDictionary<string, string[]> validationErrors)
     {
-        return exception switch
-        {
-            ValidationException validationException => validationException.ValidationErrors,
-            BusinessException businessException => businessException.Details,
-            _ => null
-        };
+        var details = string.Join("; ", validationErrors.Select(kv => $"{kv.Key}: {string.Join(", ", kv.Value)}"));
+        return string.IsNullOrEmpty(details) ? message : $"{message} - {details}";
     }
-}
-
-/// <summary>
-/// 错误响应模型
-/// </summary>
-public class ErrorResponse
-{
-    /// <summary>
-    /// 错误代码
-    /// </summary>
-    public string Code { get; set; } = string.Empty;
-
-    /// <summary>
-    /// 错误消息
-    /// </summary>
-    public string Message { get; set; } = string.Empty;
-
-    /// <summary>
-    /// 详细信息
-    /// </summary>
-    public object? Details { get; set; }
-
-    /// <summary>
-    /// 时间戳
-    /// </summary>
-    public DateTime Timestamp { get; set; }
-
-    /// <summary>
-    /// 堆栈跟踪（仅开发环境）
-    /// </summary>
-    public string? StackTrace { get; set; }
 }

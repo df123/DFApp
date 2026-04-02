@@ -40,9 +40,12 @@
 - [`IUserManagementAppService`](src/DFApp.Application.Contracts/Account/IUserManagementAppService.cs) - 用户管理服务接口（旧，待迁移）
 - [`UserManagementAppService`](src/DFApp.Web/Services/Account/UserManagementAppService.cs) - 用户管理服务实现
 
+### 控制器
+- [`AccountController`](src/DFApp.Web/Controllers/AccountController.cs) - 账户控制器（登录、密码重置，无需授权）
+- [`UserManagementController`](src/DFApp.Web/Controllers/UserManagementController.cs) - 用户管理控制器（增删改查，需要授权）
+
 ### 权限定义
-- [`DFAppPermissions.UserManagement`](src/DFApp.Application.Contracts/Permissions/DFAppPermissions.cs) - 用户管理权限常量
-- [`DFAppPermissionDefinitionProvider`](src/DFApp.Application.Contracts/Permissions/DFAppPermissionDefinitionProvider.cs) - 权限定义提供者
+- [`DFAppPermissions.UserManagement`](src/DFApp.Web/Permissions/DFAppPermissions.cs) - 用户管理权限常量
 
 ### 本地化资源
 - [`zh-Hans.json`](src/DFApp.Domain.Shared/Localization/DFApp/zh-Hans.json) - 中文本地化资源

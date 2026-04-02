@@ -3,7 +3,6 @@ using System.Threading.Tasks;
 using DFApp.Web.Data;
 using DFApp.Web.Infrastructure;
 using DFApp.Web.Permissions;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace DFApp.Web.Controllers;
@@ -12,8 +11,7 @@ namespace DFApp.Web.Controllers;
 /// 控制器基类，提供通用的控制器功能
 /// </summary>
 [ApiController]
-[Route("api/[controller]")]
-[Authorize]
+[Route("api/app/[controller]")]
 public abstract class DFAppControllerBase : ControllerBase
 {
     /// <summary>
@@ -175,31 +173,4 @@ public abstract class DFAppControllerBase : ControllerBase
             throw new UnauthorizedAccessException($"您没有权限执行此操作，需要权限: {permissionName}");
         }
     }
-}
-
-/// <summary>
-/// API 响应模型
-/// </summary>
-/// <typeparam name="T">数据类型</typeparam>
-public class ApiResponse<T>
-{
-    /// <summary>
-    /// 是否成功
-    /// </summary>
-    public bool Success { get; set; }
-
-    /// <summary>
-    /// 响应消息
-    /// </summary>
-    public string Message { get; set; } = string.Empty;
-
-    /// <summary>
-    /// 错误代码
-    /// </summary>
-    public string? Code { get; set; }
-
-    /// <summary>
-    /// 响应数据
-    /// </summary>
-    public T? Data { get; set; }
 }

@@ -64,7 +64,6 @@
 
 	<ItemGroup>
 		<ProjectReference Include="..\DFApp.Application\DFApp.Application.csproj" />
-		<ProjectReference Include="..\DFApp.HttpApi\DFApp.HttpApi.csproj" />
 		<ProjectReference Include="..\DFApp.EntityFrameworkCore\DFApp.EntityFrameworkCore.csproj" />
 	</ItemGroup>
 
