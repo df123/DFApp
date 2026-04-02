@@ -67,7 +67,6 @@ q.AddJob<RssMirrorFetchJob>(j => j.WithIdentity("RssMirrorFetchJob"))
 | 文件 | 替换数量 | 替换内容 |
 |------|---------|---------|
 | `Data/Configuration/ConfigurationInfoRepository.cs` | 3 处 | `UserFriendlyException` → `BusinessException` |
-| `DFApp.Application/Background/Aria2BackgroundWorker.cs` | 1 处 | `UserFriendlyException` → `BusinessException`（跨项目） |
 
 ## 7.4 中间件精简
 
@@ -82,19 +81,18 @@ q.AddJob<RssMirrorFetchJob>(j => j.WithIdentity("RssMirrorFetchJob"))
 - `src/DFApp.Web/Background/RssMirrorFetchJob.cs`
 - `src/DFApp.Web/Services/ElectricVehicle/GasolinePriceRefresher.cs`
 
-**修改文件（3 个）**：
+**修改文件（2 个）**：
 - `src/DFApp.Web/Program.cs` — 注册 4 个 Job 调度 + GasolinePriceRefresher DI
 - `src/DFApp.Web/Data/Configuration/ConfigurationInfoRepository.cs` — 3 处异常替换
-- `src/DFApp.Application/Background/Aria2BackgroundWorker.cs` — 1 处异常替换（跨项目）
 
 ## 统计
 
 | 指标 | 数量 |
 |------|------|
 | 新建文件 | 5 |
-| 修改文件 | 3 |
+| 修改文件 | 2 |
 | 迁移 Job | 4 |
-| 异常替换 | 4 处 |
+| 异常替换 | 3 处 |
 | 新引入编译错误 | 0 |
 
 ## 编译验证
