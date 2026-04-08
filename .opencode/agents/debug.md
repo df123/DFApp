@@ -13,14 +13,50 @@ permission:
   edit: deny
   bash:
     "*": ask
-    "dotnet build": allow
-    "dotnet run": allow
-    "dotnet test": allow
-    "npm run *": allow
-    "pnpm run *": allow
-    "git log": allow
-    "git diff": allow
+    "cat *": allow
+    "head *": allow
+    "tail *": allow
+    "wc *": allow
+    "find *": allow
+    "ls": allow
+    "ls *": allow
+    "ll": allow
+    "ll *": allow
+    "pwd": allow
+    "echo *": allow
+    "grep *": allow
+    "sed *": allow
+    "awk *": allow
+    "sort *": allow
+    "uniq *": allow
+    "which *": allow
+    "type *": allow
+    "date": allow
+    "date *": allow
+    "sleep *": allow
+    "timeout *": allow
+    "env": allow
+    "printenv": allow
+    "uname *": allow
+    "whoami": allow
+    "id": allow
+    "dotnet *": allow
+    "pnpm *": allow
+    "npm *": allow
     "git status": allow
+    "git status *": allow
+    "git diff": allow
+    "git diff *": allow
+    "git log": allow
+    "git log *": allow
+    "git show": allow
+    "git show *": allow
+    "git branch": allow
+    "git branch *": allow
+    "git rev-parse *": allow
+    "git remote *": allow
+    "git ls-files *": allow
+    "git stash *": allow
   webfetch: deny
 ---
 

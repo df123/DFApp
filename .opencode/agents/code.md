@@ -13,11 +13,81 @@ permission:
   edit: allow
   bash:
     "*": ask
+    "cat *": allow
+    "head *": allow
+    "tail *": allow
+    "wc *": allow
+    "find *": allow
+    "ls": allow
+    "ls *": allow
+    "ll": allow
+    "ll *": allow
+    "pwd": allow
+    "echo *": allow
+    "mkdir *": allow
+    "cp *": allow
+    "mv *": allow
+    "touch *": allow
+    "which *": allow
+    "type *": allow
+    "file *": allow
+    "du *": allow
+    "df *": allow
+    "grep *": allow
+    "sed *": allow
+    "awk *": allow
+    "sort *": allow
+    "uniq *": allow
+    "tr *": allow
+    "cut *": allow
+    "tee *": allow
+    "xargs *": allow
+    "basename *": allow
+    "dirname *": allow
+    "realpath *": allow
+    "readlink *": allow
+    "date": allow
+    "date *": allow
+    "sleep *": allow
+    "timeout *": allow
+    "env": allow
+    "printenv": allow
+    "export *": allow
+    "uname *": allow
+    "whoami": allow
+    "id": allow
+    "cd *": allow
     "dotnet *": allow
     "npm *": allow
     "pnpm *": allow
+    "npx *": allow
+    "node *": allow
     "git status": allow
+    "git status *": allow
     "git diff": allow
+    "git diff *": allow
+    "git log": allow
+    "git log *": allow
+    "git show": allow
+    "git show *": allow
+    "git branch": allow
+    "git branch *": allow
+    "git add *": allow
+    "git commit *": allow
+    "git stash *": allow
+    "git tag *": allow
+    "git rev-parse *": allow
+    "git remote *": allow
+    "git checkout *": allow
+    "git switch *": allow
+    "git restore *": allow
+    "git reset *": allow
+    "git config *": allow
+    "git ls-files *": allow
+    "git merge *": allow
+    "git rebase *": allow
+    "git cherry-pick *": allow
+    "git apply *": allow
   webfetch: deny
 ---
 
