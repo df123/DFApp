@@ -9,6 +9,11 @@ using DFApp.Web.Infrastructure;
 using DFApp.Web.Mapping;
 using DFApp.Web.Permissions;
 using Microsoft.Extensions.Logging;
+using KeywordFilterRuleDto = DFApp.Web.DTOs.FileFilter.KeywordFilterRuleDto;
+using CreateUpdateKeywordFilterRuleDto = DFApp.Web.DTOs.FileFilter.CreateUpdateKeywordFilterRuleDto;
+using KeywordFilterTestResultDto = DFApp.Web.DTOs.FileFilter.KeywordFilterTestResultDto;
+using TestFilterRequestDto = DFApp.Web.DTOs.FileFilter.TestFilterRequestDto;
+using KeywordFilterMatchResultDto = DFApp.Web.DTOs.FileFilter.KeywordFilterMatchResultDto;
 
 namespace DFApp.Web.Services.FileFilter;
 

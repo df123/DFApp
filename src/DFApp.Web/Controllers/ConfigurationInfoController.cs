@@ -1,11 +1,11 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using DFApp.Configuration;
 using DFApp.Web.Data;
+using DFApp.Web.DTOs.Configuration;
+using DFApp.Web.Infrastructure;
 using DFApp.Web.Permissions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using DFApp.Web.Infrastructure;
 
 namespace DFApp.Web.Controllers;
 

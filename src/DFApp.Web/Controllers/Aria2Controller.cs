@@ -1,10 +1,11 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using DFApp.Aria2;
 using DFApp.Web.Data;
+using DFApp.Web.Infrastructure;
 using DFApp.Web.Permissions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using DFApp.Web.Infrastructure;
 
 namespace DFApp.Web.Controllers;
 
@@ -103,7 +104,7 @@ public class Aria2Controller : DFAppControllerBase
     /// <param name="input">下载请求</param>
     [HttpPost("add-download")]
     [Permission(DFAppPermissions.Aria2.Default)]
-    public async Task<IActionResult> AddDownloadAsync([FromBody] DFApp.Aria2.AddDownloadRequestDto input)
+    public async Task<IActionResult> AddDownloadAsync([FromBody] AddDownloadRequestDto input)
     {
         var result = await _aria2Service.AddDownloadAsync(input);
         return Success(result);

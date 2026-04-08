@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using DFApp.Web.DTOs;
 
 namespace DFApp.Web.DTOs.Lottery

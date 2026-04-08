@@ -1,4 +1,5 @@
 using DFApp.FileFilter;
+using DFApp.Web.DTOs.FileFilter;
 using Riok.Mapperly.Abstractions;
 
 namespace DFApp.Web.Mapping;

@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using DFApp.ElectricVehicle;
 using DFApp.Web.Data;
+using DFApp.Web.Data.ElectricVehicle;
 using DFApp.Web.DTOs;
 using DFApp.Web.Infrastructure;
 using DFApp.Web.Mapping;

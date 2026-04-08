@@ -1,6 +1,6 @@
 using System;
 using DFApp.Media;
-using DFApp.Media.ExternalLink;
+using DFApp.Web.DTOs.Media;
 using Riok.Mapperly.Abstractions;
 
 namespace DFApp.Web.Mapping;

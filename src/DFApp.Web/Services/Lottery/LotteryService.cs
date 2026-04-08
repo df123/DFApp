@@ -1,22 +1,23 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Linq.Dynamic.Core;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using DFApp.Lottery;
-using DFApp.Lottery.BatchCreate;
-using DFApp.Lottery.Consts;
-using DFApp.Lottery.Statistics;
 using DFApp.Web.Data;
 using DFApp.Web.Domain;
+using DFApp.Web.DTOs;
+using DFApp.Web.DTOs.Lottery;
+using DFApp.Web.DTOs.Lottery.Consts;
+using DFApp.Web.DTOs.Lottery.Statistics;
 using DFApp.Web.Infrastructure;
 using DFApp.Web.Mapping;
 using DFApp.Web.Permissions;
 using Microsoft.Extensions.Logging;
-using Volo.Abp.Application.Dtos;
 using LotteryDto = DFApp.Web.DTOs.Lottery.LotteryDto;
 using CreateUpdateLotteryDto = DFApp.Web.DTOs.Lottery.CreateUpdateLotteryDto;
+using LotteryCombinationDto = DFApp.Web.DTOs.Lottery.LotteryCombinationDto;
+using LotteryGroupDto = DFApp.Web.DTOs.Lottery.LotteryGroupDto;
 
 namespace DFApp.Web.Services.Lottery;
 
@@ -551,13 +552,24 @@ public class LotteryService : CrudServiceBase<LotteryInfo, long, LotteryDto, Cre
     {
         var query = await Repository.GetListAsync();
 
+        // 根据 Sorting 字段排序（仅支持 Id、IndexNo 等简单字段，格式为 "PropertyName" 或 "PropertyName DESC"）
         if (!string.IsNullOrWhiteSpace(input.Sorting))
         {
-            query = query.AsQueryable().OrderBy(input.Sorting).ToList();
+            var sorting = input.Sorting.Trim();
+            var isDescending = sorting.EndsWith(" DESC", StringComparison.OrdinalIgnoreCase);
+            var propertyName = isDescending ? sorting[..^5].Trim() : sorting;
+
+            query = propertyName.ToUpperInvariant() switch
+            {
+                "ID" => isDescending ? query.OrderByDescending(x => x.Id).ToList() : query.OrderBy(x => x.Id).ToList(),
+                "INDEXNO" => isDescending ? query.OrderByDescending(x => x.IndexNo).ToList() : query.OrderBy(x => x.IndexNo).ToList(),
+                "CREATIONTIME" => isDescending ? query.OrderByDescending(x => x.CreationTime).ToList() : query.OrderBy(x => x.CreationTime).ToList(),
+                _ => query.OrderBy(x => x.Id).ToList()
+            };
         }
         else
         {
-            query = query.AsQueryable().OrderBy(x => x.Id).ToList();
+            query = query.OrderBy(x => x.Id).ToList();
         }
 
         var groupedLotteries = query.GroupBy(x => new { x.IndexNo, x.GroupId, x.LotteryType });

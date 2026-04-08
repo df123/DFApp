@@ -1,5 +1,5 @@
-using DFApp.CustomJsonConverter;
 using System.Text.Json.Serialization;
+using DFApp.Web.Infrastructure;
 
 namespace DFApp.Web.DTOs.Lottery
 {

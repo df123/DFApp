@@ -13,7 +13,7 @@ namespace DFApp.Media
         /// <summary>
         /// 名称
         /// </summary>
-        public required string Name { get; set; }
+        public string Name { get; set; }
 
         /// <summary>
         /// 大小
@@ -33,12 +33,12 @@ namespace DFApp.Media
         /// <summary>
         /// 链接内容
         /// </summary>
-        public required string LinkContent { get; set; }
+        public string LinkContent { get; set; }
 
         /// <summary>
         /// 媒体ID集合
         /// </summary>
         [SugarColumn(IsIgnore = true)]
-        public required ICollection<MediaExternalLinkMediaIds> MediaIds { get; set; }
+        public ICollection<MediaExternalLinkMediaIds> MediaIds { get; set; }
     }
 }

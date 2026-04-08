@@ -7,6 +7,7 @@ using DFApp.Web.Data;
 using DFApp.Web.Infrastructure;
 using DFApp.Web.Permissions;
 using DFApp.Web.DTOs;
+using DFApp.Web.DTOs.Rss;
 using Microsoft.Extensions.Logging;
 using SqlSugar;
 
@@ -43,7 +44,7 @@ public class RssSourceAppService : AppServiceBase
     /// </summary>
     /// <param name="input">分页排序请求</param>
     /// <returns>分页结果</returns>
-    public async Task<PagedResultDto<RssSourceDto>> GetListAsync(Volo.Abp.Application.Dtos.PagedAndSortedResultRequestDto input)
+    public async Task<PagedResultDto<RssSourceDto>> GetListAsync(PagedAndSortedResultRequestDto input)
     {
         var queryable = _rssSourceRepository.GetQueryable();
 

@@ -18,9 +18,8 @@ using DFApp.Web.Hubs;
 using DFApp.Web.Data;
 using DFApp.Web.Infrastructure;
 using DFApp.Web.Permissions;
-using DFApp.Queue;
-using DFApp.Helper;
-using DFApp.Background;
+using DFApp.Web.Queue;
+using DFApp.Web.Background;
 using DFApp.Web.Services.ElectricVehicle;
 
 namespace DFApp.Web;
@@ -52,8 +51,8 @@ public class Program
             // 使用 Serilog
             builder.Host.UseSerilog();
 
-            // 配置 AppsettingsHelper
-            builder.Services.AddSingleton(new AppsettingsHelper(builder.Configuration));
+            // 配置 AppsettingsHelper（已废弃，暂注释）
+            // builder.Services.AddSingleton(new AppsettingsHelper(builder.Configuration));
 
             // 配置 SqlSugar
             builder.Services.AddSingleton<SqlSugarConfig>();

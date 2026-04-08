@@ -1,4 +1,5 @@
 using DFApp.IP;
+using DFApp.Web.DTOs.IP;
 using Riok.Mapperly.Abstractions;
 
 namespace DFApp.Web.Mapping;

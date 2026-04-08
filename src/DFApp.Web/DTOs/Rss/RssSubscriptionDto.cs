@@ -3,146 +3,119 @@ using DFApp.Web.DTOs;
 
 namespace DFApp.Web.DTOs.Rss
 {
+    /// <summary>
+    /// RSS订阅DTO
+    /// </summary>
     public class RssSubscriptionDto : EntityDto<long>
     {
+        /// <summary>
+        /// 订阅名称
+        /// </summary>
         public string Name { get; set; } = string.Empty;
 
+        /// <summary>
+        /// 关键词
+        /// </summary>
         public string Keywords { get; set; } = string.Empty;
 
+        /// <summary>
+        /// 是否启用
+        /// </summary>
         public bool IsEnabled { get; set; }
 
+        /// <summary>
+        /// 最小做种者数量
+        /// </summary>
         public int? MinSeeders { get; set; }
 
+        /// <summary>
+        /// 最大做种者数量
+        /// </summary>
         public int? MaxSeeders { get; set; }
 
+        /// <summary>
+        /// 最小下载者数量
+        /// </summary>
         public int? MinLeechers { get; set; }
 
+        /// <summary>
+        /// 最大下载者数量
+        /// </summary>
         public int? MaxLeechers { get; set; }
 
+        /// <summary>
+        /// 最小完成下载数量
+        /// </summary>
         public int? MinDownloads { get; set; }
 
+        /// <summary>
+        /// 最大完成下载数量
+        /// </summary>
         public int? MaxDownloads { get; set; }
 
+        /// <summary>
+        /// 质量过滤器
+        /// </summary>
         public string? QualityFilter { get; set; }
 
+        /// <summary>
+        /// 字幕组过滤器
+        /// </summary>
         public string? SubtitleGroupFilter { get; set; }
 
+        /// <summary>
+        /// 是否自动下载
+        /// </summary>
         public bool AutoDownload { get; set; }
 
+        /// <summary>
+        /// 是否仅视频
+        /// </summary>
         public bool VideoOnly { get; set; }
 
+        /// <summary>
+        /// 是否启用关键词过滤
+        /// </summary>
         public bool EnableKeywordFilter { get; set; }
 
+        /// <summary>
+        /// 保存路径
+        /// </summary>
         public string? SavePath { get; set; }
 
+        /// <summary>
+        /// RSS源ID
+        /// </summary>
         public long? RssSourceId { get; set; }
 
+        /// <summary>
+        /// RSS源名称
+        /// </summary>
         public string? RssSourceName { get; set; }
 
+        /// <summary>
+        /// 开始日期
+        /// </summary>
         public DateTime? StartDate { get; set; }
 
+        /// <summary>
+        /// 结束日期
+        /// </summary>
         public DateTime? EndDate { get; set; }
 
+        /// <summary>
+        /// 备注
+        /// </summary>
         public string? Remark { get; set; }
 
+        /// <summary>
+        /// 创建时间
+        /// </summary>
         public DateTime CreationTime { get; set; }
 
+        /// <summary>
+        /// 最后修改时间
+        /// </summary>
         public DateTime? LastModificationTime { get; set; }
-    }
-
-    public class CreateUpdateRssSubscriptionDto
-    {
-        public string Name { get; set; } = string.Empty;
-
-        public string Keywords { get; set; } = string.Empty;
-
-        public bool IsEnabled { get; set; } = true;
-
-        public int? MinSeeders { get; set; }
-
-        public int? MaxSeeders { get; set; }
-
-        public int? MinLeechers { get; set; }
-
-        public int? MaxLeechers { get; set; }
-
-        public int? MinDownloads { get; set; }
-
-        public int? MaxDownloads { get; set; }
-
-        public string? QualityFilter { get; set; }
-
-        public string? SubtitleGroupFilter { get; set; }
-
-        public bool AutoDownload { get; set; } = true;
-
-        public bool VideoOnly { get; set; }
-
-        public bool EnableKeywordFilter { get; set; }
-
-        public string? SavePath { get; set; }
-
-        public long? RssSourceId { get; set; }
-
-        public DateTime? StartDate { get; set; }
-
-        public DateTime? EndDate { get; set; }
-
-        public string? Remark { get; set; }
-    }
-
-    public class RssSubscriptionDownloadDto : EntityDto<long>
-    {
-        public long SubscriptionId { get; set; }
-
-        public string? SubscriptionName { get; set; }
-
-        public long RssMirrorItemId { get; set; }
-
-        public string? RssMirrorItemTitle { get; set; }
-
-        public string? RssMirrorItemLink { get; set; }
-
-        public string? RssSourceName { get; set; }
-
-        public string Aria2Gid { get; set; } = string.Empty;
-
-        public int DownloadStatus { get; set; }
-
-        public string? DownloadStatusText { get; set; }
-
-        public bool IsPendingDueToLowDiskSpace { get; set; }
-
-        public string? ErrorMessage { get; set; }
-
-        public DateTime? DownloadStartTime { get; set; }
-
-        public DateTime? DownloadCompleteTime { get; set; }
-
-        public DateTime CreationTime { get; set; }
-    }
-
-    public class GetRssSubscriptionsRequestDto : PagedAndSortedResultRequestDto
-    {
-        public string? Filter { get; set; }
-
-        public bool? IsEnabled { get; set; }
-
-        public long? RssSourceId { get; set; }
-    }
-
-    public class GetRssSubscriptionDownloadsRequestDto : PagedAndSortedResultRequestDto
-    {
-        public long? SubscriptionId { get; set; }
-
-        public long? RssMirrorItemId { get; set; }
-
-        public int? DownloadStatus { get; set; }
-
-        public string? Filter { get; set; }
-
-        public DateTime? StartTime { get; set; }
-
-        public DateTime? EndTime { get; set; }
     }
 }

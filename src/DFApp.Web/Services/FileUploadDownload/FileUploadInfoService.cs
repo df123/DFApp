@@ -8,6 +8,9 @@ using DFApp.Web.Mapping;
 using DFApp.Web.Permissions;
 
 using IConfigurationInfoRepository = DFApp.Web.Data.Configuration.IConfigurationInfoRepository;
+using FileUploadInfoDto = DFApp.Web.DTOs.FileUploadDownload.FileUploadInfoDto;
+using CreateUpdateFileUploadInfoDto = DFApp.Web.DTOs.FileUploadDownload.CreateUpdateFileUploadInfoDto;
+using CustomFileTypeDto = DFApp.Web.DTOs.FileUploadDownload.CustomFileTypeDto;
 
 namespace DFApp.Web.Services.FileUploadDownload;
 

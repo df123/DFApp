@@ -177,7 +177,13 @@ public class ElectricVehicleCostService : CrudServiceBase<
         var expression = BuildExpression(input.StartDate, input.EndDate, input.IsBelongToSelf);
         if (input.VehicleId.HasValue)
         {
-            expression = expression.And(x => x.VehicleId == input.VehicleId.Value);
+            var vehicleId = input.VehicleId.Value;
+            var parameter = expression.Parameters[0];
+            var vehicleCondition = Expression.Equal(
+                Expression.Property(parameter, nameof(ElectricVehicleCost.VehicleId)),
+                Expression.Constant(vehicleId, typeof(Guid)));
+            var combinedBody = Expression.AndAlso(expression.Body, vehicleCondition);
+            expression = Expression.Lambda<Func<ElectricVehicleCost, bool>>(combinedBody, parameter);
         }
 
         var electricCosts = await Repository.GetListAsync(expression);
@@ -402,7 +408,13 @@ public class ElectricVehicleCostService : CrudServiceBase<
 
         if (isBelongToSelf.HasValue)
         {
-            expression = expression.And(x => x.IsBelongToSelf == isBelongToSelf.Value);
+            var isSelf = isBelongToSelf.Value;
+            var parameter = expression.Parameters[0];
+            var selfCondition = Expression.Equal(
+                Expression.Property(parameter, nameof(ElectricVehicleCost.IsBelongToSelf)),
+                Expression.Constant(isSelf, typeof(bool)));
+            var combinedBody = Expression.AndAlso(expression.Body, selfCondition);
+            expression = Expression.Lambda<Func<ElectricVehicleCost, bool>>(combinedBody, parameter);
         }
 
         return expression;

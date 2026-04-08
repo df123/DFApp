@@ -1,5 +1,6 @@
 using DFApp.Lottery;
 using DFApp.Web.Data;
+using DFApp.Web.DTOs.Lottery;
 using DFApp.Web.Mapping;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;

@@ -8,6 +8,9 @@ using DFApp.Web.Data;
 using DFApp.Web.Infrastructure;
 using DFApp.Web.Mapping;
 using DFApp.Web.Permissions;
+using CreateUpdateMediaInfoDto = DFApp.Web.DTOs.Media.CreateUpdateMediaInfoDto;
+using ChartDataDto = DFApp.Web.DTOs.Media.ChartDataDto;
+using MediaInfoDto = DFApp.Web.DTOs.Media.MediaInfoDto;
 
 namespace DFApp.Web.Services.Media;
 

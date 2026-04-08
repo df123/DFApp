@@ -22,7 +22,7 @@ namespace DFApp.Media
         /// <summary>
         /// 聊天标题
         /// </summary>
-        public required string ChatTitle { get; set; }
+        public string ChatTitle { get; set; }
 
         /// <summary>
         /// 消息
@@ -37,12 +37,12 @@ namespace DFApp.Media
         /// <summary>
         /// 保存路径
         /// </summary>
-        public required string SavePath { get; set; }
+        public string SavePath { get; set; }
 
         /// <summary>
         /// MIME类型
         /// </summary>
-        public required string MimeType { get; set; }
+        public string MimeType { get; set; }
 
         /// <summary>
         /// 是否已生成外链

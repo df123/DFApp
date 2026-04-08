@@ -7,6 +7,7 @@ using System.Text.Json;
 using System.Threading.Tasks;
 using DFApp.Lottery;
 using DFApp.Web.Data;
+using DFApp.Web.DTOs.Lottery;
 using DFApp.Web.Infrastructure;
 using DFApp.Web.Mapping;
 using DFApp.Web.Permissions;

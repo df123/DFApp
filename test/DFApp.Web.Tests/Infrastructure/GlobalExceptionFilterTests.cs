@@ -41,8 +41,9 @@ public class GlobalExceptionFilterTests
         var result = exceptionContext.Result as ObjectResult;
         result.Should().NotBeNull();
         result?.StatusCode.Should().Be((int)HttpStatusCode.BadRequest);
-        var response = result?.Value as ErrorResponse;
+        var response = result?.Value as ApiResponse<object>;
         response.Should().NotBeNull();
+        response?.Success.Should().BeFalse();
         response?.Message.Should().Be(expectedMessage);
     }
 
@@ -63,11 +64,12 @@ public class GlobalExceptionFilterTests
         var result = exceptionContext.Result as ObjectResult;
         result.Should().NotBeNull();
         result?.StatusCode.Should().Be((int)HttpStatusCode.NotFound);
-        var response = result?.Value as ErrorResponse;
+        var response = result?.Value as ApiResponse<object>;
         response.Should().NotBeNull();
+        response?.Success.Should().BeFalse();
         // NotFoundException 继承自 BusinessException，返回自定义消息
         response?.Message.Should().Be("资源未找到");
-        response?.Code.Should().Be("NotFound");
+        response?.Code.Should().Be("404");
     }
 
     /// <summary>
@@ -87,11 +89,12 @@ public class GlobalExceptionFilterTests
         var result = exceptionContext.Result as ObjectResult;
         result.Should().NotBeNull();
         result?.StatusCode.Should().Be((int)HttpStatusCode.BadRequest);
-        var response = result?.Value as ErrorResponse;
+        var response = result?.Value as ApiResponse<object>;
         response.Should().NotBeNull();
+        response?.Success.Should().BeFalse();
         // ValidationException 继承自 BusinessException，返回自定义消息
         response?.Message.Should().Be("验证失败");
-        response?.Code.Should().Be("ValidationError");
+        response?.Code.Should().Be("400");
     }
 
     /// <summary>
@@ -111,8 +114,9 @@ public class GlobalExceptionFilterTests
         var result = exceptionContext.Result as ObjectResult;
         result.Should().NotBeNull();
         result?.StatusCode.Should().Be((int)HttpStatusCode.InternalServerError);
-        var response = result?.Value as ErrorResponse;
+        var response = result?.Value as ApiResponse<object>;
         response.Should().NotBeNull();
+        response?.Success.Should().BeFalse();
         response?.Message.Should().Be("服务器内部错误，请稍后重试");
     }
 

@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using System.Xml.Linq;
 using DFApp.Rss;
 using DFApp.Web.Data;
+using DFApp.Web.DTOs.Rss;
 using DFApp.Web.Infrastructure;
 using DFApp.Web.Permissions;
 using Microsoft.Extensions.Logging;

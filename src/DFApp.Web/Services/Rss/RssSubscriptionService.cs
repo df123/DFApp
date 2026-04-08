@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
-using DFApp.Aria2;
 using DFApp.Rss;
 using DFApp.Web.Data;
 using Microsoft.Extensions.Logging;
@@ -20,8 +19,8 @@ public class RssSubscriptionService : IRssSubscriptionService
     private readonly ISqlSugarRepository<RssMirrorItem, long> _rssMirrorItemRepository;
     private readonly ISqlSugarRepository<RssSubscriptionDownload, long> _rssSubscriptionDownloadRepository;
 
-    // TODO: IAria2Service 未迁移，后续替换为实际接口
-    private readonly IAria2Service? _aria2Service;
+    // TODO: IAria2Service 未迁移，暂时使用 object? 替代
+    private readonly object? _aria2Service;
 
     /// <summary>
     /// 最小磁盘空间（GB）
@@ -38,7 +37,7 @@ public class RssSubscriptionService : IRssSubscriptionService
         ISqlSugarRepository<RssSubscription, long> rssSubscriptionRepository,
         ISqlSugarRepository<RssMirrorItem, long> rssMirrorItemRepository,
         ISqlSugarRepository<RssSubscriptionDownload, long> rssSubscriptionDownloadRepository,
-        IAria2Service? aria2Service = null)
+        object? aria2Service = null)
     {
         _logger = logger;
         _rssSubscriptionRepository = rssSubscriptionRepository;

@@ -7,6 +7,7 @@ using DFApp.Web.Data;
 using DFApp.Web.Infrastructure;
 using DFApp.Web.Permissions;
 using DFApp.Web.DTOs;
+using DFApp.Web.DTOs.Rss;
 using Microsoft.Extensions.Logging;
 using SqlSugar;
 

@@ -2,13 +2,12 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using DFApp.Aria2;
-using DFApp.Permissions;
 using DFApp.Rss;
 using DFApp.Web.Data;
+using DFApp.Web.DTOs;
+using DFApp.Web.DTOs.Rss;
 using DFApp.Web.Infrastructure;
 using DFApp.Web.Permissions;
-using DFApp.Web.DTOs;
 using Microsoft.Extensions.Logging;
 using SqlSugar;
 
@@ -24,8 +23,8 @@ public class RssMirrorItemAppService : AppServiceBase
     private readonly ISqlSugarRepository<RssSource, long> _rssSourceRepository;
     private readonly ILogger<RssMirrorItemAppService> _logger;
 
-    // TODO: IAria2Service 未迁移
-    private readonly IAria2Service? _aria2Service;
+    // TODO: IAria2Service 未迁移，暂时使用 object? 替代
+    private readonly object? _aria2Service;
 
     /// <summary>
     /// 构造函数
@@ -255,7 +254,7 @@ public class RssMirrorItemAppService : AppServiceBase
     /// <returns>分页结果</returns>
     public async Task<PagedResultDto<RssMirrorItemDto>> GetByWordTokenAsync(
         string wordToken,
-        Volo.Abp.Application.Dtos.PagedAndSortedResultRequestDto input)
+        PagedAndSortedResultRequestDto input)
     {
         var request = new GetRssMirrorItemsRequestDto
         {

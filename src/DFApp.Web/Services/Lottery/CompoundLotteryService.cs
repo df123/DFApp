@@ -3,12 +3,17 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using DFApp.Lottery;
-using DFApp.Lottery.Consts;
 using DFApp.Web.Data;
+using DFApp.Web.DTOs.Lottery;
+using DFApp.Web.DTOs.Lottery.Consts;
 using DFApp.Web.Infrastructure;
 using DFApp.Web.Mapping;
 using DFApp.Web.Permissions;
 using Microsoft.Extensions.Logging;
+using LotteryDto = DFApp.Web.DTOs.Lottery.LotteryDto;
+using CreateUpdateLotteryDto = DFApp.Web.DTOs.Lottery.CreateUpdateLotteryDto;
+using LotteryCombinationDto = DFApp.Web.DTOs.Lottery.LotteryCombinationDto;
+using LotteryGroupDto = DFApp.Web.DTOs.Lottery.LotteryGroupDto;
 
 namespace DFApp.Web.Services.Lottery;
 
@@ -355,6 +360,6 @@ public class CompoundLotteryService : AppServiceBase
             x.LotteryType == dto.LotteryType &&
             x.GroupId >= nextGroupId);
 
-        return savedLotteries.Select(_mapper.MapToExternalLotteryDto).ToList();
+        return savedLotteries.Select(_mapper.MapToDto).ToList();
     }
 }

@@ -1,5 +1,5 @@
 using DFApp.Aria2;
-using DFApp.Configuration;
+using DFApp.Web.Data.Configuration;
 using DFApp.Web.Hubs;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Hosting;

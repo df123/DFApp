@@ -21,11 +21,11 @@ namespace DFApp.Lottery
         /// <summary>
         /// 彩票球类型
         /// </summary>
-        public required LotteryBallType BallType { get; set; }
+        public LotteryBallType BallType { get; set; }
         /// <summary>
         /// 彩票类型
         /// </summary>
-        public required LotteryGameType GameType { get; set; }
+        public LotteryGameType GameType { get; set; }
         /// <summary>
         /// 分组ID
         /// </summary>

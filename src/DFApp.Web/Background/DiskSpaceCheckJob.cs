@@ -1,4 +1,5 @@
 using DFApp.Rss;
+using DFApp.Web.Services.Rss;
 using Microsoft.Extensions.Logging;
 using Quartz;
 using System;

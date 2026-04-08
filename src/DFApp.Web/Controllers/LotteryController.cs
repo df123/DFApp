@@ -1,14 +1,14 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using DFApp.Lottery;
-using DFApp.Lottery.Consts;
-using DFApp.Lottery.Statistics;
 using DFApp.Web.Data;
+using DFApp.Web.DTOs;
 using DFApp.Web.DTOs.Lottery;
+using DFApp.Web.DTOs.Lottery.Consts;
+using DFApp.Web.DTOs.Lottery.Statistics;
 using DFApp.Web.Permissions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Volo.Abp.Application.Dtos;
 using CreateUpdateLotteryDto = DFApp.Web.DTOs.Lottery.CreateUpdateLotteryDto;
 using LotteryDto = DFApp.Web.DTOs.Lottery.LotteryDto;
 using LotteryService = DFApp.Web.Services.Lottery.LotteryService;

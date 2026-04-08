@@ -1,4 +1,5 @@
-﻿using SqlSugar;
+﻿using System;
+using SqlSugar;
 using DFApp.Web.Domain;
 
 namespace DFApp.IP
@@ -6,7 +7,7 @@ namespace DFApp.IP
     [SugarTable("DynamicIP")]
     public class DynamicIP : AuditedEntity<Guid>
     {
-        public required string IP { get; set; }
-        public required string Port { get; set; }
+        public string IP { get; set; }
+        public string Port { get; set; }
     }
 }

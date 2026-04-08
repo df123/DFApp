@@ -37,8 +37,9 @@ public class User : AuditedEntity<Guid>
     /// <summary>
     /// 构造函数
     /// </summary>
-    public User(Guid id, string userName, string email) : base(id)
+    public User(Guid id, string userName, string email)
     {
+        Id = id;
         UserName = userName;
         Email = email;
     }

@@ -2,7 +2,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
-using DFApp.LogViewer.Dtos;
+using DFApp.Web.DTOs.LogViewer;
 using DFApp.Web.Data;
 using DFApp.Web.Permissions;
 using Microsoft.AspNetCore.Authorization;

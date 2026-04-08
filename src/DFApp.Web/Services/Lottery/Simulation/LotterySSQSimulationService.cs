@@ -3,13 +3,15 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using DFApp.Lottery;
-using DFApp.Lottery.Simulation.SSQ;
 using DFApp.Web.Data;
 using DFApp.Web.Domain;
+using DFApp.Web.DTOs;
+using DFApp.Web.DTOs.Lottery;
+using DFApp.Web.DTOs.Lottery.Simulation;
+using DFApp.Web.DTOs.Lottery.Simulation.SSQ;
 using DFApp.Web.Infrastructure;
 using DFApp.Web.Mapping;
 using DFApp.Web.Permissions;
-using Volo.Abp.Application.Dtos;
 
 namespace DFApp.Web.Services.Lottery.Simulation;
 
@@ -264,7 +266,7 @@ public class LotterySSQSimulationService : CrudServiceBase<LotterySimulation, Gu
     /// </summary>
     protected override LotterySimulationDto MapToGetOutputDto(LotterySimulation entity)
     {
-        return _mapper.MapToExternalSSQDto(entity);
+        return _mapper.MapToSSQDto(entity);
     }
 
     /// <summary>
@@ -272,7 +274,7 @@ public class LotterySSQSimulationService : CrudServiceBase<LotterySimulation, Gu
     /// </summary>
     protected override LotterySimulation MapToEntity(CreateUpdateLotterySimulationDto input)
     {
-        return _mapper.MapToEntityFromExternalSSQ(input);
+        return _mapper.MapToEntityFromSSQ(input);
     }
 
     /// <summary>
@@ -280,6 +282,6 @@ public class LotterySSQSimulationService : CrudServiceBase<LotterySimulation, Gu
     /// </summary>
     protected override void MapToEntity(CreateUpdateLotterySimulationDto input, LotterySimulation entity)
     {
-        _mapper.MapToEntityFromExternalSSQ(input, entity);
+        _mapper.MapToEntityFromSSQ(input, entity);
     }
 }

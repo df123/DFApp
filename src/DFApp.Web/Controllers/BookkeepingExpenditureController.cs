@@ -1,18 +1,17 @@
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using DFApp.Bookkeeping.Expenditure;
-using DFApp.Bookkeeping.Expenditure.Analysis;
+using DFApp.Bookkeeping;
 using DFApp.Web.Data;
+using DFApp.Web.DTOs.Bookkeeping;
+using DFApp.Web.Infrastructure;
 using DFApp.Web.Permissions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using BookkeepingExpenditureService = DFApp.Web.Services.Bookkeeping.BookkeepingExpenditureService;
-using CreateUpdateBookkeepingExpenditureDto = DFApp.Web.DTOs.Bookkeeping.CreateUpdateBookkeepingExpenditureDto;
-using BookkeepingExpenditureDto = DFApp.Web.DTOs.Bookkeeping.BookkeepingExpenditureDto;
-using BookkeepingCategoryLookupDto = DFApp.Web.DTOs.Bookkeeping.BookkeepingCategoryLookupDto;
-using MonthlyExpenditureDto = DFApp.Bookkeeping.Expenditure.MonthlyExpenditureDto;
-using DFApp.Web.Infrastructure;
+using CompareType = DFApp.Bookkeeping.CompareType;
+using NumberType = DFApp.Bookkeeping.NumberType;
+using MonthlyExpenditureDto = DFApp.Web.DTOs.Bookkeeping.MonthlyExpenditureDto;
 
 namespace DFApp.Web.Controllers;
 

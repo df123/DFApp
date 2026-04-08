@@ -3,13 +3,15 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using DFApp.Lottery;
-using DFApp.Lottery.Simulation.KL8;
 using DFApp.Web.Data;
 using DFApp.Web.Domain;
+using DFApp.Web.DTOs;
+using DFApp.Web.DTOs.Lottery;
+using DFApp.Web.DTOs.Lottery.Simulation;
+using DFApp.Web.DTOs.Lottery.Simulation.KL8;
 using DFApp.Web.Infrastructure;
 using DFApp.Web.Mapping;
 using DFApp.Web.Permissions;
-using Volo.Abp.Application.Dtos;
 using SqlSugar;
 
 namespace DFApp.Web.Services.Lottery.Simulation;
@@ -250,7 +252,7 @@ public class LotteryKL8SimulationService : CrudServiceBase<LotterySimulation, Gu
     /// </summary>
     protected override LotterySimulationDto MapToGetOutputDto(LotterySimulation entity)
     {
-        return _mapper.MapToExternalKL8Dto(entity);
+        return _mapper.MapToKL8Dto(entity);
     }
 
     /// <summary>
@@ -258,7 +260,7 @@ public class LotteryKL8SimulationService : CrudServiceBase<LotterySimulation, Gu
     /// </summary>
     protected override LotterySimulation MapToEntity(CreateUpdateLotterySimulationDto input)
     {
-        return _mapper.MapToEntityFromExternalKL8(input);
+        return _mapper.MapToEntityFromKL8(input);
     }
 
     /// <summary>
@@ -266,6 +268,6 @@ public class LotteryKL8SimulationService : CrudServiceBase<LotterySimulation, Gu
     /// </summary>
     protected override void MapToEntity(CreateUpdateLotterySimulationDto input, LotterySimulation entity)
     {
-        _mapper.MapToEntityFromExternalKL8(input, entity);
+        _mapper.MapToEntityFromKL8(input, entity);
     }
 }

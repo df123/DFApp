@@ -2,12 +2,12 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using DFApp.Permissions;
 using DFApp.Rss;
 using DFApp.Web.Data;
+using DFApp.Web.DTOs;
+using DFApp.Web.DTOs.Rss;
 using DFApp.Web.Infrastructure;
 using DFApp.Web.Permissions;
-using DFApp.Web.DTOs;
 using Microsoft.Extensions.Logging;
 using SqlSugar;
 
@@ -86,7 +86,17 @@ public class RssWordSegmentAppService : AppServiceBase
         // 排序
         if (!string.IsNullOrWhiteSpace(input.Sorting))
         {
-            queryable = queryable.OrderBy(input.Sorting);
+            var sorting = input.Sorting.Trim();
+            var isDescending = sorting.EndsWith(" DESC", StringComparison.OrdinalIgnoreCase);
+            var propertyName = isDescending ? sorting[..^5].Trim() : sorting;
+
+            queryable = propertyName.ToUpperInvariant() switch
+            {
+                "WORD" => isDescending ? queryable.OrderByDescending(x => x.Word) : queryable.OrderBy(x => x.Word),
+                "COUNT" => isDescending ? queryable.OrderByDescending(x => x.Count) : queryable.OrderBy(x => x.Count),
+                "CREATIONTIME" => isDescending ? queryable.OrderByDescending(x => x.CreationTime) : queryable.OrderBy(x => x.CreationTime),
+                _ => queryable.OrderByDescending(x => x.CreationTime)
+            };
         }
         else
         {
@@ -172,7 +182,17 @@ public class RssWordSegmentAppService : AppServiceBase
         // 排序
         if (!string.IsNullOrWhiteSpace(input.Sorting))
         {
-            statisticsQuery = statisticsQuery.OrderBy(input.Sorting);
+            var sorting = input.Sorting.Trim();
+            var isDescending = sorting.EndsWith(" DESC", StringComparison.OrdinalIgnoreCase);
+            var propertyName = isDescending ? sorting[..^5].Trim() : sorting;
+
+            statisticsQuery = propertyName.ToUpperInvariant() switch
+            {
+                "WORD" => isDescending ? statisticsQuery.OrderByDescending(x => x.Word) : statisticsQuery.OrderBy(x => x.Word),
+                "TOTALCOUNT" => isDescending ? statisticsQuery.OrderByDescending(x => x.TotalCount) : statisticsQuery.OrderBy(x => x.TotalCount),
+                "ITEMCOUNT" => isDescending ? statisticsQuery.OrderByDescending(x => x.ItemCount) : statisticsQuery.OrderBy(x => x.ItemCount),
+                _ => statisticsQuery.OrderByDescending(x => x.TotalCount)
+            };
         }
         else
         {

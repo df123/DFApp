@@ -4,9 +4,8 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Threading.Tasks;
 using DFApp.Bookkeeping;
-using DFApp.Bookkeeping.Expenditure;
-using DFApp.Bookkeeping.Expenditure.Analysis;
 using DFApp.Web.Data;
+using DFApp.Web.DTOs.Bookkeeping;
 using DFApp.Web.Infrastructure;
 using DFApp.Web.Mapping;
 using DFApp.Web.Permissions;
@@ -14,6 +13,8 @@ using BookkeepingExpenditureDto = DFApp.Web.DTOs.Bookkeeping.BookkeepingExpendit
 using CreateUpdateBookkeepingExpenditureDto = DFApp.Web.DTOs.Bookkeeping.CreateUpdateBookkeepingExpenditureDto;
 using BookkeepingCategoryLookupDto = DFApp.Web.DTOs.Bookkeeping.BookkeepingCategoryLookupDto;
 using BookkeepingCategoryDto = DFApp.Web.DTOs.Bookkeeping.BookkeepingCategoryDto;
+using CompareType = DFApp.Bookkeeping.CompareType;
+using NumberType = DFApp.Bookkeeping.NumberType;
 
 namespace DFApp.Web.Services.Bookkeeping;
 
@@ -258,8 +259,13 @@ public class BookkeepingExpenditureService : CrudServiceBase<
 
         if (isBelongToSelf.HasValue)
         {
-            var combined = expression.And(x => x.IsBelongToSelf == isBelongToSelf.Value);
-            return combined;
+            var isSelf = isBelongToSelf.Value;
+            var parameter = expression.Parameters[0];
+            var selfCondition = Expression.Equal(
+                Expression.Property(parameter, nameof(BookkeepingExpenditure.IsBelongToSelf)),
+                Expression.Constant(isSelf, typeof(bool)));
+            var combinedBody = Expression.AndAlso(expression.Body, selfCondition);
+            expression = Expression.Lambda<Func<BookkeepingExpenditure, bool>>(combinedBody, parameter);
         }
 
         return expression;

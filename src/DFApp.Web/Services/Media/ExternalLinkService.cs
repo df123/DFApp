@@ -7,16 +7,15 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using DFApp.Background;
-using DFApp.Helper;
+// MediaBackgroudConst 已迁移到 Domain/Media/MediaConst.cs
 using DFApp.Media;
-using DFApp.Media.ExternalLink;
-using DFApp.Queue;
 using DFApp.Web.Data;
 using DFApp.Web.Data.Configuration;
+using DFApp.Web.DTOs.Media;
 using DFApp.Web.Infrastructure;
 using DFApp.Web.Mapping;
 using DFApp.Web.Permissions;
+using DFApp.Web.Queue;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace DFApp.Web.Services.Media;
@@ -162,7 +161,7 @@ public class ExternalLinkService : CrudServiceBase<
 
             if (File.Exists(zipPhotoPathName))
             {
-                temp.Add(await mediaInfoRepository.InsertAsync(new MediaInfo
+                var zipMediaInfo = new MediaInfo
                 {
                     MediaId = Random.Shared.NextInt64(),
                     ChatId = Random.Shared.NextInt64(),
@@ -172,7 +171,9 @@ public class ExternalLinkService : CrudServiceBase<
                     MimeType = "zip",
                     IsExternalLinkGenerated = true,
                     IsDownloadCompleted = true,
-                }));
+                };
+                await mediaInfoRepository.InsertAsync(zipMediaInfo);
+                temp.Add(zipMediaInfo);
             }
 
             if (temp != null && temp.Count > 0)

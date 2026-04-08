@@ -1,12 +1,11 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using DFApp.FileFilter;
 using DFApp.Web.Data;
+using DFApp.Web.DTOs.FileFilter;
+using DFApp.Web.Infrastructure;
 using DFApp.Web.Permissions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using CreateUpdateKeywordFilterRuleDto = DFApp.FileFilter.CreateUpdateKeywordFilterRuleDto;
-using DFApp.Web.Infrastructure;
 
 namespace DFApp.Web.Controllers;
 

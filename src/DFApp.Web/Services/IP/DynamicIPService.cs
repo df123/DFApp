@@ -5,6 +5,8 @@ using DFApp.Web.Data;
 using DFApp.Web.Infrastructure;
 using DFApp.Web.Mapping;
 using DFApp.Web.Permissions;
+using DynamicIPDto = DFApp.Web.DTOs.IP.DynamicIPDto;
+using CreateUpdateDynamicIPDto = DFApp.Web.DTOs.IP.CreateUpdateDynamicIPDto;
 
 namespace DFApp.Web.Services.IP;
 

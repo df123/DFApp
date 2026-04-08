@@ -1,6 +1,7 @@
 using System.Threading.Tasks;
 using DFApp.Bookkeeping;
 using DFApp.Web.Data;
+using DFApp.Web.Data.Bookkeeping;
 using DFApp.Web.DTOs.Bookkeeping;
 using DFApp.Web.Infrastructure;
 using DFApp.Web.Mapping;

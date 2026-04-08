@@ -1,5 +1,6 @@
 using DFApp.Configuration;
-using DFApp.FileUploadDownload;
+using DFApp.Web.DTOs.Configuration;
+using DFApp.Web.DTOs.FileUploadDownload;
 using Riok.Mapperly.Abstractions;
 
 namespace DFApp.Web.Mapping;

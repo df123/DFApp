@@ -7,7 +7,7 @@ namespace DFApp.Media
     /// 媒体外链媒体ID
     /// </summary>
     [SugarTable("MediaExternalLinkMediaIds")]
-    public class MediaExternalLinkMediaIds : Entity<long>
+    public class MediaExternalLinkMediaIds : EntityBase<long>
     {
         /// <summary>
         /// 媒体ID

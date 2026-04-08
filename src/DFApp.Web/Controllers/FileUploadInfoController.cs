@@ -2,18 +2,18 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
-using DFApp.Helper;
 using DFApp.Web.Data;
 using DFApp.Web.DTOs.FileUploadDownload;
+using DFApp.Web.Infrastructure;
 using DFApp.Web.Permissions;
 using DFApp.Web.Services.FileUploadDownload;
+using DFApp.Web.Utilities;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.StaticFiles;
 
-using CreateUpdateFileUploadInfoInput = DFApp.FileUploadDownload.CreateUpdateFileUploadInfoDto;
-using DFApp.Web.Infrastructure;
+using CreateUpdateFileUploadInfoInput = DFApp.Web.DTOs.FileUploadDownload.CreateUpdateFileUploadInfoDto;
 
 namespace DFApp.Web.Controllers;
 

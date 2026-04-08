@@ -2,11 +2,14 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using DFApp.Configuration;
-using DFApp.Helper;
 using DFApp.Web.Data;
+using DFApp.Web.Data.Configuration;
+using DFApp.Web.DTOs.Configuration;
 using DFApp.Web.Infrastructure;
 using DFApp.Web.Mapping;
 using DFApp.Web.Permissions;
+using ConfigurationInfoDto = DFApp.Web.DTOs.Configuration.ConfigurationInfoDto;
+using CreateUpdateConfigurationInfoDto = DFApp.Web.DTOs.Configuration.CreateUpdateConfigurationInfoDto;
 
 namespace DFApp.Web.Services.Configuration;
 

@@ -1,10 +1,11 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using DFApp.Aria2;
 using DFApp.Web.Data;
+using DFApp.Web.Infrastructure;
 using DFApp.Web.Permissions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using DFApp.Web.Infrastructure;
 
 namespace DFApp.Web.Controllers;
 
@@ -138,7 +139,7 @@ public class Aria2ManageController : DFAppControllerBase
     /// <param name="input">下载请求</param>
     [HttpPost("add-uri")]
     [Permission(DFAppPermissions.Aria2.Default)]
-    public async Task<IActionResult> AddUriAsync([FromBody] DFApp.Aria2.AddDownloadRequestDto input)
+    public async Task<IActionResult> AddUriAsync([FromBody] AddDownloadRequestDto input)
     {
         var result = await _aria2ManageService.AddUriAsync(input);
         return Success(result);
@@ -150,7 +151,7 @@ public class Aria2ManageController : DFAppControllerBase
     /// <param name="input">批量下载请求</param>
     [HttpPost("batch-add-uri")]
     [Permission(DFAppPermissions.Aria2.Default)]
-    public async Task<IActionResult> BatchAddUriAsync([FromBody] DFApp.Aria2.BatchAddUriRequestDto input)
+    public async Task<IActionResult> BatchAddUriAsync([FromBody] BatchAddUriRequestDto input)
     {
         var result = await _aria2ManageService.BatchAddUriAsync(input);
         return Success(result);
@@ -162,7 +163,7 @@ public class Aria2ManageController : DFAppControllerBase
     /// <param name="input">种子文件下载请求</param>
     [HttpPost("add-torrent")]
     [Permission(DFAppPermissions.Aria2.Default)]
-    public async Task<IActionResult> AddTorrentAsync([FromBody] DFApp.Aria2.AddTorrentRequestDto input)
+    public async Task<IActionResult> AddTorrentAsync([FromBody] AddTorrentRequestDto input)
     {
         var result = await _aria2ManageService.AddTorrentAsync(input);
         return Success(result);
@@ -174,7 +175,7 @@ public class Aria2ManageController : DFAppControllerBase
     /// <param name="input">批量种子文件下载请求</param>
     [HttpPost("batch-add-torrent")]
     [Permission(DFAppPermissions.Aria2.Default)]
-    public async Task<IActionResult> BatchAddTorrentAsync([FromBody] DFApp.Aria2.BatchAddTorrentRequestDto input)
+    public async Task<IActionResult> BatchAddTorrentAsync([FromBody] BatchAddTorrentRequestDto input)
     {
         var result = await _aria2ManageService.BatchAddTorrentAsync(input);
         return Success(result);
@@ -186,7 +187,7 @@ public class Aria2ManageController : DFAppControllerBase
     /// <param name="input">暂停任务请求</param>
     [HttpPost("pause")]
     [Permission(DFAppPermissions.Aria2.Default)]
-    public async Task<IActionResult> PauseTasksAsync([FromBody] DFApp.Aria2.PauseTasksRequestDto input)
+    public async Task<IActionResult> PauseTasksAsync([FromBody] PauseTasksRequestDto input)
     {
         var result = await _aria2ManageService.PauseTasksAsync(input);
         return Success(result);
@@ -209,7 +210,7 @@ public class Aria2ManageController : DFAppControllerBase
     /// <param name="input">恢复任务请求</param>
     [HttpPost("unpause")]
     [Permission(DFAppPermissions.Aria2.Default)]
-    public async Task<IActionResult> UnpauseTasksAsync([FromBody] DFApp.Aria2.PauseTasksRequestDto input)
+    public async Task<IActionResult> UnpauseTasksAsync([FromBody] PauseTasksRequestDto input)
     {
         var result = await _aria2ManageService.UnpauseTasksAsync(input);
         return Success(result);
@@ -232,7 +233,7 @@ public class Aria2ManageController : DFAppControllerBase
     /// <param name="input">停止任务请求</param>
     [HttpPost("stop")]
     [Permission(DFAppPermissions.Aria2.Default)]
-    public async Task<IActionResult> StopTasksAsync([FromBody] DFApp.Aria2.StopTasksRequestDto input)
+    public async Task<IActionResult> StopTasksAsync([FromBody] StopTasksRequestDto input)
     {
         var result = await _aria2ManageService.StopTasksAsync(input);
         return Success(result);
@@ -244,7 +245,7 @@ public class Aria2ManageController : DFAppControllerBase
     /// <param name="input">删除任务请求</param>
     [HttpPost("remove")]
     [Permission(DFAppPermissions.Aria2.Default)]
-    public async Task<IActionResult> RemoveTasksAsync([FromBody] DFApp.Aria2.RemoveTasksRequestDto input)
+    public async Task<IActionResult> RemoveTasksAsync([FromBody] RemoveTasksRequestDto input)
     {
         var result = await _aria2ManageService.RemoveTasksAsync(input);
         return Success(result);
