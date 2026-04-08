@@ -21,6 +21,7 @@ using DFApp.Web.Permissions;
 using DFApp.Web.Queue;
 using DFApp.Web.Background;
 using DFApp.Web.Services.ElectricVehicle;
+using DFApp.Aria2;
 
 namespace DFApp.Web;
 
@@ -87,14 +88,22 @@ public class Program
 
             // 配置 HttpClient
             builder.Services.AddHttpClient();
+            builder.Services.AddHttpClient<Aria2RpcClient>();
+
+            // 注册 Aria2 管理器（单例，维护请求历史记录）
+            builder.Services.AddSingleton<Aria2Manager>();
 
             // 配置后台任务队列
             builder.Services.AddSingleton<IBackgroundTaskQueue, BackgroundTaskQueue>();
+            builder.Services.AddSingleton<IQueueManagement, QueueManagement>();
             builder.Services.AddHostedService<BackgroundQueueHostedService>();
 
             // 配置后台服务
             builder.Services.AddHostedService<Aria2BackgroundWorker>();
             builder.Services.AddHostedService<ListenTelegramService>();
+
+            // 配置应用服务
+            builder.Services.AddScoped<DFApp.Web.Services.TG.TGLoginService>();
             builder.Services.AddHostedService<Web.Background.Aria2MonitorWorker>();
 
             // 配置 CORS

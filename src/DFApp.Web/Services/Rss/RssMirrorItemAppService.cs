@@ -227,21 +227,19 @@ public class RssMirrorItemAppService : AppServiceBase
             wordSegmentQueryable = wordSegmentQueryable.Where(x => x.LanguageType == languageType.Value);
         }
 
-        // 在内存中执行分组统计
-        var allSegments = await wordSegmentQueryable.ToListAsync();
-
-        var statistics = allSegments
+        // 在数据库层面执行分组统计
+        var statistics = await wordSegmentQueryable
             .GroupBy(x => x.Word.ToLower())
             .Select(g => new WordSegmentStatisticsDto
             {
-                Word = g.First().Word,
-                TotalCount = g.Sum(x => x.Count),
-                ItemCount = g.Select(x => x.RssMirrorItemId).Distinct().Count(),
-                LanguageType = g.First().LanguageType
+                Word = SqlFunc.AggregateMin(g.Word),
+                TotalCount = SqlFunc.AggregateSum(g.Count),
+                ItemCount = SqlFunc.AggregateDistinctCount(g.RssMirrorItemId),
+                LanguageType = SqlFunc.AggregateMin(g.LanguageType)
             })
             .OrderByDescending(x => x.TotalCount)
             .Take(top)
-            .ToList();
+            .ToListAsync();
 
         return statistics;
     }

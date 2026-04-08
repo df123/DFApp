@@ -38,53 +38,53 @@ namespace DFApp.Lottery
     public enum LotteryKL8PlayType
     {
         /// <summary>
-        /// 选1个号码
+        /// 选一
         /// </summary>
-        Pick1 = 1,
+        Select1 = 1,
 
         /// <summary>
-        /// 选2个号码
+        /// 选二
         /// </summary>
-        Pick2 = 2,
+        Select2 = 2,
 
         /// <summary>
-        /// 选3个号码
+        /// 选三
         /// </summary>
-        Pick3 = 3,
+        Select3 = 3,
 
         /// <summary>
-        /// 选4个号码
+        /// 选四
         /// </summary>
-        Pick4 = 4,
+        Select4 = 4,
 
         /// <summary>
-        /// 选5个号码
+        /// 选五
         /// </summary>
-        Pick5 = 5,
+        Select5 = 5,
 
         /// <summary>
-        /// 选6个号码
+        /// 选六
         /// </summary>
-        Pick6 = 6,
+        Select6 = 6,
 
         /// <summary>
-        /// 选7个号码
+        /// 选七
         /// </summary>
-        Pick7 = 7,
+        Select7 = 7,
 
         /// <summary>
-        /// 选8个号码
+        /// 选八
         /// </summary>
-        Pick8 = 8,
+        Select8 = 8,
 
         /// <summary>
-        /// 选9个号码
+        /// 选九
         /// </summary>
-        Pick9 = 9,
+        Select9 = 9,
 
         /// <summary>
-        /// 选10个号码
+        /// 选十
         /// </summary>
-        Pick10 = 10
+        Select10 = 10
     }
 }

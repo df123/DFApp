@@ -15,9 +15,11 @@
 	</ItemGroup>
 
 	<ItemGroup>
+		<PackageReference Include="BencodeNET" Version="5.0.0" />
 		<PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="10.0.0" />
 		<PackageReference Include="Serilog.AspNetCore" Version="9.0.0" />
 		<PackageReference Include="Serilog.Sinks.Async" Version="2.1.0" />
+		<PackageReference Include="System.Linq.Dynamic.Core" Version="1.7.2" />
 	</ItemGroup>
 
 	<ItemGroup>

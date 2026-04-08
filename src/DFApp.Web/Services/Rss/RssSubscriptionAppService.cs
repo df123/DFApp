@@ -179,7 +179,28 @@ public class RssSubscriptionAppService : AppServiceBase
         MapToEntity(input, subscription);
         subscription.LastModificationTime = DateTime.Now;
 
-        await _rssSubscriptionRepository.UpdateAsync(subscription);
+        try
+        {
+            await _rssSubscriptionRepository.UpdateAsync(subscription);
+        }
+        catch (SqlSugarException ex)
+        {
+            _logger.LogWarning("更新RSS订阅时发生并发冲突，重新获取实体后重试: {Name}, 异常: {Message}",
+                input.Name, ex.Message);
+
+            // 等待一小段时间，确保获取到最新数据
+            await Task.Delay(100);
+
+            subscription = await _rssSubscriptionRepository.GetByIdAsync(id);
+            EnsureEntityExists(subscription, id);
+            _logger.LogInformation("重试获取到的实体，最后修改时间: {Time}",
+                subscription.LastModificationTime);
+
+            MapToEntity(input, subscription);
+            subscription.LastModificationTime = DateTime.Now;
+
+            await _rssSubscriptionRepository.UpdateAsync(subscription);
+        }
 
         _logger.LogInformation("更新RSS订阅成功: {Name}", input.Name);
 
@@ -209,7 +230,25 @@ public class RssSubscriptionAppService : AppServiceBase
         subscription.IsEnabled = !subscription.IsEnabled;
         subscription.LastModificationTime = DateTime.Now;
 
-        await _rssSubscriptionRepository.UpdateAsync(subscription);
+        try
+        {
+            await _rssSubscriptionRepository.UpdateAsync(subscription);
+        }
+        catch (SqlSugarException)
+        {
+            _logger.LogWarning("切换订阅状态时发生并发冲突，重新获取实体后重试: {Name}", subscription.Name);
+
+            // 等待一小段时间，确保获取到最新数据
+            await Task.Delay(100);
+
+            subscription = await _rssSubscriptionRepository.GetByIdAsync(id);
+            EnsureEntityExists(subscription, id);
+
+            subscription.IsEnabled = !subscription.IsEnabled;
+            subscription.LastModificationTime = DateTime.Now;
+
+            await _rssSubscriptionRepository.UpdateAsync(subscription);
+        }
 
         _logger.LogInformation("{Action} RSS订阅: {Name}",
             subscription.IsEnabled ? "启用" : "禁用", subscription.Name);

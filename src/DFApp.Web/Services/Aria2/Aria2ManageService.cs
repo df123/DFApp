@@ -19,7 +19,6 @@ namespace DFApp.Web.Services.Aria2;
 /// </summary>
 public class Aria2ManageService : AppServiceBase
 {
-    // TODO: Aria2RpcClient 未迁移，暂时使用伪代码替代
     private readonly Aria2RpcClient _aria2Client;
     private readonly IConfigurationInfoRepository _configurationInfoRepository;
     private readonly HttpClient _httpClient;

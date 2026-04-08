@@ -1,4 +1,6 @@
+using System.ComponentModel.DataAnnotations;
 using DFApp.Lottery;
+using DFApp.Web.DTOs.Lottery.Validation;
 
 namespace DFApp.Web.DTOs.Lottery.Simulation
 {
@@ -15,8 +17,10 @@ namespace DFApp.Web.DTOs.Lottery.Simulation
         }
 
         /// <summary>
-        /// 期号
+        /// 期号（格式：yyyyxxx，例如：2023001）
         /// </summary>
+        [Required]
+        [TermNumberFormat]
         public int TermNumber { get; set; }
 
         /// <summary>

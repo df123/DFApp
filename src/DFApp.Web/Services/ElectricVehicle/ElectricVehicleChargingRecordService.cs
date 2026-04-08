@@ -202,30 +202,41 @@ public class ElectricVehicleChargingRecordService : CrudServiceBase<
     /// <param name="energy">充电量</param>
     private async Task CreateOrUpdateCostRecordAsync(Guid chargingRecordId, DateTime chargingDate, decimal amount, Guid vehicleId, decimal? energy)
     {
-        var query = _costRepository.GetQueryable();
-        var existingCost = await _costRepository.GetFirstOrDefaultAsync(
-            c => c.Remark != null && c.Remark.Contains($"ChargingRecord:{chargingRecordId}"));
+        // 使用独立事务确保成本记录操作的原子性
+        _costRepository.BeginTran();
+        try
+        {
+            var existingCost = await _costRepository.GetFirstOrDefaultAsync(
+                c => c.Remark != null && c.Remark.Contains($"ChargingRecord:{chargingRecordId}"));
 
-        if (existingCost != null)
-        {
-            existingCost.CostDate = chargingDate;
-            existingCost.Amount = amount;
-            existingCost.VehicleId = vehicleId;
-            existingCost.Remark = $"ChargingRecord:{chargingRecordId}|充电：{energy?.ToString("0.0")}kWh";
-            await _costRepository.UpdateAsync(existingCost);
-        }
-        else
-        {
-            var cost = new ElectricVehicleCost
+            if (existingCost != null)
             {
-                VehicleId = vehicleId,
-                CostType = CostType.Charging,
-                CostDate = chargingDate,
-                Amount = amount,
-                IsBelongToSelf = true,
-                Remark = $"ChargingRecord:{chargingRecordId}|充电：{energy?.ToString("0.0")}kWh"
-            };
-            await _costRepository.InsertAsync(cost);
+                existingCost.CostDate = chargingDate;
+                existingCost.Amount = amount;
+                existingCost.VehicleId = vehicleId;
+                existingCost.Remark = $"ChargingRecord:{chargingRecordId}|充电：{energy?.ToString("0.0")}kWh";
+                await _costRepository.UpdateAsync(existingCost);
+            }
+            else
+            {
+                var cost = new ElectricVehicleCost
+                {
+                    VehicleId = vehicleId,
+                    CostType = CostType.Charging,
+                    CostDate = chargingDate,
+                    Amount = amount,
+                    IsBelongToSelf = true,
+                    Remark = $"ChargingRecord:{chargingRecordId}|充电：{energy?.ToString("0.0")}kWh"
+                };
+                await _costRepository.InsertAsync(cost);
+            }
+
+            _costRepository.CommitTran();
+        }
+        catch (Exception)
+        {
+            _costRepository.RollbackTran();
+            throw;
         }
     }
 
@@ -235,11 +246,23 @@ public class ElectricVehicleChargingRecordService : CrudServiceBase<
     /// <param name="chargingRecordId">充电记录 ID</param>
     private async Task DeleteRelatedCostRecordAsync(Guid chargingRecordId)
     {
-        var cost = await _costRepository.GetFirstOrDefaultAsync(
-            c => c.Remark != null && c.Remark.Contains($"ChargingRecord:{chargingRecordId}"));
-        if (cost != null)
+        // 使用独立事务确保删除操作的原子性
+        _costRepository.BeginTran();
+        try
         {
-            await _costRepository.DeleteAsync(cost);
+            var cost = await _costRepository.GetFirstOrDefaultAsync(
+                c => c.Remark != null && c.Remark.Contains($"ChargingRecord:{chargingRecordId}"));
+            if (cost != null)
+            {
+                await _costRepository.DeleteAsync(cost);
+            }
+
+            _costRepository.CommitTran();
+        }
+        catch (Exception)
+        {
+            _costRepository.RollbackTran();
+            throw;
         }
     }
 
@@ -250,11 +273,23 @@ public class ElectricVehicleChargingRecordService : CrudServiceBase<
     /// <param name="mileage">当前里程</param>
     private async Task UpdateVehicleTotalMileageAsync(Guid vehicleId, decimal mileage)
     {
-        var vehicle = await _vehicleRepository.GetByIdAsync(vehicleId);
-        if (vehicle != null)
+        // 使用独立事务确保里程更新操作的原子性
+        _vehicleRepository.BeginTran();
+        try
         {
-            vehicle.TotalMileage = mileage;
-            await _vehicleRepository.UpdateAsync(vehicle);
+            var vehicle = await _vehicleRepository.GetByIdAsync(vehicleId);
+            if (vehicle != null)
+            {
+                vehicle.TotalMileage = mileage;
+                await _vehicleRepository.UpdateAsync(vehicle);
+            }
+
+            _vehicleRepository.CommitTran();
+        }
+        catch (Exception)
+        {
+            _vehicleRepository.RollbackTran();
+            throw;
         }
     }
 

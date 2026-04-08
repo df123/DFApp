@@ -29,7 +29,7 @@ namespace DFApp.Web.Services.Account;
 /// <summary>
 /// 账户应用服务
 /// </summary>
-public class AccountAppService : AppServiceBase
+public class AccountAppService
 {
     private readonly ISqlSugarRepository<User, Guid> _userRepository;
     private readonly ISqlSugarRepository<PermissionGrant, Guid> _permissionGrantRepository;
@@ -40,8 +40,6 @@ public class AccountAppService : AppServiceBase
     private readonly ILogger<AccountAppService> _logger;
 
     public AccountAppService(
-        ICurrentUser currentUser,
-        IPermissionChecker permissionChecker,
         ISqlSugarRepository<User, Guid> userRepository,
         ISqlSugarRepository<PermissionGrant, Guid> permissionGrantRepository,
         ISqlSugarRepository<UserRole, Guid> userRoleRepository,
@@ -49,7 +47,6 @@ public class AccountAppService : AppServiceBase
         IMemoryCache cache,
         IPasswordHasher passwordHasher,
         ILogger<AccountAppService> logger)
-        : base(currentUser, permissionChecker)
     {
         _userRepository = userRepository;
         _permissionGrantRepository = permissionGrantRepository;
@@ -96,6 +93,8 @@ public class AccountAppService : AppServiceBase
             if (!result)
             {
                 _logger.LogWarning("登录失败：密码错误");
+                // 递增登录失败次数
+                _cache.Set(cacheKey, attempts + 1, TimeSpan.FromMinutes(15));
                 throw new BusinessException("用户名或密码错误");
             }
 

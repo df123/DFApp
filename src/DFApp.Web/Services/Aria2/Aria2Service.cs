@@ -5,9 +5,8 @@ using System.Linq;
 using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
-// TODO: BencodeNET NuGet 包依赖缺失，暂时注释掉，恢复时需要安装 BencodeNET 包
-// using BencodeNET.Parsing;
-// using BencodeNET.Torrents;
+using BencodeNET.Parsing;
+using BencodeNET.Torrents;
 using DFApp.Aria2;
 using DFApp.Aria2.Request;
 using DFApp.Aria2.Response.TellStatus;
@@ -475,64 +474,59 @@ public class Aria2Service : CrudServiceBase<
     {
         try
         {
-            // TODO: BencodeNET NuGet 包依赖缺失，暂时无法解析 torrent 文件
-            // 恢复时需要取消下方注释并安装 BencodeNET 包
-            _logger.LogWarning("BencodeNET 依赖缺失，无法解析 torrent 文件进行过滤，将下载全部文件");
-            return new List<int>();
+            // 下载 torrent 文件
+            using var httpClient = new HttpClient();
+            var torrentBytes = await httpClient.GetByteArrayAsync(torrentUrl);
 
-            // // 下载 torrent 文件
-            // using var httpClient = new HttpClient();
-            // var torrentBytes = await httpClient.GetByteArrayAsync(torrentUrl);
-            //
-            // // 解析 torrent 文件
-            // using var stream = new MemoryStream(torrentBytes);
-            // var parser = new TorrentParser();
-            // var torrent = parser.Parse(stream);
-            //
-            // // 获取文件列表
-            // var files = torrent.Files;
-            //
-            // // 视频文件扩展名列表
-            // var videoExtensions = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
-            // {
-            //     ".mp4", ".mkv", ".avi", ".mov", ".wmv", ".flv", ".webm",
-            //     ".m4v", ".mpg", ".mpeg", ".3gp", ".ogg", ".ts", ".m2ts",
-            //     ".vob", ".rm", ".rmvb", ".asf", ".divx", ".xvid"
-            // };
-            //
-            // // 查找符合条件的文件索引
-            // var filteredIndices = new List<int>();
-            // for (int i = 0; i < files.Count(); i++)
-            // {
-            //     var file = files[i];
-            //     var fileName = file.FileName;
-            //     var extension = Path.GetExtension(fileName);
-            //
-            //     // 检查 VideoOnly 条件
-            //     if (videoOnly && !videoExtensions.Contains(extension))
-            //     {
-            //         continue;
-            //     }
-            //
-            //     // 检查关键词过滤条件
-            //     if (enableKeywordFilter)
-            //     {
-            //         bool shouldFilter = await _keywordFilterRuleRepository.ShouldFilterFileAsync(fileName);
-            //         if (shouldFilter)
-            //         {
-            //             continue;
-            //         }
-            //     }
-            //
-            //     // 索引从 1 开始（Aria2 的 select-file 使用 1-based 索引）
-            //     filteredIndices.Add(i + 1);
-            // }
-            //
-            // return filteredIndices;
+            // 解析 torrent 文件
+            using var stream = new MemoryStream(torrentBytes);
+            var parser = new TorrentParser();
+            var torrent = parser.Parse(stream);
+
+            // 获取文件列表
+            var files = torrent.Files;
+
+            // 视频文件扩展名列表
+            var videoExtensions = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+            {
+                ".mp4", ".mkv", ".avi", ".mov", ".wmv", ".flv", ".webm",
+                ".m4v", ".mpg", ".mpeg", ".3gp", ".ogg", ".ts", ".m2ts",
+                ".vob", ".rm", ".rmvb", ".asf", ".divx", ".xvid"
+            };
+
+            // 查找符合条件的文件索引
+            var filteredIndices = new List<int>();
+            for (int i = 0; i < files.Count(); i++)
+            {
+                var file = files[i];
+                var fileName = file.FileName;
+                var extension = Path.GetExtension(fileName);
+
+                // 检查 VideoOnly 条件
+                if (videoOnly && !videoExtensions.Contains(extension))
+                {
+                    continue;
+                }
+
+                // 检查关键词过滤条件
+                if (enableKeywordFilter)
+                {
+                    bool shouldFilter = await _keywordFilterRuleRepository.ShouldFilterFileAsync(fileName);
+                    if (shouldFilter)
+                    {
+                        continue;
+                    }
+                }
+
+                // 索引从 1 开始（Aria2 的 select-file 使用 1-based 索引）
+                filteredIndices.Add(i + 1);
+            }
+
+            return filteredIndices;
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "解析torrent文件失败: {TorrentUrl}", torrentUrl);
+            _logger.LogWarning(ex, "解析 torrent 文件失败: {TorrentUrl}", torrentUrl);
             return new List<int>();
         }
     }

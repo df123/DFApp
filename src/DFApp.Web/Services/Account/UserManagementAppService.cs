@@ -38,8 +38,6 @@ public class UserManagementAppService : AppServiceBase
     /// </summary>
     public async Task<PagedResultDto<UserDto>> GetListAsync(GetUserListDto input)
     {
-        await CheckPermissionAsync(DFAppPermissions.UserManagement.Default);
-
         var queryable = _userRepository.GetQueryable();
 
         var totalCount = await queryable.CountAsync();
@@ -69,8 +67,6 @@ public class UserManagementAppService : AppServiceBase
     /// </summary>
     public async Task<UserDto> GetAsync(Guid id)
     {
-        await CheckPermissionAsync(DFAppPermissions.UserManagement.Default);
-
         var user = await _userRepository.GetByIdAsync(id);
         EnsureEntityExists(user, id);
 
@@ -91,8 +87,6 @@ public class UserManagementAppService : AppServiceBase
     /// </summary>
     public async Task<UserDto> CreateAsync(CreateUserDto input)
     {
-        await CheckPermissionAsync(DFAppPermissions.UserManagement.Create);
-
         // 检查用户名是否已存在
         var existingUser = await _userRepository.GetFirstOrDefaultAsync(u => u.UserName == input.UserName);
         if (existingUser != null)
@@ -133,8 +127,6 @@ public class UserManagementAppService : AppServiceBase
     /// </summary>
     public async Task<UserDto> UpdateAsync(Guid id, UpdateUserDto input)
     {
-        await CheckPermissionAsync(DFAppPermissions.UserManagement.Update);
-
         var user = await _userRepository.GetByIdAsync(id);
         EnsureEntityExists(user, id);
 
@@ -175,8 +167,6 @@ public class UserManagementAppService : AppServiceBase
     /// </summary>
     public async Task DeleteAsync(Guid id)
     {
-        await CheckPermissionAsync(DFAppPermissions.UserManagement.Delete);
-
         // 防止删除当前登录用户
         if (CurrentUserId == id)
         {
@@ -191,8 +181,6 @@ public class UserManagementAppService : AppServiceBase
     /// </summary>
     public async Task ChangePasswordAsync(ChangePasswordDto input)
     {
-        await CheckPermissionAsync(DFAppPermissions.UserManagement.ChangePassword);
-
         var user = await _userRepository.GetByIdAsync(input.UserId);
         EnsureEntityExists(user, input.UserId);
 

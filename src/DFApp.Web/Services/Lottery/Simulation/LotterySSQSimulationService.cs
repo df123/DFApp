@@ -12,6 +12,7 @@ using DFApp.Web.DTOs.Lottery.Simulation.SSQ;
 using DFApp.Web.Infrastructure;
 using DFApp.Web.Mapping;
 using DFApp.Web.Permissions;
+using SqlSugar;
 
 namespace DFApp.Web.Services.Lottery.Simulation;
 
@@ -230,35 +231,60 @@ public class LotterySSQSimulationService : CrudServiceBase<LotterySimulation, Gu
 
     /// <summary>
     /// 获取分页列表（按组聚合）
+    /// 使用数据库层面 GroupBy 和分页，避免加载全量数据到内存
     /// </summary>
     public async Task<PagedResultDto<LotterySimulationDto>> GetPagedListAsync(int skipCount, int maxResultCount)
     {
-        // 获取所有双色球模拟数据
-        var allData = await Repository.GetListAsync(x => x.GameType == LotteryGameType.双色球);
+        var queryable = Repository.GetQueryable()
+            .Where(x => x.GameType == LotteryGameType.双色球);
 
-        // 每组7个号码（6红+1蓝），计算总组数
-        var totalCount = allData.Count / 7;
+        // 在数据库层面获取分组总数
+        var totalCount = await queryable
+            .GroupBy(x => new { x.TermNumber, x.GroupId })
+            .CountAsync();
 
-        // 内存中分组
-        var groupedData = allData
-            .GroupBy(x => new { x.TermNumber, x.GroupId, x.GameType })
-            .Select(g => new LotterySimulationDto
-            {
-                TermNumber = g.Key.TermNumber,
-                GroupId = g.Key.GroupId,
-                GameType = g.Key.GameType,
-                RedNumbers = string.Join(",", g.Where(x => x.BallType == LotteryBallType.Red)
-                    .OrderBy(x => x.Number)
-                    .Select(x => x.Number.ToString("D2"))),
-                BlueNumber = g.FirstOrDefault(x => x.BallType == LotteryBallType.Blue)?.Number.ToString("D2")
-            })
-            .OrderByDescending(x => x.TermNumber)
-            .ThenBy(x => x.GroupId)
+        // 在数据库层面分页获取分组键（按期号降序、组号升序排列）
+        var pagedKeys = await queryable
+            .GroupBy(x => new { x.TermNumber, x.GroupId })
+            .OrderBy(x => x.TermNumber, OrderByType.Desc)
+            .OrderBy(x => x.GroupId, OrderByType.Asc)
+            .Select(x => new { x.TermNumber, x.GroupId })
             .Skip(skipCount)
             .Take(maxResultCount)
-            .ToList();
+            .ToListAsync();
 
-        return new PagedResultDto<LotterySimulationDto>(totalCount, groupedData);
+        if (pagedKeys.Count == 0)
+        {
+            return new PagedResultDto<LotterySimulationDto>(totalCount, new List<LotterySimulationDto>());
+        }
+
+        // 只获取分页分组的详细数据，避免加载全量数据
+        var termNumbers = pagedKeys.Select(k => k.TermNumber).Distinct().ToList();
+        var groupIds = pagedKeys.Select(k => k.GroupId).ToList();
+
+        var details = await Repository.GetListAsync(x =>
+            termNumbers.Contains(x.TermNumber) &&
+            groupIds.Contains(x.GroupId) &&
+            x.GameType == LotteryGameType.双色球);
+
+        // 在内存中组装 DTO（仅处理分页后的少量数据）
+        var items = pagedKeys.Select(key =>
+        {
+            var groupDetails = details.Where(d => d.TermNumber == key.TermNumber && d.GroupId == key.GroupId);
+            return new LotterySimulationDto
+            {
+                TermNumber = key.TermNumber,
+                GroupId = key.GroupId,
+                GameType = LotteryGameType.双色球,
+                RedNumbers = string.Join(",", groupDetails
+                    .Where(x => x.BallType == LotteryBallType.Red)
+                    .OrderBy(x => x.Number)
+                    .Select(x => x.Number.ToString("D2"))),
+                BlueNumber = groupDetails.FirstOrDefault(x => x.BallType == LotteryBallType.Blue)?.Number.ToString("D2")
+            };
+        }).ToList();
+
+        return new PagedResultDto<LotterySimulationDto>(totalCount, items);
     }
 
     /// <summary>

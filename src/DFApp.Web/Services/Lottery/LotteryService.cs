@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Linq.Dynamic.Core;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using DFApp.Lottery;
@@ -416,7 +417,7 @@ public class LotteryService : CrudServiceBase<LotteryInfo, long, LotteryDto, Cre
         if (dto.Blues == null)
             throw new BusinessException(nameof(dto.Blues) + " 不能为空");
 
-        if (dto.Blues.Count <= 0 || dto.Reds.Count <= 0 || dto.Period <= 2013000)
+        if (dto.Blues.Count <= 0 || dto.Reds.Count <= 0 || dto.Period <= int.Parse(LotteryConst.SSQ_START_CODE) - 1)
         {
             throw new BusinessException(nameof(dto) + " 参数无效");
         }
@@ -552,20 +553,10 @@ public class LotteryService : CrudServiceBase<LotteryInfo, long, LotteryDto, Cre
     {
         var query = await Repository.GetListAsync();
 
-        // 根据 Sorting 字段排序（仅支持 Id、IndexNo 等简单字段，格式为 "PropertyName" 或 "PropertyName DESC"）
+        // 根据 Sorting 字段动态排序
         if (!string.IsNullOrWhiteSpace(input.Sorting))
         {
-            var sorting = input.Sorting.Trim();
-            var isDescending = sorting.EndsWith(" DESC", StringComparison.OrdinalIgnoreCase);
-            var propertyName = isDescending ? sorting[..^5].Trim() : sorting;
-
-            query = propertyName.ToUpperInvariant() switch
-            {
-                "ID" => isDescending ? query.OrderByDescending(x => x.Id).ToList() : query.OrderBy(x => x.Id).ToList(),
-                "INDEXNO" => isDescending ? query.OrderByDescending(x => x.IndexNo).ToList() : query.OrderBy(x => x.IndexNo).ToList(),
-                "CREATIONTIME" => isDescending ? query.OrderByDescending(x => x.CreationTime).ToList() : query.OrderBy(x => x.CreationTime).ToList(),
-                _ => query.OrderBy(x => x.Id).ToList()
-            };
+            query = query.AsQueryable().OrderBy(input.Sorting).ToList();
         }
         else
         {

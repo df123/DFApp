@@ -117,6 +117,154 @@ public class BookkeepingExpenditureService : CrudServiceBase<
     }
 
     /// <summary>
+    /// 根据 ID 获取实体，包含关联的分类信息
+    /// </summary>
+    /// <param name="id">主键 ID</param>
+    /// <returns>支出 DTO</returns>
+    public override async Task<BookkeepingExpenditureDto> GetAsync(long id)
+    {
+        var entity = await Repository.GetByIdAsync(id);
+        EnsureEntityExists(entity, id);
+
+        var dto = MapToGetOutputDto(entity);
+
+        // 手动查询并填充关联的分类信息
+        var category = await _categoryRepository.GetByIdAsync(entity.CategoryId);
+        if (category != null)
+        {
+            dto.Category = MapCategoryToDto(category);
+        }
+
+        return dto;
+    }
+
+    /// <summary>
+    /// 获取所有实体列表，包含关联的分类信息
+    /// </summary>
+    /// <returns>支出 DTO 列表</returns>
+    public override async Task<List<BookkeepingExpenditureDto>> GetListAsync()
+    {
+        var entities = await Repository.GetListAsync();
+        return await FillCategoryForDtosAsync(entities);
+    }
+
+    /// <summary>
+    /// 根据条件获取实体列表，包含关联的分类信息
+    /// </summary>
+    /// <param name="expression">查询条件</param>
+    /// <returns>支出 DTO 列表</returns>
+    public override async Task<List<BookkeepingExpenditureDto>> GetListAsync(
+        System.Linq.Expressions.Expression<Func<BookkeepingExpenditure, bool>> expression)
+    {
+        var entities = await Repository.GetListAsync(expression);
+        return await FillCategoryForDtosAsync(entities);
+    }
+
+    /// <summary>
+    /// 分页查询，包含关联的分类信息
+    /// </summary>
+    /// <param name="pageIndex">页码（从 1 开始）</param>
+    /// <param name="pageSize">每页大小</param>
+    /// <returns>分页结果</returns>
+    public override async Task<(List<BookkeepingExpenditureDto> Items, int TotalCount)> GetPagedListAsync(
+        int pageIndex, int pageSize)
+    {
+        var (items, totalCount) = await Repository.GetPagedListAsync(pageIndex, pageSize);
+        var dtos = await FillCategoryForDtosAsync(items);
+        return (dtos, totalCount);
+    }
+
+    /// <summary>
+    /// 根据条件分页查询，包含关联的分类信息
+    /// </summary>
+    /// <param name="expression">查询条件</param>
+    /// <param name="pageIndex">页码（从 1 开始）</param>
+    /// <param name="pageSize">每页大小</param>
+    /// <returns>分页结果</returns>
+    public override async Task<(List<BookkeepingExpenditureDto> Items, int TotalCount)> GetPagedListAsync(
+        System.Linq.Expressions.Expression<Func<BookkeepingExpenditure, bool>> expression,
+        int pageIndex, int pageSize)
+    {
+        var (items, totalCount) = await Repository.GetPagedListAsync(expression, pageIndex, pageSize);
+        var dtos = await FillCategoryForDtosAsync(items);
+        return (dtos, totalCount);
+    }
+
+    /// <summary>
+    /// 批量查询分类信息并填充到 DTO 列表中
+    /// </summary>
+    /// <param name="entities">支出实体列表</param>
+    /// <returns>已填充分类信息的 DTO 列表</returns>
+    private async Task<List<BookkeepingExpenditureDto>> FillCategoryForDtosAsync(
+        List<BookkeepingExpenditure> entities)
+    {
+        var categoryIds = entities.Select(x => x.CategoryId).Distinct().ToList();
+        var categories = await _categoryRepository.GetListAsync(x => categoryIds.Contains(x.Id));
+        var categoryMap = categories.ToDictionary(x => x.Id);
+
+        var dtos = new List<BookkeepingExpenditureDto>();
+        foreach (var item in entities)
+        {
+            var dto = MapToGetOutputDto(item);
+            if (categoryMap.TryGetValue(item.CategoryId, out var category))
+            {
+                dto.Category = MapCategoryToDto(category);
+            }
+            dtos.Add(dto);
+        }
+
+        return dtos;
+    }
+
+    /// <summary>
+    /// 创建支出记录，返回包含分类信息的 DTO
+    /// </summary>
+    /// <param name="input">创建输入 DTO</param>
+    /// <returns>支出 DTO</returns>
+    public override async Task<BookkeepingExpenditureDto> CreateAsync(CreateUpdateBookkeepingExpenditureDto input)
+    {
+        var entity = await MapToEntityAsync(input);
+        await Repository.InsertAsync(entity);
+
+        var dto = MapToGetOutputDto(entity);
+
+        // 填充关联的分类信息
+        var category = await _categoryRepository.GetByIdAsync(entity.CategoryId);
+        if (category != null)
+        {
+            dto.Category = MapCategoryToDto(category);
+        }
+
+        return dto;
+    }
+
+    /// <summary>
+    /// 更新支出记录，返回包含分类信息的 DTO
+    /// </summary>
+    /// <param name="id">主键 ID</param>
+    /// <param name="input">更新输入 DTO</param>
+    /// <returns>支出 DTO</returns>
+    public override async Task<BookkeepingExpenditureDto> UpdateAsync(long id, CreateUpdateBookkeepingExpenditureDto input)
+    {
+        var entity = await Repository.GetByIdAsync(id);
+        EnsureEntityExists(entity, id);
+
+        await MapToEntityAsync(input, entity);
+        await Repository.UpdateAsync(entity);
+
+        var dto = MapToGetOutputDto(entity);
+
+        // 填充关联的分类信息
+        var category = await _categoryRepository.GetByIdAsync(entity.CategoryId);
+        if (category != null)
+        {
+            dto.Category = MapCategoryToDto(category);
+        }
+
+        return dto;
+    }
+
+    /// <summary>
     /// 获取分类查找列表
     /// </summary>
     /// <returns>分类查找 DTO 列表</returns>

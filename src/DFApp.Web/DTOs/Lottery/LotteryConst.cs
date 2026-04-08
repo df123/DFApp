@@ -30,12 +30,17 @@ namespace DFApp.Web.DTOs.Lottery
         /// <summary>
         /// 双色球起始期号代码
         /// </summary>
-        public const string SSQ_START_CODE = "2003001";
+        public const string SSQ_START_CODE = "2013001";
 
         /// <summary>
         /// 快乐8起始期号代码
         /// </summary>
-        public const string KL8_STRAT_CODE = "2019001";
+        public const string KL8_STRAT_CODE = "2020001";
+
+        /// <summary>
+        /// 代理服务器配置键
+        /// </summary>
+        public const string LOTTERY_PROXY_URL_KEY = "LotteryProxy:Url";
 
         /// <summary>
         /// 获取彩票代理服务器URL
@@ -44,7 +49,7 @@ namespace DFApp.Web.DTOs.Lottery
         /// <returns>代理服务器地址</returns>
         public static string GetLotteryProxyUrl(IConfiguration configuration)
         {
-            return configuration["LotteryProxy:Url"] ?? "http://localhost:5000";
+            return configuration[LOTTERY_PROXY_URL_KEY] ?? "http://localhost:5000";
         }
     }
 }

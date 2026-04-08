@@ -92,6 +92,35 @@ public static class SpaceHelper
     }
 
     /// <summary>
+    /// 获取指定驱动器的可用空间（MB）
+    /// </summary>
+    public static double GetDriveAvailableMB(string driveName)
+    {
+        return GetAnyDriveAvailable(driveName) * 1024;
+    }
+
+    /// <summary>
+    /// 递归删除指定目录下的所有 .temp 文件
+    /// </summary>
+    public static void DeleteTempFiles(string directoryPath)
+    {
+        if (!Directory.Exists(directoryPath)) return;
+
+        foreach (string file in Directory.GetFiles(directoryPath))
+        {
+            if (Path.GetExtension(file).Equals(".temp", StringComparison.OrdinalIgnoreCase))
+            {
+                try { File.Delete(file); } catch { }
+            }
+        }
+
+        foreach (string subdirectory in Directory.GetDirectories(directoryPath))
+        {
+            DeleteTempFiles(subdirectory);
+        }
+    }
+
+    /// <summary>
     /// 清空目录内容（不删除目录本身）
     /// </summary>
     public static void ClearDirectory(string path)

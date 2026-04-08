@@ -37,47 +37,47 @@ public interface IQueueManagement
 }
 
 /// <summary>
-/// 后台队列处理服务，用于消费队列中的任务
+/// 后台任务队列消费服务，用于执行通过 IBackgroundTaskQueue 入队的后台任务
 /// </summary>
 public class BackgroundQueueHostedService : BackgroundService
 {
-    private readonly IQueueManagement _queueManagement;
+    private readonly IBackgroundTaskQueue _taskQueue;
     private readonly IServiceScopeFactory _serviceScopeFactory;
     private readonly ILogger<BackgroundQueueHostedService> _logger;
 
     public BackgroundQueueHostedService(
-        IQueueManagement queueManagement,
+        IBackgroundTaskQueue taskQueue,
         IServiceScopeFactory serviceScopeFactory,
         ILogger<BackgroundQueueHostedService> logger)
     {
-        _queueManagement = queueManagement;
+        _taskQueue = taskQueue;
         _serviceScopeFactory = serviceScopeFactory;
         _logger = logger;
     }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        _logger.LogInformation("后台队列处理服务启动");
+        _logger.LogInformation("后台任务队列消费服务启动");
 
-        while (!stoppingToken.IsCancellationRequested)
+        // 逐个消费队列中的任务
+        await foreach (var task in ((BackgroundTaskQueue)_taskQueue).ReadAllAsync(stoppingToken))
         {
             try
             {
-                // TODO: 实现队列消费逻辑
-                await Task.Delay(1000, stoppingToken);
+                await task(_serviceScopeFactory, stoppingToken);
             }
             catch (OperationCanceledException)
             {
-                // 正常停止
+                // 正常停止，不记录错误
+                break;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "后台队列处理服务出错");
-                await Task.Delay(5000, stoppingToken);
+                _logger.LogError(ex, "后台任务执行出错");
             }
         }
 
-        _logger.LogInformation("后台队列处理服务停止");
+        _logger.LogInformation("后台任务队列消费服务停止");
     }
 }
 
