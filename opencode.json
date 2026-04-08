@@ -1,5 +1,8 @@
 {
   "$schema": "https://opencode.ai/config.json",
+  "permission": {
+    "bash": "allow"
+  },
   "agent": {
     "orchestrator": {
       "name": "orchestrator",
@@ -7,19 +10,15 @@
       "mode": "primary",
       "temperature": 0.3,
       "prompt": "{file:./.opencode/prompts/orchestrator.txt}",
-      "tools": {
-        "task": true,
-        "bash": false,
-        "read": false,
-        "grep": false,
-        "glob": false,
-        "write": false,
-        "edit": false,
-        "webfetch": false,
-        "websearch": false,
-        "question": true
-      },
       "permission": {
+        "bash": "deny",
+        "read": "deny",
+        "grep": "deny",
+        "glob": "deny",
+        "edit": "deny",
+        "webfetch": "deny",
+        "websearch": "deny",
+        "question": "allow",
         "task": {
           "*": "deny",
           "architect": "allow",
