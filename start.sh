@@ -17,7 +17,7 @@
 
 # 基础路径
 BASE_DIR="/home/df/dfapp/DFApp"
-VUE_DIR="/home/df/dfapp/DFApp.Vue"
+VUE_DIR="/home/df/dfapp/DFApp/client"
 LOG_DIR="${BASE_DIR}/logs"
 
 # 服务端口

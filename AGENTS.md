@@ -4,15 +4,16 @@
 
 ## 项目概览
 
-这是一个多功能 Web 应用：
+这是一个多功能 Web 应用（Monorepo 结构）：
 - **后端**：基于 ASP.NET Core 10.0 的轻量级单体应用
-- **前端**：Vue 3 + Element Plus 管理后台（Pure Admin Thin 模板）
+- **前端**：Vue 3 + Element Plus 管理后台（Pure Admin Thin 模板），位于 `client/` 目录
 - **附加服务**：Lottery proxy 服务（端口 5000），用于访问中国福利彩票网站
 - **ORM**：SqlSugar（已替代 EF Core）
 - **解决方案**：包含 3 个项目 — DFApp.Web、DFApp.LotteryProxy、DFApp.Web.Tests
 
 ## 技术栈
 
+### 后端
 - ASP.NET Core 10.0
 - SqlSugar ORM + SQLite
 - JWT Bearer 认证
@@ -22,6 +23,17 @@
 - Serilog 日志
 - Swagger API 文档
 
+### 前端
+- Vue 3（Composition API）
+- Element Plus UI 组件库
+- Pure Admin Thin 管理后台模板
+- Pinia 状态管理
+- Vue Router 路由
+- Vite 构建工具
+- Tailwind CSS 样式
+- @microsoft/signalr 实时通信客户端
+- Playwright E2E 测试
+
 ## 已完成迁移
 
 项目已完成从 ABP Framework 到轻量级 ASP.NET Core 的全面迁移（Phase 1-9）。迁移详情参见：
@@ -29,6 +41,18 @@
 - `docs/framework-migration-summary-phase-1~9.md` — 各阶段迁移总结
 
 ## 架构
+
+### Monorepo 目录结构
+```
+DFApp/                          ← 仓库根目录
+├── AGENTS.md                   ← 本文件
+├── DFApp.Web/                  ← 后端项目
+├── DFApp.LotteryProxy/         ← 彩票代理服务
+├── test/DFApp.Web.Tests/       ← 单元测试
+├── client/                     ← 前端项目（Vue 3）
+├── docs/                       ← 后端文档
+└── sql/                        ← 数据库变更脚本
+```
 
 ### 后端结构（轻量级单体架构）
 - `DFApp.Web/` ← 唯一后端项目
@@ -47,10 +71,14 @@
 - `test/DFApp.Web.Tests/` ← 单元测试
 
 ### 前端结构（Vue 3）
-- `src/views/` - 页面组件
-- `src/layout/` - 布局组件
-- `src/components/` - 可复用组件
-- `src/style/` - 全局样式（Tailwind CSS）
+- `client/src/views/` - 页面组件
+- `client/src/layout/` - 布局组件
+- `client/src/components/` - 可复用组件
+- `client/src/style/` - 全局样式（Tailwind CSS）
+- `client/src/store/` - Pinia 状态管理
+- `client/src/router/` - Vue Router 路由配置
+- `client/src/api/` - API 请求封装
+- `client/src/utils/` - 工具函数
 
 ### 关键集成点
 - 前端通过 Vite 代理将 API 请求代理到后端（`/api` → `VITE_API_BASE_URL`）
@@ -58,10 +86,10 @@
 - 使用 SignalR 提供实时功能（`@microsoft/signalr`）
 - 使用 SQLite 数据库（后端根目录的 `DFApp.db`）
 - 彩票数据通过代理服务（端口 5000）从 `https://www.cwl.gov.cn` 获取
-- 运行dotnet命令时应当在/home/df/dfapp/DFApp下面
-- 运行pnpm命令时应当在/home/df/dfapp/DFApp.Vue下面
-- 前端的端口是8848
-- 后端的端口是44369
+- 运行 dotnet 命令时应当在 `/home/df/dfapp/DFApp` 下面
+- 运行 pnpm 命令时应当在 `/home/df/dfapp/DFApp/client` 下面
+- 前端的端口是 8848
+- 后端的端口是 44369
 - **启动后端服务时，请务必使用 0.0.0.0 作为绑定地址**：这是因为开发环境采用 VS Code 远程开发模式，需要确保服务能够被远程访问
 
 ## 重要约束
@@ -85,8 +113,8 @@
 
 ## 文档管理
 
-- 前端文档在DFApp.Vue/docs
-- 后端文档在DFApp/docs
+- 前端文档在 `client/docs/`
+- 后端文档在 `docs/`
 - 每次修改模块时检查是否存在文件，存在读取
 - 每次修改对应模块时要更新内容到文档
 - 缺失的文件在修改时添加
