@@ -7,7 +7,7 @@ namespace DFApp.Media
     /// <summary>
     /// 媒体外链
     /// </summary>
-    [SugarTable("MediaExternalLinks")]
+    [SugarTable("AppMediaExternalLink")]
     public class MediaExternalLink : AuditedEntity<long>
     {
         /// <summary>

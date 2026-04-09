@@ -11,7 +11,7 @@ namespace DFApp.Bookkeeping
     /// <summary>
     /// 记账支出实体
     /// </summary>
-    [SugarTable("BookkeepingExpenditures")]
+    [SugarTable("AppBookkeepingExpenditure")]
     public class BookkeepingExpenditure : AuditedEntity<long>
     {
         /// <summary>

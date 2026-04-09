@@ -6,7 +6,7 @@ namespace DFApp.Media
     /// <summary>
     /// 媒体信息
     /// </summary>
-    [SugarTable("MediaInfos")]
+    [SugarTable("AppMediaInfo")]
     public class MediaInfo : AuditedEntity<long>
     {
         /// <summary>

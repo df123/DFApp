@@ -6,7 +6,7 @@ namespace DFApp.Aria2.Response.TellStatus
     /// <summary>
     /// Aria2 URI项实体
     /// </summary>
-    [SugarTable("UrisItems")]
+    [SugarTable("AppAria2UrisItem")]
     public class UrisItem : CreationAuditedEntity<short>
     {
         /// <summary>

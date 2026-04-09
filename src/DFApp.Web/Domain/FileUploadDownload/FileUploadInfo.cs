@@ -3,7 +3,7 @@ using DFApp.Web.Domain;
 
 namespace DFApp.FileUploadDownload
 {
-    [SugarTable("FileUploadInfos")]
+    [SugarTable("AppFileUploadInfo")]
     public class FileUploadInfo : AuditedEntity<long>
     {
         public string FileName { get; set; }

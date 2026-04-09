@@ -8,6 +8,7 @@ using DFApp.Aria2.Request;
 using DFApp.Aria2.Response.TellStatus;
 using DFApp.Web.Data;
 using DFApp.Web.Data.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
 namespace DFApp.Aria2;
@@ -17,25 +18,16 @@ namespace DFApp.Aria2;
 /// </summary>
 public class Aria2Manager
 {
-    private readonly ISqlSugarRepository<TellStatusResult, long> _resultRepository;
-    private readonly ISqlSugarRepository<FilesItem, int> _filesItemRepository;
-    private readonly ISqlSugarRepository<UrisItem, short> _urisItemRepository;
-    private readonly IConfigurationInfoRepository _configurationInfoRepository;
+    private readonly IServiceScopeFactory _scopeFactory;
     private readonly List<Aria2Request> _requestsHistory;
     private readonly ILogger<Aria2Manager> _logger;
 
     public Aria2Manager(
-        ISqlSugarRepository<TellStatusResult, long> resultRepository,
-        ISqlSugarRepository<FilesItem, int> filesItemRepository,
-        ISqlSugarRepository<UrisItem, short> urisItemRepository,
-        IConfigurationInfoRepository configurationInfoRepository,
+        IServiceScopeFactory scopeFactory,
         ILogger<Aria2Manager> logger)
     {
         _requestsHistory = new List<Aria2Request>();
-        _resultRepository = resultRepository;
-        _filesItemRepository = filesItemRepository;
-        _urisItemRepository = urisItemRepository;
-        _configurationInfoRepository = configurationInfoRepository;
+        _scopeFactory = scopeFactory;
         _logger = logger;
     }
 
@@ -120,7 +112,12 @@ public class Aria2Manager
     public async Task<List<Aria2Request>> DownloadCompleteHandlerAsync(List<ParamsItem> paramsItems)
     {
         List<Aria2Request> requests = new List<Aria2Request>();
-        string aria2secret = await _configurationInfoRepository.GetConfigurationInfoValue("aria2secret", "DFApp.Aria2.Aria2Service");
+        string aria2secret;
+        using (var scope = _scopeFactory.CreateScope())
+        {
+            var configRepo = scope.ServiceProvider.GetRequiredService<IConfigurationInfoRepository>();
+            aria2secret = await configRepo.GetConfigurationInfoValue("aria2secret", "DFApp.Aria2.Aria2Service");
+        }
         foreach (var item in paramsItems)
         {
             var request = new Aria2Request(Guid.NewGuid().ToString(), aria2secret);
@@ -178,47 +175,55 @@ public class Aria2Manager
             _logger.LogInformation("TotalLength: {TotalLength}", tellStatusResult.TotalLength);
             _logger.LogInformation("CompletedLength: {CompletedLength}", tellStatusResult.CompletedLength);
 
-            // 保存主记录
-            await _resultRepository.InsertAsync(tellStatusResult);
-
-            // 解析并保存文件列表
-            if (resultElement.TryGetProperty("files", out var filesElement) && filesElement.ValueKind == JsonValueKind.Array)
+            // 在 scope 中执行数据库操作
+            using (var scope = _scopeFactory.CreateScope())
             {
-                int fileIndex = 0;
-                foreach (var fileElement in filesElement.EnumerateArray())
+                var resultRepository = scope.ServiceProvider.GetRequiredService<ISqlSugarRepository<TellStatusResult, long>>();
+                var filesItemRepository = scope.ServiceProvider.GetRequiredService<ISqlSugarRepository<FilesItem, int>>();
+                var urisItemRepository = scope.ServiceProvider.GetRequiredService<ISqlSugarRepository<UrisItem, short>>();
+
+                // 保存主记录
+                await resultRepository.InsertAsync(tellStatusResult);
+
+                // 解析并保存文件列表
+                if (resultElement.TryGetProperty("files", out var filesElement) && filesElement.ValueKind == JsonValueKind.Array)
                 {
-                    var filesItem = new FilesItem
+                    int fileIndex = 0;
+                    foreach (var fileElement in filesElement.EnumerateArray())
                     {
-                        ResultId = tellStatusResult.Id,
-                        Index = fileElement.TryGetProperty("index", out var index) ? GetLongValue(index) : fileIndex,
-                        Path = fileElement.TryGetProperty("path", out var path) ? path.GetString() : null,
-                        Length = fileElement.TryGetProperty("length", out var length) ? GetLongValue(length) : null,
-                        CompletedLength = fileElement.TryGetProperty("completedLength", out var fileCompletedLength) ? GetLongValue(fileCompletedLength) : null,
-                        Selected = fileElement.TryGetProperty("selected", out var selected) ? GetBoolValue(selected) : null
-                    };
-
-                    await _filesItemRepository.InsertAsync(filesItem);
-
-                    _logger.LogInformation("  文件[{Index}]: {Path}, 长度: {Length}, 已完成: {CompletedLength}",
-                        filesItem.Index, filesItem.Path, filesItem.Length, filesItem.CompletedLength);
-
-                    // 解析并保存 URI 列表
-                    if (fileElement.TryGetProperty("uris", out var urisElement) && urisElement.ValueKind == JsonValueKind.Array)
-                    {
-                        foreach (var uriElement in urisElement.EnumerateArray())
+                        var filesItem = new FilesItem
                         {
-                            var urisItem = new UrisItem
+                            ResultId = tellStatusResult.Id,
+                            Index = fileElement.TryGetProperty("index", out var index) ? GetLongValue(index) : fileIndex,
+                            Path = fileElement.TryGetProperty("path", out var path) ? path.GetString() : null,
+                            Length = fileElement.TryGetProperty("length", out var length) ? GetLongValue(length) : null,
+                            CompletedLength = fileElement.TryGetProperty("completedLength", out var fileCompletedLength) ? GetLongValue(fileCompletedLength) : null,
+                            Selected = fileElement.TryGetProperty("selected", out var selected) ? GetBoolValue(selected) : null
+                        };
+
+                        await filesItemRepository.InsertAsync(filesItem);
+
+                        _logger.LogInformation("  文件[{Index}]: {Path}, 长度: {Length}, 已完成: {CompletedLength}",
+                            filesItem.Index, filesItem.Path, filesItem.Length, filesItem.CompletedLength);
+
+                        // 解析并保存 URI 列表
+                        if (fileElement.TryGetProperty("uris", out var urisElement) && urisElement.ValueKind == JsonValueKind.Array)
+                        {
+                            foreach (var uriElement in urisElement.EnumerateArray())
                             {
-                                FilesItemId = filesItem.Id,
-                                Uri = uriElement.TryGetProperty("uri", out var uri) ? uri.GetString() : null,
-                                Status = uriElement.TryGetProperty("status", out var uriStatus) ? uriStatus.GetString() : null
-                            };
+                                var urisItem = new UrisItem
+                                {
+                                    FilesItemId = filesItem.Id,
+                                    Uri = uriElement.TryGetProperty("uri", out var uri) ? uri.GetString() : null,
+                                    Status = uriElement.TryGetProperty("status", out var uriStatus) ? uriStatus.GetString() : null
+                                };
 
-                            await _urisItemRepository.InsertAsync(urisItem);
+                                await urisItemRepository.InsertAsync(urisItem);
+                            }
                         }
-                    }
 
-                    fileIndex++;
+                        fileIndex++;
+                    }
                 }
             }
 

@@ -7,7 +7,7 @@ namespace DFApp.Rss
     /// <summary>
     /// RSS分词统计
     /// </summary>
-    [SugarTable("RssWordSegments")]
+    [SugarTable("AppRssWordSegment")]
     public class RssWordSegment : CreationAuditedEntity<long>
     {
         /// <summary>

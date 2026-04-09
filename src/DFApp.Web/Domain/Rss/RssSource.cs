@@ -7,7 +7,7 @@ namespace DFApp.Rss
     /// <summary>
     /// RSS源配置
     /// </summary>
-    [SugarTable("RssSources")]
+    [SugarTable("AppRssSource")]
     public class RssSource : CreationAuditedEntity<long>
     {
         /// <summary>

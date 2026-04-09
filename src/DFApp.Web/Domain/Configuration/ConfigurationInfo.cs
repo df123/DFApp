@@ -3,7 +3,7 @@ using DFApp.Web.Domain;
 
 namespace DFApp.Configuration
 {
-    [SugarTable("ConfigurationInfos")]
+    [SugarTable("AppConfigurationInfo")]
     public class ConfigurationInfo : AuditedEntity<long>
     {
 

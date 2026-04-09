@@ -4,7 +4,7 @@ using DFApp.Web.Domain;
 
 namespace DFApp.IP
 {
-    [SugarTable("DynamicIP")]
+    [SugarTable("AppDynamicIP")]
     public class DynamicIP : AuditedEntity<Guid>
     {
         public string IP { get; set; }

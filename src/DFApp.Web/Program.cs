@@ -79,6 +79,7 @@ public class Program
             // 注册自定义仓储
             builder.Services.AddScoped<DFApp.FileFilter.IKeywordFilterRuleRepository, DFApp.FileFilter.KeywordFilterRuleRepository>();
             builder.Services.AddScoped<DFApp.Web.Data.ElectricVehicle.IGasolinePriceRepository, DFApp.Web.Data.ElectricVehicle.GasolinePriceRepository>();
+            builder.Services.AddScoped<DFApp.Web.Data.Configuration.IConfigurationInfoRepository, DFApp.Web.Data.Configuration.ConfigurationInfoRepository>();
 
             // 注册密码哈希服务（无状态，使用 Transient）
             builder.Services.AddTransient<IPasswordHasher, PasswordHasher>();
@@ -96,15 +97,47 @@ public class Program
             // 配置后台任务队列
             builder.Services.AddSingleton<IBackgroundTaskQueue, BackgroundTaskQueue>();
             builder.Services.AddSingleton<IQueueManagement, QueueManagement>();
-            builder.Services.AddHostedService<BackgroundQueueHostedService>();
+            // 暂时禁用后台任务，减少启动日志干扰
+            // builder.Services.AddHostedService<BackgroundQueueHostedService>();
 
-            // 配置后台服务
-            builder.Services.AddHostedService<Aria2BackgroundWorker>();
-            builder.Services.AddHostedService<ListenTelegramService>();
+            // 配置后台服务（暂时禁用）
+            // builder.Services.AddHostedService<Aria2BackgroundWorker>();
+            // builder.Services.AddHostedService<ListenTelegramService>();
 
             // 配置应用服务
             builder.Services.AddScoped<DFApp.Web.Services.TG.TGLoginService>();
-            builder.Services.AddHostedService<Web.Background.Aria2MonitorWorker>();
+            builder.Services.AddScoped<DFApp.Web.Services.Account.AccountAppService>();
+            builder.Services.AddScoped<DFApp.Web.Services.Account.UserManagementAppService>();
+            builder.Services.AddScoped<DFApp.Web.Services.Rss.RssSourceAppService>();
+            builder.Services.AddScoped<DFApp.Web.Services.Rss.RssSubscriptionAppService>();
+            builder.Services.AddScoped<DFApp.Web.Services.Rss.RssSubscriptionDownloadAppService>();
+            builder.Services.AddScoped<DFApp.Web.Services.Rss.RssWordSegmentAppService>();
+            builder.Services.AddScoped<DFApp.Web.Services.Rss.RssMirrorItemAppService>();
+            builder.Services.AddScoped<DFApp.Web.Services.Rss.RssFetchService>();
+            builder.Services.AddScoped<DFApp.Web.Services.Rss.RssSubscriptionService>();
+            builder.Services.AddScoped<DFApp.Web.Services.Rss.WordSegmentService>();
+            builder.Services.AddScoped<DFApp.Web.Services.Lottery.LotteryService>();
+            builder.Services.AddScoped<DFApp.Web.Services.Lottery.LotteryResultService>();
+            builder.Services.AddScoped<DFApp.Web.Services.Lottery.LotteryDataFetchService>();
+            builder.Services.AddScoped<DFApp.Web.Services.Lottery.Simulation.LotterySSQSimulationService>();
+            builder.Services.AddScoped<DFApp.Web.Services.Lottery.Simulation.LotteryKL8SimulationService>();
+            builder.Services.AddScoped<DFApp.Web.Services.Lottery.CompoundLotteryService>();
+            builder.Services.AddScoped<DFApp.Web.Services.ElectricVehicle.ElectricVehicleService>();
+            builder.Services.AddScoped<DFApp.Web.Services.ElectricVehicle.ElectricVehicleCostService>();
+            builder.Services.AddScoped<DFApp.Web.Services.ElectricVehicle.ElectricVehicleChargingRecordService>();
+            builder.Services.AddScoped<DFApp.Web.Services.ElectricVehicle.GasolinePriceService>();
+            builder.Services.AddScoped<DFApp.Web.Services.Bookkeeping.BookkeepingCategoryService>();
+            builder.Services.AddScoped<DFApp.Web.Services.Bookkeeping.BookkeepingExpenditureService>();
+            builder.Services.AddScoped<DFApp.Web.Services.Media.MediaInfoService>();
+            builder.Services.AddScoped<DFApp.Web.Services.Media.ExternalLinkService>();
+            builder.Services.AddScoped<DFApp.Web.Services.Aria2.Aria2ManageService>();
+            builder.Services.AddScoped<DFApp.Web.Services.Aria2.Aria2Service>();
+            builder.Services.AddScoped<DFApp.Web.Services.FileUploadDownload.FileUploadInfoService>();
+            builder.Services.AddScoped<DFApp.Web.Services.Configuration.ConfigurationInfoService>();
+            builder.Services.AddScoped<DFApp.Web.Services.FileFilter.KeywordFilterRuleService>();
+            builder.Services.AddScoped<DFApp.Web.Services.IP.DynamicIPService>();
+            // 暂时禁用后台任务，减少启动日志干扰
+            // builder.Services.AddHostedService<Web.Background.Aria2MonitorWorker>();
 
             // 配置 CORS
             builder.Services.AddCors(options =>
@@ -201,35 +234,35 @@ public class Program
                 });
             });
 
-            // 配置 Quartz.NET
-            Quartz.Logging.LogProvider.IsDisabled = true;
-            builder.Services.AddQuartz(q =>
-            {
-                // GasolinePriceRefreshJob — 每晚21:00执行
-                q.ScheduleJob<Background.GasolinePriceRefreshJob>(trigger => trigger
-                    .WithIdentity("GasolinePriceRefreshJob-trigger")
-                    .WithCronSchedule("0 0 21 * * ?"));
+            // 暂时禁用 Quartz 定时任务，减少启动日志干扰
+            // Quartz.Logging.LogProvider.IsDisabled = true;
+            // builder.Services.AddQuartz(q =>
+            // {
+            //     // GasolinePriceRefreshJob — 每晚21:00执行
+            //     q.ScheduleJob<Background.GasolinePriceRefreshJob>(trigger => trigger
+            //         .WithIdentity("GasolinePriceRefreshJob-trigger")
+            //         .WithCronSchedule("0 0 21 * * ?"));
 
-                // DiskSpaceCheckJob — 每10分钟执行
-                q.ScheduleJob<Background.DiskSpaceCheckJob>(trigger => trigger
-                    .WithIdentity("DiskSpaceCheckJob-trigger")
-                    .WithSimpleSchedule(x => x
-                        .WithIntervalInMinutes(10)
-                        .RepeatForever()));
+            //     // DiskSpaceCheckJob — 每10分钟执行
+            //     q.ScheduleJob<Background.DiskSpaceCheckJob>(trigger => trigger
+            //         .WithIdentity("DiskSpaceCheckJob-trigger")
+            //         .WithSimpleSchedule(x => x
+            //             .WithIntervalInMinutes(10)
+            //             .RepeatForever()));
 
-                // LotteryResultJob — 每晚23:00执行
-                q.ScheduleJob<Background.LotteryResultJob>(trigger => trigger
-                    .WithIdentity("LotteryResultJob-trigger")
-                    .WithCronSchedule("0 0 23 * * ?"));
+            //     // LotteryResultJob — 每晚23:00执行
+            //     q.ScheduleJob<Background.LotteryResultJob>(trigger => trigger
+            //         .WithIdentity("LotteryResultJob-trigger")
+            //         .WithCronSchedule("0 0 23 * * ?"));
 
-                // RssMirrorFetchJob — 每5分钟执行
-                q.ScheduleJob<Background.RssMirrorFetchJob>(trigger => trigger
-                    .WithIdentity("RssMirrorFetchJob-trigger")
-                    .WithSimpleSchedule(x => x
-                        .WithIntervalInMinutes(5)
-                        .RepeatForever()));
-            });
-            builder.Services.AddQuartzHostedService(q => q.WaitForJobsToComplete = true);
+            //     // RssMirrorFetchJob — 每5分钟执行
+            //     q.ScheduleJob<Background.RssMirrorFetchJob>(trigger => trigger
+            //         .WithIdentity("RssMirrorFetchJob-trigger")
+            //         .WithSimpleSchedule(x => x
+            //             .WithIntervalInMinutes(5)
+            //             .RepeatForever()));
+            // });
+            // builder.Services.AddQuartzHostedService(q => q.WaitForJobsToComplete = true);
 
             var app = builder.Build();
 

@@ -7,7 +7,7 @@ namespace DFApp.Lottery
     /// <summary>
     /// 模拟购买彩票
     /// </summary>
-    [SugarTable("LotterySimulation")]
+    [SugarTable("AppLotterySimulation")]
     public class LotterySimulation : AuditedEntity<Guid>
     {
         /// <summary>

@@ -3,7 +3,7 @@ using DFApp.Web.Domain;
 
 namespace DFApp.Lottery
 {
-    [SugarTable("LotteryInfo")]
+    [SugarTable("AppLottery")]
     public class LotteryInfo : AuditedEntity<long>
     {
         public int IndexNo { get; set; }

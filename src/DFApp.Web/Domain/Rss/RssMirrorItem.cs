@@ -7,7 +7,7 @@ namespace DFApp.Rss
     /// <summary>
     /// RSS镜像条目
     /// </summary>
-    [SugarTable("RssMirrorItems")]
+    [SugarTable("AppRssMirrorItem")]
     public class RssMirrorItem : AuditedEntity<long>
     {
         /// <summary>

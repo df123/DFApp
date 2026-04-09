@@ -3,6 +3,7 @@ using System.Linq;
 using System.Reflection;
 using DFApp.Web.Domain;
 using DFApp.Web.Infrastructure;
+using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using SqlSugar;
@@ -14,17 +15,17 @@ namespace DFApp.Web.Data;
 /// </summary>
 public class SqlSugarConfig
 {
-    private readonly IServiceProvider _serviceProvider;
+    private readonly IHttpContextAccessor _httpContextAccessor;
     private readonly IConfiguration _configuration;
 
     /// <summary>
     /// 构造函数
     /// </summary>
-    /// <param name="serviceProvider">服务提供程序</param>
+    /// <param name="httpContextAccessor">HTTP 上下文访问器，用于从请求作用域获取服务</param>
     /// <param name="configuration">配置</param>
-    public SqlSugarConfig(IServiceProvider serviceProvider, IConfiguration configuration)
+    public SqlSugarConfig(IHttpContextAccessor httpContextAccessor, IConfiguration configuration)
     {
-        _serviceProvider = serviceProvider;
+        _httpContextAccessor = httpContextAccessor;
         _configuration = configuration;
     }
 
@@ -86,7 +87,7 @@ public class SqlSugarConfig
                 {
                     if (creatorIdEntity.CreatorId == null)
                     {
-                        var currentUser = _serviceProvider.GetService<ICurrentUser>();
+                        var currentUser = GetCurrentUser();
                         if (currentUser != null && currentUser.Id.HasValue)
                         {
                             creatorIdEntity.CreatorId = currentUser.Id.Value;
@@ -97,7 +98,7 @@ public class SqlSugarConfig
                 // 设置最后修改者 ID
                 if (entityInfo.PropertyName == nameof(IModifierId.LastModifierId) && entityInfo.EntityValue is IModifierId modifierIdEntity)
                 {
-                    var currentUser = _serviceProvider.GetService<ICurrentUser>();
+                    var currentUser = GetCurrentUser();
                     if (currentUser != null && currentUser.Id.HasValue)
                     {
                         modifierIdEntity.LastModifierId = currentUser.Id.Value;
@@ -127,7 +128,7 @@ public class SqlSugarConfig
                 // 设置最后修改者 ID
                 if (entityInfo.PropertyName == nameof(IModifierId.LastModifierId) && entityInfo.EntityValue is IModifierId modifierIdEntity)
                 {
-                    var currentUser = _serviceProvider.GetService<ICurrentUser>();
+                    var currentUser = GetCurrentUser();
                     if (currentUser != null && currentUser.Id.HasValue)
                     {
                         modifierIdEntity.LastModifierId = currentUser.Id.Value;
@@ -162,7 +163,7 @@ public class SqlSugarConfig
                 {
                     if (deleterIdEntity.DeleterId == null)
                     {
-                        var currentUser = _serviceProvider.GetService<ICurrentUser>();
+                        var currentUser = GetCurrentUser();
                         if (currentUser != null && currentUser.Id.HasValue)
                         {
                             deleterIdEntity.DeleterId = currentUser.Id.Value;
@@ -196,10 +197,19 @@ public class SqlSugarConfig
     /// <param name="db">SqlSugar 客户端</param>
     private void ConfigureCreatorIdFilter(ISqlSugarClient db)
     {
-        var currentUser = _serviceProvider.GetService<ICurrentUser>();
+        var currentUser = GetCurrentUser();
         if (currentUser != null && currentUser.Id.HasValue)
         {
             db.QueryFilter.Add(new TableFilterItem<ICreatorId>(it => it.CreatorId == currentUser.Id.Value));
         }
+    }
+
+    /// <summary>
+    /// 从当前 HTTP 请求的 scoped 服务容器中获取当前用户信息
+    /// 后台任务场景下 HttpContext 为 null，返回 null
+    /// </summary>
+    private ICurrentUser? GetCurrentUser()
+    {
+        return _httpContextAccessor.HttpContext?.RequestServices.GetService<ICurrentUser>();
     }
 }

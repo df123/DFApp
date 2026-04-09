@@ -7,7 +7,7 @@ namespace DFApp.Aria2.Response.TellStatus
     /// <summary>
     /// Aria2 TellStatus 结果实体
     /// </summary>
-    [SugarTable("TellStatusResults")]
+    [SugarTable("AppAria2TellStatusResult")]
     public class TellStatusResult : CreationAuditedEntity<long>
     {
         /// <summary>

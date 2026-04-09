@@ -7,7 +7,7 @@ namespace DFApp.FileFilter
     /// <summary>
     /// 关键词过滤规则实体
     /// </summary>
-    [SugarTable("KeywordFilterRules")]
+    [SugarTable("AppKeywordFilterRule")]
     public class KeywordFilterRule : CreationAuditedEntity<long>
     {
         /// <summary>

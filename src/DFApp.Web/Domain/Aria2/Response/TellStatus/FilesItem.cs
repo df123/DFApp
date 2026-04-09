@@ -7,7 +7,7 @@ namespace DFApp.Aria2.Response.TellStatus
     /// <summary>
     /// Aria2 文件项实体
     /// </summary>
-    [SugarTable("FilesItems")]
+    [SugarTable("AppAria2FilesItem")]
     public class FilesItem : CreationAuditedEntity<int>
     {
         /// <summary>

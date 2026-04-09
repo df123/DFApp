@@ -7,7 +7,7 @@ namespace DFApp.Rss
     /// <summary>
     /// RSS订阅配置
     /// </summary>
-    [SugarTable("RssSubscriptions")]
+    [SugarTable("AppRssSubscriptions")]
     public class RssSubscription : AuditedEntity<long>
     {
         /// <summary>
