@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using DFApp.Account;
 using DFApp.Identity;
 using DFApp.Web.Data;
+using DFApp.Web.Domain;
 using DFApp.Web.Infrastructure;
 using DFApp.Web.Permissions;
 
@@ -32,7 +33,8 @@ namespace DFApp.Web.Services.Account;
 public class AccountAppService
 {
     private readonly ISqlSugarRepository<User, Guid> _userRepository;
-    private readonly ISqlSugarRepository<PermissionGrant, Guid> _permissionGrantRepository;
+    private readonly ISqlSugarRepository<Role, Guid> _roleRepository;
+    private readonly ISqlSugarRepository<AppPermissionGrant, long> _appPermissionGrantRepository;
     private readonly ISqlSugarRepository<UserRole, Guid> _userRoleRepository;
     private readonly IConfiguration _configuration;
     private readonly IMemoryCache _cache;
@@ -41,7 +43,8 @@ public class AccountAppService
 
     public AccountAppService(
         ISqlSugarRepository<User, Guid> userRepository,
-        ISqlSugarRepository<PermissionGrant, Guid> permissionGrantRepository,
+        ISqlSugarRepository<Role, Guid> roleRepository,
+        ISqlSugarRepository<AppPermissionGrant, long> appPermissionGrantRepository,
         ISqlSugarRepository<UserRole, Guid> userRoleRepository,
         IConfiguration configuration,
         IMemoryCache cache,
@@ -49,7 +52,8 @@ public class AccountAppService
         ILogger<AccountAppService> logger)
     {
         _userRepository = userRepository;
-        _permissionGrantRepository = permissionGrantRepository;
+        _roleRepository = roleRepository;
+        _appPermissionGrantRepository = appPermissionGrantRepository;
         _userRoleRepository = userRoleRepository;
         _configuration = configuration;
         _cache = cache;
@@ -127,6 +131,11 @@ public class AccountAppService
     /// <summary>
     /// 生成 JWT 令牌
     /// </summary>
+    /// <remarks>
+    /// 从新的 AppPermissionGrants 表加载权限。
+    /// 角色级权限的 ProviderKey 存储角色名称（非 GUID），避免大小写匹配问题。
+    /// 用户级权限的 ProviderKey 存储用户 ID 字符串（小写）。
+    /// </remarks>
     private async Task<string> GenerateJwtTokenAsync(User user)
     {
         var secretKey = _configuration["Jwt:SecretKey"];
@@ -138,37 +147,73 @@ public class AccountAppService
         var claims = new List<Claim>
         {
             new Claim(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
+            new Claim(ClaimTypes.Name, user.UserName ?? ""),
             new Claim(JwtRegisteredClaimNames.UniqueName, user.UserName ?? ""),
             new Claim(JwtRegisteredClaimNames.Email, user.Email ?? ""),
             new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
         };
 
-        // 从用户角色关联表查询角色 ID
-        var userRoleIds = await _userRoleRepository.GetQueryable()
-            .Where(ur => ur.UserId == user.Id)
-            .Select(ur => ur.RoleId)
+        var userIdUpper = user.Id.ToString().ToUpperInvariant();
+
+        // 查询用户角色关联，使用 UPPER() 避免 GUID 大小写问题
+        var userRoles = await _userRoleRepository.GetQueryable()
+            .Where("UPPER(UserId) = @UserId", new { UserId = userIdUpper })
             .ToListAsync();
 
-        // 将角色ID转换为字符串列表
-        var userRoleIdStrings = userRoleIds.Select(id => id.ToString()).ToList();
+        _logger.LogDebug("用户 {UserName} 查到 {RoleCount} 条角色关联", user.UserName, userRoles.Count);
 
-        // 将角色 ID 添加到 JWT claims 中
-        foreach (var roleId in userRoleIdStrings)
+        // 获取所有角色并在内存中匹配名称（角色数量少，内存匹配避免 SqlSugar Contains 翻译问题）
+        var allRoles = await _roleRepository.GetQueryable().ToListAsync();
+        var roleNames = allRoles
+            .Where(r => userRoles.Any(ur => string.Equals(ur.RoleId.ToString(), r.Id.ToString(), StringComparison.OrdinalIgnoreCase)))
+            .Select(r => r.Name)
+            .ToList();
+
+        // 将角色名称添加到 JWT claims
+        foreach (var roleName in roleNames)
         {
-            claims.Add(new Claim(DFAppClaimTypes.Role, roleId));
+            claims.Add(new Claim(DFAppClaimTypes.Role, roleName));
         }
 
-        // 查询权限授予记录
-        var permissions = await _permissionGrantRepository.GetQueryable()
-            .Where(pg =>
-                (pg.ProviderName == "U" && pg.ProviderKey == user.Id.ToString()) ||
-                (pg.ProviderName == "R" && userRoleIdStrings.Contains(pg.ProviderKey))
-            )
-            .Select(pg => pg.Name)
+        // 从新表 AppPermissionGrants 加载权限
+        var permissionSet = new HashSet<string>();
+
+        // 用户级权限（ProviderKey 为用户 ID 字符串）
+        var userPermissions = await _appPermissionGrantRepository.GetQueryable()
+            .Where(pg => pg.ProviderType == "User" && pg.ProviderKey == user.Id.ToString())
+            .Select(pg => pg.PermissionName)
             .ToListAsync();
 
-        // 将权限添加到JWT claims中（去重，避免用户和角色授予相同权限时重复写入）
-        foreach (var permission in permissions.Distinct())
+        foreach (var p in userPermissions)
+        {
+            permissionSet.Add(p);
+        }
+
+        _logger.LogDebug("用户级权限: {Count} 个", userPermissions.Count);
+
+        // 角色级权限（ProviderKey 为角色名称）
+        if (roleNames.Count > 0)
+        {
+            // 查询所有角色级权限，在内存中匹配（避免 SqlSugar Contains 翻译问题）
+            var rolePermissionList = await _appPermissionGrantRepository.GetQueryable()
+                .Where(pg => pg.ProviderType == "Role")
+                .ToListAsync();
+
+            foreach (var pg in rolePermissionList)
+            {
+                if (roleNames.Contains(pg.ProviderKey))
+                {
+                    permissionSet.Add(pg.PermissionName);
+                }
+            }
+
+            _logger.LogDebug("角色级权限: {Count} 个", rolePermissionList.Count(pg => roleNames.Contains(pg.ProviderKey)));
+        }
+
+        _logger.LogInformation("用户 {UserName} 令牌中共有 {PermCount} 个权限", user.UserName, permissionSet.Count);
+
+        // 将权限添加到 JWT claims（HashSet 已去重）
+        foreach (var permission in permissionSet)
         {
             claims.Add(new Claim(DFAppClaimTypes.Permission, permission));
         }

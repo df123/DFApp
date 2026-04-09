@@ -10,7 +10,7 @@
 #   停止所有服务: ./start.sh stop
 #
 # 服务说明：
-#   1. 后端 API (DFApp.Web)       - HTTPS, 端口 44369
+#   1. 后端 API (DFApp.Web)       - HTTP,  端口 44369
 #   2. 彩票代理 (DFApp.LotteryProxy) - HTTP,  端口 5000
 #   3. 前端 (DFApp.Vue)           - HTTP,  端口 8848
 # ========================================
@@ -140,14 +140,14 @@ start_backend() {
     local total=$1
     local step=$2
 
-    echo "[${step}/${total}] 启动后端 API (https://0.0.0.0:${BACKEND_PORT})..."
+    echo "[${step}/${total}] 启动后端 API (http://0.0.0.0:${BACKEND_PORT})..."
     echo "  - 检查端口 ${BACKEND_PORT}..."
     kill_port_processes "$BACKEND_PORT" "后端 API"
     wait_for_port_release "$BACKEND_PORT"
 
     echo "  - 启动中..."
     ASPNETCORE_ENVIRONMENT=Development nohup dotnet run --project "${BASE_DIR}/src/DFApp.Web/DFApp.Web.csproj" \
-        --urls "https://0.0.0.0:${BACKEND_PORT}" > "${BACKEND_LOG}" 2>&1 &
+        --urls "http://0.0.0.0:${BACKEND_PORT}" > "${BACKEND_LOG}" 2>&1 &
     disown
     echo "  ✓ 后端 API 已在后台启动"
     echo "  - 日志: ${BACKEND_LOG}"
@@ -219,9 +219,9 @@ start_default_services() {
     print_separator
     echo "  所有服务已启动！"
     print_separator
-    echo "  后端 API:      https://0.0.0.0:${BACKEND_PORT}"
+    echo "  后端 API:      http://0.0.0.0:${BACKEND_PORT}"
     echo "  前端:          http://0.0.0.0:${FRONTEND_PORT}"
-    echo "  Swagger:       https://0.0.0.0:${BACKEND_PORT}/swagger"
+    echo "  Swagger:       http://0.0.0.0:${BACKEND_PORT}/swagger"
     print_separator
     echo "  查看日志: tail -f logs/<service>.log"
     echo "  停止服务: ./start.sh stop"
@@ -254,10 +254,10 @@ start_all_services() {
     print_separator
     echo "  所有服务已启动！"
     print_separator
-    echo "  后端 API:      https://0.0.0.0:${BACKEND_PORT}"
+    echo "  后端 API:      http://0.0.0.0:${BACKEND_PORT}"
     echo "  彩票代理:      http://0.0.0.0:${LOTTERY_PORT}"
     echo "  前端:          http://0.0.0.0:${FRONTEND_PORT}"
-    echo "  Swagger:       https://0.0.0.0:${BACKEND_PORT}/swagger"
+    echo "  Swagger:       http://0.0.0.0:${BACKEND_PORT}/swagger"
     print_separator
     echo "  查看日志: tail -f logs/<service>.log"
     echo "  停止服务: ./start.sh stop"

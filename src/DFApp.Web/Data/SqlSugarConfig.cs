@@ -50,9 +50,6 @@ public class SqlSugarConfig
         // 配置全局软删除过滤器
         ConfigureSoftDeleteFilter(db);
 
-        // 配置 CreatorId 数据过滤器
-        ConfigureCreatorIdFilter(db);
-
         return db;
     }
 
@@ -189,19 +186,6 @@ public class SqlSugarConfig
         // 软删除功能已废除，不再配置软删除过滤器
         return;
         // db.QueryFilter.Add(new TableFilterItem<ISoftDelete>(it => it.IsDeleted == false));
-    }
-
-    /// <summary>
-    /// 配置 CreatorId 数据过滤器
-    /// </summary>
-    /// <param name="db">SqlSugar 客户端</param>
-    private void ConfigureCreatorIdFilter(ISqlSugarClient db)
-    {
-        var currentUser = GetCurrentUser();
-        if (currentUser != null && currentUser.Id.HasValue)
-        {
-            db.QueryFilter.Add(new TableFilterItem<ICreatorId>(it => it.CreatorId == currentUser.Id.Value));
-        }
     }
 
     /// <summary>

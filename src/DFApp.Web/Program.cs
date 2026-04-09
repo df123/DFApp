@@ -138,6 +138,9 @@ public class Program
             builder.Services.AddScoped<DFApp.Web.Services.Configuration.ConfigurationInfoService>();
             builder.Services.AddScoped<DFApp.Web.Services.FileFilter.KeywordFilterRuleService>();
             builder.Services.AddScoped<DFApp.Web.Services.IP.DynamicIPService>();
+            builder.Services.AddScoped<DFApp.Web.Services.Identity.RoleManagementAppService>();
+            builder.Services.AddScoped<DFApp.Web.Services.Identity.PermissionGrantManagementAppService>();
+            builder.Services.AddScoped<DFApp.Web.Services.Identity.UserRoleManagementAppService>();
             // 暂时禁用后台任务，减少启动日志干扰
             // builder.Services.AddHostedService<Web.Background.Aria2MonitorWorker>();
 

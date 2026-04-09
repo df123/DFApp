@@ -172,4 +172,29 @@ public static class DFAppPermissions
         public const string Delete = Default + ".Delete";
         public const string Download = Default + ".Download";
     }
+
+    /// <summary>角色管理权限</summary>
+    public static class RoleManagement
+    {
+        public const string Default = GroupName + ".RoleManagement";
+        public const string Create = Default + ".Create";
+        public const string Update = Default + ".Update";
+        public const string Delete = Default + ".Delete";
+    }
+
+    /// <summary>权限授予管理权限</summary>
+    public static class PermissionGrantManagement
+    {
+        public const string Default = GroupName + ".PermissionGrantManagement";
+        public const string Grant = Default + ".Grant";
+        public const string Revoke = Default + ".Revoke";
+    }
+
+    /// <summary>用户角色管理权限</summary>
+    public static class UserRoleManagement
+    {
+        public const string Default = GroupName + ".UserRoleManagement";
+        public const string Assign = Default + ".Assign";
+        public const string Remove = Default + ".Remove";
+    }
 }
