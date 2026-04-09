@@ -66,6 +66,7 @@ public class Program
 
             // 配置 HTTP 上下文访问器
             builder.Services.AddHttpContextAccessor();
+            builder.Services.AddMemoryCache();
 
             // 配置权限系统
             builder.Services.AddScoped<IPermissionChecker, PermissionChecker>();
@@ -80,6 +81,7 @@ public class Program
             builder.Services.AddScoped<DFApp.FileFilter.IKeywordFilterRuleRepository, DFApp.FileFilter.KeywordFilterRuleRepository>();
             builder.Services.AddScoped<DFApp.Web.Data.ElectricVehicle.IGasolinePriceRepository, DFApp.Web.Data.ElectricVehicle.GasolinePriceRepository>();
             builder.Services.AddScoped<DFApp.Web.Data.Configuration.IConfigurationInfoRepository, DFApp.Web.Data.Configuration.ConfigurationInfoRepository>();
+            builder.Services.AddScoped<DFApp.Web.Data.Bookkeeping.IBookkeepingExpenditureRepository, DFApp.Web.Data.Bookkeeping.BookkeepingExpenditureRepository>();
 
             // 注册密码哈希服务（无状态，使用 Transient）
             builder.Services.AddTransient<IPasswordHasher, PasswordHasher>();
