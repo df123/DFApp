@@ -39,12 +39,12 @@ export class FileUploadApi {
     return http.request("delete", `${this.baseUrl}/app/file-upload-info/${id}`);
   }
 
-  // GET /api/app/file-upload-info/configuration-value
+  // GET /api/app/file-upload-info/configuration
   async getCustomFileTypeConfig(
     configurationName?: string
   ): Promise<CustomFileTypeDto> {
     return http.get(
-      `${this.baseUrl}/app/file-upload-info/configuration-value`,
+      `${this.baseUrl}/app/file-upload-info/configuration`,
       {
         params: { configurationName }
       }
@@ -77,7 +77,7 @@ export class FileUploadApi {
       }
     };
 
-    return http.request("post", `/api/FileUploadInfo/upload`, {
+    return http.request("post", `${this.baseUrl}/app/file-upload-info/upload`, {
       data: formData,
       ...config
     });
@@ -85,7 +85,7 @@ export class FileUploadApi {
 
   // 下载文件
   async downloadFile(id: number): Promise<string> {
-    return `${window.location.origin}/api/FileUploadInfo?id=${id}`;
+    return `${window.location.origin}/api/app/file-upload-info/download?id=${id}`;
   }
 
   // 计算文件 SHA1

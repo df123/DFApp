@@ -77,7 +77,7 @@ class ElectricVehicleCostApi {
   async getOilCostComparison(
     params: OilCostComparisonRequestDto
   ): Promise<OilCostComparisonDto> {
-    return http.get(`${this.baseUrl}/oil-cost-comparison`, { params });
+    return http.post(`${this.baseUrl}/oil-cost-comparison`, { data: params });
   }
 }
 
@@ -120,15 +120,15 @@ class GasolinePriceApi {
   async getPrices(
     params?: PagedRequestDto
   ): Promise<PagedResultDto<GasolinePriceDto>> {
-    return http.get(this.baseUrl, { params });
+    return http.get(`${this.baseUrl}/list`, { params });
   }
 
   async getLatestPrice(province: string): Promise<GasolinePriceDto> {
-    return http.get(`${this.baseUrl}/latest-price`, { params: { province } });
+    return http.get(`${this.baseUrl}/latest`, { params: { province } });
   }
 
   async refreshPrices(): Promise<void> {
-    return http.post(`${this.baseUrl}/refresh-gasoline-prices`);
+    return http.post(`${this.baseUrl}/refresh`);
   }
 }
 

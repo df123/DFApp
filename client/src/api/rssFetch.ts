@@ -40,11 +40,11 @@ export interface RssFetchResponseDto {
 export class RssFetchApi {
   private baseUrl = "/api/app/rss-fetch";
 
-  // POST /api/app/rss-fetch/fetch-rss-feed
+  // POST /api/app/rss-fetch
   async fetchRssFeed(
     request: RssFetchRequestDto
   ): Promise<RssFetchResponseDto> {
-    return http.post(`${this.baseUrl}/fetch-rss-feed`, { data: request });
+    return http.post(this.baseUrl, { data: request });
   }
 }
 

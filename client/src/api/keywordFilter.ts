@@ -55,7 +55,7 @@ class KeywordFilterApi {
    * 测试文件名过滤
    */
   async testFilter(fileName: string): Promise<KeywordFilterTestResultDto> {
-    return http.post(`${this.baseUrl}/test-filter`, { data: { fileName } });
+    return http.post(`${this.baseUrl}/test`, { data: { fileName } });
   }
 
   /**
@@ -64,7 +64,7 @@ class KeywordFilterApi {
   async testFilterBatch(
     fileNames: string[]
   ): Promise<KeywordFilterTestResultDto[]> {
-    return http.post(`${this.baseUrl}/test-filter-batch`, {
+    return http.post(`${this.baseUrl}/test-batch`, {
       data: { fileNames }
     });
   }
@@ -80,7 +80,7 @@ class KeywordFilterApi {
    * 启用/禁用规则
    */
   async toggleRule(id: number, isEnabled: boolean): Promise<void> {
-    return http.post(`${this.baseUrl}/${id}/toggle-rule`, {
+    return http.put(`${this.baseUrl}/${id}/toggle`, {
       data: { isEnabled }
     });
   }

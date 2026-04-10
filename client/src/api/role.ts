@@ -28,7 +28,7 @@ export interface GetRolesInput {
 }
 
 class RoleApi {
-  private baseUrl = "/api/identity/roles";
+  private baseUrl = "/api/app/role-management";
 
   /**
    * 获取角色列表

@@ -19,7 +19,7 @@ import type {
 
 class Aria2Api {
   private baseUrl = "/api/app/aria2";
-  private manageUrl = "/api/app/aria2Manage";
+  private manageUrl = "/api/app/aria2-manage";
 
   /**
    * 获取下载状态列表
@@ -42,7 +42,7 @@ class Aria2Api {
    * @param videoOnly 是否只获取视频文件链接
    */
   async getAllExternalLinks(videoOnly: boolean = true): Promise<string[]> {
-    return http.get(`${this.baseUrl}/external-links`, {
+    return http.get(`${this.baseUrl}/all-external-links`, {
       params: { videoOnly }
     });
   }
@@ -65,7 +65,7 @@ class Aria2Api {
    * 清空下载目录
    */
   async clearDownloadDirectory(): Promise<void> {
-    return http.post(`${this.baseUrl}/clear-download-directory`);
+    return http.request("delete", `${this.baseUrl}/clear-directory`);
   }
 
   /**
@@ -134,7 +134,7 @@ class Aria2Api {
    * 添加 URI 下载任务
    */
   async addUri(request: AddDownloadRequestDto): Promise<string> {
-    return http.post(`${this.manageUrl}/uri`, { data: request });
+    return http.post(`${this.manageUrl}/add-uri`, { data: request });
   }
 
   /**
@@ -148,7 +148,7 @@ class Aria2Api {
    * 添加种子文件下载任务
    */
   async addTorrent(request: AddTorrentRequestDto): Promise<string> {
-    return http.post(`${this.manageUrl}/torrent`, { data: request });
+    return http.post(`${this.manageUrl}/add-torrent`, { data: request });
   }
 
   /**
@@ -162,49 +162,49 @@ class Aria2Api {
    * 暂停任务
    */
   async pauseTasks(request: PauseTasksRequestDto): Promise<string[]> {
-    return http.post(`${this.manageUrl}/pause-tasks`, { data: request });
+    return http.post(`${this.manageUrl}/pause`, { data: request });
   }
 
   /**
    * 暂停所有任务
    */
   async pauseAllTasks(): Promise<string> {
-    return http.post(`${this.manageUrl}/pause-all-tasks`);
+    return http.post(`${this.manageUrl}/pause-all`);
   }
 
   /**
    * 恢复任务
    */
   async unpauseTasks(request: PauseTasksRequestDto): Promise<string[]> {
-    return http.post(`${this.manageUrl}/unpause-tasks`, { data: request });
+    return http.post(`${this.manageUrl}/unpause`, { data: request });
   }
 
   /**
    * 恢复所有任务
    */
   async unpauseAllTasks(): Promise<string> {
-    return http.post(`${this.manageUrl}/unpause-all-tasks`);
+    return http.post(`${this.manageUrl}/unpause-all`);
   }
 
   /**
    * 停止任务
    */
   async stopTasks(request: StopTasksRequestDto): Promise<string[]> {
-    return http.post(`${this.manageUrl}/stop-tasks`, { data: request });
+    return http.post(`${this.manageUrl}/stop`, { data: request });
   }
 
   /**
    * 删除停止的任务
    */
   async removeTasks(request: RemoveTasksRequestDto): Promise<string[]> {
-    return http.delete(`${this.manageUrl}/tasks`, { data: request });
+    return http.post(`${this.manageUrl}/remove`, { data: request });
   }
 
   /**
    * 清空停止的任务
    */
   async purgeDownloadResult(): Promise<string> {
-    return http.post(`${this.manageUrl}/purge-download-result`);
+    return http.post(`${this.manageUrl}/purge`);
   }
 
   /**
@@ -218,8 +218,8 @@ class Aria2Api {
    * 批量查询 IP 地理位置（通过后端代理）
    */
   async getIpGeolocation(ips: string[]): Promise<IpGeolocationDto[]> {
-    return http.get(`${this.manageUrl}/ip-geolocation`, {
-      params: { Ips: ips }
+    return http.post(`${this.manageUrl}/ip-geolocation`, {
+      data: { Ips: ips }
     });
   }
 }

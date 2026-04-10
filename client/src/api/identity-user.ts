@@ -47,7 +47,7 @@ export interface GetIdentityUsersInput {
 }
 
 class IdentityUserApi {
-  private baseUrl = "/api/identity/users";
+  private baseUrl = "/api/app/user-management";
 
   /**
    * 获取用户列表

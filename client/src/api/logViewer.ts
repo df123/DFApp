@@ -2,7 +2,7 @@ import { http } from "@/utils/http";
 import type { LogFileInfoDto } from "@/types/business";
 
 class LogViewerApi {
-  private baseUrl = "/api/LogViewer";
+  private baseUrl = "/api/app/log-viewer";
 
   /**
    * 获取日志文件列表

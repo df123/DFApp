@@ -93,16 +93,13 @@ class BookkeepingExpenditureApi {
    * 获取图表数据
    */
   async getChartData(params: GetChartDataRequestDto): Promise<ChartJSDto> {
-    return http.get(`${this.baseUrl}/chart-jSDto`, { params });
+    return http.get(`${this.baseUrl}/chart`, { params });
   }
 
   async getMonthlyExpenditure(year: number): Promise<MonthlyExpenditureDto> {
     return http.request<MonthlyExpenditureDto>(
       "get",
-      `${this.baseUrl}/monthly-expenditure`,
-      {
-        params: { year }
-      }
+      `${this.baseUrl}/monthly/${year}`
     );
   }
 
@@ -111,7 +108,7 @@ class BookkeepingExpenditureApi {
     categoryId?: number;
     isBelongToSelf?: boolean;
   }): Promise<number> {
-    return http.get(`${this.baseUrl}/total-expenditure`, { params });
+    return http.get(`${this.baseUrl}/total`, { params });
   }
 }
 

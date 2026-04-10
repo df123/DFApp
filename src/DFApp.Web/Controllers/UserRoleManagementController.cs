@@ -11,6 +11,7 @@ namespace DFApp.Web.Controllers;
 /// <summary>
 /// 用户角色管理控制器，提供用户角色的查询、分配和移除功能
 /// </summary>
+[Route("api/app/user-role-management")]
 public class UserRoleManagementController : DFAppControllerBase
 {
     private readonly UserRoleManagementAppService _userRoleAppService;

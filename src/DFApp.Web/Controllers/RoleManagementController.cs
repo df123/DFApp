@@ -11,6 +11,7 @@ namespace DFApp.Web.Controllers;
 /// <summary>
 /// 角色管理控制器，提供角色的增删改查功能
 /// </summary>
+[Route("api/app/role-management")]
 public class RoleManagementController : DFAppControllerBase
 {
     private readonly RoleManagementAppService _roleAppService;

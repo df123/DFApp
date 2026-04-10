@@ -24,28 +24,28 @@ export interface LotteryDataFetchResponseDto {
 export class LotteryDataFetchApi {
   private baseUrl = "/api/app/lottery-data-fetch";
 
-  // POST /api/app/lottery-data-fetch/fetch-lottery-data
+  // POST /api/app/lottery-data-fetch/fetch
   async fetchLotteryData(
     request: LotteryDataFetchRequestDto
   ): Promise<LotteryDataFetchResponseDto> {
-    return http.post(`${this.baseUrl}/fetch-lottery-data`, { data: request });
+    return http.post(`${this.baseUrl}/fetch`, { data: request });
   }
 
-  // GET /api/app/lottery-data-fetch/fetch-ssq-latest-data
+  // POST /api/app/lottery-data-fetch/fetch-ssq
   async fetchSSQLatestData(): Promise<LotteryDataFetchResponseDto> {
-    return http.post(`${this.baseUrl}/fetch-sSQLatest-data`);
+    return http.post(`${this.baseUrl}/fetch-ssq`);
   }
 
-  // GET /api/app/lottery-data-fetch/fetch-kl8-latest-data
+  // POST /api/app/lottery-data-fetch/fetch-kl8
   async fetchKL8LatestData(): Promise<LotteryDataFetchResponseDto> {
-    return http.post(`${this.baseUrl}/fetch-kL8Latest-data`);
+    return http.post(`${this.baseUrl}/fetch-kl8`);
   }
 
-  // GET /api/app/lottery-data-fetch/test-lottery-api-connection
+  // POST /api/app/lottery-data-fetch/test-connection
   async testLotteryApiConnection(
     lotteryType?: string
   ): Promise<LotteryDataFetchResponseDto> {
-    return http.post(`${this.baseUrl}/test-lottery-api-connection`, {
+    return http.post(`${this.baseUrl}/test-connection`, {
       params: { lotteryType }
     });
   }

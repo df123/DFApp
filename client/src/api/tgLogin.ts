@@ -2,13 +2,13 @@ import { http } from "@/utils/http";
 import type { TGChatsDto } from "../types/business";
 
 class TGLoginApi {
-  private baseUrl = "/api/app/t-gLogin";
+  private baseUrl = "/api/app/tg-login";
 
   /**
    * 获取 TG 登录状态
    */
   async getStatus(): Promise<string> {
-    return http.post(`${this.baseUrl}/status`);
+    return http.get(`${this.baseUrl}/status`);
   }
 
   /**
@@ -24,7 +24,7 @@ class TGLoginApi {
    * 获取 TG 聊天 (403 Forbidden)
    */
   async getChats(): Promise<TGChatsDto> {
-    return http.post(`${this.baseUrl}/chats`);
+    return http.get(`${this.baseUrl}/chats`);
   }
 }
 

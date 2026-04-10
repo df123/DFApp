@@ -10,6 +10,7 @@ namespace DFApp.Web.Controllers;
 /// <summary>
 /// 权限授予管理控制器，提供权限的查询、授予、撤销和全量更新功能
 /// </summary>
+[Route("api/app/permission-grant-management")]
 public class PermissionGrantManagementController : DFAppControllerBase
 {
     private readonly PermissionGrantManagementAppService _permissionGrantAppService;

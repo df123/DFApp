@@ -68,7 +68,7 @@ class RssMirrorApi {
    * 清空所有RSS镜像条目
    */
   async clearAll(): Promise<void> {
-    return http.post(`${this.baseUrl}/clear-all`);
+    return http.request("delete", `${this.baseUrl}/clear-all`);
   }
 
   /**

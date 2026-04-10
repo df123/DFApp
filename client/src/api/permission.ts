@@ -33,7 +33,7 @@ export interface UpdatePermissionsDto {
 }
 
 class PermissionApi {
-  private baseUrl = "/api/permission-management/permissions";
+  private baseUrl = "/api/app/permission-grant-management";
 
   /**
    * 获取权限列表

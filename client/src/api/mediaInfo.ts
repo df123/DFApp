@@ -20,7 +20,7 @@ class MediaInfoApi {
    * 删除无效项目
    */
   async deleteInvalidItems(): Promise<void> {
-    return http.request("delete", `${this.baseUrl}/invalid-items`);
+    return http.request("delete", `${this.baseUrl}/invalid`);
   }
 
   /**
