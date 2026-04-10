@@ -317,7 +317,7 @@ test.describe("Authentication Tests", () => {
 
 ```typescript
 use: {
-  baseURL: "http://localhost:8848",      // 前端地址
+  baseURL: "http://localhost:9949",      // 前端地址
   ignoreHTTPSErrors: true,               // 忽略证书错误
   viewport: { width: 1280, height: 720 }, // 视口大小
   screenshot: "only-on-failure",         // 失败时截图（可改为 "on"）
@@ -381,7 +381,7 @@ Error: self signed certificate
 ### 4. 端口被占用
 
 ```
-Error: Port 8848 is already in use
+Error: Port 9949 is already in use
 ```
 
 **解决方案**: 关闭占用端口的进程或修改端口配置

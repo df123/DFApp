@@ -43,15 +43,20 @@ const handleLogin = async () => {
       }
     });
 
-    sessionStorage.setItem("access_token", result.accessToken);
+    const loginData = result.Data || result.data || result;
+    const roles = loginData.Roles || loginData.roles || [];
+    const permissions =
+      loginData.Permissions || loginData.permissions || [];
+    sessionStorage.setItem("access_token", loginData.AccessToken || loginData.accessToken);
     sessionStorage.setItem(
       "user-info",
       JSON.stringify({
-        username: result.username,
-        email: result.email,
-        expires: result.expiresAt * 1000,
-        roles: result.roles || [],
-        permissions: result.permissions || []
+        username: loginData.Username || loginData.username,
+        email: loginData.Email || loginData.email,
+        expires:
+          (loginData.ExpiresAt || loginData.expiresAt) * 1000,
+        roles,
+        permissions
       })
     );
 

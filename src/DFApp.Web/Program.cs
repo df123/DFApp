@@ -150,8 +150,8 @@ public class Program
                 options.AddDefaultPolicy(builder =>
                 {
                     builder.WithOrigins(
-                            "http://localhost:8848",
-                            "https://localhost:8848"
+                            "http://localhost:9949",
+                            "https://localhost:9949"
                         )
                         .WithHeaders("Authorization", "Content-Type", "X-Requested-With", "X-SignalR-User-Agent")
                         .WithMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")

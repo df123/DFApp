@@ -15,7 +15,8 @@ import {
   findRouteByPath,
   handleAliveRoute,
   formatTwoStageRoutes,
-  formatFlatteningRoutes
+  formatFlatteningRoutes,
+  resetRouterInit
 } from "./utils";
 import {
   type Router,
@@ -90,6 +91,7 @@ export function resetRouter() {
     formatFlatteningRoutes(buildHierarchyTree(ascending(routes.flat(Infinity))))
   );
   usePermissionStoreHook().clearAllCachePage();
+  resetRouterInit();
 }
 
 /** 路由白名单 */

@@ -65,6 +65,6 @@ test.describe("端到端测试", () => {
     await page.waitForLoadState("networkidle");
 
     const currentUrl = page.url();
-    expect(currentUrl).toContain("localhost:8848");
+    expect(currentUrl).toContain("localhost:9949");
   });
 });

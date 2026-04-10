@@ -175,7 +175,7 @@ await expect(page.locator(".item")).toHaveCount(3);
 ### URL 断言
 
 ```typescript
-await expect(page).toHaveURL("https://localhost:8848/page");
+await expect(page).toHaveURL("https://localhost:9949/page");
 await expect(page).toHaveURL(/.*page.*/);
 await expect(page).toHaveURL(/page\?id=\d+/);
 ```

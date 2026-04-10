@@ -1,0 +1,26 @@
+- generic [active] [ref=e1]:
+  - img
+  - generic [ref=e3]:
+    - img [ref=e4]
+    - generic [ref=e6]:
+      - switch
+      - img [ref=e10] [cursor=pointer]
+    - generic [ref=e14]:
+      - img [ref=e16]
+      - generic [ref=e55]:
+        - img [ref=e56]
+        - heading "PureAdmin" [level=2] [ref=e61]
+        - generic [ref=e63]:
+          - generic [ref=e64]: 用户名
+          - textbox "请输入用户名" [ref=e67]: admin
+        - generic [ref=e69]:
+          - generic [ref=e70]: 密码
+          - generic [ref=e72]:
+            - textbox "请输入密码" [ref=e73]: "123456"
+            - img [ref=e96] [cursor=pointer]
+        - button "登录" [ref=e75] [cursor=pointer]:
+          - generic [ref=e76]: 登录
+        - generic [ref=e80] [cursor=pointer]: 忘记密码
+  - alert [ref=e99]:
+    - img [ref=e101]
+    - paragraph [ref=e103]: 登录成功

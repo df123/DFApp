@@ -99,7 +99,7 @@ test.describe("API Response Tests", () => {
       console.log("No API responses captured, checking page load");
       // 至少页面应该成功加载
       const currentUrl = page.url();
-      expect(currentUrl).toContain("localhost:8848");
+      expect(currentUrl).toContain("localhost:9949");
     }
   });
 });
@@ -273,7 +273,7 @@ export default defineConfig({
   workers: process.env.CI ? 1 : undefined,
   reporter: [["html"], ["list"]],
   use: {
-    baseURL: "http://localhost:8848",
+    baseURL: "http://localhost:9949",
     trace: "on-first-retry",
     ignoreHTTPSErrors: true,
     screenshot: "on", // 每个测试都保存截图
@@ -287,7 +287,7 @@ export default defineConfig({
       name: "setup",
       testMatch: /.*\.setup\.ts/,
       use: {
-        baseURL: "http://localhost:8848"
+        baseURL: "http://localhost:9949"
       }
     },
     {
@@ -317,7 +317,7 @@ export default defineConfig({
   ],
   webServer: {
     command: "NODE_ENV=test pnpm dev",
-    url: "http://localhost:8848",
+    url: "http://localhost:9949",
     reuseExistingServer: !process.env.CI,
     timeout: 120000,
     env: {

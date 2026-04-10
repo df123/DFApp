@@ -70,7 +70,7 @@ tests/
 ### playwright.config.ts
 
 - `ignoreHTTPSErrors: true` - 忽略自签名证书错误
-- `baseURL: "http://localhost:8848"` - 前端服务地址
+- `baseURL: "http://localhost:9949"` - 前端服务地址
 - `storageState` - 保存和恢复认证状态
 - `webServer` - 自动启动前端开发服务器
 

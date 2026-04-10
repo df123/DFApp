@@ -80,7 +80,7 @@ setup("authenticate", async ({ page, request, context }) => {
     { userInfo, oidcUser }
   );
 
-  await page.goto("http://localhost:8848/");
+  await page.goto("http://localhost:9949/");
   await page.waitForLoadState("networkidle");
 
   await expect(async () => {

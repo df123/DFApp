@@ -8,7 +8,7 @@ export default defineConfig({
   workers: process.env.CI ? 1 : undefined,
   reporter: [["html"], ["list"]],
   use: {
-    baseURL: "http://localhost:8848",
+    baseURL: "http://localhost:9949",
     trace: "on-first-retry",
     ignoreHTTPSErrors: true,
     screenshot: "on",
@@ -22,7 +22,7 @@ export default defineConfig({
       name: "setup",
       testMatch: /.*\.setup\.ts/,
       use: {
-        baseURL: "http://localhost:8848"
+        baseURL: "http://localhost:9949"
       }
     },
     {
@@ -52,7 +52,7 @@ export default defineConfig({
   ],
   webServer: {
     command: "NODE_ENV=test pnpm dev",
-    url: "http://localhost:8848",
+    url: "http://localhost:9949",
     reuseExistingServer: !process.env.CI,
     timeout: 120000,
     env: {

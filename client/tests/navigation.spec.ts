@@ -112,7 +112,7 @@ test.describe("API 响应测试", () => {
     } else {
       console.log("未捕获到 API 响应，检查页面加载");
       const currentUrl = page.url();
-      expect(currentUrl).toContain("localhost:8848");
+      expect(currentUrl).toContain("localhost:9949");
     }
   });
 });

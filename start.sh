@@ -12,7 +12,7 @@
 # 服务说明：
 #   1. 后端 API (DFApp.Web)       - HTTP,  端口 44369
 #   2. 彩票代理 (DFApp.LotteryProxy) - HTTP,  端口 5000
-#   3. 前端 (DFApp.Vue)           - HTTP,  端口 8848
+#   3. 前端 (DFApp.Vue)           - HTTP,  端口 9949
 # ========================================
 
 # 基础路径
@@ -23,7 +23,7 @@ LOG_DIR="${BASE_DIR}/logs"
 # 服务端口
 BACKEND_PORT=44369
 LOTTERY_PORT=5000
-FRONTEND_PORT=8848
+FRONTEND_PORT=9949
 
 # 日志文件
 BACKEND_LOG="${LOG_DIR}/backend.log"
@@ -188,7 +188,7 @@ start_frontend() {
     wait_for_port_release "$FRONTEND_PORT"
 
     echo "  - 启动中..."
-    nohup bash -c "cd '${VUE_DIR}' && pnpm dev" > "${FRONTEND_LOG}" 2>&1 &
+    nohup bash -c "cd '${VUE_DIR}' && VITE_PORT=${FRONTEND_PORT} pnpm dev" > "${FRONTEND_LOG}" 2>&1 &
     disown
     echo "  ✓ 前端服务已在后台启动"
     echo "  - 日志: ${FRONTEND_LOG}"
