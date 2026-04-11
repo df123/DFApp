@@ -105,13 +105,15 @@ class PureHttp {
         // 优先判断post/get等方法是否传入回调，否则执行初始化设置等回调
         if (typeof $config.beforeResponseCallback === "function") {
           $config.beforeResponseCallback(response);
-          return response.data;
-        }
-        if (PureHttp.initConfig.beforeResponseCallback) {
+        } else if (PureHttp.initConfig.beforeResponseCallback) {
           PureHttp.initConfig.beforeResponseCallback(response);
-          return response.data;
         }
-        return response.data;
+        // 解包后端统一响应格式 { Success, Message, Code, Data }
+        const res = response.data;
+        if (res && typeof res === "object" && "Success" in res && "Data" in res) {
+          return res.Data;
+        }
+        return res;
       },
       async (error: PureHttpError) => {
         const $error = error;
@@ -211,7 +213,7 @@ class PureHttp {
     return new Promise((resolve, reject) => {
       PureHttp.axiosInstance
         .request(config)
-        .then((response: undefined) => {
+        .then((response: any) => {
           resolve(response);
         })
         .catch(error => {

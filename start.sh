@@ -173,6 +173,16 @@ start_backend() {
     kill_port_processes "$BACKEND_PORT" "后端 API"
     wait_for_port_release "$BACKEND_PORT"
 
+    echo "  - 编译后端项目..."
+    dotnet build "${BASE_DIR}/src/DFApp.Web/DFApp.Web.csproj" > "${LOG_DIR}/backend-build.log" 2>&1
+    if [ $? -ne 0 ]; then
+      echo "❌ 后端编译失败，请检查日志: ${LOG_DIR}/backend-build.log"
+      cat "${LOG_DIR}/backend-build.log"
+      return 1
+    fi
+    echo "  ✅ 后端编译成功"
+    echo ""
+
     echo "  - 启动中..."
     ASPNETCORE_ENVIRONMENT=Development nohup dotnet run --project "${BASE_DIR}/src/DFApp.Web/DFApp.Web.csproj" \
         --urls "http://0.0.0.0:${BACKEND_PORT}" > "${BACKEND_LOG}" 2>&1 &
