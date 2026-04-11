@@ -210,9 +210,9 @@ function initRouter() {
     } else {
       return new Promise(resolve => {
         getAsyncRoutes()
-          .then(({ data }) => {
-            handleAsyncRoutes(cloneDeep(data));
-            storageLocal().setItem(key, data);
+          .then((routes) => {
+            handleAsyncRoutes(cloneDeep(routes));
+            storageLocal().setItem(key, routes);
             resolve(router);
           })
           .catch(() => {
@@ -223,8 +223,8 @@ function initRouter() {
   } else {
     return new Promise(resolve => {
       getAsyncRoutes()
-        .then(({ data }) => {
-          handleAsyncRoutes(cloneDeep(data));
+        .then((routes) => {
+          handleAsyncRoutes(cloneDeep(routes));
           resolve(router);
         })
         .catch(() => {
