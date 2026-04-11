@@ -108,10 +108,10 @@ class PureHttp {
         } else if (PureHttp.initConfig.beforeResponseCallback) {
           PureHttp.initConfig.beforeResponseCallback(response);
         }
-        // 解包后端统一响应格式 { Success, Message, Code, Data }
+        // 解包后端统一响应格式 { success, message, code, data }
         const res = response.data;
-        if (res && typeof res === "object" && "Success" in res && "Data" in res) {
-          return res.Data;
+        if (res && typeof res === "object" && "success" in res && "data" in res) {
+          return res.data;
         }
         return res;
       },
