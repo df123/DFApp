@@ -21,7 +21,7 @@ class BookkeepingCategoryApi {
   async getCategories(
     params?: PagedRequestDto
   ): Promise<PagedResultDto<BookkeepingCategoryDto>> {
-    return http.get(this.baseUrl, { params });
+    return http.get(`${this.baseUrl}/paged`, { params });
   }
 
   /**
@@ -60,7 +60,7 @@ class BookkeepingExpenditureApi {
   async getExpenditures(
     params?: GetExpendituresRequestDto
   ): Promise<PagedResultDto<BookkeepingExpenditureDto>> {
-    return http.get(this.baseUrl, { params });
+    return http.get(`${this.baseUrl}/paged`, { params });
   }
 
   /**

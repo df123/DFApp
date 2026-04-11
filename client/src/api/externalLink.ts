@@ -21,7 +21,7 @@ class ExternalLinkApi {
   async getList(
     params?: PagedRequestDto
   ): Promise<PagedResultDto<ExternalLinkDto>> {
-    return http.get(this.baseUrl, { params });
+    return http.get(`${this.baseUrl}/paged`, { params });
   }
 
   /**

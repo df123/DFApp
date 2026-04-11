@@ -28,7 +28,7 @@ export class LotteryApi {
   async getLotteries(
     params?: PagedRequestDto
   ): Promise<PagedResultDto<LotteryDto>> {
-    return http.get(this.baseUrl, { params });
+    return http.get(`${this.baseUrl}/paged`, { params });
   }
 
   // POST /api/app/lottery
@@ -128,7 +128,7 @@ export class LotteryResultApi {
   async getLotteryResults(
     params?: PagedRequestDto
   ): Promise<PagedResultDto<LotteryResultDto>> {
-    return http.get(this.baseUrl, { params });
+    return http.get(`${this.baseUrl}/paged`, { params });
   }
 
   // POST /api/app/lottery-result
@@ -159,7 +159,7 @@ export class LotterySimulationApi {
   async getSSQSimulations(
     params?: PagedRequestDto
   ): Promise<PagedResultDto<LotterySimulationDto>> {
-    return http.get(this.baseUrl, { params });
+    return http.get(`${this.baseUrl}/paged`, { params });
   }
 
   async generateSSQSimulation(
@@ -192,7 +192,7 @@ export class LotteryKL8SimulationApi {
   async getKL8Simulations(
     params?: PagedRequestDto
   ): Promise<PagedResultDto<LotterySimulationDto>> {
-    return http.get(this.baseUrl, { params });
+    return http.get(`${this.baseUrl}/paged`, { params });
   }
 
   // POST /api/app/lottery-kl8-simulation

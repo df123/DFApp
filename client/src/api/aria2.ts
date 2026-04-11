@@ -27,7 +27,7 @@ class Aria2Api {
   async getAria2Status(
     params?: PagedRequestDto & { filter?: string }
   ): Promise<PagedResultDto<TellStatusResultDto>> {
-    return http.get(this.baseUrl, { params });
+    return http.get(`${this.baseUrl}/filtered-list`, { params });
   }
 
   /**

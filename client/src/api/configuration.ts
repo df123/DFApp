@@ -15,7 +15,7 @@ class ConfigurationApi {
   async getConfigurations(
     params?: PagedRequestDto
   ): Promise<PagedResultDto<ConfigurationInfoDto>> {
-    return http.get(this.baseUrl, { params });
+    return http.get(`${this.baseUrl}/paged`, { params });
   }
 
   /**

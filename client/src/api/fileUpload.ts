@@ -14,7 +14,7 @@ export class FileUploadApi {
   async getFileUploadInfos(
     params?: PagedRequestDto
   ): Promise<PagedResultDto<FileUploadInfoDto>> {
-    return http.get(`${this.baseUrl}/app/file-upload-info`, { params });
+    return http.get(`${this.baseUrl}/app/file-upload-info/paged`, { params });
   }
 
   // POST /api/app/file-upload-info

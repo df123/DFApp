@@ -19,7 +19,7 @@ class ElectricVehicleApi {
   async getVehicles(
     params?: PagedRequestDto
   ): Promise<PagedResultDto<ElectricVehicleDto>> {
-    return http.get(this.baseUrl, { params });
+    return http.get(`${this.baseUrl}/paged`, { params });
   }
 
   async getVehicle(id: string): Promise<ElectricVehicleDto> {
@@ -50,7 +50,7 @@ class ElectricVehicleCostApi {
   async getCosts(
     params?: any
   ): Promise<PagedResultDto<ElectricVehicleCostDto>> {
-    return http.get(this.baseUrl, { params });
+    return http.get(`${this.baseUrl}/paged`, { params });
   }
 
   async getCost(id: string): Promise<ElectricVehicleCostDto> {
@@ -87,7 +87,7 @@ class ElectricVehicleChargingRecordApi {
   async getChargingRecords(
     params?: any
   ): Promise<PagedResultDto<ElectricVehicleChargingRecordDto>> {
-    return http.get(this.baseUrl, { params });
+    return http.get(`${this.baseUrl}/paged`, { params });
   }
 
   async getChargingRecord(

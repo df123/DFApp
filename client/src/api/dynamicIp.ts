@@ -15,7 +15,7 @@ class DynamicIpApi {
   async getDynamicIPs(
     params?: PagedRequestDto
   ): Promise<PagedResultDto<DynamicIPDto>> {
-    return http.get(this.baseUrl, { params });
+    return http.get(`${this.baseUrl}/paged`, { params });
   }
 
   /**

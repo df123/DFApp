@@ -36,7 +36,7 @@ class MediaInfoApi {
   async getList(
     params?: PagedRequestDto & { filter?: string }
   ): Promise<PagedResultDto<MediaInfoDto>> {
-    return http.get(this.baseUrl, { params });
+    return http.get(`${this.baseUrl}/paged`, { params });
   }
 
   /**
