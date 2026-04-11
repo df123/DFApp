@@ -105,7 +105,7 @@ public class AccountAppService
             // 登录成功，清除尝试次数
             _cache.Remove(cacheKey);
 
-            var token = await GenerateJwtTokenAsync(user);
+            var (token, roles, permissions) = await GenerateJwtTokenAsync(user);
 
             return new LoginResultDto
             {
@@ -114,7 +114,9 @@ public class AccountAppService
                     _configuration.GetValue<int>("Jwt:ExpirationMinutes"))
                     .ToUnixTimeSeconds(),
                 Username = user.UserName,
-                Email = user.Email
+                Email = user.Email,
+                Roles = roles,
+                Permissions = permissions
             };
         }
         catch (BusinessException)
@@ -136,7 +138,7 @@ public class AccountAppService
     /// 角色级权限的 ProviderKey 存储角色名称（非 GUID），避免大小写匹配问题。
     /// 用户级权限的 ProviderKey 存储用户 ID 字符串（小写）。
     /// </remarks>
-    private async Task<string> GenerateJwtTokenAsync(User user)
+    private async Task<(string token, List<string> roles, List<string> permissions)> GenerateJwtTokenAsync(User user)
     {
         var secretKey = _configuration["Jwt:SecretKey"];
         if (string.IsNullOrEmpty(secretKey))
@@ -230,7 +232,8 @@ public class AccountAppService
             signingCredentials: credentials
         );
 
-        return new JwtSecurityTokenHandler().WriteToken(token);
+        var tokenString = new JwtSecurityTokenHandler().WriteToken(token);
+        return (tokenString, roleNames, permissionSet.ToList());
     }
 
     /// <summary>

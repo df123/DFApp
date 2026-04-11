@@ -1,3 +1,5 @@
+using System.Collections.Generic;
+
 namespace DFApp.Web.DTOs.Account;
 
 /// <summary>
@@ -24,4 +26,14 @@ public class LoginResultDto
     /// 邮箱
     /// </summary>
     public string Email { get; set; } = string.Empty;
+
+    /// <summary>
+    /// 用户角色列表
+    /// </summary>
+    public List<string> Roles { get; set; } = new();
+
+    /// <summary>
+    /// 用户权限列表
+    /// </summary>
+    public List<string> Permissions { get; set; } = new();
 }
