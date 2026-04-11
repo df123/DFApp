@@ -396,8 +396,8 @@ const loadData = async () => {
   try {
     const request = {
       filter: searchKeyword.value,
-      skipCount: (currentPage.value - 1) * pageSize.value,
-      maxResultCount: pageSize.value
+      pageIndex: currentPage.value,
+      pageSize: pageSize.value
     };
     const response = await keywordFilterApi.getList(request);
     tableData.value = response.items;

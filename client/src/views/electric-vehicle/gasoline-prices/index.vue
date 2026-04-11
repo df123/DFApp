@@ -191,8 +191,8 @@ const loadPrices = async () => {
   loading.value = true;
   try {
     const params: any = {
-      skipCount: (currentPage.value - 1) * pageSize.value,
-      maxResultCount: pageSize.value
+      pageIndex: currentPage.value,
+      pageSize: pageSize.value
     };
 
     if (filterForm.value.province) {

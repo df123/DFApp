@@ -268,8 +268,8 @@ const loadTableData = async () => {
   loading.value = true;
   try {
     const params = {
-      skipCount: (pagination.currentPage - 1) * pagination.pageSize,
-      maxResultCount: pagination.pageSize,
+      pageIndex: pagination.currentPage,
+      pageSize: pagination.pageSize,
       filter:
         searchForm.moduleName || searchForm.configurationName
           ? `${searchForm.moduleName} ${searchForm.configurationName}`

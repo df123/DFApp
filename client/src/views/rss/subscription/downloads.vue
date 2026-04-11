@@ -223,8 +223,8 @@ const fetchData = async () => {
   loading.value = true;
   try {
     const result = await rssSubscriptionDownloadApi.getList({
-      skipCount: (pagination.page - 1) * pagination.pageSize,
-      maxResultCount: pagination.pageSize,
+      pageIndex: pagination.page,
+      pageSize: pagination.pageSize,
       sorting: "CreationTime desc",
       ...searchForm
     });
@@ -241,8 +241,8 @@ const fetchData = async () => {
 const fetchSubscriptions = async () => {
   try {
     const result = await rssSubscriptionApi.getList({
-      skipCount: 0,
-      maxResultCount: 1000,
+      pageIndex: 1,
+      pageSize: 1000,
       isEnabled: true
     });
     subscriptions.value = result.items || [];

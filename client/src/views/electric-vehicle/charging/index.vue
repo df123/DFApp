@@ -212,7 +212,7 @@ const formRules: FormRules = {
 const loadVehicles = async () => {
   try {
     const result = await electricVehicleApi.getVehicles({
-      maxResultCount: 1000
+      pageSize: 1000
     });
     vehicles.value = result.items;
   } catch (error) {
@@ -225,8 +225,8 @@ const loadTableData = async () => {
   loading.value = true;
   try {
     const result = await electricVehicleChargingRecordApi.getChargingRecords({
-      skipCount: (pagination.currentPage - 1) * pagination.pageSize,
-      maxResultCount: pagination.pageSize
+      pageIndex: pagination.currentPage,
+      pageSize: pagination.pageSize
     });
     tableData.value = result.items;
     pagination.total = result.totalCount;

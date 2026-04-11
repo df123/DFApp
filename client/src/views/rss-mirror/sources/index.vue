@@ -279,8 +279,8 @@ const fetchData = async () => {
   loading.value = true;
   try {
     const result = await rssSourceApi.getList({
-      skipCount: (pagination.page - 1) * pagination.pageSize,
-      maxResultCount: pagination.pageSize,
+      pageIndex: pagination.page,
+      pageSize: pagination.pageSize,
       filter: searchForm.filter || undefined,
       sorting: "CreationTime desc"
     });

@@ -198,8 +198,8 @@ const loadData = async () => {
   loading.value = true;
   try {
     const params: PagedRequestDto = {
-      skipCount: (pagination.currentPage - 1) * pagination.pageSize,
-      maxResultCount: pagination.pageSize
+      pageIndex: pagination.currentPage,
+      pageSize: pagination.pageSize
     };
 
     const result = await fileUploadApi.getFileUploadInfos(params);

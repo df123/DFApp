@@ -22,8 +22,8 @@ export interface UpdateRoleDto {
 }
 
 export interface GetRolesInput {
-  skipCount?: number;
-  maxResultCount?: number;
+  pageIndex?: number;
+  pageSize?: number;
   filter?: string;
 }
 
@@ -39,8 +39,8 @@ class RoleApi {
   }> {
     return http.get(this.baseUrl, {
       params: {
-        skipCount: input?.skipCount ?? 0,
-        maxResultCount: input?.maxResultCount ?? 100,
+        pageIndex: input?.pageIndex ?? 1,
+        pageSize: input?.pageSize ?? 100,
         filter: input?.filter
       }
     });
@@ -50,7 +50,7 @@ class RoleApi {
    * 获取所有角色
    */
   async getAllRoles(): Promise<RoleDto[]> {
-    const result = await this.getRoles({ maxResultCount: 1000 });
+    const result = await this.getRoles({ pageSize: 1000 });
     return result.items;
   }
 

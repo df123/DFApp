@@ -8,10 +8,10 @@ export interface LoginResultDto {
   permissions: string[];
 }
 
-// ABP 标准分页参数
+// 分页请求参数
 export interface PagedRequestDto {
-  skipCount?: number;
-  maxResultCount?: number;
+  pageIndex?: number;
+  pageSize?: number;
   sorting?: string;
 }
 

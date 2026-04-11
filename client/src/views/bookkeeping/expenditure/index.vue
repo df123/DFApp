@@ -500,7 +500,7 @@ const columns = ref([
 // 方法
 const loadCategories = async () => {
   try {
-    const result = await categoryApi.getCategories({ maxResultCount: 1000 });
+    const result = await categoryApi.getCategories({ pageSize: 1000 });
     categories.value = result.items;
   } catch (error) {
     console.error("加载分类数据失败:", error);
@@ -512,8 +512,8 @@ const loadTableData = async () => {
   loading.value = true;
   try {
     const params = {
-      skipCount: (pagination.currentPage - 1) * pagination.pageSize,
-      maxResultCount: pagination.pageSize,
+      pageIndex: pagination.currentPage,
+      pageSize: pagination.pageSize,
       filter: searchForm.filter || undefined,
       categoryId: searchForm.categoryId,
       isBelongToSelf: searchForm.isBelongToSelf,

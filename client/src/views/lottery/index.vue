@@ -349,8 +349,8 @@ const fetchTableData = async () => {
   loading.value = true;
   try {
     const params: PagedRequestDto = {
-      skipCount: (currentPage.value - 1) * pageSize.value,
-      maxResultCount: pageSize.value,
+      pageIndex: currentPage.value,
+      pageSize: pageSize.value,
       sorting: `${sortField.value} ${sortOrder.value}`
     };
 

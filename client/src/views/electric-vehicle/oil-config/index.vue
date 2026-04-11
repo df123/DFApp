@@ -87,7 +87,7 @@ const loadConfig = async () => {
   try {
     const result = await configurationApi.getConfigurations({
       moduleName: "DFApp.ElectricVehicle",
-      maxResultCount: 100
+      pageSize: 100
     });
     result.items.forEach((config: any) => {
       if (config.configurationName === "OilProvince") {
@@ -137,7 +137,7 @@ const handleSave = async () => {
 
     const existingConfigs = await configurationApi.getConfigurations({
       moduleName: "DFApp.ElectricVehicle",
-      maxResultCount: 100
+      pageSize: 100
     });
     const existingMap = new Map(
       existingConfigs.items.map((c: any) => [c.configurationName, c])

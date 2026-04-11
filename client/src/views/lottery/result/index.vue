@@ -119,8 +119,8 @@ const fetchLotteryResults = async () => {
   loading.value = true;
   try {
     const params: PagedRequestDto = {
-      skipCount: (currentPage.value - 1) * pageSize.value,
-      maxResultCount: pageSize.value,
+      pageIndex: currentPage.value,
+      pageSize: pageSize.value,
       sorting: `${sortParams.sortBy} ${sortParams.sortOrder}`
     };
 

@@ -208,8 +208,8 @@ const getLotteryData = async () => {
   loading.value = true;
   try {
     const result = await lotteryApi.getLotteryGroups({
-      skipCount: (currentPage.value - 1) * pageSize.value,
-      maxResultCount: pageSize.value
+      pageIndex: currentPage.value,
+      pageSize: pageSize.value
     });
     tableData.value = result.items;
     total.value = result.totalCount;

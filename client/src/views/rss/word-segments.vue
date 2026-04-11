@@ -269,8 +269,8 @@ import type {
 const queryParams = reactive<GetRssWordSegmentsRequestDto>({
   filter: "",
   languageType: undefined,
-  skipCount: 0,
-  maxResultCount: 20,
+  pageIndex: 1,
+  pageSize: 20,
   sorting: ""
 });
 
@@ -340,9 +340,8 @@ const loadStatistics = async () => {
   statisticsLoading.value = true;
   try {
     const input: GetRssWordSegmentsRequestDto = {
-      skipCount:
-        (statisticsPagination.page - 1) * statisticsPagination.pageSize,
-      maxResultCount: statisticsPagination.pageSize,
+      pageIndex: statisticsPagination.page,
+      pageSize: statisticsPagination.pageSize,
       filter: queryParams.filter,
       languageType: queryParams.languageType,
       sorting: "totalCount desc"
@@ -364,8 +363,8 @@ const loadStatistics = async () => {
 const loadTableData = async () => {
   tableLoading.value = true;
   try {
-    queryParams.skipCount = (pagination.page - 1) * pagination.pageSize;
-    queryParams.maxResultCount = pagination.pageSize;
+    queryParams.pageIndex = pagination.page;
+    queryParams.pageSize = pagination.pageSize;
 
     const result = await rssWordSegmentApi.getList(queryParams);
     tableData.value = result.items;

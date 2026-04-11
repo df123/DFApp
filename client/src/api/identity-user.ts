@@ -41,8 +41,8 @@ export interface UpdateIdentityUserDto {
 }
 
 export interface GetIdentityUsersInput {
-  skipCount?: number;
-  maxResultCount?: number;
+  pageIndex?: number;
+  pageSize?: number;
   filter?: string;
 }
 
@@ -58,8 +58,8 @@ class IdentityUserApi {
   }> {
     return http.get(this.baseUrl, {
       params: {
-        skipCount: input?.skipCount ?? 0,
-        maxResultCount: input?.maxResultCount ?? 100,
+        pageIndex: input?.pageIndex ?? 1,
+        pageSize: input?.pageSize ?? 100,
         filter: input?.filter
       }
     });
@@ -69,7 +69,7 @@ class IdentityUserApi {
    * 获取所有用户
    */
   async getAllUsers(): Promise<IdentityUserDto[]> {
-    const result = await this.getUsers({ maxResultCount: 1000 });
+    const result = await this.getUsers({ pageSize: 1000 });
     return result.items;
   }
 
