@@ -59,7 +59,7 @@ check_dependencies() {
     fi
 }
 
-# 安全地杀掉占用指定端口的进程
+# 安全地杀掉占用指定端口的进程（包括其进程组）
 # 排除 VS Code 远程开发相关进程
 kill_port_processes() {
     local port=$1
@@ -78,28 +78,56 @@ kill_port_processes() {
     for pid in $pids; do
         # 获取进程命令行，检查是否为 VS Code 相关进程
         local cmdline
-        cmdline=$(tr '\0' ' ' < "/proc/${pid}/cmdline" 2>/dev/null | tr -s ' ' | tolower 2>/dev/null) || true
+        cmdline=$(tr '\0' ' ' < "/proc/${pid}/cmdline" 2>/dev/null | tr -s ' ') || true
 
         if echo "$cmdline" | grep -qiE 'vscode|vsc'; then
             echo "  ⚠ 跳过 VS Code 进程 (PID: ${pid})"
             continue
         fi
 
-        echo "  - 正在停止 ${service_name} 进程 (PID: ${pid})..."
-        kill "$pid" 2>/dev/null || true
-        sleep 1
-        # 如果进程仍未退出，强制杀掉
-        if kill -0 "$pid" 2>/dev/null; then
-            kill -9 "$pid" 2>/dev/null || true
+        # 检查父进程是否为 VS Code 相关进程
+        local ppid
+        ppid=$(ps -o ppid= -p "$pid" 2>/dev/null | tr -d ' ') || true
+        if [ -n "$ppid" ] && [ -f "/proc/${ppid}/cmdline" ]; then
+            local pcmdline
+            pcmdline=$(tr '\0' ' ' < "/proc/${ppid}/cmdline" 2>/dev/null | tr -s ' ') || true
+            if echo "$pcmdline" | grep -qiE 'vscode|vsc'; then
+                echo "  ⚠ 跳过进程 (PID: ${pid})，其父进程为 VS Code (PID: ${ppid})"
+                continue
+            fi
         fi
-        echo "  ✓ 进程 ${pid} 已停止"
+
+        # 获取进程组 ID，尝试杀掉整个进程组
+        local pgid
+        pgid=$(ps -o pgid= -p "$pid" 2>/dev/null | tr -d ' ') || true
+
+        if [ -n "$pgid" ] && [ "$pgid" != "0" ] && [ "$pgid" != "$pid" ]; then
+            echo "  - 正在停止 ${service_name} 进程组 (PGID: ${pgid}, 包含 PID: ${pid})..."
+            kill -- -"$pgid" 2>/dev/null || true
+        else
+            echo "  - 正在停止 ${service_name} 进程 (PID: ${pid})..."
+            kill "$pid" 2>/dev/null || true
+        fi
+
+        sleep 2
+        # 如果进程仍在运行，强制杀掉整个进程组
+        if kill -0 "$pid" 2>/dev/null; then
+            if [ -n "$pgid" ] && [ "$pgid" != "0" ] && [ "$pgid" != "$pid" ]; then
+                echo "  - 进程未退出，强制终止进程组 (PGID: ${pgid})..."
+                kill -9 -- -"$pgid" 2>/dev/null || true
+            else
+                echo "  - 进程未退出，强制终止 (PID: ${pid})..."
+                kill -9 "$pid" 2>/dev/null || true
+            fi
+        fi
+        echo "  ✓ ${service_name} 已停止"
     done
 }
 
 # 等待端口释放
 wait_for_port_release() {
     local port=$1
-    local max_wait=5
+    local max_wait=10
     local waited=0
     while lsof -ti :${port} &>/dev/null && [ $waited -lt $max_wait ]; do
         sleep 1
