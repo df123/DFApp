@@ -25,50 +25,43 @@ export interface PermissionsResultDto {
   groups: PermissionGroupDto[];
 }
 
-export interface UpdatePermissionsDto {
-  permissions: {
-    name: string;
-    isGranted: boolean;
-  }[];
-}
-
 class PermissionApi {
   private baseUrl = "/api/app/permission-grant-management";
 
   /**
    * 获取权限列表
-   * @param providerName 权限提供者类型 (R: Role, U: User)
-   * @param providerKey 提供者标识 (角色名或用户ID)
+   * @param providerType 授予目标类型 ("Role" 或 "User")
+   * @param providerKey 提供者标识（角色名称或用户ID）
    */
   async getPermissions(
-    providerName: string,
+    providerType: string,
     providerKey: string
   ): Promise<PermissionsResultDto> {
     return http.get(this.baseUrl, {
       params: {
-        providerName,
+        providerType,
         providerKey
       }
     });
   }
 
   /**
-   * 更新权限
-   * @param providerName 权限提供者类型 (R: Role, U: User)
-   * @param providerKey 提供者标识 (角色名或用户ID)
-   * @param data 权限更新数据
+   * 全量更新权限
+   * @param providerType 授予目标类型 ("Role" 或 "User")
+   * @param providerKey 提供者标识（角色名称或用户ID）
+   * @param permissionNames 要设置的权限名称列表（仅包含需要授予的权限）
    */
   async updatePermissions(
-    providerName: string,
+    providerType: string,
     providerKey: string,
-    data: UpdatePermissionsDto
+    permissionNames: string[]
   ): Promise<void> {
     return http.put(this.baseUrl, {
-      params: {
-        providerName,
-        providerKey
-      },
-      data: data
+      data: {
+        providerType,
+        providerKey,
+        permissionNames
+      }
     });
   }
 
@@ -77,7 +70,7 @@ class PermissionApi {
    * @param userId 用户ID
    */
   async getUserPermissions(userId: string): Promise<PermissionsResultDto> {
-    return this.getPermissions("U", userId);
+    return this.getPermissions("User", userId);
   }
 
   /**
@@ -85,7 +78,7 @@ class PermissionApi {
    * @param roleName 角色名
    */
   async getRolePermissions(roleName: string): Promise<PermissionsResultDto> {
-    return this.getPermissions("R", roleName);
+    return this.getPermissions("Role", roleName);
   }
 
   /**
@@ -97,7 +90,10 @@ class PermissionApi {
     userId: string,
     permissions: { name: string; isGranted: boolean }[]
   ): Promise<void> {
-    return this.updatePermissions("U", userId, { permissions });
+    const permissionNames = permissions
+      .filter(p => p.isGranted)
+      .map(p => p.name);
+    return this.updatePermissions("User", userId, permissionNames);
   }
 
   /**
@@ -109,7 +105,10 @@ class PermissionApi {
     roleName: string,
     permissions: { name: string; isGranted: boolean }[]
   ): Promise<void> {
-    return this.updatePermissions("R", roleName, { permissions });
+    const permissionNames = permissions
+      .filter(p => p.isGranted)
+      .map(p => p.name);
+    return this.updatePermissions("Role", roleName, permissionNames);
   }
 }
 

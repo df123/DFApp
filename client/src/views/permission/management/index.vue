@@ -40,7 +40,7 @@ const permissionDialogVisible = ref(false);
 const currentProvider = ref<{
   name: string;
   displayName: string;
-  type: "R" | "U";
+  type: "Role" | "User";
 } | null>(null);
 const permissionData = ref<{
   entityDisplayName: string;
@@ -331,7 +331,7 @@ async function deleteUser(user: IdentityUserDto) {
 async function openPermissionDialog(provider: {
   name: string;
   displayName: string;
-  type: "R" | "U";
+  type: "Role" | "User";
 }) {
   try {
     loading.value = true;
@@ -385,7 +385,7 @@ async function savePermissions() {
     });
 
     // 根据提供者类型调用不同的更新方法
-    if (currentProvider.value.type === "R") {
+    if (currentProvider.value.type === "Role") {
       await permissionApi.updateRolePermissions(
         currentProvider.value.name,
         permissions
@@ -547,8 +547,8 @@ function getPermissionDisplayName(permission: any): string {
     .filter((p: any) => p.providerName !== currentProvider.value?.type)
     .map((p: any) => {
       // 将provider名称转换为更友好的显示
-      if (p.providerName === "R") return `角色: ${p.providerKey}`;
-      if (p.providerName === "U") return `用户`;
+      if (p.providerName === "Role") return `角色: ${p.providerKey}`;
+      if (p.providerName === "User") return `用户`;
       return p.providerName;
     });
 
@@ -636,7 +636,7 @@ onMounted(() => {
                     openPermissionDialog({
                       name: row.name,
                       displayName: row.name,
-                      type: 'R'
+                      type: 'Role'
                     })
                   "
                 >
@@ -709,7 +709,7 @@ onMounted(() => {
                     openPermissionDialog({
                       name: row.id,
                       displayName: row.userName,
-                      type: 'U'
+                      type: 'User'
                     })
                   "
                 >
