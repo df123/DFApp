@@ -56,10 +56,12 @@ class IdentityUserApi {
     items: IdentityUserDto[];
     totalCount: number;
   }> {
+    const pageIndex = input?.pageIndex ?? 1;
+    const pageSize = input?.pageSize ?? 100;
     return http.get(this.baseUrl, {
       params: {
-        pageIndex: input?.pageIndex ?? 1,
-        pageSize: input?.pageSize ?? 100,
+        skipCount: (pageIndex - 1) * pageSize,
+        maxResultCount: pageSize,
         filter: input?.filter
       }
     });
