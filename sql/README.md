@@ -64,7 +64,13 @@ sqlite3 DFApp.db
 | `rss-subscription-tables.sql` | ✅已执行 | RSS 订阅表创建 |
 | `add-disk-space-check.sql` | ✅已执行 | RSS 订阅下载表添加字段 |
 
-### 三、运维脚本
+### 三、数据修复脚本
+
+| 文件名 | 状态 | 说明 |
+|--------|------|------|
+| `fix-guid-case-migration.sql` | ✅已执行 | 将所有表中的大写 Guid 统一转为小写（ABP 遗留数据兼容 SqlSugar） |
+
+### 四、运维脚本
 
 | 文件名 | 状态 | 说明 |
 |--------|------|------|
