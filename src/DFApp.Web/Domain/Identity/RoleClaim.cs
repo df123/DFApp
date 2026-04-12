@@ -11,6 +11,12 @@ namespace DFApp.Identity;
 public class RoleClaim : AuditedEntity<Guid>
 {
     /// <summary>
+    /// Guid 类型主键不支持数据库自增，覆盖基类属性移除 IsIdentity
+    /// </summary>
+    [SugarColumn(IsPrimaryKey = true, IsIdentity = false)]
+    public new Guid Id { get; set; }
+
+    /// <summary>
     /// 角色 ID
     /// </summary>
     [SugarColumn(ColumnName = "RoleId")]

@@ -1,0 +1,26 @@
+-- 修复 long 类型主键实体缺少 IsIdentity 的问题
+-- 
+-- 根因：EntityBase<TKey> 中移除了 IsIdentity = true（因为 Guid 类型不支持自增），
+-- 导致所有继承 EntityBase<long> 的实体在 INSERT 时 SqlSugar 传入 Id=0，
+-- 与 SQLite 的 AUTOINCREMENT 约束冲突，返回 500 错误。
+--
+-- 修复方案：
+-- 1. EntityBase<TKey> 中将 IsIdentity 默认设为 true
+-- 2. 所有 Guid 主键实体通过 new 关键字覆盖 Id 属性，显式设置 IsIdentity = false
+--
+-- 此修复不需要数据库结构变更，仅修改 ORM 映射配置。
+-- SQLite 中已有的 INTEGER PRIMARY KEY AUTOINCREMENT 约束无需修改，
+-- SqlSugar 会在 INSERT 时自动忽略 Id 字段的值，由数据库自动生成。
+--
+-- 影响的 long 类型主键实体（无需修改，自动继承 IsIdentity = true）：
+-- - BookkeepingCategory, BookkeepingExpenditure, BookkeepingInfo, BookkeepingResult,
+--   BookkeepingPrizegrades, RssSubscription, RssMirrorItem, RssSource,
+--   RssSubscriptionDownload, RssWordSegment, ConfigurationInfo, FileUploadInfo,
+--   MediaInfo, MediaExternalLink, MediaExternalLinkMediaIds, TellStatusResult,
+--   KeywordFilterRule, AppPermissionGrant
+--
+-- 已显式设置 IsIdentity = false 的 Guid 主键实体：
+-- - Entity, AuditedEntity, FullAuditedEntity, CreationAuditedEntity（无参别名类）
+-- - User, Role, RoleClaim, PermissionGrant, Permission, DynamicIP,
+--   LotterySimulation, ElectricVehicle, ElectricVehicleCost,
+--   ElectricVehicleChargingRecord, GasolinePrice

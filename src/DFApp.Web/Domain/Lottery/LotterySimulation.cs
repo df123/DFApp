@@ -11,6 +11,12 @@ namespace DFApp.Lottery
     public class LotterySimulation : AuditedEntity<Guid>
     {
         /// <summary>
+        /// Guid 类型主键不支持数据库自增，覆盖基类属性移除 IsIdentity
+        /// </summary>
+        [SugarColumn(IsPrimaryKey = true, IsIdentity = false)]
+        public new Guid Id { get; set; }
+
+        /// <summary>
         /// 期号 (格式：yyyyxxx，例如：2023001)
         /// </summary>
         public int TermNumber { get; set; }

@@ -11,9 +11,7 @@ public abstract class EntityBase<TKey> : IEntity<TKey>
     /// <summary>
     /// 实体唯一标识
     /// </summary>
-    // 移除 IsIdentity：Guid 类型主键不支持数据库自增，SQLite TEXT 主键也无法自动生成值，
-    // 保留 IsIdentity 会导致 INSERT 时 SqlSugar 不传递 Id，引发 NOT NULL 约束失败
-    [SugarColumn(IsPrimaryKey = true)]
+    [SugarColumn(IsPrimaryKey = true, IsIdentity = true)]
     public TKey Id { get; set; }
 
     /// <summary>

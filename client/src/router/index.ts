@@ -163,6 +163,20 @@ router.beforeEach(async (to: ToRouteType, _from, next) => {
   }
 
   if (authenticated) {
+    // 从 sessionStorage 恢复用户数据到 Pinia store（处理页面刷新场景）
+    const userStore = useUserStoreHook();
+    if (userStore.roles.length === 0 || userStore.permissions.length === 0) {
+      try {
+        const userInfo = JSON.parse(userInfoStr);
+        userStore.SET_USERNAME(userInfo.username || "");
+        userStore.SET_NICKNAME(userInfo.nickname || "");
+        userStore.SET_ROLES(userInfo.roles || []);
+        userStore.SET_PERMS(userInfo.permissions || []);
+      } catch (error) {
+        console.error("恢复用户数据到 Pinia store 失败:", error);
+      }
+    }
+
     // 无权限跳转403页面
     if (to.meta?.roles) {
       const userRoles = useUserStoreHook()?.roles || [];

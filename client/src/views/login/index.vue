@@ -7,6 +7,7 @@ import { bg, avatar, illustration } from "./utils/static";
 import { useDataThemeChange } from "@/layout/hooks/useDataThemeChange";
 import { useNav } from "@/layout/hooks/useNav";
 import { useLayout } from "@/layout/hooks/useLayout";
+import { useUserStoreHook } from "@/store/modules/user";
 import Motion from "./utils/motion";
 
 import dayIcon from "@/assets/svg/day.svg?component";
@@ -47,18 +48,29 @@ const handleLogin = async () => {
     const roles = loginData.Roles || loginData.roles || [];
     const permissions =
       loginData.Permissions || loginData.permissions || [];
-    sessionStorage.setItem("access_token", loginData.AccessToken || loginData.accessToken);
+    const token = loginData.AccessToken || loginData.accessToken;
+    const usernameVal = loginData.Username || loginData.username;
+    const nickname = loginData.Nickname || loginData.nickname || "";
+    const expires = (loginData.ExpiresAt || loginData.expiresAt) * 1000;
+
+    sessionStorage.setItem("access_token", token);
     sessionStorage.setItem(
       "user-info",
       JSON.stringify({
-        username: loginData.Username || loginData.username,
+        username: usernameVal,
         email: loginData.Email || loginData.email,
-        expires:
-          (loginData.ExpiresAt || loginData.expiresAt) * 1000,
+        expires,
         roles,
         permissions
       })
     );
+
+    // 将用户数据写入 Pinia store，确保 v-permission 指令能正确读取权限
+    const userStore = useUserStoreHook();
+    userStore.SET_USERNAME(usernameVal);
+    userStore.SET_NICKNAME(nickname);
+    userStore.SET_ROLES(roles);
+    userStore.SET_PERMS(permissions);
 
     message("登录成功", { type: "success" });
     router.push("/");
