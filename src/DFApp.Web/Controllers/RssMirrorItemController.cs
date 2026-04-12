@@ -141,6 +141,6 @@ public class RssMirrorItemController : DFAppControllerBase
         [FromQuery] bool enableKeywordFilter = false)
     {
         var result = await _rssMirrorItemAppService.DownloadToAria2Async(id, videoOnly, enableKeywordFilter);
-        return Success(result);
+        return Success(data: result);
     }
 }

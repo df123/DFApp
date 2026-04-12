@@ -83,7 +83,7 @@ public class Aria2Controller : DFAppControllerBase
     public async Task<IActionResult> GetExternalLinkAsync([FromRoute] long id)
     {
         var result = await _aria2Service.GetExternalLinkAsync(id);
-        return Success(result);
+        return Success(data: result);
     }
 
     /// <summary>

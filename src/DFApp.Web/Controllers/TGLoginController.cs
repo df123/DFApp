@@ -40,7 +40,7 @@ public class TGLoginController : DFAppControllerBase
     public IActionResult Status()
     {
         var result = _tgLoginService.Status();
-        return Success(result);
+        return Success(data: result);
     }
 
     /// <summary>
@@ -51,7 +51,7 @@ public class TGLoginController : DFAppControllerBase
     public async Task<IActionResult> Config([FromBody] string value)
     {
         var result = await _tgLoginService.Config(value);
-        return Success(result);
+        return Success(data: result);
     }
 
     /// <summary>

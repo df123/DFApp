@@ -112,7 +112,7 @@ public class ConfigurationInfoController : DFAppControllerBase
         [FromQuery] string moduleName)
     {
         var result = await _configurationInfoService.GetConfigurationInfoValue(configurationName, moduleName);
-        return Success(result);
+        return Success(data: result);
     }
 
     /// <summary>
@@ -135,6 +135,6 @@ public class ConfigurationInfoController : DFAppControllerBase
     public async Task<IActionResult> GetRemainingDiskSpaceAsync()
     {
         var result = await _configurationInfoService.GetRemainingDiskSpaceAsync();
-        return Success(result);
+        return Success(data: result);
     }
 }

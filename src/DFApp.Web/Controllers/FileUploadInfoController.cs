@@ -98,7 +98,7 @@ public class FileUploadInfoController : DFAppControllerBase
     public async Task<IActionResult> GetConfigurationValueAsync([FromQuery] string configurationName)
     {
         var result = await _fileUploadInfoService.GetConfigurationValue(configurationName);
-        return Success(result);
+        return Success(data: result);
     }
 
     /// <summary>

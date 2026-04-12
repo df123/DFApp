@@ -142,7 +142,7 @@ public class Aria2ManageController : DFAppControllerBase
     public async Task<IActionResult> AddUriAsync([FromBody] AddDownloadRequestDto input)
     {
         var result = await _aria2ManageService.AddUriAsync(input);
-        return Success(result);
+        return Success(data: result);
     }
 
     /// <summary>
@@ -166,7 +166,7 @@ public class Aria2ManageController : DFAppControllerBase
     public async Task<IActionResult> AddTorrentAsync([FromBody] AddTorrentRequestDto input)
     {
         var result = await _aria2ManageService.AddTorrentAsync(input);
-        return Success(result);
+        return Success(data: result);
     }
 
     /// <summary>
@@ -201,7 +201,7 @@ public class Aria2ManageController : DFAppControllerBase
     public async Task<IActionResult> PauseAllTasksAsync()
     {
         var result = await _aria2ManageService.PauseAllTasksAsync();
-        return Success(result);
+        return Success(data: result);
     }
 
     /// <summary>
@@ -224,7 +224,7 @@ public class Aria2ManageController : DFAppControllerBase
     public async Task<IActionResult> UnpauseAllTasksAsync()
     {
         var result = await _aria2ManageService.UnpauseAllTasksAsync();
-        return Success(result);
+        return Success(data: result);
     }
 
     /// <summary>
@@ -259,7 +259,7 @@ public class Aria2ManageController : DFAppControllerBase
     public async Task<IActionResult> PurgeDownloadResultAsync()
     {
         var result = await _aria2ManageService.PurgeDownloadResultAsync();
-        return Success(result);
+        return Success(data: result);
     }
 
     #endregion
