@@ -192,7 +192,7 @@ const pagination = reactive({
 });
 
 const formData = ref<CreateUpdateElectricVehicleCostDto>({
-  costDate: "",
+  costDate: null as string | null,
   amount: 0,
   isBelongToSelf: true,
   costType: 2,

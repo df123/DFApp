@@ -412,7 +412,7 @@ const total = ref(0);
 
 // 表单数据 (use ref instead of reactive)
 const formData = ref<CreateUpdateBookkeepingExpenditureDto>({
-  expenditureDate: "",
+  expenditureDate: null as string | null,
   expenditure: 0,
   remark: "",
   isBelongToSelf: true,

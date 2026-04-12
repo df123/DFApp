@@ -174,7 +174,7 @@ export interface CreateUpdateElectricVehicleDto {
   brand?: string;
   model?: string;
   licensePlate?: string;
-  purchaseDate?: string;
+  purchaseDate?: string | null;
   batteryCapacity?: number;
   totalMileage: number;
   remark?: string;

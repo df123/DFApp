@@ -170,7 +170,7 @@ const formData = ref<CreateUpdateElectricVehicleDto>({
   licensePlate: "",
   batteryCapacity: undefined,
   totalMileage: 0,
-  purchaseDate: "",
+  purchaseDate: null as string | null,
   remark: ""
 });
 
@@ -219,7 +219,7 @@ const handleCreate = () => {
     licensePlate: "",
     batteryCapacity: undefined,
     totalMileage: 0,
-    purchaseDate: "",
+    purchaseDate: null as string | null,
     remark: ""
   });
   dialogTitle.value = "新增车辆";
@@ -235,7 +235,7 @@ const handleEdit = (row: ElectricVehicleDto) => {
     licensePlate: row.licensePlate || "",
     batteryCapacity: row.batteryCapacity,
     totalMileage: row.totalMileage,
-    purchaseDate: row.purchaseDate || "",
+    purchaseDate: row.purchaseDate ?? null,
     remark: row.remark || ""
   });
   dialogTitle.value = "编辑车辆";

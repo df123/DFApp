@@ -183,7 +183,7 @@ const pagination = reactive({
 });
 
 const formData = ref<CreateUpdateElectricVehicleChargingRecordDto>({
-  chargingDate: "",
+  chargingDate: null as string | null,
   stationName: "",
   chargingDuration: undefined,
   energy: undefined,
