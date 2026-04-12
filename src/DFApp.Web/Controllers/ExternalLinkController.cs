@@ -77,4 +77,15 @@ public class ExternalLinkController : DFAppControllerBase
         await _externalLinkService.DeleteAsync(id);
         return Success();
     }
+
+    /// <summary>
+    /// 仅移除外链关联的物理文件
+    /// </summary>
+    [HttpDelete("{id:long}/file")]
+    [Permission(DFAppPermissions.Medias.Delete)]
+    public async Task<IActionResult> RemoveFileAsync([FromRoute] long id)
+    {
+        await _externalLinkService.RemoveFileAsync(id);
+        return Success();
+    }
 }

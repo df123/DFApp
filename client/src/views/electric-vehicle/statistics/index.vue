@@ -37,7 +37,7 @@
           <el-card class="stat-card">
             <el-statistic
               title="电车总花费"
-              :value="data?.electricVehicleTotalCost?.toFixed(2)"
+              :value="Number(data?.electricVehicleTotalCost?.toFixed(2) ?? 0)"
               prefix="￥"
             />
           </el-card>
@@ -46,7 +46,7 @@
           <el-card class="stat-card">
             <el-statistic
               title="电车行驶里程"
-              :value="data?.electricVehicleMileage?.toFixed(0)"
+              :value="Number(data?.electricVehicleMileage?.toFixed(0) ?? 0)"
               suffix="km"
             />
           </el-card>
@@ -55,7 +55,7 @@
           <el-card class="stat-card">
             <el-statistic
               title="电车每公里成本"
-              :value="data?.electricVehicleCostPerKm?.toFixed(2)"
+              :value="Number(data?.electricVehicleCostPerKm?.toFixed(2) ?? 0)"
               prefix="￥"
             />
           </el-card>
@@ -64,7 +64,7 @@
           <el-card class="stat-card">
             <el-statistic
               title="节省金额"
-              :value="data?.savings?.toFixed(2)"
+              :value="Number(data?.savings?.toFixed(2) ?? 0)"
               prefix="￥"
               :value-style="{ color: '#67C23A' }"
             />
