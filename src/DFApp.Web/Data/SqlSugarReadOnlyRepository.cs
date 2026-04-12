@@ -29,9 +29,9 @@ public class SqlSugarReadOnlyRepository<T, TKey> : ISqlSugarReadOnlyRepository<T
     /// </summary>
     /// <param name="id">主键 ID</param>
     /// <returns>实体</returns>
-    public async Task<T?> GetByIdAsync(TKey id)
+    public Task<T?> GetByIdAsync(TKey id)
     {
-        return await _db.Queryable<T>().In(id).FirstAsync();
+        return Task.FromResult<T?>(_db.Queryable<T>().InSingle(id));
     }
 
     /// <summary>
