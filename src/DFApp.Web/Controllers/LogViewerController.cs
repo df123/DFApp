@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -101,7 +102,7 @@ public class LogViewerController : DFAppControllerBase
             content = await System.IO.File.ReadAllTextAsync(filePath);
         }
 
-        return Success(content);
+        return Success((object?)content);
     }
 
     /// <summary>
@@ -137,30 +138,51 @@ public class LogViewerController : DFAppControllerBase
     }
 
     /// <summary>
-    /// 读取文件末尾指定行数的内容
+    /// 从文件末尾倒序读取指定行数的内容（UTF-8 安全，避免遍历整个大文件）
     /// </summary>
     /// <param name="filePath">文件路径</param>
     /// <param name="lines">行数</param>
     private async Task<string> ReadLastLinesAsync(string filePath, int lines)
     {
-        var contentBuilder = new List<string>();
+        const int bufferSize = 64 * 1024;
+        var collected = new List<string>();
+        var leftover = string.Empty;
 
         await using var fileStream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
-        using var reader = new StreamReader(fileStream);
+        var position = fileStream.Length;
 
-        while (!reader.EndOfStream)
+        while (position > 0 && collected.Count < lines)
         {
-            var line = await reader.ReadLineAsync();
-            if (line != null)
+            var readSize = (int)Math.Min(bufferSize, position);
+            position -= readSize;
+            fileStream.Position = position;
+
+            var buffer = new byte[readSize];
+            var bytesRead = await fileStream.ReadAsync(buffer.AsMemory(0, readSize));
+            var chunk = System.Text.Encoding.UTF8.GetString(buffer, 0, bytesRead);
+            var combined = chunk + leftover;
+
+            // 从 combined 中提取所有行（保留顺序）
+            var parts = combined.Split('\n');
+            // 最后一部分可能是不完整的行，留到下次迭代与前面的块拼接
+            leftover = parts[0];
+
+            // 从后向前将行添加到结果列表头部
+            for (int i = parts.Length - 1; i >= 1 && collected.Count < lines; i--)
             {
-                contentBuilder.Add(line);
-                if (contentBuilder.Count > lines)
-                {
-                    contentBuilder.RemoveAt(0);
-                }
+                var line = parts[i];
+                if (line.EndsWith('\r'))
+                    line = line[..^1];
+                collected.Insert(0, line);
             }
         }
 
-        return string.Join(System.Environment.NewLine, contentBuilder);
+        // 处理文件开头没有换行符的剩余内容
+        if (leftover.Length > 0 && collected.Count < lines)
+        {
+            collected.Insert(0, leftover.TrimEnd('\r'));
+        }
+
+        return string.Join(Environment.NewLine, collected);
     }
 }

@@ -18,7 +18,8 @@ class LogViewerApi {
    */
   async getLogContent(fileName: string, isTail = true): Promise<string> {
     const params = { fileName, isTail };
-    return http.get(`${this.baseUrl}/log-content`, { params });
+    // 日志文件可能很大，设置 60 秒超时
+    return http.get(`${this.baseUrl}/log-content`, { params, timeout: 60000 });
   }
 
   /**
