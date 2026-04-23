@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Threading.Tasks;
 using System.Text;
 using System.Text.Json;
@@ -100,12 +100,10 @@ public class Program
             // 配置后台任务队列
             builder.Services.AddSingleton<IBackgroundTaskQueue, BackgroundTaskQueue>();
             builder.Services.AddSingleton<IQueueManagement, QueueManagement>();
-            // 暂时禁用后台任务，减少启动日志干扰
-            // builder.Services.AddHostedService<BackgroundQueueHostedService>();
+            builder.Services.AddHostedService<BackgroundQueueHostedService>();
 
-            // 配置后台服务（暂时禁用）
-            // builder.Services.AddHostedService<Aria2BackgroundWorker>();
-            // builder.Services.AddHostedService<ListenTelegramService>();
+            builder.Services.AddHostedService<Aria2BackgroundWorker>();
+            builder.Services.AddHostedService<ListenTelegramService>();
 
             // 配置应用服务
             builder.Services.AddScoped<DFApp.Web.Services.TG.TGLoginService>();
@@ -142,8 +140,7 @@ public class Program
             builder.Services.AddScoped<DFApp.Web.Services.Identity.RoleManagementAppService>();
             builder.Services.AddScoped<DFApp.Web.Services.Identity.PermissionGrantManagementAppService>();
             builder.Services.AddScoped<DFApp.Web.Services.Identity.UserRoleManagementAppService>();
-            // 暂时禁用后台任务，减少启动日志干扰
-            // builder.Services.AddHostedService<Web.Background.Aria2MonitorWorker>();
+            builder.Services.AddHostedService<Web.Background.Aria2MonitorWorker>();
 
             // 配置 CORS
             builder.Services.AddCors(options =>
@@ -241,35 +238,34 @@ public class Program
                 });
             });
 
-            // 暂时禁用 Quartz 定时任务，减少启动日志干扰
-            // Quartz.Logging.LogProvider.IsDisabled = true;
-            // builder.Services.AddQuartz(q =>
-            // {
-            //     // GasolinePriceRefreshJob — 每晚21:00执行
-            //     q.ScheduleJob<Background.GasolinePriceRefreshJob>(trigger => trigger
-            //         .WithIdentity("GasolinePriceRefreshJob-trigger")
-            //         .WithCronSchedule("0 0 21 * * ?"));
+            Quartz.Logging.LogProvider.IsDisabled = true;
+            builder.Services.AddQuartz(q =>
+            {
+                // GasolinePriceRefreshJob — 每晚21:00执行
+                q.ScheduleJob<Background.GasolinePriceRefreshJob>(trigger => trigger
+                    .WithIdentity("GasolinePriceRefreshJob-trigger")
+                    .WithCronSchedule("0 0 21 * * ?"));
 
-            //     // DiskSpaceCheckJob — 每10分钟执行
-            //     q.ScheduleJob<Background.DiskSpaceCheckJob>(trigger => trigger
-            //         .WithIdentity("DiskSpaceCheckJob-trigger")
-            //         .WithSimpleSchedule(x => x
-            //             .WithIntervalInMinutes(10)
-            //             .RepeatForever()));
+                // DiskSpaceCheckJob — 每10分钟执行
+                q.ScheduleJob<Background.DiskSpaceCheckJob>(trigger => trigger
+                    .WithIdentity("DiskSpaceCheckJob-trigger")
+                    .WithSimpleSchedule(x => x
+                        .WithIntervalInMinutes(10)
+                        .RepeatForever()));
 
-            //     // LotteryResultJob — 每晚23:00执行
-            //     q.ScheduleJob<Background.LotteryResultJob>(trigger => trigger
-            //         .WithIdentity("LotteryResultJob-trigger")
-            //         .WithCronSchedule("0 0 23 * * ?"));
+                // LotteryResultJob — 每晚23:00执行
+                q.ScheduleJob<Background.LotteryResultJob>(trigger => trigger
+                    .WithIdentity("LotteryResultJob-trigger")
+                    .WithCronSchedule("0 0 23 * * ?"));
 
-            //     // RssMirrorFetchJob — 每5分钟执行
-            //     q.ScheduleJob<Background.RssMirrorFetchJob>(trigger => trigger
-            //         .WithIdentity("RssMirrorFetchJob-trigger")
-            //         .WithSimpleSchedule(x => x
-            //             .WithIntervalInMinutes(5)
-            //             .RepeatForever()));
-            // });
-            // builder.Services.AddQuartzHostedService(q => q.WaitForJobsToComplete = true);
+                // RssMirrorFetchJob — 每5分钟执行
+                q.ScheduleJob<Background.RssMirrorFetchJob>(trigger => trigger
+                    .WithIdentity("RssMirrorFetchJob-trigger")
+                    .WithSimpleSchedule(x => x
+                        .WithIntervalInMinutes(5)
+                        .RepeatForever()));
+            });
+            builder.Services.AddQuartzHostedService(q => q.WaitForJobsToComplete = true);
 
             var app = builder.Build();
 
