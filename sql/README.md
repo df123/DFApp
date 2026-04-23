@@ -1,111 +1,65 @@
-# SQL 脚本说明
+# SQL 迁移脚本
 
-本目录包含数据库迁移、维护和业务相关的 SQL 脚本。
+本目录包含数据库迁移和运维脚本，用于从 ABP Framework 迁移到轻量级 ASP.NET Core 架构。
 
-## 执行前准备
+## 执行顺序
 
-1. **备份数据库**：执行任何脚本前，请务必备份数据库文件
-   ```bash
-   cp DFApp.db DFApp.db.backup
-   ```
+### 阶段 A：ABP 迁移清理
 
-2. **停止应用**：确保应用程序已停止运行
+| 顺序 | 文件 | 说明 |
+|------|------|------|
+| 01 | `cleanup-soft-deleted-users.sql` | 清理软删除用户（cms, down, cms2）及其关联数据 |
+| 02 | `migrate-abpusers-table.sql` | 精简 AbpUsers 表（31列→10列） |
+| 03 | `remove-abp-legacy-columns-from-app-tables.sql` | 移除 App 表的 ABP 遗留列（ExtraProperties, IsDeleted） |
+| 04 | `add-missing-audit-columns.sql` | 补充缺失的审计列（CreatorId, LastModifierId 等） |
+| 05 | `fix-guid-case-migration.sql` | 统一所有表中的 GUID 为小写 |
+| 06 | `migrate-to-app-permission-grants.sql` | 创建 AppPermissionGrants 表并从旧表迁移数据 |
+| 07 | `cleanup-all-abp-tables.sql` | 删除 31 张 ABP 遗留表 |
+| 08 | `verify-identity-data.sql` | 验证迁移后数据的完整性 |
 
-## 执行方法
+### 阶段 B：业务表创建
 
-### 方法一：SQLite 命令行
+| 顺序 | 文件 | 说明 |
+|------|------|------|
+| 09 | `rss-subscription-tables.sql` | 创建 RSS 订阅和下载表 |
+| 10 | `add-disk-space-check.sql` | RSS 下载表添加磁盘空间检查字段 |
+
+### 阶段 C：权限种子数据
+
+| 顺序 | 文件 | 说明 |
+|------|------|------|
+| 11 | `grant-admin-all-permissions.sql` | 为 admin 角色授予所有 DFApp.* 权限 |
+
+### 阶段 D：运维工具（按需使用）
+
+| 顺序 | 文件 | 说明 |
+|------|------|------|
+| 12 | `set-default-password.sql` | 为无密码用户设置默认密码 "123456" |
+| 13 | `reset-passwords.sql` | 重置所有用户密码 |
+
+## 使用说明
+
+### 新环境部署
+
+按照 01-13 的顺序依次执行 SQL 脚本。其中 12 和 13 为运维工具，仅在需要时使用。
+
+### 执行方式
+
 ```bash
-# 在 /home/df/dfapp/DFApp 目录下
-sqlite3 DFApp.db < sql/<脚本文件名>.sql
+sqlite3 /path/to/DFApp.db < sql/01-cleanup-soft-deleted-users.sql
 ```
 
-### 方法二：SQLite 交互式
+或批量执行：
+
 ```bash
-sqlite3 DFApp.db
-.read sql/<脚本文件名>.sql
-.quit
+for f in sql/*.sql; do
+  echo "执行: $f"
+  sqlite3 /path/to/DFApp.db < "$f"
+done
 ```
-
-### 方法三：DB Browser for SQLite
-1. 打开 `DFApp.db`
-2. 点击"执行 SQL"标签
-3. 加载脚本文件并执行
-
----
-
-## 脚本分类
-
-### 一、ABP 迁移清理脚本（Phase 8）
-
-> 移除 ABP Framework 过程中产生的迁移脚本，按推荐顺序执行。
-
-| 文件名 | 状态 | 说明 |
-|--------|------|------|
-| `migrate-abpusers-table.sql` | ✅已执行 | AbpUsers 表字段精简迁移（31列→10列） |
-| `migrate-identity-entities-to-custom-base-classes.sql` | ✅已执行 | Identity 实体基类迁移记录 |
-| `migrate-account-user-entity-to-custom-base-class.sql` | ✅已执行 | User 实体基类迁移记录 |
-| `migrate-rss-entities-to-custom-base-classes.sql` | ✅已执行 | RSS 实体基类迁移记录 |
-| `fix-permission-grants-data.sql` | ✅已执行 | 修复权限授予数据格式问题 |
-| `verify-identity-data.sql` | ✅已执行 | 身份数据完整性验证 |
-| `cleanup-all-abp-tables.sql` | ✅已执行 | **统一清理脚本**，删除 ABP 残留的 31 张表（整合了下面的两个脚本） |
-| `cleanup-soft-deleted-users.sql` | ✅已执行 | 清理已软删除的用户（3 个） |
-
-#### 废弃脚本（已被 `cleanup-all-abp-tables.sql` 替代）
-
-| 文件名 | 状态 | 说明 |
-|--------|------|------|
-| `cleanup-abp-obsolete-tables.sql` | ⛔废弃 | ABP 废弃表清理（25 张），功能已整合到 `cleanup-all-abp-tables.sql` |
-| `remove-openiddict-tables.sql` | ⛔废弃 | OpenIddict 表清理（4 张），功能已整合到 `cleanup-all-abp-tables.sql` |
-
-### 二、业务脚本
-
-| 文件名 | 状态 | 说明 |
-|--------|------|------|
-| `rss-subscription-tables.sql` | ✅已执行 | RSS 订阅表创建 |
-| `add-disk-space-check.sql` | ✅已执行 | RSS 订阅下载表添加字段 |
-
-### 三、数据修复脚本
-
-| 文件名 | 状态 | 说明 |
-|--------|------|------|
-| `fix-guid-case-migration.sql` | ✅已执行 | 将所有表中的大写 Guid 统一转为小写（ABP 遗留数据兼容 SqlSugar） |
-
-### 四、运维脚本
-
-| 文件名 | 状态 | 说明 |
-|--------|------|------|
-| `set-default-password.sql` | 📋待执行 | 设置默认密码（按需使用） |
-| `reset-passwords.sql` | 📋待执行 | 重置密码（按需使用） |
-
----
-
-## 推荐执行顺序
-
-**Phase 8 ABP 迁移（已全部完成）：**
-
-1. `migrate-abpusers-table.sql` — 先精简用户表
-2. `migrate-identity-entities-to-custom-base-classes.sql` — Identity 实体基类迁移
-3. `migrate-account-user-entity-to-custom-base-class.sql` — User 实体基类迁移
-4. `migrate-rss-entities-to-custom-base-classes.sql` — RSS 实体基类迁移
-5. `fix-permission-grants-data.sql` — 修复权限数据
-6. `verify-identity-data.sql` — 验证身份数据完整性
-7. `cleanup-all-abp-tables.sql` — 清理所有 ABP 残留表
-8. `cleanup-soft-deleted-users.sql` — 清理软删除用户
-
-**业务脚本（按需）：**
-
-9. `rss-subscription-tables.sql` — 创建 RSS 表
-10. `add-disk-space-check.sql` — RSS 表添加字段
-
-**运维脚本（按需使用）：**
-
-11. `set-default-password.sql` — 设置默认密码
-12. `reset-passwords.sql` — 重置密码
-
----
 
 ## 注意事项
 
-- 所有删除操作不可逆，执行前务必确认已备份数据库
-- 已标记为 ⛔废弃 的脚本不应再执行，其功能已被更完整的脚本替代
-- 运维脚本为按需使用，非必要不执行
+- 所有脚本针对 SQLite 数据库编写
+- 执行前请备份数据库
+- 脚本已按依赖关系排序，请勿打乱执行顺序

@@ -273,6 +273,7 @@ src/DF.Telegram.Blazor.Server.Tiered/Logs/*
 /DFApp.db
 /DFApp.db-shm
 /DFApp.db-wal
+/DFApp-old.db
 /src/DF.Telegram.Web/host/default
 /src/DF.Telegram.Web/.config
 /src/DF.Telegram.Web/publish.ps1
