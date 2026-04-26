@@ -51,6 +51,11 @@ AND EXISTS (
     WHERE UPPER(r.Id) = UPPER(AppPermissionGrants.ProviderKey)
 );
 
+-- 5.5 清理残留的大写 Guid 格式 ProviderKey（从脚本 05 移入）
+--     确保所有 Guid 格式的 ProviderKey 统一为小写（角色名等非 Guid 值不受影响）
+UPDATE AppPermissionGrants SET ProviderKey = LOWER(ProviderKey)
+WHERE ProviderKey LIKE '%-%-%-%-%' AND ProviderKey != LOWER(ProviderKey);
+
 -- 6. 验证迁移结果
 SELECT '=== 迁移结果统计 ===' AS info;
 SELECT '旧表总数' AS label, COUNT(*) AS cnt FROM AbpPermissionGrants
