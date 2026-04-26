@@ -42,39 +42,27 @@ SELECT COUNT(*) AS '禁用用户数' FROM AbpUsers WHERE IsActive = 0;
 -- 1.2 软删除检查
 --    迁移脚本 migrate-abpusers-table.sql 会移除 IsDeleted 列，
 --    如果该列仍存在则检查是否有残留的软删除数据
+--    注意：SQLite 会解析整个语句，不能在 CASE 中条件引用已删除的列，
+--    因此只能通过 pragma_table_info 检查列是否存在
 SELECT '--- 软删除检查 ---' AS section;
 SELECT CASE
-    WHEN COUNT(*) = 0 THEN '⚠️ IsDeleted 列不存在（已执行表结构迁移，此项跳过）'
-    ELSE '检查软删除数据...'
-END AS status
-FROM pragma_table_info('AbpUsers') WHERE name = 'IsDeleted';
+    WHEN (SELECT COUNT(*) FROM pragma_table_info('AbpUsers') WHERE name = 'IsDeleted') = 0
+    THEN '✅ IsDeleted 列已移除，无软删除数据'
+    ELSE '⚠️ IsDeleted 列仍存在，请检查是否有软删除用户残留'
+END AS '软删除验证结果';
 
-SELECT COUNT(*) AS '软删除用户数（IsDeleted=1）'
-FROM AbpUsers
-WHERE name = 'IsDeleted' AND (SELECT COUNT(*) FROM pragma_table_info('AbpUsers') WHERE name = 'IsDeleted') > 0
-AND IsDeleted = 1;
-
--- 使用子查询方式避免列不存在时报错
-SELECT
-    CASE
-        WHEN (SELECT COUNT(*) FROM pragma_table_info('AbpUsers') WHERE name = 'IsDeleted') = 0
-        THEN '✅ IsDeleted 列已移除，无软删除数据'
-        WHEN (SELECT COUNT(*) FROM AbpUsers WHERE IsDeleted = 1) = 0
-        THEN '✅ 无软删除用户'
-        ELSE '❌ 仍有软删除用户残留，数量: ' || (SELECT COUNT(*) FROM AbpUsers WHERE IsDeleted = 1)
-    END AS '软删除验证结果';
 
 -- 1.3 多租户检查
 --    迁移脚本会移除 TenantId 列，如果该列仍存在则检查是否有多租户数据残留
+--    注意：SQLite 会解析整个语句，不能在 CASE 中条件引用已删除的列，
+--    因此只能通过 pragma_table_info 检查列是否存在
 SELECT '--- 多租户检查 ---' AS section;
-SELECT
-    CASE
-        WHEN (SELECT COUNT(*) FROM pragma_table_info('AbpUsers') WHERE name = 'TenantId') = 0
-        THEN '✅ TenantId 列已移除，无多租户数据'
-        WHEN (SELECT COUNT(*) FROM AbpUsers WHERE TenantId IS NOT NULL) = 0
-        THEN '✅ 所有用户 TenantId 均为 NULL，无多租户数据'
-        ELSE '❌ 存在多租户用户数据，数量: ' || (SELECT COUNT(*) FROM AbpUsers WHERE TenantId IS NOT NULL)
-    END AS '多租户验证结果';
+SELECT CASE
+    WHEN (SELECT COUNT(*) FROM pragma_table_info('AbpUsers') WHERE name = 'TenantId') = 0
+    THEN '✅ TenantId 列已移除，无多租户数据'
+    ELSE '⚠️ TenantId 列仍存在，请检查是否有多租户数据残留'
+END AS '多租户验证结果';
+
 
 -- 1.4 密码哈希检查
 --    所有用户都应设置密码哈希
@@ -371,6 +359,8 @@ SELECT
     )) AS '重复用户名数';
 
 -- 8.3 迁移状态检查
+--    注意：SQLite 会解析整个语句，不能在 CASE 中条件引用已删除的列，
+--    因此只通过 pragma_table_info 检查列是否存在
 SELECT '--- 迁移状态检查 ---' AS section;
 SELECT
     CASE WHEN (SELECT COUNT(*) FROM pragma_table_info('AbpUsers') WHERE name = 'IsDeleted') = 0
@@ -379,11 +369,9 @@ SELECT
     END AS '表结构迁移状态',
     CASE WHEN (SELECT COUNT(*) FROM pragma_table_info('AbpUsers') WHERE name = 'TenantId') = 0
         THEN '✅ 已清理'
-        ELSE CASE WHEN (SELECT COUNT(*) FROM AbpUsers WHERE TenantId IS NOT NULL) = 0
-            THEN '✅ 已清理（列存在但值为空）'
-            ELSE '❌ 存在多租户数据'
-        END
+        ELSE '⚠️ TenantId 列仍存在，请检查是否有多租户数据残留'
     END AS '多租户数据清理状态';
+
 
 -- 8.4 最终验证结论
 SELECT '' AS blank;
@@ -407,13 +395,11 @@ SELECT CASE
         SELECT UserName FROM AbpUsers GROUP BY UserName HAVING COUNT(*) > 1
     )) > 0
     THEN '❌ 数据完整性存在问题：存在重复用户名'
-    -- 迁移残留检查（仅在列仍存在时才报错）
+    -- 迁移残留检查（仅检查列是否仍存在，不引用已删除的列）
     WHEN (SELECT COUNT(*) FROM pragma_table_info('AbpUsers') WHERE name = 'IsDeleted') > 0
-     AND (SELECT COUNT(*) FROM AbpUsers WHERE IsDeleted = 1) > 0
-    THEN '❌ 数据完整性存在问题：存在软删除用户残留'
+    THEN '❌ 数据完整性存在问题：IsDeleted 列仍存在，迁移未完成'
     WHEN (SELECT COUNT(*) FROM pragma_table_info('AbpUsers') WHERE name = 'TenantId') > 0
-     AND (SELECT COUNT(*) FROM AbpUsers WHERE TenantId IS NOT NULL) > 0
-    THEN '❌ 数据完整性存在问题：存在多租户数据残留'
+    THEN '❌ 数据完整性存在问题：TenantId 列仍存在，迁移未完成'
     -- 所有检查通过
     ELSE '✅ 所有数据验证通过，数据完整性良好'
 END AS '验证结论';

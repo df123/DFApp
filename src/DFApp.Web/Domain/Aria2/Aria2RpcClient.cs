@@ -5,7 +5,9 @@ using System.Net.Http;
 using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
+using DFApp.Web.Data.Configuration;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
 namespace DFApp.Aria2;
@@ -17,7 +19,10 @@ public class Aria2RpcClient
 {
     private readonly HttpClient _httpClient;
     private readonly IConfiguration _configuration;
+    private readonly IServiceScopeFactory _scopeFactory;
     private readonly ILogger<Aria2RpcClient> _logger;
+
+    private const string ModuleName = "DFApp.Aria2.Aria2RpcClient";
 
     // JSON 序列化选项：不区分大小写，使用驼峰命名
     private readonly JsonSerializerOptions _jsonOptions = new JsonSerializerOptions
@@ -26,27 +31,52 @@ public class Aria2RpcClient
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase
     };
 
-    public Aria2RpcClient(HttpClient httpClient, IConfiguration configuration, ILogger<Aria2RpcClient> logger)
+    public Aria2RpcClient(
+        HttpClient httpClient,
+        IConfiguration configuration,
+        IServiceScopeFactory scopeFactory,
+        ILogger<Aria2RpcClient> logger)
     {
         _httpClient = httpClient;
         _configuration = configuration;
+        _scopeFactory = scopeFactory;
         _logger = logger;
     }
 
     /// <summary>
-    /// 获取 RPC URL
+    /// 从数据库获取 RPC URL，读取失败时回退到 IConfiguration 或默认值
     /// </summary>
-    private string GetRpcUrl()
+    private async Task<string> GetRpcUrlAsync()
     {
-        return _configuration["Aria2:RpcUrl"] ?? "http://localhost:6800/jsonrpc";
+        try
+        {
+            using var scope = _scopeFactory.CreateScope();
+            var configRepo = scope.ServiceProvider.GetRequiredService<IConfigurationInfoRepository>();
+            return await configRepo.GetConfigurationInfoValue("aria2rpc", ModuleName);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "从数据库读取 aria2rpc 配置失败，使用 IConfiguration 兜底值");
+            return _configuration["Aria2:RpcUrl"] ?? "http://localhost:6800/jsonrpc";
+        }
     }
 
     /// <summary>
-    /// 获取 RPC 密钥
+    /// 从数据库获取 RPC 密钥，读取失败时回退到 IConfiguration 或空字符串
     /// </summary>
-    private string GetSecret()
+    private async Task<string> GetSecretAsync()
     {
-        return _configuration["Aria2:Secret"] ?? string.Empty;
+        try
+        {
+            using var scope = _scopeFactory.CreateScope();
+            var configRepo = scope.ServiceProvider.GetRequiredService<IConfigurationInfoRepository>();
+            return await configRepo.GetConfigurationInfoValue("aria2secret", ModuleName);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "从数据库读取 aria2secret 配置失败，使用 IConfiguration 兜底值");
+            return _configuration["Aria2:Secret"] ?? string.Empty;
+        }
     }
 
     /// <summary>
@@ -56,8 +86,8 @@ public class Aria2RpcClient
     {
         try
         {
-            var rpcUrl = GetRpcUrl();
-            var rpcToken = GetSecret();
+            var rpcUrl = await GetRpcUrlAsync();
+            var rpcToken = await GetSecretAsync();
 
             // 添加 token 到参数
             if (!string.IsNullOrWhiteSpace(rpcToken))
@@ -97,7 +127,7 @@ public class Aria2RpcClient
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "调用 Aria2 RPC 失败: {Method}, URL: {Url}", method, GetRpcUrl());
+            _logger.LogError(ex, "调用 Aria2 RPC 失败: {Method}", method);
             throw;
         }
     }

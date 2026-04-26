@@ -117,9 +117,9 @@ UPDATE AppLotteryPrizegrades SET CreatorId = LOWER(CreatorId) WHERE CreatorId IS
 --     列：CreatorId
 UPDATE AppLotteryResult SET CreatorId = LOWER(CreatorId) WHERE CreatorId IS NOT NULL AND CreatorId != LOWER(CreatorId);
 
--- 20. AppPermissionGrants（应用权限授予，ProviderKey 可能是 Guid 或角色名）
---     列：ProviderKey（仅当 ProviderKey 符合 Guid 格式时转换）
-UPDATE AppPermissionGrants SET ProviderKey = LOWER(ProviderKey) WHERE ProviderKey LIKE '%-%-%-%-%' AND ProviderKey != LOWER(ProviderKey);
+-- 20. AppPermissionGrants 已移至脚本 06 处理
+--     原因：AppPermissionGrants 表在脚本 06 中创建，脚本 05 执行时该表尚不存在
+--     脚本 06 在数据迁移时已统一使用 lower(ProviderKey)，并在迁移完成后清理残留大写 Guid
 
 -- 21. AppMediaExternalLink（媒体外链）
 --     列：CreatorId, LastModifierId
