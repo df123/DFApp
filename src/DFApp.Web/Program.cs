@@ -276,8 +276,6 @@ public class Program
                 app.UseDeveloperExceptionPage();
             }
 
-            app.UseStaticFiles();
-
             app.UseRouting();
 
             if (!env.IsDevelopment())
