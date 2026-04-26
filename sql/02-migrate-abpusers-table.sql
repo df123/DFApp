@@ -35,7 +35,7 @@ FROM sqlite_master WHERE type = 'table' AND name = 'AbpUsers';
 
 -- 查看当前表结构
 SELECT '=== 当前 AbpUsers 表结构 ===' AS section;
-SELECT name AS ColumnName, type AS DataType, `notnull` AS NotNull
+SELECT name AS ColumnName, type AS DataType, "notnull" AS NotNull
 FROM pragma_table_info('AbpUsers')
 ORDER BY cid;
 
@@ -127,7 +127,7 @@ COMMIT;
 
 -- 验证新表结构（应只有 10 列）
 SELECT '=== 新 AbpUsers 表结构 ===' AS section;
-SELECT name AS ColumnName, type AS DataType, `notnull` AS NotNull
+SELECT name AS ColumnName, type AS DataType, "notnull" AS NotNull
 FROM pragma_table_info('AbpUsers')
 ORDER BY cid;
 
