@@ -387,7 +387,7 @@ export default {
 
 ### 前端服务
 - **进程 PID**: 75547
-- **运行地址**: http://localhost:8848
+- **运行地址**: http://localhost:9949
 - **状态**: ✅ 运行中
 
 ## 数据库状态
@@ -423,7 +423,7 @@ export default {
 
 ## 测试访问
 
-- 前端地址: http://localhost:8848
+- 前端地址: http://localhost:9949
 - 后端 Swagger: https://localhost:44369/swagger
 - API 基础路径: https://localhost:44369/api/app/
 

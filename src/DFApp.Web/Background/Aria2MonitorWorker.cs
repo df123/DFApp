@@ -1,7 +1,8 @@
 using DFApp.Aria2;
-using DFApp.Configuration;
+using DFApp.Web.Data.Configuration;
 using DFApp.Web.Hubs;
 using Microsoft.AspNetCore.SignalR;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using System;
@@ -19,7 +20,7 @@ namespace DFApp.Web.Background
     {
         private readonly Aria2RpcClient _aria2Client;
         private readonly IHubContext<Aria2Hub> _hubContext;
-        private readonly IConfigurationInfoRepository _configurationInfoRepository;
+        private readonly IServiceScopeFactory _scopeFactory;
         private readonly ILogger<Aria2MonitorWorker> _logger;
 
         private List<string>? _lastActiveGids = new List<string>();
@@ -28,12 +29,12 @@ namespace DFApp.Web.Background
         public Aria2MonitorWorker(
             Aria2RpcClient aria2Client,
             IHubContext<Aria2Hub> hubContext,
-            IConfigurationInfoRepository configurationInfoRepository,
+            IServiceScopeFactory scopeFactory,
             ILogger<Aria2MonitorWorker> logger)
         {
             _aria2Client = aria2Client;
             _hubContext = hubContext;
-            _configurationInfoRepository = configurationInfoRepository;
+            _scopeFactory = scopeFactory;
             _logger = logger;
         }
 
@@ -50,7 +51,7 @@ namespace DFApp.Web.Background
                 try
                 {
                     // 检查是否启用监控
-                    var enableMonitor = await _configurationInfoRepository.GetConfigurationInfoValue("Aria2EnableMonitor", "DFApp.Web.Background.Aria2MonitorWorker");
+                    var enableMonitor = await GetConfigurationValueAsync("Aria2EnableMonitor", "DFApp.Web.Background.Aria2MonitorWorker");
                     if (!string.IsNullOrWhiteSpace(enableMonitor) && enableMonitor.ToLower() == "false")
                     {
                         await Task.Delay(5000, stoppingToken);
@@ -117,6 +118,16 @@ namespace DFApp.Web.Background
 
             var set1 = new HashSet<string>(list1);
             return set1.SetEquals(list2);
+        }
+
+        /// <summary>
+        /// 通过 scope 获取配置值
+        /// </summary>
+        private async Task<string> GetConfigurationValueAsync(string key, string section)
+        {
+            using var scope = _scopeFactory.CreateScope();
+            var configRepo = scope.ServiceProvider.GetRequiredService<IConfigurationInfoRepository>();
+            return await configRepo.GetConfigurationInfoValue(key, section);
         }
     }
 }

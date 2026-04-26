@@ -29,7 +29,12 @@ WORKDIR /app
 RUN apt-get update && apt-get install -y curl && rm -rf /var/lib/apt/lists/*
 
 # 创建非root用户
-RUN useradd -m -s /bin/bash appuser && chown -R appuser /app
+RUN useradd -m -s /bin/bash appuser
+
+# 创建日志目录并设置权限
+RUN mkdir -p /app/logs && chown -R appuser:appuser /app
+
+# 切换到非root用户
 USER appuser
 
 # 复制发布的应用

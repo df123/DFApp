@@ -180,12 +180,78 @@ export ProxySettings__RetryCount=5
 
 ## 监控和日志
 
-### 日志级别
+### 日志配置
+
+项目使用 Serilog 作为日志框架，支持以下日志输出方式：
+
+#### 控制台输出
+- 格式：`[{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} {Level:u3}] {Message:lj}{NewLine}{Exception}`
+- 包含时间戳、日志级别和详细信息
+
+#### 文件输出
+- 路径：`logs/lottery-proxy-.log`
+- 滚动策略：按日滚动（每天一个新文件）
+- 文件名格式：`lottery-proxy-YYYYMMDD.log`
+- 保留策略：保留最近30天的日志文件
+- 文件大小限制：单个日志文件最大100MB，超过自动创建新文件
+- 格式：`[{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} {Level:u3}] {Message:lj}{NewLine}{Exception}`
+
+#### Docker Compose 日志查看
+
+```bash
+# 查看实时日志（包含时间戳）
+docker-compose logs -f lottery-proxy
+
+# 查看特定日期的日志文件
+docker exec lottery-proxy cat /app/logs/lottery-proxy-20250323.log
+
+# 查看日志目录
+docker exec lottery-proxy ls -lh /app/logs
+```
+
+#### 日志级别
 
 - `Information`: 记录请求和响应基本信息
 - `Warning`: 记录重试和异常情况
 - `Error`: 记录严重错误
 - `Debug`: 记录详细的调试信息（仅开发环境）
+
+### 日志配置文件
+
+在 `appsettings.json` 中可以自定义日志配置：
+
+```json
+{
+  "Serilog": {
+    "MinimumLevel": {
+      "Default": "Information",
+      "Override": {
+        "Microsoft": "Warning",
+        "Microsoft.AspNetCore": "Warning"
+      }
+    },
+    "WriteTo": [
+      {
+        "Name": "Console",
+        "Args": {
+          "outputTemplate": "[{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} {Level:u3}] {Message:lj}{NewLine}{Exception}"
+        }
+      },
+      {
+        "Name": "File",
+        "Args": {
+          "path": "logs/lottery-proxy-.log",
+          "rollingInterval": "Day",
+          "outputTemplate": "[{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} {Level:u3}] {Message:lj}{NewLine}{Exception}",
+          "retainedFileCountLimit": 30,
+          "rollOnFileSizeLimit": true,
+          "fileSizeLimitBytes": 104857600
+        }
+      }
+    ]
+  }
+}
+```
 
 ### 健康检查
 

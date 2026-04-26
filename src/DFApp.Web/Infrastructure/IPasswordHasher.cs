@@ -1,0 +1,19 @@
+// 迁移自 DFApp.Domain/Account/IPasswordHasher.cs
+
+namespace DFApp.Web.Infrastructure;
+
+/// <summary>
+/// 密码哈希服务接口
+/// </summary>
+public interface IPasswordHasher
+{
+    /// <summary>
+    /// 哈希密码
+    /// </summary>
+    string HashPassword(string password);
+
+    /// <summary>
+    /// 验证密码
+    /// </summary>
+    bool VerifyPassword(string hashedPassword, string providedPassword);
+}

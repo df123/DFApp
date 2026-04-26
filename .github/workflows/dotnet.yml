@@ -31,12 +31,6 @@ jobs:
         git config --global --add safe.directory ./publish
       shell: bash
 
-    - name: Install Abp Cli
-      run: dotnet tool install -g Volo.Abp.Cli
-
-    - name: Install abp libs
-      run: abp install-libs
-
     - name: Create publish directory
       run: mkdir -p ./publish
       
