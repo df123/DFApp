@@ -60,7 +60,7 @@ class BookkeepingExpenditureApi {
   async getExpenditures(
     params?: GetExpendituresRequestDto
   ): Promise<PagedResultDto<BookkeepingExpenditureDto>> {
-    return http.get(`${this.baseUrl}/paged`, { params });
+    return http.get(`${this.baseUrl}/filtered`, { params });
   }
 
   /**

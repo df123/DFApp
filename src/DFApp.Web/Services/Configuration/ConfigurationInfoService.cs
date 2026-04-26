@@ -84,7 +84,7 @@ public class ConfigurationInfoService : CrudServiceBase<ConfigurationInfo, long,
     public async Task<string> GetRemainingDiskSpaceAsync()
     {
         string saveDrive = await _configurationInfoRepository.GetConfigurationInfoValue("SaveDrive", string.Empty);
-        return StorageUnitConversionHelper.ByteToGB(SpaceHelper.GetAnyDriveAvailable(saveDrive)).ToString("F2") + "GB";
+        return SpaceHelper.GetAnyDriveAvailable(saveDrive).ToString("F2") + "GB";
     }
 
     /// <summary>

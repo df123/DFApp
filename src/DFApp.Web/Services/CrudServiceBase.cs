@@ -7,6 +7,7 @@ using DFApp.Web.Data;
 using DFApp.Web.Domain;
 using DFApp.Web.Infrastructure;
 using DFApp.Web.Permissions;
+using SqlSugar;
 
 namespace DFApp.Web.Services;
 
@@ -75,20 +76,30 @@ public abstract class CrudServiceBase<TEntity, TKey, TGetOutputDto, TCreateInput
     }
 
     /// <summary>
-    /// 分页查询
+    /// 分页查询（默认按创建时间倒序）
     /// </summary>
     /// <param name="pageIndex">页码（从 1 开始）</param>
     /// <param name="pageSize">每页大小</param>
     /// <returns>分页结果</returns>
     public virtual async Task<(List<TGetOutputDto> Items, int TotalCount)> GetPagedListAsync(int pageIndex, int pageSize)
     {
-        var (items, totalCount) = await Repository.GetPagedListAsync(pageIndex, pageSize);
-        var dtos = await MapToGetOutputDtoAsync(items);
-        return (dtos, totalCount);
+        if (HasCreationTimeProperty())
+        {
+            var (items, totalCount) = await Repository.GetPagedListAsync(
+                pageIndex, pageSize,
+                BuildCreationTimeOrderExpression(),
+                OrderByType.Desc);
+            var dtos = await MapToGetOutputDtoAsync(items);
+            return (dtos, totalCount);
+        }
+
+        var (defaultItems, defaultTotalCount) = await Repository.GetPagedListAsync(pageIndex, pageSize);
+        var defaultDtos = await MapToGetOutputDtoAsync(defaultItems);
+        return (defaultDtos, defaultTotalCount);
     }
 
     /// <summary>
-    /// 根据条件分页查询
+    /// 根据条件分页查询（默认按创建时间倒序）
     /// </summary>
     /// <param name="expression">查询条件</param>
     /// <param name="pageIndex">页码（从 1 开始）</param>
@@ -99,9 +110,38 @@ public abstract class CrudServiceBase<TEntity, TKey, TGetOutputDto, TCreateInput
         int pageIndex,
         int pageSize)
     {
-        var (items, totalCount) = await Repository.GetPagedListAsync(expression, pageIndex, pageSize);
-        var dtos = await MapToGetOutputDtoAsync(items);
-        return (dtos, totalCount);
+        if (HasCreationTimeProperty())
+        {
+            var (items, totalCount) = await Repository.GetPagedListAsync(
+                expression, pageIndex, pageSize,
+                BuildCreationTimeOrderExpression(),
+                OrderByType.Desc);
+            var dtos = await MapToGetOutputDtoAsync(items);
+            return (dtos, totalCount);
+        }
+
+        var (defaultItems, defaultTotalCount) = await Repository.GetPagedListAsync(expression, pageIndex, pageSize);
+        var defaultDtos = await MapToGetOutputDtoAsync(defaultItems);
+        return (defaultDtos, defaultTotalCount);
+    }
+
+    /// <summary>
+    /// 检查实体是否有 CreationTime 属性
+    /// </summary>
+    private static bool HasCreationTimeProperty()
+    {
+        return typeof(TEntity).GetProperty("CreationTime") != null;
+    }
+
+    /// <summary>
+    /// 构建 CreationTime 排序表达式
+    /// </summary>
+    private static Expression<Func<TEntity, object>> BuildCreationTimeOrderExpression()
+    {
+        var parameter = Expression.Parameter(typeof(TEntity), "x");
+        var property = Expression.PropertyOrField(parameter, "CreationTime");
+        var converted = Expression.Convert(property, typeof(object));
+        return Expression.Lambda<Func<TEntity, object>>(converted, parameter);
     }
 
     /// <summary>
