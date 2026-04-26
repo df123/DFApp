@@ -1,5 +1,14 @@
+-- =============================================================
 -- 修复 AuditedEntity 派生实体缺失的审计列（CreatorId, LastModifierId）
--- 部分 AuditedEntity 派生实体的数据库表在迁移时遗漏了审计列
+-- 说明：部分 AuditedEntity 派生实体的数据库表在迁移时遗漏了审计列
+--
+-- 注意：AppPermissionGrants 表的审计列不在此脚本中添加。
+--       该表由脚本 06 (06-migrate-to-app-permission-grants.sql) 创建，
+--       创建时已包含 CreatorId、LastModificationTime、LastModifierId 列。
+--       之前此脚本引用了尚未创建的 AppPermissionGrants 表导致报错。
+-- =============================================================
+
+.bail on
 
 -- AppMediaInfo（MediaInfo : AuditedEntity<long>）
 ALTER TABLE "AppMediaInfo" ADD COLUMN "CreatorId" TEXT NULL;
@@ -18,11 +27,6 @@ ALTER TABLE "AbpRoleClaims" ADD COLUMN "CreationTime" TEXT NOT NULL DEFAULT '000
 ALTER TABLE "AbpRoleClaims" ADD COLUMN "CreatorId" TEXT NULL;
 ALTER TABLE "AbpRoleClaims" ADD COLUMN "LastModificationTime" TEXT NULL;
 ALTER TABLE "AbpRoleClaims" ADD COLUMN "LastModifierId" TEXT NULL;
-
--- AppPermissionGrants（PermissionGrant : AuditedEntity<Guid>）
-ALTER TABLE "AppPermissionGrants" ADD COLUMN "CreatorId" TEXT NULL;
-ALTER TABLE "AppPermissionGrants" ADD COLUMN "LastModificationTime" TEXT NULL;
-ALTER TABLE "AppPermissionGrants" ADD COLUMN "LastModifierId" TEXT NULL;
 
 -- AbpRoles（Role : AuditedEntity<Guid>）
 -- CreationTime 已存在，仅补充 CreatorId 和修改审计列
