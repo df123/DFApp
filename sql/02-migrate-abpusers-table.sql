@@ -1,9 +1,10 @@
 -- ============================================================
--- AbpUsers 表精简迁移脚本
+-- AbpUsers 表精简迁移脚本（幂等安全版）
 -- 用途：移除 ABP Framework 遗留的冗余字段，使表结构与新 User 实体一致
 -- 前置条件：已备份 DFApp.db，应用已停止运行
--- 执行方式：sqlite3 DFApp.db < sql/migrate-abpusers-table.sql
+-- 执行方式：sqlite3 DFApp.db < sql/02-migrate-abpusers-table.sql
 -- 注意：此操作不可逆！请务必先备份数据库！
+-- 幂等性：如果迁移已完成，脚本会安全终止，不会重复执行
 -- ============================================================
 --
 -- 背景：
@@ -18,14 +19,23 @@
 --   2. 从旧表复制未软删除的数据到新表（排除 IsDeleted=1 的记录）
 --   3. 删除旧表
 --   4. 将新表重命名为 AbpUsers
+--
+-- 安全机制：
+--   - .bail on：遇到错误时立即终止，防止 INSERT 失败后继续执行 DROP TABLE
+--   - 迁移状态检查：检测 IsDeleted 列是否存在，已完成迁移时安全退出
+--   - DROP TABLE IF EXISTS：清理上次失败运行遗留的临时表
 -- ============================================================
+
+-- 关键安全设置：遇到错误时终止脚本执行
+-- 防止 INSERT 失败后脚本继续执行 DROP TABLE 导致数据丢失
+.bail on
 
 
 -- ============================================================
 -- 第一部分：前置检查
 -- ============================================================
 
--- 确认 AbpUsers 表存在
+-- 1.1 确认 AbpUsers 表存在
 SELECT '正在检查 AbpUsers 表是否存在...' AS step;
 SELECT CASE
     WHEN COUNT(*) > 0 THEN '✅ AbpUsers 表存在，可以继续'
@@ -33,13 +43,27 @@ SELECT CASE
 END AS result
 FROM sqlite_master WHERE type = 'table' AND name = 'AbpUsers';
 
--- 查看当前表结构
+-- 1.2 查看当前表结构
 SELECT '=== 当前 AbpUsers 表结构 ===' AS section;
-SELECT name AS ColumnName, type AS DataType, "notnull" AS NotNull
+SELECT name AS ColumnName, type AS DataType, "notnull" AS "NotNull"
 FROM pragma_table_info('AbpUsers')
 ORDER BY cid;
 
--- 查看当前数据量（含已软删除的）
+-- 1.3 检查迁移状态
+-- 通过 pragma_table_info 查询列信息，不直接引用 IsDeleted 列，因此总是安全的
+SELECT '=== 迁移状态检查 ===' AS section;
+SELECT CASE
+    WHEN (SELECT COUNT(*) FROM pragma_table_info('AbpUsers') WHERE name = 'IsDeleted') > 0
+    THEN '🔄 IsDeleted 列存在，需要执行数据迁移'
+    ELSE '⏭️ IsDeleted 列不存在，迁移已完成。脚本将安全终止。'
+END AS migration_status;
+
+-- 1.4 查看当前数据量（含已软删除的）
+-- 此查询引用 IsDeleted 列作为安全守卫：
+--   - 如果 IsDeleted 列存在 → 正常输出统计数据
+--   - 如果 IsDeleted 列不存在 → 产生 "no such column: IsDeleted" 错误
+--     配合 .bail on 指令，脚本将在此安全终止
+--     后续的事务迁移操作（含 DROP TABLE）不会被执行，保护数据安全
 SELECT '=== 当前数据统计 ===' AS section;
 SELECT
     COUNT(*) AS TotalRows,
@@ -50,7 +74,11 @@ FROM AbpUsers;
 
 -- ============================================================
 -- 第二部分：数据迁移（事务保护）
+-- 仅在 IsDeleted 列存在时才会执行到这里（否则已在上方终止）
 -- ============================================================
+
+-- 清理上次失败运行遗留的临时表（幂等性保障）
+DROP TABLE IF EXISTS _AbpUsers_new;
 
 BEGIN TRANSACTION;
 
@@ -127,7 +155,7 @@ COMMIT;
 
 -- 验证新表结构（应只有 10 列）
 SELECT '=== 新 AbpUsers 表结构 ===' AS section;
-SELECT name AS ColumnName, type AS DataType, "notnull" AS NotNull
+SELECT name AS ColumnName, type AS DataType, "notnull" AS "NotNull"
 FROM pragma_table_info('AbpUsers')
 ORDER BY cid;
 
