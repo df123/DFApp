@@ -87,6 +87,7 @@ public class Program
 
             // 注册密码哈希服务（无状态，使用 Transient）
             builder.Services.AddTransient<IPasswordHasher, PasswordHasher>();
+            builder.Services.AddTransient<DFApp.Web.Mapping.LotteryMapper>();
 
             // 注册油价刷新器（无状态，使用 Transient）
             builder.Services.AddTransient<GasolinePriceRefresher>();
@@ -232,7 +233,6 @@ public class Program
                 });
             });
 
-            // 禁用 Quartz 日志会导致 Job 实例化失败等框架级错误被静默吞掉，保持日志开启以便排查问题
             // Quartz.Logging.LogProvider.IsDisabled = true;
             builder.Services.AddQuartz(q =>
             {

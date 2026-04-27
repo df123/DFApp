@@ -24,8 +24,7 @@ public class LotteryResultJob : IJob
     private readonly ISqlSugarReadOnlyRepository<LotteryResult, long> _resultReadOnly;
     private readonly ISqlSugarRepository<LotteryPrizegrades, long> _lotteryPrizegradesRepository;
     private readonly ISqlSugarReadOnlyRepository<LotteryPrizegrades, long> _prizegradesReadOnly;
-    // LotteryMapper 未注册到 DI 容器，直接实例化使用
-    private readonly LotteryMapper _mapper = new();
+    private readonly LotteryMapper _mapper;
     private readonly IHttpClientFactory _httpClientFactory;
     private readonly IConfiguration _configuration;
     private readonly ILogger<LotteryResultJob> _logger;
@@ -35,6 +34,7 @@ public class LotteryResultJob : IJob
         ISqlSugarReadOnlyRepository<LotteryResult, long> resultReadOnly,
         ISqlSugarRepository<LotteryPrizegrades, long> lotteryPrizegradesRepository,
         ISqlSugarReadOnlyRepository<LotteryPrizegrades, long> prizegradesReadOnly,
+        LotteryMapper mapper,
         IHttpClientFactory httpClientFactory,
         IConfiguration configuration,
         ILogger<LotteryResultJob> logger)
@@ -43,6 +43,7 @@ public class LotteryResultJob : IJob
         _resultReadOnly = resultReadOnly;
         _lotteryPrizegradesRepository = lotteryPrizegradesRepository;
         _prizegradesReadOnly = prizegradesReadOnly;
+        _mapper = mapper;
         _httpClientFactory = httpClientFactory;
         _configuration = configuration;
         _logger = logger;
