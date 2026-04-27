@@ -232,7 +232,8 @@ public class Program
                 });
             });
 
-            Quartz.Logging.LogProvider.IsDisabled = true;
+            // 禁用 Quartz 日志会导致 Job 实例化失败等框架级错误被静默吞掉，保持日志开启以便排查问题
+            // Quartz.Logging.LogProvider.IsDisabled = true;
             builder.Services.AddQuartz(q =>
             {
                 // GasolinePriceRefreshJob — 每晚21:00执行
