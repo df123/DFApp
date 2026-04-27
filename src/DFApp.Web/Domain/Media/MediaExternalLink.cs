@@ -36,12 +36,6 @@ namespace DFApp.Media
         public string LinkContent { get; set; }
 
         /// <summary>
-        /// 扩展属性（数据库遗留字段，保持兼容）
-        /// </summary>
-        [SugarColumn(ColumnName = "ExtraProperties")]
-        public string ExtraProperties { get; set; } = string.Empty;
-
-        /// <summary>
         /// 媒体ID集合
         /// </summary>
         [SugarColumn(IsIgnore = true)]
