@@ -46,7 +46,7 @@
 ```
 DFApp/                          ← 仓库根目录
 ├── AGENTS.md                   ← 本文件
-├── DFApp.Web/                  ← 后端项目
+├── src/DFApp.Web/              ← 后端项目
 ├── DFApp.LotteryProxy/         ← 彩票代理服务
 ├── test/DFApp.Web.Tests/       ← 单元测试
 ├── client/                     ← 前端项目（Vue 3）
@@ -55,7 +55,7 @@ DFApp/                          ← 仓库根目录
 ```
 
 ### 后端结构（轻量级单体架构）
-- `DFApp.Web/` ← 唯一后端项目
+- `src/DFApp.Web/` ← 唯一后端项目
   - `Domain/` - 实体和自定义基类
   - `Services/` - 应用服务
   - `Controllers/` - API 控制器（路由模式：`/api/app/{kebab-case-entity}`）

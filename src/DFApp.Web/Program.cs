@@ -87,6 +87,7 @@ public class Program
 
             // 注册密码哈希服务（无状态，使用 Transient）
             builder.Services.AddTransient<IPasswordHasher, PasswordHasher>();
+            builder.Services.AddTransient<DFApp.Web.Mapping.LotteryMapper>();
 
             // 注册油价刷新器（无状态，使用 Transient）
             builder.Services.AddTransient<GasolinePriceRefresher>();
@@ -232,7 +233,7 @@ public class Program
                 });
             });
 
-            Quartz.Logging.LogProvider.IsDisabled = true;
+            // Quartz.Logging.LogProvider.IsDisabled = true;
             builder.Services.AddQuartz(q =>
             {
                 // GasolinePriceRefreshJob — 每晚21:00执行

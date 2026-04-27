@@ -57,6 +57,17 @@ public class ExternalLinkController : DFAppControllerBase
     }
 
     /// <summary>
+    /// 生成外链（后台任务）
+    /// </summary>
+    [HttpGet("external-link")]
+    [Permission(DFAppPermissions.Medias.Create)]
+    public async Task<IActionResult> GetExternalLinkAsync()
+    {
+        var result = await _externalLinkService.GetExternalLink();
+        return Success(result);
+    }
+
+    /// <summary>
     /// 分页获取外链列表
     /// </summary>
     [HttpGet("paged")]
