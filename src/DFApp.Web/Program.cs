@@ -117,8 +117,8 @@ public class Program
             builder.Services.AddScoped<DFApp.Web.Services.Rss.RssWordSegmentAppService>();
             builder.Services.AddScoped<DFApp.Web.Services.Rss.RssMirrorItemAppService>();
             builder.Services.AddScoped<DFApp.Web.Services.Rss.RssFetchService>();
-            builder.Services.AddScoped<DFApp.Web.Services.Rss.RssSubscriptionService>();
-            builder.Services.AddScoped<DFApp.Web.Services.Rss.WordSegmentService>();
+            builder.Services.AddScoped<DFApp.Web.Services.Rss.IRssSubscriptionService, DFApp.Web.Services.Rss.RssSubscriptionService>();
+            builder.Services.AddScoped<DFApp.Web.Services.Rss.IWordSegmentService, DFApp.Web.Services.Rss.WordSegmentService>();
             builder.Services.AddScoped<DFApp.Web.Services.Lottery.LotteryService>();
             builder.Services.AddScoped<DFApp.Web.Services.Lottery.LotteryResultService>();
             builder.Services.AddScoped<DFApp.Web.Services.Lottery.LotteryDataFetchService>();
