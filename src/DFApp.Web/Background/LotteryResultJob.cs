@@ -115,27 +115,24 @@ public class LotteryResultJob : IJob
                 if (result1 == null || result1.Count <= 0)
                 {
                     _logger.LogInformation("今天没有数据，开始获取最新数据");
-                    _lotteryResultRepository.BeginTran();
+
+                    _logger.LogInformation("开始更新奖级信息");
                     try
                     {
-                        _logger.LogInformation("开始更新奖级信息");
                         await UpdatePrizegrades(lotteryType, lotteryTypeEng);
-
-                        _logger.LogInformation("获取最新一期开奖结果作为起始点");
-                        LotteryResult lotteryResult = _resultReadOnly.GetQueryable().OrderByDescending(x => x.Code).First();
-                        string dayStart = (lotteryResult.Date!.Split('('))[0];
-                        _logger.LogInformation("从 {DayStart} 开始获取最新数据", dayStart);
-
-                        await GetCurrentLotteryResult(dayStart, 0, lotteryTypeEng);
-                        _lotteryResultRepository.CommitTran();
-                        _logger.LogInformation("最新数据获取完成并提交事务");
                     }
                     catch (Exception ex)
                     {
-                        _logger.LogError(ex, "获取最新数据时发生异常");
-                        _lotteryResultRepository.RollbackTran();
-                        throw;
+                        _logger.LogError(ex, "更新奖级信息时发生异常，继续获取最新数据");
                     }
+
+                    _logger.LogInformation("获取最新一期开奖结果作为起始点");
+                    LotteryResult lotteryResult = _resultReadOnly.GetQueryable().OrderByDescending(x => x.Code).First();
+                    string dayStart = (lotteryResult.Date!.Split('('))[0];
+                    _logger.LogInformation("从 {DayStart} 开始获取最新数据", dayStart);
+
+                    await GetCurrentLotteryResult(dayStart, 0, lotteryTypeEng);
+                    _logger.LogInformation("最新数据获取完成");
                 }
                 else
                 {
@@ -152,6 +149,55 @@ public class LotteryResultJob : IJob
         }
     }
 
+    /// <summary>
+    /// 逐条处理开奖结果，每条独立写入数据库，某条失败不影响其他条目
+    /// </summary>
+    private async Task ProcessResultsIndividually(List<DFApp.Lottery.ResultItemDto> items)
+    {
+        int successCount = 0;
+        int skipCount = 0;
+        int failCount = 0;
+
+        foreach (var item in items)
+        {
+            try
+            {
+                // 按期号+彩票类型去重检查
+                bool exists = await _resultReadOnly.AnyAsync(r => r.Code == item.Code && r.Name == item.Name);
+                if (exists)
+                {
+                    _logger.LogDebug("跳过已存在的记录 - 彩票类型: {Name}, 期号: {Code}", item.Name, item.Code);
+                    skipCount++;
+                    continue;
+                }
+
+                LotteryResult entity = _mapper.MapToEntityFromExternalResultItem(item);
+                await _lotteryResultRepository.InsertAsync(entity);
+                successCount++;
+
+                // 同时写入该条结果对应的奖级信息
+                if (item.Prizegrades != null && item.Prizegrades.Count > 0)
+                {
+                    var prizeEntities = item.Prizegrades.Select(pg =>
+                    {
+                        var prizeEntity = _mapper.MapToEntityFromExternalPrizegradesItem(pg);
+                        prizeEntity.LotteryResultId = entity.Id;
+                        return prizeEntity;
+                    }).ToList();
+
+                    await _lotteryPrizegradesRepository.InsertAsync(prizeEntities);
+                }
+            }
+            catch (Exception ex)
+            {
+                failCount++;
+                _logger.LogError(ex, "逐条写入失败 - 彩票类型: {Name}, 期号: {Code}，继续处理下一条", item.Name, item.Code);
+            }
+        }
+
+        _logger.LogInformation("逐条处理完成 - 成功: {Success}, 跳过(已存在): {Skip}, 失败: {Fail}", successCount, skipCount, failCount);
+    }
+
     private async Task GetCurrentLotteryResult(string dayStart, int pageNo, string lotteryType)
     {
         string dayEnd = DateTime.Now.ToString("yyyy-MM-dd");
@@ -161,21 +207,9 @@ public class LotteryResultJob : IJob
 
         if (dto.Result != null && dto.Result.Count > 0)
         {
-            _logger.LogInformation("获取到 {Count} 条数据，开始映射并保存到数据库", dto.Result.Count);
-            List<LotteryResult> result = dto.Result.Select(item => _mapper.MapToEntityFromExternalResultItem(item)).ToList();
+            _logger.LogInformation("获取到 {Count} 条数据，开始逐条处理", dto.Result.Count);
+            await ProcessResultsIndividually(dto.Result);
 
-            try
-            {
-                await _lotteryResultRepository.InsertAsync(result);
-                _logger.LogInformation("成功保存 {Count} 条彩票结果到数据库", result.Count);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "保存彩票结果到数据库时发生异常");
-                throw;
-            }
-
-            // 检查是否需要获取下一页数据
             if (dto.PageNo < dto.PageNum)
             {
                 _logger.LogInformation("当前页 {PageNo} 小于总页数 {PageNum}，继续获取下一页数据", dto.PageNo, dto.PageNum);
@@ -200,21 +234,9 @@ public class LotteryResultJob : IJob
 
         if (dto.Result != null && dto.Result.Count > 0)
         {
-            _logger.LogInformation("获取到 {Count} 条历史数据，开始映射并保存到数据库", dto.Result.Count);
-            List<LotteryResult> result = dto.Result.Select(item => _mapper.MapToEntityFromExternalResultItem(item)).ToList();
+            _logger.LogInformation("获取到 {Count} 条历史数据，开始逐条处理", dto.Result.Count);
+            await ProcessResultsIndividually(dto.Result);
 
-            try
-            {
-                await _lotteryResultRepository.InsertAsync(result);
-                _logger.LogInformation("成功保存 {Count} 条历史彩票结果到数据库", result.Count);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "保存历史彩票结果到数据库时发生异常");
-                throw;
-            }
-
-            // 检查是否需要获取下一页数据
             if (dto.PageNo < dto.PageNum)
             {
                 _logger.LogInformation("当前页 {PageNo} 小于总页数 {PageNum}，继续获取下一页历史数据", dto.PageNo, dto.PageNum);

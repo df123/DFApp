@@ -202,8 +202,10 @@ const handleCurrentChange = (page: number) => {
 const handleCreateExternalLink = async () => {
   try {
     await externalLinkApi.getExternalLinkStatus();
-    ElMessage.success("外部链接添加成功");
-    loadTableData();
+    ElMessage.success("外链生成任务已提交，正在后台处理...");
+    setTimeout(() => {
+      loadTableData();
+    }, 5000);
   } catch (error) {
     console.error("添加外部链接失败:", error);
     ElMessage.error("添加外部链接失败");

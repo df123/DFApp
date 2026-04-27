@@ -17,6 +17,7 @@ using DFApp.Web.Mapping;
 using DFApp.Web.Permissions;
 using DFApp.Web.Queue;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 
 namespace DFApp.Web.Services.Media;
 
@@ -107,6 +108,7 @@ public class ExternalLinkService : CrudServiceBase<
             var mediaInfoRepository = scope.ServiceProvider.GetRequiredService<ISqlSugarRepository<MediaInfo, long>>();
             var externalLinkRepository = scope.ServiceProvider.GetRequiredService<ISqlSugarRepository<MediaExternalLink, long>>();
             var mediaExternalLinkMediaIdRepository = scope.ServiceProvider.GetRequiredService<ISqlSugarRepository<MediaExternalLinkMediaIds, long>>();
+            var logger = scope.ServiceProvider.GetRequiredService<ILogger<ExternalLinkService>>();
 
             var returnDownloadUrlPrefix = await configurationInfoRepository.GetConfigurationInfoValue("ReturnDownloadUrlPrefix", MediaBackgroudConst.ModuleName);
             if (string.IsNullOrWhiteSpace(returnDownloadUrlPrefix))
@@ -127,8 +129,11 @@ public class ExternalLinkService : CrudServiceBase<
 
             if (temp == null || temp.Count <= 0)
             {
+                logger.LogWarning("没有符合条件的外链生成媒体（IsExternalLinkGenerated=false 且 IsDownloadCompleted=true）");
                 return;
             }
+
+            logger.LogInformation("找到 {Count} 条符合条件的外链生成媒体，开始处理", temp.Count);
 
             string datetimeName = DateTime.Now.ToString("yyyyMMddHHmmss");
             string zipPhotoName = $"{datetimeName}.zip";
@@ -153,6 +158,11 @@ public class ExternalLinkService : CrudServiceBase<
                     size += mediaInfo.Size;
 
                     continue;
+                }
+
+                if (!File.Exists(mediaInfo.SavePath))
+                {
+                    logger.LogWarning("媒体文件不存在，跳过：{SavePath}（MediaId={MediaId}）", mediaInfo.SavePath, mediaInfo.Id);
                 }
 
                 stringBuilder.AppendLine($"{Path.Combine(returnDownloadUrlPrefix, mediaInfo.SavePath.Replace(replaceUrlPrefix, string.Empty).Replace("\\", "/"))}");
@@ -202,6 +212,16 @@ public class ExternalLinkService : CrudServiceBase<
                 }
 
                 await externalLinkRepository.InsertAsync(mediaExternalLink);
+
+                // 插入后获取外链 ID，为子记录赋值并批量插入
+                foreach (var item in mediaExternalLinkMediaIds)
+                {
+                    item.MediaExternalLinkId = mediaExternalLink.Id;
+                }
+                await mediaExternalLinkMediaIdRepository.InsertAsync(mediaExternalLinkMediaIds);
+
+                logger.LogInformation("外链生成完成，ID={Id}，包含 {Count} 条媒体记录，耗时 {ElapsedMs}ms",
+                    mediaExternalLink.Id, mediaExternalLinkMediaIds.Count, stopwatch.ElapsedMilliseconds);
             }
         });
 
