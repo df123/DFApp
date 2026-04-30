@@ -145,8 +145,11 @@ public class LotteryDataFetchService : AppServiceBase
                             results.Add(lotteryResult);
                         }
 
-                        // 先保存 LotteryResult
-                        await _lotteryResultRepository.InsertAsync(results);
+                        // 逐条保存 LotteryResult，确保自增 Id 正确回填
+                        foreach (var result in results)
+                        {
+                            result.Id = await _lotteryResultRepository.InsertReturnIdAsync(result);
+                        }
                         response.SavedCount = results.Count;
 
                         // 保存关联的 Prizegrades

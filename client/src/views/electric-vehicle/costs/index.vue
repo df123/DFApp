@@ -118,11 +118,12 @@
             placeholder="请选择类型"
             style="width: 100%"
           >
-            <el-option label="保养" :value="2" />
-            <el-option label="保险" :value="3" />
-            <el-option label="停车" :value="4" />
-            <el-option label="维修" :value="5" />
-            <el-option label="其他" :value="6" />
+            <el-option label="保养" :value="1" />
+            <el-option label="保险" :value="2" />
+            <el-option label="其他" :value="3" />
+            <el-option label="过路费" :value="4" />
+            <el-option label="停车" :value="5" />
+            <el-option label="维修" :value="6" />
           </el-select>
         </el-form-item>
         <el-form-item label="车辆" prop="vehicleId">
@@ -219,12 +220,13 @@ const formRules: FormRules = {
 
 const getCostTypeName = (type: number) => {
   const map = {
-    1: "充电",
-    2: "保养",
-    3: "保险",
-    4: "停车",
-    5: "维修",
-    6: "其他"
+    0: "充电",
+    1: "保养",
+    2: "保险",
+    3: "其他",
+    4: "过路费",
+    5: "停车",
+    6: "维修"
   };
   return map[type] || "未知";
 };
@@ -286,7 +288,7 @@ const handleCreate = () => {
     costDate: new Date().toISOString().split("T")[0],
     amount: 0,
     isBelongToSelf: true,
-    costType: 2,
+  costType: 1,
     vehicleId: vehicles.value.length === 1 ? vehicles.value[0].id : undefined,
     remark: ""
   });

@@ -182,7 +182,8 @@ public class ExternalLinkService : CrudServiceBase<
                     IsExternalLinkGenerated = true,
                     IsDownloadCompleted = true,
                 };
-                await mediaInfoRepository.InsertAsync(zipMediaInfo);
+                // 使用 InsertReturnIdAsync 获取自增 Id，InsertAsync 不会回填自增主键
+                zipMediaInfo.Id = await mediaInfoRepository.InsertReturnIdAsync(zipMediaInfo);
                 temp.Add(zipMediaInfo);
             }
 
@@ -211,7 +212,8 @@ public class ExternalLinkService : CrudServiceBase<
                     });
                 }
 
-                await externalLinkRepository.InsertAsync(mediaExternalLink);
+                // 使用 InsertReturnIdAsync 获取自增 Id，InsertAsync 不会回填自增主键
+                mediaExternalLink.Id = await externalLinkRepository.InsertReturnIdAsync(mediaExternalLink);
 
                 // 插入后获取外链 ID，为子记录赋值并批量插入
                 foreach (var item in mediaExternalLinkMediaIds)

@@ -86,6 +86,13 @@ public interface ISqlSugarRepository<T, TKey> where T : class, new()
     Task<int> InsertAsync(T entity);
 
     /// <summary>
+    /// 插入实体并返回自增主键 ID
+    /// </summary>
+    /// <param name="entity">实体</param>
+    /// <returns>自增主键 ID</returns>
+    Task<long> InsertReturnIdAsync(T entity);
+
+    /// <summary>
     /// 批量插入实体
     /// </summary>
     /// <param name="entities">实体列表</param>

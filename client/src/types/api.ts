@@ -264,12 +264,13 @@ export interface OilCostComparisonRequestDto {
 }
 
 export enum CostType {
-  Charging = 1,
-  Maintenance = 2,
-  Insurance = 3,
-  Parking = 4,
-  Repair = 5,
-  Other = 6
+  Charging = 0,
+  Maintenance = 1,
+  Insurance = 2,
+  Other = 3,
+  Toll = 4,
+  Parking = 5,
+  Repair = 6
 }
 
 export enum GasolineGrade {

@@ -172,7 +172,8 @@ public class LotteryResultJob : IJob
                 }
 
                 LotteryResult entity = _mapper.MapToEntityFromExternalResultItem(item);
-                await _lotteryResultRepository.InsertAsync(entity);
+                // 使用 InsertReturnIdAsync 获取自增 Id，InsertAsync 不会回填自增主键
+                entity.Id = await _lotteryResultRepository.InsertReturnIdAsync(entity);
                 successCount++;
 
                 // 同时写入该条结果对应的奖级信息

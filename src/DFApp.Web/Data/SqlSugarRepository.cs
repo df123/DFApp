@@ -153,6 +153,16 @@ public class SqlSugarRepository<T, TKey> : ISqlSugarRepository<T, TKey> where T 
     }
 
     /// <summary>
+    /// 插入实体并返回自增主键 ID
+    /// </summary>
+    /// <param name="entity">实体</param>
+    /// <returns>自增主键 ID</returns>
+    public async Task<long> InsertReturnIdAsync(T entity)
+    {
+        return await _db.Insertable(entity).ExecuteReturnBigIdentityAsync();
+    }
+
+    /// <summary>
     /// 批量插入实体
     /// </summary>
     /// <param name="entities">实体列表</param>
