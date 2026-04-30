@@ -23,7 +23,22 @@ namespace DFApp.ElectricVehicle
         /// <summary>
         /// 其他费用
         /// </summary>
-        Other
+        Other = 3,
+
+        /// <summary>
+        /// 过路费
+        /// </summary>
+        Toll = 4,
+
+        /// <summary>
+        /// 停车费
+        /// </summary>
+        Parking = 5,
+
+        /// <summary>
+        /// 维修费
+        /// </summary>
+        Repair = 6
     }
 
     /// <summary>

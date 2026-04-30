@@ -182,8 +182,8 @@ public class Aria2Manager
                 var filesItemRepository = scope.ServiceProvider.GetRequiredService<ISqlSugarRepository<FilesItem, int>>();
                 var urisItemRepository = scope.ServiceProvider.GetRequiredService<ISqlSugarRepository<UrisItem, short>>();
 
-                // 保存主记录
-                await resultRepository.InsertAsync(tellStatusResult);
+                // 保存主记录，使用 InsertReturnIdAsync 获取自增 Id
+                tellStatusResult.Id = await resultRepository.InsertReturnIdAsync(tellStatusResult);
 
                 // 解析并保存文件列表
                 if (resultElement.TryGetProperty("files", out var filesElement) && filesElement.ValueKind == JsonValueKind.Array)
@@ -201,7 +201,8 @@ public class Aria2Manager
                             Selected = fileElement.TryGetProperty("selected", out var selected) ? GetBoolValue(selected) : null
                         };
 
-                        await filesItemRepository.InsertAsync(filesItem);
+                        // 使用 InsertReturnIdAsync 获取自增 Id，用于子表外键关联
+                        filesItem.Id = (int)await filesItemRepository.InsertReturnIdAsync(filesItem);
 
                         _logger.LogInformation("  文件[{Index}]: {Path}, 长度: {Length}, 已完成: {CompletedLength}",
                             filesItem.Index, filesItem.Path, filesItem.Length, filesItem.CompletedLength);

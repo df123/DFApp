@@ -157,10 +157,10 @@ namespace DFApp.Web.Background
                         }
                     }
 
-                    // 逐个插入镜像条目（确保自增ID回填）
+                    // 逐个插入镜像条目，确保自增 Id 回填
                     foreach (var item in newItems)
                     {
-                        await _rssMirrorItemRepository.InsertAsync(item);
+                        item.Id = await _rssMirrorItemRepository.InsertReturnIdAsync(item);
                     }
 
                     // 插入分词数据
