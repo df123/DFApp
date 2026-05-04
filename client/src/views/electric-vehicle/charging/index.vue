@@ -204,7 +204,7 @@ const formRules: FormRules = {
   chargingDate: [{ required: true, message: "请选择日期", trigger: "change" }],
   amount: [
     { required: true, message: "请输入金额", trigger: "blur" },
-    { type: "number", min: 0.01, message: "金额必须大于0", trigger: "blur" }
+    { type: "number", min: 0, message: "金额不能为负数", trigger: "blur" }
   ],
   vehicleId: [{ required: true, message: "请选择车辆", trigger: "change" }]
 };
