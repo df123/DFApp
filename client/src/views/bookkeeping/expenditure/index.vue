@@ -342,6 +342,103 @@
         </div>
       </template>
     </el-dialog>
+
+    <!-- 导入车成本记录对话框 -->
+    <el-dialog
+      v-model="carCostDialogVisible"
+      title="导入到车成本记录"
+      :width="isMobile ? '95%' : '600px'"
+      :fullscreen="isMobile"
+      :before-close="handleCarCostClose"
+      class="mobile-dialog"
+    >
+      <el-form
+        ref="carCostFormRef"
+        :model="carCostFormData"
+        :rules="carCostFormRules"
+        :label-width="isMobile ? '80px' : '100px'"
+        :label-position="isMobile ? 'top' : 'right'"
+      >
+        <el-form-item label="日期" prop="costDate">
+          <el-date-picker
+            v-model="carCostFormData.costDate"
+            type="date"
+            placeholder="请选择日期"
+            value-format="YYYY-MM-DD"
+            style="width: 100%"
+          />
+        </el-form-item>
+        <el-form-item label="金额" prop="amount">
+          <el-input-number
+            v-model="carCostFormData.amount"
+            :min="0"
+            :precision="2"
+            style="width: 100%"
+          />
+        </el-form-item>
+        <el-form-item label="归属" prop="isBelongToSelf">
+          <el-radio-group v-model="carCostFormData.isBelongToSelf">
+            <el-radio :label="true">个人</el-radio>
+            <el-radio :label="false">家庭</el-radio>
+          </el-radio-group>
+        </el-form-item>
+        <el-form-item label="类型" prop="costType">
+          <el-select
+            v-model="carCostFormData.costType"
+            placeholder="请选择类型"
+            style="width: 100%"
+          >
+            <el-option label="保养" :value="1" />
+            <el-option label="保险" :value="2" />
+            <el-option label="其他" :value="3" />
+            <el-option label="过路费" :value="4" />
+            <el-option label="停车" :value="5" />
+            <el-option label="维修" :value="6" />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="车辆" prop="vehicleId">
+          <el-select
+            v-model="carCostFormData.vehicleId"
+            placeholder="请选择车辆"
+            style="width: 100%"
+          >
+            <el-option
+              v-for="vehicle in carCostVehicles"
+              :key="vehicle.id"
+              :label="vehicle.name"
+              :value="vehicle.id"
+            />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="备注">
+          <el-input
+            v-model="carCostFormData.remark"
+            type="textarea"
+            :rows="2"
+            placeholder="请输入备注"
+          />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <div class="dialog-footer">
+          <el-button
+            class="cancel-btn"
+            :size="isMobile ? 'large' : 'default'"
+            @click="handleCarCostClose"
+            >取消</el-button
+          >
+          <el-button
+            type="primary"
+            :loading="carCostSubmitting"
+            :size="isMobile ? 'large' : 'default'"
+            class="confirm-btn"
+            @click="handleCarCostSubmit"
+          >
+            确定
+          </el-button>
+        </div>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
@@ -358,10 +455,16 @@ import {
   useBookkeepingExpenditureApi,
   useBookkeepingCategoryApi
 } from "@/api/bookkeeping";
+import {
+  electricVehicleApi,
+  electricVehicleCostApi
+} from "@/api/electric-vehicle";
 import type {
   BookkeepingExpenditureDto,
   CreateUpdateBookkeepingExpenditureDto,
-  BookkeepingCategoryDto
+  BookkeepingCategoryDto,
+  ElectricVehicleDto,
+  CreateUpdateElectricVehicleCostDto
 } from "@/types/api";
 
 // API 服务
@@ -421,6 +524,34 @@ const formData = ref<CreateUpdateBookkeepingExpenditureDto>({
 
 // 当前编辑的ID
 const currentEditId = ref<number | null>(null);
+
+// 车成本导入相关
+const carCostDialogVisible = ref(false);
+const carCostSubmitting = ref(false);
+const carCostFormRef = ref<FormInstance>();
+const carCostVehicles = ref<ElectricVehicleDto[]>([]);
+
+const carCostFormData = ref<CreateUpdateElectricVehicleCostDto>({
+  costDate: null as string | null,
+  amount: 0,
+  isBelongToSelf: true,
+  costType: 3, // 默认"其他"
+  vehicleId: "",
+  remark: ""
+});
+
+const carCostFormRules: FormRules = {
+  costDate: [{ required: true, message: "请选择日期", trigger: "change" }],
+  amount: [
+    { required: true, message: "请输入金额", trigger: "blur" },
+    { type: "number", min: 0.01, message: "金额必须大于0", trigger: "blur" }
+  ],
+  isBelongToSelf: [
+    { required: true, message: "请选择归属", trigger: "change" }
+  ],
+  costType: [{ required: true, message: "请选择类型", trigger: "change" }],
+  vehicleId: [{ required: true, message: "请选择车辆", trigger: "change" }]
+};
 
 // 计算属性
 const dialogTitle = computed(() =>
@@ -621,6 +752,62 @@ const handleClose = () => {
   formRef.value?.clearValidate();
 };
 
+// 加载车辆列表
+const loadCarCostVehicles = async () => {
+  try {
+    const result = await electricVehicleApi.getVehicles({ pageSize: 1000 });
+    carCostVehicles.value = result.items;
+  } catch (error) {
+    console.error("加载车辆列表失败:", error);
+  }
+};
+
+// 打开车成本导入对话框
+const openCarCostDialog = async (
+  expenditureData: CreateUpdateBookkeepingExpenditureDto
+) => {
+  // 预填数据
+  Object.assign(carCostFormData.value, {
+    costDate: expenditureData.expenditureDate,
+    amount: expenditureData.expenditure,
+    isBelongToSelf: expenditureData.isBelongToSelf,
+    costType: 3, // 默认"其他"
+    vehicleId:
+      carCostVehicles.value.length === 1
+        ? carCostVehicles.value[0].id
+        : "",
+    remark: expenditureData.remark || ""
+  });
+
+  carCostDialogVisible.value = true;
+};
+
+// 关闭车成本对话框
+const handleCarCostClose = () => {
+  carCostDialogVisible.value = false;
+  carCostFormRef.value?.clearValidate();
+};
+
+// 提交车成本记录
+const handleCarCostSubmit = async () => {
+  if (!carCostFormRef.value) return;
+
+  const valid = await carCostFormRef.value.validate();
+  if (!valid) return;
+
+  carCostSubmitting.value = true;
+  try {
+    await electricVehicleCostApi.createCost(carCostFormData.value);
+    ElMessage.success("已导入到车成本记录");
+    carCostDialogVisible.value = false;
+  } catch (error) {
+    console.error("导入车成本记录失败:", error);
+    ElMessage.error("导入车成本记录失败");
+  } finally {
+    carCostSubmitting.value = false;
+  }
+};
+
 const handleSubmit = async () => {
   if (!formRef.value) return;
 
@@ -643,6 +830,29 @@ const handleSubmit = async () => {
 
     dialogVisible.value = false;
     loadTableData();
+
+    // 检查分类是否为"车"，提示是否导入到车成本记录
+    const selectedCategory = categories.value.find(
+      (c) => c.id === formData.value.categoryId
+    );
+    if (selectedCategory && selectedCategory.category === "车") {
+      try {
+        await ElMessageBox.confirm(
+          "是否将该支出导入到车的成本记录？",
+          "导入提示",
+          {
+            confirmButtonText: "导入",
+            cancelButtonText: "不导入",
+            type: "info"
+          }
+        );
+        // 用户确认导入
+        await loadCarCostVehicles();
+        openCarCostDialog(formData.value);
+      } catch {
+        // 用户取消，不做任何处理
+      }
+    }
   } catch (error) {
     console.error("保存支出记录失败:", error);
     ElMessage.error("保存支出记录失败");
