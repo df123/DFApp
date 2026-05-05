@@ -132,13 +132,13 @@ public class LotteryDataFetchService : AppServiceBase
 
                         foreach (var item in dto.Result)
                         {
-                            var lotteryResult = _mapper.MapToEntityFromExternalResultItem(item);
+                            var lotteryResult = _mapper.MapToEntityFromResultItem(item);
 
                             // 使用映射器处理 Prizegrades
                             if (item.Prizegrades != null && item.Prizegrades.Count > 0)
                             {
                                 lotteryResult.Prizegrades = item.Prizegrades
-                                    .Select(p => _mapper.MapToEntityFromExternalPrizegradesItem(p))
+                                    .Select(p => _mapper.MapToEntityFromPrizegradesItem(p))
                                     .ToList();
                             }
 

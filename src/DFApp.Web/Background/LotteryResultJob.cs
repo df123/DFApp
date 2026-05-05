@@ -152,7 +152,7 @@ public class LotteryResultJob : IJob
     /// <summary>
     /// 逐条处理开奖结果，每条独立写入数据库，某条失败不影响其他条目
     /// </summary>
-    private async Task ProcessResultsIndividually(List<DFApp.Lottery.ResultItemDto> items)
+    private async Task ProcessResultsIndividually(List<DFApp.Web.DTOs.Lottery.ResultItemDto> items)
     {
         int successCount = 0;
         int skipCount = 0;
@@ -171,7 +171,7 @@ public class LotteryResultJob : IJob
                     continue;
                 }
 
-                LotteryResult entity = _mapper.MapToEntityFromExternalResultItem(item);
+                LotteryResult entity = _mapper.MapToEntityFromResultItem(item);
                 // 使用 InsertReturnIdAsync 获取自增 Id，InsertAsync 不会回填自增主键
                 entity.Id = await _lotteryResultRepository.InsertReturnIdAsync(entity);
                 successCount++;
@@ -181,7 +181,7 @@ public class LotteryResultJob : IJob
                 {
                     var prizeEntities = item.Prizegrades.Select(pg =>
                     {
-                        var prizeEntity = _mapper.MapToEntityFromExternalPrizegradesItem(pg);
+                        var prizeEntity = _mapper.MapToEntityFromPrizegradesItem(pg);
                         prizeEntity.LotteryResultId = entity.Id;
                         return prizeEntity;
                     }).ToList();
@@ -305,7 +305,7 @@ public class LotteryResultJob : IJob
 
                                     var prizeEntities = resultItem.Prizegrades.Select(pg =>
                                     {
-                                        var entity = _mapper.MapToEntityFromExternalPrizegradesItem(pg);
+                                        var entity = _mapper.MapToEntityFromPrizegradesItem(pg);
                                         entity.LotteryResultId = item.Id;
                                         return entity;
                                     }).ToList();
@@ -342,89 +342,126 @@ public class LotteryResultJob : IJob
 
     private async Task<LotteryInputDto> GetLotteryResult(string dayStart, string dayEnd, int pageNo, string lotteryType)
     {
-        // 使用代理服务器获取数据
         string proxyServerUrl = LotteryConst.GetLotteryProxyUrl(_configuration);
         string requestUrl = $"{proxyServerUrl}/api/proxy/lottery/findDrawNotice?name={lotteryType}&dayStart={dayStart}&dayEnd={dayEnd}&pageNo={pageNo}&pageSize=30&week=&systemType=PC";
 
         _logger.LogInformation("开始通过代理获取彩票数据 - 彩票类型: {LotteryType}, 开始日期: {DayStart}, 结束日期: {DayEnd}, 页码: {PageNo}", lotteryType, dayStart, dayEnd, pageNo);
-        _logger.LogInformation("代理请求URL: {RequestUrl}", requestUrl);
 
-        try
+        const int maxRetries = 3;
+        const int retryDelaySeconds = 5;
+
+        for (int attempt = 1; attempt <= maxRetries; attempt++)
         {
-            using var client = _httpClientFactory.CreateClient();
-            // 设置超时时间
-            client.Timeout = TimeSpan.FromSeconds(60);
-
-            _logger.LogInformation("发送代理HTTP请求...");
-
-            HttpResponseMessage message = await client.GetAsync(requestUrl);
-
-            _logger.LogInformation("代理HTTP响应状态码: {StatusCode} ({Status})", (int)message.StatusCode, message.StatusCode);
-
-            message.EnsureSuccessStatusCode();
-
-            string responseContent = await message.Content.ReadAsStringAsync();
-            _logger.LogInformation("代理响应内容长度: {Length} 字符", responseContent.Length);
-
-            // 记录响应内容（仅前500字符，避免日志过长）
-            if (responseContent.Length > 500)
+            try
             {
-                _logger.LogInformation("代理响应内容前500字符: {Content}...", responseContent.Substring(0, 500));
-            }
-            else
-            {
-                _logger.LogInformation("代理响应内容: {Content}", responseContent);
-            }
+                using var client = _httpClientFactory.CreateClient();
+                client.Timeout = TimeSpan.FromSeconds(60);
 
-            LotteryInputDto? dto = JsonSerializer.Deserialize<LotteryInputDto>(responseContent);
+                _logger.LogInformation("发送代理HTTP请求 (尝试 {Attempt}/{MaxRetries})...", attempt, maxRetries);
 
-            if (dto == null)
-            {
-                _logger.LogWarning("反序列化代理响应失败，响应为null，创建空对象");
-                dto = new LotteryInputDto();
-            }
-            else
-            {
-                _logger.LogInformation("反序列化代理响应成功 - 总数据量: {Total}, 当前页: {PageNo}/{PageNum}, 每页大小: {PageSize}", dto.Total, dto.PageNo, dto.PageNum, dto.PageSize);
+                using HttpResponseMessage message = await client.GetAsync(requestUrl);
 
-                if (dto.Result != null)
+                _logger.LogInformation("代理HTTP响应状态码: {StatusCode} ({Status})", (int)message.StatusCode, message.StatusCode);
+
+                string responseContent = await message.Content.ReadAsStringAsync();
+
+                if (!message.IsSuccessStatusCode)
                 {
-                    _logger.LogInformation("当前页数据条数: {Count}", dto.Result.Count);
+                    _logger.LogError("代理请求失败 - 状态码: {StatusCode}, 响应内容: {Content}",
+                        (int)message.StatusCode,
+                        responseContent.Length > 500 ? responseContent.Substring(0, 500) : responseContent);
 
-                    // 记录第一条数据的详细信息
-                    if (dto.Result.Count > 0)
+                    if ((int)message.StatusCode == 502 || (int)message.StatusCode == 504)
                     {
-                        var firstResult = dto.Result[0];
-                        _logger.LogInformation("第一条数据 - 彩票类型: {Name}, 期号: {Code}, 开奖日期: {Date}, 红球: {Red}, 蓝球: {Blue}", firstResult.Name, firstResult.Code, firstResult.Date, firstResult.Red, firstResult.Blue);
+                        if (attempt < maxRetries)
+                        {
+                            _logger.LogWarning("遇到网关错误 {StatusCode}，等待 {Delay} 秒后重试 (尝试 {Attempt}/{MaxRetries})",
+                                (int)message.StatusCode, retryDelaySeconds * attempt, attempt, maxRetries);
+                            await Task.Delay(TimeSpan.FromSeconds(retryDelaySeconds * attempt));
+                            continue;
+                        }
+
+                        throw new HttpRequestException(
+                            $"代理请求在 {maxRetries} 次尝试后仍然失败，最后状态码: {(int)message.StatusCode}，响应: {(responseContent.Length > 200 ? responseContent.Substring(0, 200) : responseContent)}");
                     }
+
+                    throw new HttpRequestException(
+                        $"代理请求失败，状态码: {(int)message.StatusCode}，响应: {(responseContent.Length > 200 ? responseContent.Substring(0, 200) : responseContent)}");
+                }
+
+                _logger.LogInformation("代理响应内容长度: {Length} 字符", responseContent.Length);
+
+                if (responseContent.Length > 500)
+                {
+                    _logger.LogInformation("代理响应内容前500字符: {Content}...", responseContent.Substring(0, 500));
                 }
                 else
                 {
-                    _logger.LogWarning("代理响应中的Result字段为null");
+                    _logger.LogInformation("代理响应内容: {Content}", responseContent);
                 }
-            }
 
-            return dto;
+                LotteryInputDto? dto = JsonSerializer.Deserialize<LotteryInputDto>(responseContent);
+
+                if (dto == null)
+                {
+                    _logger.LogWarning("反序列化代理响应失败，响应为null，创建空对象");
+                    dto = new LotteryInputDto();
+                }
+                else
+                {
+                    _logger.LogInformation("反序列化代理响应成功 - 总数据量: {Total}, 当前页: {PageNo}/{PageNum}, 每页大小: {PageSize}", dto.Total, dto.PageNo, dto.PageNum, dto.PageSize);
+
+                    if (dto.Result != null)
+                    {
+                        _logger.LogInformation("当前页数据条数: {Count}", dto.Result.Count);
+
+                        if (dto.Result.Count > 0)
+                        {
+                            var firstResult = dto.Result[0];
+                            _logger.LogInformation("第一条数据 - 彩票类型: {Name}, 期号: {Code}, 开奖日期: {Date}, 红球: {Red}, 蓝球: {Blue}", firstResult.Name, firstResult.Code, firstResult.Date, firstResult.Red, firstResult.Blue);
+                        }
+                    }
+                    else
+                    {
+                        _logger.LogWarning("代理响应中的Result字段为null");
+                    }
+                }
+
+                return dto;
+            }
+            catch (HttpRequestException)
+            {
+                throw;
+            }
+            catch (JsonException ex)
+            {
+                _logger.LogError(ex, "代理JSON解析异常: {Message}", ex.Message);
+                throw;
+            }
+            catch (TaskCanceledException ex)
+            {
+                _logger.LogError(ex, "代理请求超时 (尝试 {Attempt}/{MaxRetries}): {Message}", attempt, maxRetries, ex.Message);
+
+                if (attempt == maxRetries)
+                {
+                    throw;
+                }
+
+                await Task.Delay(TimeSpan.FromSeconds(retryDelaySeconds * attempt));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "代理未知异常 (尝试 {Attempt}/{MaxRetries}): {Message}", attempt, maxRetries, ex.Message);
+
+                if (attempt == maxRetries)
+                {
+                    throw;
+                }
+
+                await Task.Delay(TimeSpan.FromSeconds(retryDelaySeconds * attempt));
+            }
         }
-        catch (HttpRequestException ex)
-        {
-            _logger.LogError(ex, "代理HTTP请求异常: {Message}", ex.Message);
-            throw;
-        }
-        catch (TaskCanceledException ex)
-        {
-            _logger.LogError(ex, "代理请求超时: {Message}", ex.Message);
-            throw;
-        }
-        catch (JsonException ex)
-        {
-            _logger.LogError(ex, "代理JSON解析异常: {Message}", ex.Message);
-            throw;
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "代理未知异常: {Message}", ex.Message);
-            throw;
-        }
+
+        throw new InvalidOperationException($"获取彩票数据失败，已重试 {maxRetries} 次");
     }
 }
