@@ -7,7 +7,7 @@ namespace DFApp.Web.DTOs.Lottery
     {
 
         [JsonPropertyName("type")]
-        [JsonConverter(typeof(IntToStringConverter))]
+        [JsonConverter(typeof(FlexibleStringConverter))]
         public string? Type { get; set; }
 
         [JsonPropertyName("typenum")]
