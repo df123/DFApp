@@ -215,7 +215,7 @@ class Aria2Api {
    */
   async getIpGeolocation(ips: string[]): Promise<IpGeolocationDto[]> {
     return http.post(`${this.manageUrl}/ip-geolocation`, {
-      data: { Ips: ips }
+      data: ips
     });
   }
 }
