@@ -759,7 +759,6 @@ export interface GetRssMirrorItemsRequestDto extends PagedRequestDto {
   startTime?: string;
   endTime?: string;
   isDownloaded?: boolean;
-  wordToken?: string;
 }
 
 // 分词统计DTO

@@ -5,7 +5,6 @@
         <div class="card-header">
           <span class="card-title">RSS镜像条目</span>
           <div>
-            <el-button @click="showStatistics = true">分词统计</el-button>
             <el-button type="danger" @click="handleClearAll"
               >清空所有</el-button
             >
@@ -34,14 +33,6 @@
           <el-input
             v-model="searchForm.filter"
             placeholder="搜索标题或描述"
-            clearable
-            @clear="handleSearch"
-          />
-        </el-form-item>
-        <el-form-item label="分词">
-          <el-input
-            v-model="searchForm.wordToken"
-            placeholder="输入分词过滤"
             clearable
             @clear="handleSearch"
           />
@@ -131,19 +122,6 @@
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="分词" width="100">
-          <template #default="{ row }">
-            <el-button
-              v-if="row.wordSegments && row.wordSegments.length > 0"
-              link
-              type="primary"
-              @click="showWordSegments(row)"
-            >
-              查看({{ row.wordSegments.length }})
-            </el-button>
-            <span v-else>-</span>
-          </template>
-        </el-table-column>
         <el-table-column prop="creationTime" label="抓取时间" width="180">
           <template #default="{ row }">
             {{ formatDate(row.creationTime) }}
@@ -191,91 +169,6 @@
       />
     </el-card>
 
-    <!-- 分词统计对话框 -->
-    <el-dialog
-      v-model="showStatistics"
-      title="分词统计"
-      width="80%"
-      :close-on-click-modal="false"
-    >
-      <div class="statistics-container">
-        <el-form :inline="true" class="filter-form">
-          <el-form-item label="语言类型">
-            <el-select
-              v-model="statisticsForm.languageType"
-              placeholder="全部"
-              clearable
-            >
-              <el-option label="中文" :value="0" />
-              <el-option label="英文" :value="1" />
-              <el-option label="日文" :value="2" />
-            </el-select>
-          </el-form-item>
-          <el-form-item label="Top">
-            <el-input-number
-              v-model="statisticsForm.top"
-              :min="10"
-              :max="500"
-              :step="10"
-            />
-          </el-form-item>
-          <el-form-item>
-            <el-button type="primary" @click="fetchStatistics">查询</el-button>
-          </el-form-item>
-        </el-form>
-
-        <el-table
-          v-loading="statisticsLoading"
-          :data="statisticsData"
-          stripe
-          style="width: 100%"
-        >
-          <el-table-column prop="word" label="分词" width="200" />
-          <el-table-column prop="languageType" label="语言类型" width="120">
-            <template #default="{ row }">
-              <el-tag v-if="row.languageType === 0" type="success">中文</el-tag>
-              <el-tag v-else-if="row.languageType === 1" type="primary"
-                >英文</el-tag
-              >
-              <el-tag v-else-if="row.languageType === 2" type="warning"
-                >日文</el-tag
-              >
-            </template>
-          </el-table-column>
-          <el-table-column prop="totalCount" label="总出现次数" width="130" />
-          <el-table-column prop="itemCount" label="涉及条目数" width="130" />
-          <el-table-column label="操作" width="120">
-            <template #default="{ row }">
-              <el-button type="primary" link @click="filterByWord(row.word)">
-                查看条目
-              </el-button>
-            </template>
-          </el-table-column>
-        </el-table>
-      </div>
-    </el-dialog>
-
-    <!-- 分词详情对话框 -->
-    <el-dialog v-model="showWordSegmentsDialog" title="分词详情" width="600px">
-      <div class="word-segments-list">
-        <el-tag
-          v-for="segment in currentWordSegments"
-          :key="segment.word"
-          :type="
-            segment.languageType === 0
-              ? 'success'
-              : segment.languageType === 1
-                ? 'primary'
-                : 'warning'
-          "
-          style="margin: 5px"
-          @click="filterByWord(segment.word)"
-        >
-          {{ segment.word }} ({{ segment.count }})
-        </el-tag>
-      </div>
-    </el-dialog>
-
     <!-- 下载选项对话框 -->
     <el-dialog v-model="showDownloadDialog" title="下载选项" width="500px">
       <el-form label-width="140px">
@@ -303,15 +196,13 @@ import { rssMirrorApi } from "@/api/rssMirror";
 import { rssSourceApi } from "@/api/rssSource";
 import type {
   RssMirrorItemDto,
-  RssSourceDto,
-  WordSegmentStatisticsDto
+  RssSourceDto
 } from "@/types/business";
 
 // 搜索表单
 const searchForm = reactive({
   rssSourceId: undefined as number | undefined,
   filter: "",
-  wordToken: "",
   isDownloaded: undefined as boolean | undefined,
   startTime: "",
   endTime: ""
@@ -333,19 +224,6 @@ const selectedRows = ref<RssMirrorItemDto[]>([]);
 
 // RSS源列表
 const rssSources = ref<RssSourceDto[]>([]);
-
-// 统计对话框
-const showStatistics = ref(false);
-const statisticsLoading = ref(false);
-const statisticsData = ref<WordSegmentStatisticsDto[]>([]);
-const statisticsForm = reactive({
-  languageType: undefined as number | undefined,
-  top: 100
-});
-
-// 分词详情对话框
-const showWordSegmentsDialog = ref(false);
-const currentWordSegments = ref<any[]>([]);
 
 // 下载选项对话框
 const showDownloadDialog = ref(false);
@@ -398,7 +276,6 @@ const handleSearch = () => {
 const handleReset = () => {
   searchForm.rssSourceId = undefined;
   searchForm.filter = "";
-  searchForm.wordToken = "";
   searchForm.isDownloaded = undefined;
   searchForm.startTime = "";
   searchForm.endTime = "";
@@ -522,38 +399,6 @@ const openLink = (url: string) => {
   window.open(url, "_blank");
 };
 
-// 获取统计
-const fetchStatistics = async () => {
-  statisticsLoading.value = true;
-  try {
-    const data = await rssMirrorApi.getWordSegmentStatistics(
-      searchForm.rssSourceId,
-      statisticsForm.languageType,
-      statisticsForm.top
-    );
-    statisticsData.value = data;
-  } catch (error) {
-    console.error("获取分词统计失败:", error);
-    ElMessage.error("获取分词统计失败");
-  } finally {
-    statisticsLoading.value = false;
-  }
-};
-
-// 显示分词
-const showWordSegments = (row: RssMirrorItemDto) => {
-  currentWordSegments.value = row.wordSegments || [];
-  showWordSegmentsDialog.value = true;
-};
-
-// 按分词过滤
-const filterByWord = (word: string) => {
-  searchForm.wordToken = word;
-  showStatistics.value = false;
-  showWordSegmentsDialog.value = false;
-  handleSearch();
-};
-
 // 格式化日期
 const formatDate = (dateStr: string) => {
   return new Date(dateStr).toLocaleString("zh-CN");
@@ -601,25 +446,6 @@ onMounted(() => {
 .selected-info {
   font-weight: 500;
   color: #606266;
-}
-
-.statistics-container {
-  max-height: 70vh;
-  overflow-y: auto;
-}
-
-.filter-form {
-  margin-bottom: 20px;
-}
-
-.word-segments-list {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-}
-
-.word-segments-list .el-tag {
-  cursor: pointer;
 }
 
 .form-tip {
