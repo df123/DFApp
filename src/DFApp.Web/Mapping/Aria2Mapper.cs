@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using DFApp.Aria2;
 using DFApp.Aria2.Notifications;
-using DFApp.Aria2.Request;
 using DFApp.Aria2.Response;
 using DFApp.Aria2.Response.TellStatus;
 using DFApp.Web.DTOs.Aria2;
@@ -17,8 +16,6 @@ using Aria2NotificationEntity = DFApp.Aria2.Notifications.Aria2Notification;
 using Aria2NotificationDtoType = DFApp.Web.DTOs.Aria2.Aria2NotificationDto;
 using ParamsItemEntity = DFApp.Aria2.Notifications.ParamsItem;
 using ParamsItemDtoType = DFApp.Web.DTOs.Aria2.ParamsItemDto;
-using Aria2RequestEntity = DFApp.Aria2.Request.Aria2Request;
-using Aria2RequestDtoType = DFApp.Web.DTOs.Aria2.Aria2RequestDto;
 using Aria2ResponseEntity = DFApp.Aria2.Response.Aria2Response;
 using Aria2ResponseDtoType = DFApp.Web.DTOs.Aria2.Aria2ResponseDto;
 using ResponseBaseEntity = DFApp.Aria2.ResponseBase;
@@ -88,11 +85,6 @@ public partial class Aria2Mapper
     /// ParamsItemDto → ParamsItem
     /// </summary>
     public partial ParamsItemEntity MapToEntity(ParamsItemDtoType dto);
-
-    /// <summary>
-    /// Aria2Request → Aria2RequestDto
-    /// </summary>
-    public partial Aria2RequestDtoType MapToDto(Aria2RequestEntity entity);
 
     /// <summary>
     /// Aria2Response → Aria2ResponseDto

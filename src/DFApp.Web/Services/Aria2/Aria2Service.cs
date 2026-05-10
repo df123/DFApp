@@ -8,14 +8,13 @@ using System.Threading.Tasks;
 using BencodeNET.Parsing;
 using BencodeNET.Torrents;
 using DFApp.Aria2;
-using DFApp.Aria2.Request;
 using DFApp.Aria2.Response.TellStatus;
 using DFApp.FileFilter;
 using DFApp.Web.Data;
 using DFApp.Web.Data.Configuration;
 using DFApp.Web.Infrastructure;
 using DFApp.Web.Permissions;
-using DFApp.Web.Queue;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
 namespace DFApp.Web.Services.Aria2;
@@ -32,7 +31,7 @@ public class Aria2Service : CrudServiceBase<
 {
     private readonly ISqlSugarRepository<FilesItem, int> _filesItemRepository;
     private readonly IConfigurationInfoRepository _configurationInfoRepository;
-    private readonly IQueueManagement _queueManagement;
+    private readonly IServiceScopeFactory _scopeFactory;
     private readonly IKeywordFilterRuleRepository _keywordFilterRuleRepository;
     private readonly ILogger<Aria2Service> _logger;
 
@@ -44,7 +43,7 @@ public class Aria2Service : CrudServiceBase<
     /// <param name="repository">TellStatusResult 仓储接口</param>
     /// <param name="filesItemRepository">FilesItem 仓储接口</param>
     /// <param name="configurationInfoRepository">配置信息仓储接口</param>
-    /// <param name="queueManagement">队列管理接口</param>
+    /// <param name="scopeFactory">服务作用域工厂，用于获取 Aria2RpcClient</param>
     /// <param name="keywordFilterRuleRepository">关键词过滤规则仓储接口</param>
     /// <param name="logger">日志记录器</param>
     public Aria2Service(
@@ -53,14 +52,14 @@ public class Aria2Service : CrudServiceBase<
         ISqlSugarRepository<TellStatusResult, long> repository,
         ISqlSugarRepository<FilesItem, int> filesItemRepository,
         IConfigurationInfoRepository configurationInfoRepository,
-        IQueueManagement queueManagement,
+        IServiceScopeFactory scopeFactory,
         IKeywordFilterRuleRepository keywordFilterRuleRepository,
         ILogger<Aria2Service> logger)
         : base(currentUser, permissionChecker, repository)
     {
         _filesItemRepository = filesItemRepository;
         _configurationInfoRepository = configurationInfoRepository;
-        _queueManagement = queueManagement;
+        _scopeFactory = scopeFactory;
         _keywordFilterRuleRepository = keywordFilterRuleRepository;
         _logger = logger;
     }
@@ -318,7 +317,7 @@ public class Aria2Service : CrudServiceBase<
     }
 
     /// <summary>
-    /// 添加下载任务
+    /// 添加下载任务（通过 HTTP RPC 直连 Aria2）
     /// </summary>
     /// <param name="input">下载请求 DTO</param>
     /// <returns>下载响应 DTO</returns>
@@ -329,11 +328,9 @@ public class Aria2Service : CrudServiceBase<
             throw new BusinessException("URL列表不能为空");
         }
 
-        // 从配置获取 aria2secret
-        string aria2secret = await _configurationInfoRepository.GetConfigurationInfoValue("aria2secret", "DFApp.Aria2.Aria2Service");
-
-        // 创建 Aria2Request - 构造函数会添加 token 到 Params[0]
-        var request = new Aria2Request(Guid.NewGuid().ToString(), aria2secret);
+        // 通过 scope 获取 Aria2RpcClient（因为它是通过 AddHttpClient 注册的）
+        using var scope = _scopeFactory.CreateScope();
+        var rpcClient = scope.ServiceProvider.GetRequiredService<Aria2RpcClient>();
 
         // 判断是否包含 torrent 文件 URL 或磁力链接
         bool hasTorrentFile = input.Urls.Any(url => url.EndsWith(".torrent", StringComparison.OrdinalIgnoreCase));
@@ -342,6 +339,8 @@ public class Aria2Service : CrudServiceBase<
 
         // 处理过滤选项（VideoOnly 和关键词过滤）
         bool shouldFilterTorrent = (input.VideoOnly || input.EnableKeywordFilter) && hasTorrentFile;
+
+        string gid;
 
         if (shouldFilterTorrent)
         {
@@ -354,16 +353,10 @@ public class Aria2Service : CrudServiceBase<
                 // 构建 select-file 字符串，例如"1,3,5"
                 string selectFile = string.Join(",", filteredIndices);
 
-                // 下载 torrent 文件内容
+                // 下载 torrent 文件内容并转为 Base64
                 using var httpClient = new HttpClient();
                 var torrentBytes = await httpClient.GetByteArrayAsync(torrentUrl);
                 string torrentBase64 = Convert.ToBase64String(torrentBytes);
-
-                // 使用 addTorrent 方法
-                request.Method = Aria2Consts.AddTorrent;
-                // 参数：token, torrent 内容 base64, urls 数组（空）, options
-                request.Params.Insert(1, torrentBase64);
-                request.Params.Insert(2, new List<object>());
 
                 // 构建选项
                 var options = new Dictionary<string, object>();
@@ -382,21 +375,17 @@ public class Aria2Service : CrudServiceBase<
                     }
                 }
 
-                if (options.Count > 0)
-                {
-                    request.Params.Add(options);
-                }
-
                 string filterDescription = GetFilterDescription(input.VideoOnly, input.EnableKeywordFilter);
                 _logger.LogInformation("{FilterDescription}过滤已应用，选择文件索引: {SelectFile}", filterDescription, selectFile);
+
+                // 直接调用 RPC 添加种子下载
+                gid = await rpcClient.AddTorrentAsync(torrentBase64, options);
             }
             else
             {
                 _logger.LogWarning("过滤已启用，但未在 torrent 文件中找到符合条件的文件，将下载全部文件");
-                // 继续使用 AddUri 方法
-                request.Method = Aria2Consts.AddUri;
-                request.Params.Insert(1, input.Urls);
-                AddOptionsToRequest(request, input.SavePath, input.Options);
+                var options = BuildOptions(input.SavePath, input.Options);
+                gid = await rpcClient.AddUriAsync(input.Urls, options);
             }
         }
         else
@@ -419,9 +408,6 @@ public class Aria2Service : CrudServiceBase<
                 }
             }
 
-            request.Method = Aria2Consts.AddUri;
-            request.Params.Insert(1, filteredUrls);
-
             // 如果指定了 VideoOnly 但不是 .torrent 文件，记录警告
             if (input.VideoOnly)
             {
@@ -441,26 +427,13 @@ public class Aria2Service : CrudServiceBase<
                 _logger.LogInformation("关键词过滤已应用于URL列表");
             }
 
-            // 添加选项
-            AddOptionsToRequest(request, input.SavePath, input.Options);
+            // 直接调用 RPC 添加 URI 下载
+            var options = BuildOptions(input.SavePath, input.Options);
+            gid = await rpcClient.AddUriAsync(filteredUrls, options);
         }
 
-        // 将请求转换为 DTO 并添加到队列
-        // Aria2RequestDto 来自 DFApp.Aria2.Request 命名空间，
-        // 与 Mapperly 映射器的 DFApp.Web.DTOs.Aria2.Aria2RequestDto 类型不同，
-        // 因此保留手动映射
-        var requestDto = new Aria2RequestDto
-        {
-            JSONRPC = request.JSONRPC,
-            Method = request.Method,
-            Id = request.Id,
-            Params = request.Params
-        };
-
-        // 添加到队列
-        _queueManagement.AddQueueValue("Aria2RequestQueue", new List<Aria2RequestDto> { requestDto });
-
-        return new AddDownloadResponseDto { Id = request.Id };
+        _logger.LogInformation("已通过 RPC 直连添加下载任务，GID: {Gid}", gid);
+        return new AddDownloadResponseDto { Id = gid };
     }
 
     /// <summary>
@@ -655,12 +628,12 @@ public class Aria2Service : CrudServiceBase<
     }
 
     /// <summary>
-    /// 添加选项到 Aria2 请求
+    /// 构建 Aria2 下载选项
     /// </summary>
-    /// <param name="request">Aria2 请求</param>
     /// <param name="savePath">保存路径</param>
     /// <param name="customOptions">自定义选项</param>
-    private void AddOptionsToRequest(Aria2Request request, string? savePath, Dictionary<string, object>? customOptions)
+    /// <returns>选项字典（无选项时返回 null）</returns>
+    private Dictionary<string, object>? BuildOptions(string? savePath, Dictionary<string, object>? customOptions)
     {
         var options = new Dictionary<string, object>();
 
@@ -677,10 +650,7 @@ public class Aria2Service : CrudServiceBase<
             }
         }
 
-        if (options.Count > 0)
-        {
-            request.Params.Add(options);
-        }
+        return options.Count > 0 ? options : null;
     }
 
     /// <summary>

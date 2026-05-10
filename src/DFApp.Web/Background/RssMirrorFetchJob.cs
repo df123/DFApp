@@ -16,17 +16,15 @@ using System.Xml.Linq;
 namespace DFApp.Web.Background
 {
     /// <summary>
-    /// RSS镜像抓取定时任务，定期从启用的RSS源抓取数据并处理订阅匹配
+    /// RSS镜像抓取定时任务，定期从启用的RSS源抓取数据
     /// </summary>
     public class RssMirrorFetchJob : IJob
     {
         private readonly ISqlSugarRepository<RssSource, long> _rssSourceRepository;
         private readonly ISqlSugarRepository<RssMirrorItem, long> _rssMirrorItemRepository;
         private readonly ISqlSugarRepository<RssWordSegment, long> _rssWordSegmentRepository;
-        private readonly ISqlSugarReadOnlyRepository<RssSubscription, long> _rssSubscriptionRepository;
         private readonly IWordSegmentService _wordSegmentService;
         private readonly ISqlSugarClient _db;
-        private readonly IRssSubscriptionService _rssSubscriptionService;
         private readonly ILogger<RssMirrorFetchJob> _logger;
 
         /// <summary>
@@ -41,19 +39,15 @@ namespace DFApp.Web.Background
             ISqlSugarRepository<RssSource, long> rssSourceRepository,
             ISqlSugarRepository<RssMirrorItem, long> rssMirrorItemRepository,
             ISqlSugarRepository<RssWordSegment, long> rssWordSegmentRepository,
-            ISqlSugarReadOnlyRepository<RssSubscription, long> rssSubscriptionRepository,
             IWordSegmentService wordSegmentService,
             ISqlSugarClient db,
-            IRssSubscriptionService rssSubscriptionService,
             ILogger<RssMirrorFetchJob> logger)
         {
             _rssSourceRepository = rssSourceRepository;
             _rssMirrorItemRepository = rssMirrorItemRepository;
             _rssWordSegmentRepository = rssWordSegmentRepository;
-            _rssSubscriptionRepository = rssSubscriptionRepository;
             _wordSegmentService = wordSegmentService;
             _db = db;
-            _rssSubscriptionService = rssSubscriptionService;
             _logger = logger;
         }
 
@@ -195,9 +189,6 @@ namespace DFApp.Web.Background
                     _db.Ado.CommitTran();
 
                     _logger.LogInformation("RSS源 {Name} 抓取完成，新增 {Count} 条记录", source.Name, newItemCount);
-
-                    // 提交事务后处理订阅
-                    await ProcessSubscriptionsAsync(newItems);
                 }
                 catch
                 {
@@ -316,33 +307,5 @@ namespace DFApp.Web.Background
             return items;
         }
 
-        /// <summary>
-        /// 处理订阅匹配，对新增条目进行关键词匹配和自动下载
-        /// </summary>
-        private async Task ProcessSubscriptionsAsync(List<RssMirrorItem> newItems)
-        {
-            var enabledSubscriptions = await _rssSubscriptionRepository.GetListAsync(s => s.IsEnabled);
-
-            if (!enabledSubscriptions.Any())
-            {
-                return;
-            }
-
-            foreach (var item in newItems)
-            {
-                var matchResults = await _rssSubscriptionService.MatchSubscriptionsAsync(item);
-
-                foreach (var matchResult in matchResults.Where(r => r.Matched))
-                {
-                    var subscription = enabledSubscriptions.FirstOrDefault(s => s.Id == matchResult.SubscriptionId);
-                    if (subscription != null && subscription.AutoDownload)
-                    {
-                        await _rssSubscriptionService.CreateDownloadTaskAsync(matchResult.SubscriptionId, item.Id);
-                        _logger.LogInformation("订阅 {SubscriptionName} 匹配并自动下载: {Title}",
-                            subscription.Name, item.Title);
-                    }
-                }
-            }
-        }
     }
 }

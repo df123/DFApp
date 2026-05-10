@@ -20,7 +20,7 @@
 
 ## 功能概述
 
-RSS镜像站点前端提供了两个主要页面，用于管理RSS源和查看RSS镜像条目。
+RSS镜像站点前端提供了三个主要页面，用于管理RSS源、查看RSS镜像条目和分词统计。
 
 ### 页面列表
 
@@ -33,9 +33,14 @@ RSS镜像站点前端提供了两个主要页面，用于管理RSS源和查看RS
 2. **RSS镜像条目** (`/download-subscription/rss-mirror-items`)
    - 查看所有RSS镜像条目
    - 多条件筛选和搜索
-   - 查看分词统计
    - 下载到Aria2
    - 批量删除
+
+3. **分词统计** (`/download-subscription/rss-word-segments`)
+   - 全部分词统计查看（支持分页）
+   - 分词详情列表查看
+   - 按分词精确筛选
+   - 直接下载到Aria2
 
 ### 核心特性
 
@@ -88,17 +93,20 @@ DFApp.Vue/
 ├── src/
 │   ├── api/
 │   │   ├── rssSource.ts          # RSS源API封装
-│   │   └── rssMirror.ts          # RSS镜像条目API封装
+│   │   ├── rssMirror.ts          # RSS镜像条目API封装
+│   │   └── rssWordSegment.ts     # 分词统计API封装
 │   │
 │   ├── types/
 │   │   └── business.ts           # 业务类型定义（包含RSS相关类型）
 │   │
 │   ├── views/
-│   │   └── rss-mirror/
-│   │       ├── sources/
-│   │       │   └── index.vue     # RSS源管理页面
-│   │       └── items/
-│   │           └── index.vue     # RSS镜像条目页面
+│   │   ├── rss-mirror/
+│   │   │   ├── sources/
+│   │   │   │   └── index.vue     # RSS源管理页面
+│   │   │   └── items/
+│   │   │       └── index.vue     # RSS镜像条目页面
+│   │   └── rss/
+│   │       └── word-segments.vue # 分词统计页面
 │   │
 │   └── router/
 │       └── modules/
@@ -126,23 +134,30 @@ DFApp.Vue/
    - RSS镜像条目API封装
    - 包含查询、删除、统计、下载等操作
 
+3. **`/src/api/rssWordSegment.ts`**
+   - 分词统计API封装
+   - 包含分词列表查询、统计查询等操作
+
 #### 类型层
 
-3. **`/src/types/business.ts`** (扩展)
+4. **`/src/types/business.ts`** (扩展)
    - 添加了RSS相关的TypeScript类型定义
 
 #### 页面组件
 
-4. **`/src/views/rss-mirror/sources/index.vue`**
+5. **`/src/views/rss-mirror/sources/index.vue`**
    - RSS源管理页面组件
 
-5. **`/src/views/rss-mirror/items/index.vue`**
+6. **`/src/views/rss-mirror/items/index.vue`**
    - RSS镜像条目页面组件
+
+7. **`/src/views/rss/word-segments.vue`**
+   - 分词统计页面组件
 
 #### 路由配置
 
-6. **`/src/router/modules/download-subscription.ts`** (修改)
-   - 添加了两个新路由
+8. **`/src/router/modules/download-subscription.ts`** (修改)
+   - 添加了RSS镜像相关路由
 
 ---
 
@@ -1207,6 +1222,14 @@ export default {
       }
     },
     {
+      path: "/download-subscription/rss-word-segments",
+      name: "RssWordSegments",
+      component: () => import("@/views/rss/word-segments.vue"),
+      meta: {
+        title: "分词统计"
+      }
+    },
+    {
       path: "/download-subscription/filterKeyword",
       name: "FilterKeyword",
       component: () => import("@/views/filterKeyword/index.vue"),
@@ -1220,10 +1243,11 @@ export default {
 
 ### 路由说明
 
-**新增路由**:
+**RSS镜像相关路由**:
 
 1. `/download-subscription/rss-sources` - RSS源管理
 2. `/download-subscription/rss-mirror-items` - RSS镜像条目
+3. `/download-subscription/rss-word-segments` - 分词统计
 
 **路由元信息**:
 
@@ -2108,7 +2132,6 @@ onMounted(() => {
 ### 项目文档
 
 - [后端文档](/home/df/dfapp/DFApp/docs/rss-mirror-feature.md)
-- [ABP Framework文档](https://docs.abp.io/)
 
 ### 工具推荐
 
@@ -2119,6 +2142,14 @@ onMounted(() => {
 ---
 
 ## 版本历史
+
+### v1.1.0 (2026-05-10)
+**文档更新**
+
+- 新增分词统计页面文档
+- 更新路由配置（新增 rss-word-segments 路由）
+- 更新项目结构（新增 word-segments.vue）
+- 移除过时的 ABP Framework 引用
 
 ### v1.0.0 (2026-01-14)
 
@@ -2149,7 +2180,7 @@ onMounted(() => {
 ## 作者信息
 
 **开发日期**: 2026-01-14
-**版本**: 1.0.0
+**版本**: 1.1.0
 **框架**: Vue 3 + TypeScript + Element Plus
 **AI助手**: Claude (Anthropic)
 
