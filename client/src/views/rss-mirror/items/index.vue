@@ -184,21 +184,24 @@
       </el-form>
       <template #footer>
         <el-button @click="showDownloadDialog = false">取消</el-button>
-        <el-button type="primary" @click="confirmDownload">确定</el-button>
+        <el-button
+          type="primary"
+          :loading="downloadLoading"
+          @click="confirmDownload"
+        >
+          确定
+        </el-button>
       </template>
     </el-dialog>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted } from "vue";
+import { ref, reactive, watch, onMounted } from "vue";
 import { ElMessage, ElMessageBox } from "element-plus";
 import { rssMirrorApi } from "@/api/rssMirror";
 import { rssSourceApi } from "@/api/rssSource";
-import type {
-  RssMirrorItemDto,
-  RssSourceDto
-} from "@/types/business";
+import type { RssMirrorItemDto, RssSourceDto } from "@/types/business";
 
 // 搜索表单
 const searchForm = reactive({
@@ -228,11 +231,19 @@ const rssSources = ref<RssSourceDto[]>([]);
 
 // 下载选项对话框
 const showDownloadDialog = ref(false);
+const downloadLoading = ref(false);
 const downloadOptions = reactive({
   videoOnly: true,
   enableKeywordFilter: true
 });
 let currentDownloadItem: RssMirrorItemDto | null = null;
+
+// 对话框关闭时重置loading状态
+watch(showDownloadDialog, val => {
+  if (!val) {
+    downloadLoading.value = false;
+  }
+});
 
 // 获取数据
 const fetchData = async () => {
@@ -379,7 +390,7 @@ const handleDownload = (row: RssMirrorItemDto) => {
 // 确认下载
 const confirmDownload = async () => {
   if (!currentDownloadItem) return;
-
+  downloadLoading.value = true;
   try {
     await rssMirrorApi.downloadToAria2(
       currentDownloadItem.id,
@@ -392,6 +403,8 @@ const confirmDownload = async () => {
   } catch (error: any) {
     console.error("下载失败:", error);
     ElMessage.error(error.message || "下载失败");
+  } finally {
+    downloadLoading.value = false;
   }
 };
 
