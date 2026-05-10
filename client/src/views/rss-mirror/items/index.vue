@@ -19,6 +19,7 @@
             v-model="searchForm.rssSourceId"
             placeholder="全部"
             clearable
+            style="width: 300px"
             @change="handleSearch"
           >
             <el-option
