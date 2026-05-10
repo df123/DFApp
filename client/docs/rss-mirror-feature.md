@@ -2143,6 +2143,39 @@ onMounted(() => {
 
 ## 版本历史
 
+### v1.2.0 (2026-05-10)
+**Bug修复与功能重构**
+
+#### 问题描述
+1. **分页无效**：RSS镜像条目页面的分页功能无法正常工作，切换页码后数据不更新
+2. **下载失败**：点击下载按钮后返回400错误，无法完成下载
+3. **超时问题**：下载请求经常超时失败
+
+#### 根本原因
+1. **分页参数不匹配**：前端API使用`pageIndex/pageSize`参数名，后端期望`skipCount/maxResultCount`参数名
+2. **下载功能未实现**：后端`RssMirrorItemAppService.DownloadToAria2Async`方法为TODO伪代码，未真正注入Aria2Service
+3. **下载状态更新时机错误**：`IsDownloaded`状态在请求开始时就标记为true，而非成功后才标记
+4. **请求超时过短**：下载相关请求超时设置为10秒，对于大文件下载不够用
+
+#### 修复方案
+1. **参数转换**：在`rssMirror.ts`的`getList`方法中添加参数转换逻辑，将`pageIndex/pageSize`转换为`skipCount/maxResultCount`
+2. **实现下载功能**：在后端注入真正的Aria2Service，完成下载逻辑实现
+3. **修复状态更新**：将`IsDownloaded`状态更新移到下载成功后的回调中
+4. **增加超时时间**：下载相关请求超时从10秒改为30秒
+5. **优化分页默认值**：默认分页条数从20条改为10条
+6. **移除分词统计功能**：根据需求变更，移除前端页面中分词统计相关的UI、API方法和类型定义
+
+#### 修改文件
+- `client/src/api/rssMirror.ts` - 参数转换、移除分词统计API、增加下载超时
+- `client/src/views/rss-mirror/items/index.vue` - 移除分词统计UI、调整分页默认值
+- `src/DFApp.Web/Services/Rss/RssMirrorItemAppService.cs` - 实现下载功能、修复状态更新
+
+#### 验证结果
+- ✅ 分页功能正常工作，切换页码数据正确更新
+- ✅ 下载功能正常，能够成功添加到Aria2
+- ✅ 下载超时问题解决，大文件下载不再超时
+- ✅ 下载状态正确显示，只有成功下载后才标记为已下载
+
 ### v1.1.0 (2026-05-10)
 **文档更新**
 
@@ -2180,7 +2213,7 @@ onMounted(() => {
 ## 作者信息
 
 **开发日期**: 2026-01-14
-**版本**: 1.1.0
+**版本**: 1.2.0
 **框架**: Vue 3 + TypeScript + Element Plus
 **AI助手**: Claude (Anthropic)
 

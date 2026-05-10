@@ -16,18 +16,18 @@ class RssMirrorApi {
   ): Promise<PagedResultDto<RssMirrorItemDto>> {
     const pageIndex = input?.pageIndex ?? 1;
     const pageSize = input?.pageSize ?? 10;
-    return http.get(this.baseUrl, {
-      params: {
-        skipCount: (pageIndex - 1) * pageSize,
-        maxResultCount: pageSize,
-        sorting: input?.sorting,
-        rssSourceId: input?.rssSourceId,
-        filter: input?.filter,
-        startTime: input?.startTime,
-        endTime: input?.endTime,
-        isDownloaded: input?.isDownloaded
-      }
-    });
+    // 构建参数对象，过滤掉空字符串和 undefined，避免后端模型绑定失败
+    const params: Record<string, any> = {
+      skipCount: (pageIndex - 1) * pageSize,
+      maxResultCount: pageSize
+    };
+    if (input?.sorting) params.sorting = input.sorting;
+    if (input?.rssSourceId != null) params.rssSourceId = input.rssSourceId;
+    if (input?.filter) params.filter = input.filter;
+    if (input?.startTime) params.startTime = input.startTime;
+    if (input?.endTime) params.endTime = input.endTime;
+    if (input?.isDownloaded != null) params.isDownloaded = input.isDownloaded;
+    return http.get(this.baseUrl, { params });
   }
 
   /**
