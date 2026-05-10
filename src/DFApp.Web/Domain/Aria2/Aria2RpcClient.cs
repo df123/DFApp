@@ -282,7 +282,9 @@ public class Aria2RpcClient
     /// </summary>
     public async Task<string> AddTorrentAsync(string torrentData, Dictionary<string, object>? options = null)
     {
-        var parameters = new List<object?> { torrentData };
+        // aria2.addTorrent 参数顺序: [secret, ] torrentData [, uris [, options]]
+        // 必须提供 uris 占位参数，否则 options 会被错误地解析为 uris 类型
+        var parameters = new List<object?> { torrentData, new List<string>() };
         if (options != null && options.Count > 0)
         {
             parameters.Add(options);
