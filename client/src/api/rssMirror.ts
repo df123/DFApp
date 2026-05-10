@@ -15,7 +15,21 @@ class RssMirrorApi {
   async getList(
     input: GetRssMirrorItemsRequestDto
   ): Promise<PagedResultDto<RssMirrorItemDto>> {
-    return http.get(this.baseUrl, { params: input });
+    const pageIndex = input?.pageIndex ?? 1;
+    const pageSize = input?.pageSize ?? 10;
+    return http.get(this.baseUrl, {
+      params: {
+        skipCount: (pageIndex - 1) * pageSize,
+        maxResultCount: pageSize,
+        sorting: input?.sorting,
+        rssSourceId: input?.rssSourceId,
+        filter: input?.filter,
+        startTime: input?.startTime,
+        endTime: input?.endTime,
+        isDownloaded: input?.isDownloaded,
+        wordToken: input?.wordToken
+      }
+    });
   }
 
   /**
@@ -59,8 +73,15 @@ class RssMirrorApi {
     wordToken: string,
     params?: PagedRequestDto
   ): Promise<PagedResultDto<RssMirrorItemDto>> {
+    const pageIndex = params?.pageIndex ?? 1;
+    const pageSize = params?.pageSize ?? 10;
     return http.get(`${this.baseUrl}/by-word-token`, {
-      params: { wordToken, ...params }
+      params: {
+        wordToken,
+        skipCount: (pageIndex - 1) * pageSize,
+        maxResultCount: pageSize,
+        sorting: params?.sorting
+      }
     });
   }
 

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using DFApp.Rss;
+using DFApp.Aria2;
 using DFApp.Web.Data;
 using DFApp.Web.DTOs;
 using DFApp.Web.DTOs.Rss;
@@ -22,9 +23,7 @@ public class RssMirrorItemAppService : AppServiceBase
     private readonly ISqlSugarRepository<RssWordSegment, long> _rssWordSegmentRepository;
     private readonly ISqlSugarRepository<RssSource, long> _rssSourceRepository;
     private readonly ILogger<RssMirrorItemAppService> _logger;
-
-    // TODO: IAria2Service 未迁移，暂时使用 object? 替代
-    private readonly object? _aria2Service;
+    private readonly Services.Aria2.Aria2Service _aria2Service;
 
     /// <summary>
     /// 构造函数
@@ -34,6 +33,7 @@ public class RssMirrorItemAppService : AppServiceBase
     /// <param name="rssMirrorItemRepository">RSS镜像条目仓储</param>
     /// <param name="rssWordSegmentRepository">RSS分词仓储</param>
     /// <param name="rssSourceRepository">RSS源仓储</param>
+    /// <param name="aria2Service">Aria2下载服务</param>
     /// <param name="logger">日志记录器</param>
     public RssMirrorItemAppService(
         ICurrentUser currentUser,
@@ -41,12 +41,14 @@ public class RssMirrorItemAppService : AppServiceBase
         ISqlSugarRepository<RssMirrorItem, long> rssMirrorItemRepository,
         ISqlSugarRepository<RssWordSegment, long> rssWordSegmentRepository,
         ISqlSugarRepository<RssSource, long> rssSourceRepository,
+        Services.Aria2.Aria2Service aria2Service,
         ILogger<RssMirrorItemAppService> logger)
         : base(currentUser, permissionChecker)
     {
         _rssMirrorItemRepository = rssMirrorItemRepository;
         _rssWordSegmentRepository = rssWordSegmentRepository;
         _rssSourceRepository = rssSourceRepository;
+        _aria2Service = aria2Service;
         _logger = logger;
     }
 
@@ -301,25 +303,29 @@ public class RssMirrorItemAppService : AppServiceBase
             throw new BusinessException("该条目已经下载过");
         }
 
-        // TODO: IAria2Service 未迁移，以下为伪代码
-        // var request = new AddDownloadRequestDto
-        // {
-        //     Urls = new List<string> { item.Link },
-        //     VideoOnly = videoOnly,
-        //     EnableKeywordFilter = enableKeywordFilter
-        // };
-        // var result = await _aria2Service.AddDownloadAsync(request);
+        if (string.IsNullOrWhiteSpace(item.Link))
+        {
+            throw new BusinessException("该条目没有下载链接");
+        }
 
-        // 更新下载状态
+        // 构造下载请求，先调用 Aria2 添加下载任务
+        var request = new AddDownloadRequestDto
+        {
+            Urls = new List<string> { item.Link },
+            VideoOnly = videoOnly,
+            EnableKeywordFilter = enableKeywordFilter
+        };
+
+        var result = await _aria2Service.AddDownloadAsync(request);
+
+        // 下载任务创建成功后才更新下载状态
         item.IsDownloaded = true;
         item.DownloadTime = DateTime.Now;
         await _rssMirrorItemRepository.UpdateAsync(item);
 
-        _logger.LogInformation("RSS镜像条目 {Id} 已添加到Aria2下载队列", id);
+        _logger.LogInformation("RSS镜像条目 {Id} 已添加到Aria2下载队列，GID: {Gid}", id, result.Id);
 
-        // TODO: IAria2Service 未迁移，返回占位值
-        throw new BusinessException("IAria2Service 尚未迁移，下载功能暂不可用");
-        // return result.Id;
+        return result.Id;
     }
 
     /// <summary>
