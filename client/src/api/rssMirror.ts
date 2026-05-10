@@ -1,9 +1,8 @@
 import { http } from "@/utils/http";
-import type { PagedRequestDto, PagedResultDto } from "@/types/api";
+import type { PagedResultDto } from "@/types/api";
 import type {
   RssMirrorItemDto,
-  GetRssMirrorItemsRequestDto,
-  WordSegmentStatisticsDto
+  GetRssMirrorItemsRequestDto
 } from "@/types/business";
 
 class RssMirrorApi {
@@ -26,8 +25,7 @@ class RssMirrorApi {
         filter: input?.filter,
         startTime: input?.startTime,
         endTime: input?.endTime,
-        isDownloaded: input?.isDownloaded,
-        wordToken: input?.wordToken
+        isDownloaded: input?.isDownloaded
       }
     });
   }
@@ -51,38 +49,6 @@ class RssMirrorApi {
    */
   async deleteMany(ids: number[]): Promise<void> {
     return http.request("delete", `${this.baseUrl}/many`, { data: ids });
-  }
-
-  /**
-   * 获取分词统计
-   */
-  async getWordSegmentStatistics(
-    rssSourceId?: number,
-    languageType?: number,
-    top: number = 100
-  ): Promise<WordSegmentStatisticsDto[]> {
-    return http.get(`${this.baseUrl}/word-segment-statistics`, {
-      params: { rssSourceId, languageType, top }
-    });
-  }
-
-  /**
-   * 根据分词查询RSS镜像条目
-   */
-  async getByWordToken(
-    wordToken: string,
-    params?: PagedRequestDto
-  ): Promise<PagedResultDto<RssMirrorItemDto>> {
-    const pageIndex = params?.pageIndex ?? 1;
-    const pageSize = params?.pageSize ?? 10;
-    return http.get(`${this.baseUrl}/by-word-token`, {
-      params: {
-        wordToken,
-        skipCount: (pageIndex - 1) * pageSize,
-        maxResultCount: pageSize,
-        sorting: params?.sorting
-      }
-    });
   }
 
   /**
