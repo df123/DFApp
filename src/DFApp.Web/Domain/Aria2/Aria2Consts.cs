@@ -218,21 +218,4 @@ public static class Aria2Consts
     /// 列出所有通知
     /// </summary>
     public const string ListNotifications = "system.listNotifications";
-
-    private static string? _aria2RequestId;
-
-    /// <summary>
-    /// Aria2 请求 ID
-    /// </summary>
-    public static string Aria2RequestId
-    {
-        get
-        {
-            if (string.IsNullOrWhiteSpace(_aria2RequestId))
-            {
-                _aria2RequestId = Guid.NewGuid().ToString();
-            }
-            return _aria2RequestId;
-        }
-    }
 }

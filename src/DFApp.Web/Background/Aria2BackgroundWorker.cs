@@ -1,6 +1,4 @@
 using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Net.WebSockets;
 using System.Text;
 using System.Text.Json;
@@ -8,11 +6,8 @@ using System.Threading;
 using System.Threading.Tasks;
 using DFApp.Aria2;
 using DFApp.Aria2.Notifications;
-using DFApp.Aria2.Request;
-using DFApp.Aria2.Response.TellStatus;
 using DFApp.Web.Data;
 using DFApp.Web.Data.Configuration;
-using DFApp.Web.Queue;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -20,25 +15,21 @@ using Microsoft.Extensions.Logging;
 namespace DFApp.Web.Background;
 
 /// <summary>
-/// Aria2 后台处理服务，通过 WebSocket 连接 Aria2 服务
-/// 接收下载通知、处理 RPC 响应、发送队列中的请求
+/// Aria2 后台处理服务，通过 WebSocket 连接 Aria2 服务接收下载通知
 /// </summary>
 public class Aria2BackgroundWorker : BackgroundService
 {
     private readonly Aria2Manager _manager;
     private readonly IServiceProvider _serviceProvider;
-    private readonly IQueueManagement _queueManagement;
     private readonly ILogger<Aria2BackgroundWorker> _logger;
 
     public Aria2BackgroundWorker(
         Aria2Manager manager,
         IServiceProvider serviceProvider,
-        IQueueManagement queueManagement,
         ILogger<Aria2BackgroundWorker> logger)
     {
         _manager = manager;
         _serviceProvider = serviceProvider;
-        _queueManagement = queueManagement;
         _logger = logger;
     }
 
@@ -68,10 +59,7 @@ public class Aria2BackgroundWorker : BackgroundService
                 await clientWebSocket.ConnectAsync(new Uri(aria2ws), stoppingToken);
                 _logger.LogInformation("已连接到 Aria2 WebSocket: {Url}", aria2ws);
 
-                var receiveTask = ReceiveMessagesAsync(clientWebSocket, stoppingToken);
-                var sendTask = SendQueuedRequestsAsync(clientWebSocket, stoppingToken);
-
-                await Task.WhenAll(receiveTask, sendTask);
+                await ReceiveMessagesAsync(clientWebSocket, stoppingToken);
 
                 _logger.LogInformation("Aria2 WebSocket 连接已断开，5秒后重试");
             }
@@ -120,43 +108,7 @@ public class Aria2BackgroundWorker : BackgroundService
     }
 
     /// <summary>
-    /// 从队列中获取请求并发送到 Aria2
-    /// </summary>
-    private async Task SendQueuedRequestsAsync(ClientWebSocket ws, CancellationToken ct)
-    {
-        while (!ct.IsCancellationRequested && ws.State == WebSocketState.Open)
-        {
-            try
-            {
-                var items = _queueManagement.GetQueueValue<Aria2RequestDto>("Aria2RequestQueue");
-                if (items != null && items.Count > 0)
-                {
-                    foreach (var item in items)
-                    {
-                        string json = JsonSerializer.Serialize(item);
-                        var bytes = Encoding.UTF8.GetBytes(json);
-                        if (ws.State != WebSocketState.Open) break;
-                        await ws.SendAsync(new ArraySegment<byte>(bytes), WebSocketMessageType.Text, true, ct);
-                        _logger.LogDebug("已发送 Aria2 请求: {Method}, Id: {Id}", item.Method, item.Id);
-                    }
-                    _queueManagement.ClearQueue("Aria2RequestQueue");
-                }
-
-                await Task.Delay(500, ct);
-            }
-            catch (OperationCanceledException)
-            {
-                break;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "发送 Aria2 请求异常");
-            }
-        }
-    }
-
-    /// <summary>
-    /// 处理接收到的 WebSocket 消息
+    /// 处理接收到的 WebSocket 通知消息
     /// </summary>
     private async Task ProcessMessageAsync(string message)
     {
@@ -170,38 +122,12 @@ public class Aria2BackgroundWorker : BackgroundService
 
             _logger.LogDebug("Aria2 消息: {Message}", message);
 
-            ResponseBase? dto;
-            if (message.Contains("\"id\":") && !message.Contains("\"error\":"))
+            if (message.Contains("\"method\":"))
             {
-                // 请求响应（如 TellStatus 响应）
-                dto = JsonSerializer.Deserialize<TellStatusResponse>(message);
-            }
-            else if (message.Contains("\"method\":"))
-            {
-                // 通知事件
                 var notification = JsonSerializer.Deserialize<Aria2Notification>(message);
-                dto = notification;
-            }
-            else
-            {
-                return;
-            }
-
-            if (dto != null)
-            {
-                var requests = await _manager.ProcessResponseAsync(dto);
-                if (requests != null && requests.Count > 0)
+                if (notification != null)
                 {
-                    // 将 Aria2Request 转换为 Aria2RequestDto 并加入发送队列
-                    var dtos = requests.Select(r => new Aria2RequestDto
-                    {
-                        JSONRPC = r.JSONRPC,
-                        Method = r.Method,
-                        Id = r.Id,
-                        Params = new List<object>(r.Params)
-                    }).ToList();
-
-                    _queueManagement.AddQueueValue("Aria2RequestQueue", dtos);
+                    await _manager.ProcessResponseAsync(notification);
                 }
             }
         }
@@ -210,5 +136,4 @@ public class Aria2BackgroundWorker : BackgroundService
             _logger.LogError(ex, "处理 Aria2 消息异常");
         }
     }
-
 }
