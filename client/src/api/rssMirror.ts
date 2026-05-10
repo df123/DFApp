@@ -101,7 +101,8 @@ class RssMirrorApi {
     enableKeywordFilter: boolean = false
   ): Promise<string> {
     return http.post(`${this.baseUrl}/${id}/download-to-aria2`, {
-      params: { videoOnly, enableKeywordFilter }
+      params: { videoOnly, enableKeywordFilter },
+      timeout: 30000
     });
   }
 }

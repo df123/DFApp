@@ -322,7 +322,7 @@ const dateRange = ref<[string, string]>([]);
 // 分页
 const pagination = reactive({
   page: 1,
-  pageSize: 20,
+  pageSize: 10,
   total: 0
 });
 
