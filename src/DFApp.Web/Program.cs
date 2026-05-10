@@ -112,12 +112,9 @@ public class Program
             builder.Services.AddScoped<DFApp.Web.Services.Account.AccountAppService>();
             builder.Services.AddScoped<DFApp.Web.Services.Account.UserManagementAppService>();
             builder.Services.AddScoped<DFApp.Web.Services.Rss.RssSourceAppService>();
-            builder.Services.AddScoped<DFApp.Web.Services.Rss.RssSubscriptionAppService>();
-            builder.Services.AddScoped<DFApp.Web.Services.Rss.RssSubscriptionDownloadAppService>();
             builder.Services.AddScoped<DFApp.Web.Services.Rss.RssWordSegmentAppService>();
             builder.Services.AddScoped<DFApp.Web.Services.Rss.RssMirrorItemAppService>();
             builder.Services.AddScoped<DFApp.Web.Services.Rss.RssFetchService>();
-            builder.Services.AddScoped<DFApp.Web.Services.Rss.IRssSubscriptionService, DFApp.Web.Services.Rss.RssSubscriptionService>();
             builder.Services.AddScoped<DFApp.Web.Services.Rss.IWordSegmentService, DFApp.Web.Services.Rss.WordSegmentService>();
             builder.Services.AddScoped<DFApp.Web.Services.Lottery.LotteryService>();
             builder.Services.AddScoped<DFApp.Web.Services.Lottery.LotteryResultService>();
@@ -240,13 +237,6 @@ public class Program
                 q.ScheduleJob<Background.GasolinePriceRefreshJob>(trigger => trigger
                     .WithIdentity("GasolinePriceRefreshJob-trigger")
                     .WithCronSchedule("0 0 21 * * ?"));
-
-                // DiskSpaceCheckJob — 每10分钟执行
-                q.ScheduleJob<Background.DiskSpaceCheckJob>(trigger => trigger
-                    .WithIdentity("DiskSpaceCheckJob-trigger")
-                    .WithSimpleSchedule(x => x
-                        .WithIntervalInMinutes(10)
-                        .RepeatForever()));
 
                 // LotteryResultJob — 每晚23:00执行
                 q.ScheduleJob<Background.LotteryResultJob>(trigger => trigger

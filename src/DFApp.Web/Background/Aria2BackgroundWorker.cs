@@ -10,7 +10,6 @@ using DFApp.Aria2;
 using DFApp.Aria2.Notifications;
 using DFApp.Aria2.Request;
 using DFApp.Aria2.Response.TellStatus;
-using DFApp.Rss;
 using DFApp.Web.Data;
 using DFApp.Web.Data.Configuration;
 using DFApp.Web.Queue;
@@ -182,12 +181,6 @@ public class Aria2BackgroundWorker : BackgroundService
                 // 通知事件
                 var notification = JsonSerializer.Deserialize<Aria2Notification>(message);
                 dto = notification;
-
-                // 下载完成时更新 RSS 订阅下载记录
-                if (notification != null && notification.Method == Aria2Consts.OnDownloadComplete)
-                {
-                    await UpdateDownloadRecordStatusAsync(notification);
-                }
             }
             else
             {
@@ -218,30 +211,4 @@ public class Aria2BackgroundWorker : BackgroundService
         }
     }
 
-    /// <summary>
-    /// 下载完成时更新 RSS 订阅下载记录状态
-    /// </summary>
-    private async Task UpdateDownloadRecordStatusAsync(Aria2Notification notification)
-    {
-        if (notification.Params == null || notification.Params.Count == 0) return;
-
-        string gid = notification.Params[0].GID;
-        if (string.IsNullOrEmpty(gid)) return;
-
-        using var scope = _serviceProvider.CreateScope();
-        var repository = scope.ServiceProvider.GetRequiredService<ISqlSugarRepository<RssSubscriptionDownload, long>>();
-
-        var downloads = await repository.GetListAsync(d => d.Aria2Gid == gid);
-        foreach (var download in downloads)
-        {
-            download.DownloadStatus = 2;
-            download.DownloadCompleteTime = DateTime.Now;
-            await repository.UpdateAsync(download);
-        }
-
-        if (downloads.Count > 0)
-        {
-            _logger.LogInformation("更新订阅下载记录状态: {Gid} -> 完成，共 {Count} 条", gid, downloads.Count);
-        }
-    }
 }

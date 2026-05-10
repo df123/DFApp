@@ -63,22 +63,6 @@ export default {
       meta: {
         title: "关键词过滤管理"
       }
-    },
-    {
-      path: "/download-subscription/rss-subscriptions",
-      name: "RssSubscriptions",
-      component: () => import("@/views/rss/subscription/index.vue"),
-      meta: {
-        title: "RSS订阅管理"
-      }
-    },
-    {
-      path: "/download-subscription/rss-subscription-downloads",
-      name: "RssSubscriptionDownloads",
-      component: () => import("@/views/rss/subscription/downloads.vue"),
-      meta: {
-        title: "订阅下载记录"
-      }
     }
   ]
 } satisfies RouteConfigsTable;
