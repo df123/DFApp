@@ -12,7 +12,10 @@ using System.Threading.Tasks;
 using DFApp.Media;
 using DFApp.Web.Data;
 using DFApp.Web.Data.Configuration;
+using DFApp.Web.DTOs.Media;
+using DFApp.Web.Hubs;
 using DFApp.Web.Infrastructure;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -571,6 +574,9 @@ public class ListenTelegramService : BackgroundService
                 await UpdateDownloadStatsAsync(mediaInfo.Id, downloadTimeMs, downloadSpeedBps);
                 await UpdateIsDownloadCompletedAsync(mediaInfo.Id);
 
+                // 向 Downloader 子程序推送下载完成通知
+                await NotifyDownloaderAsync(mediaInfo);
+
                 double speedMBps = StorageUnitConversionHelper.ByteToMB(fileSize) / (downloadTimeMs / 1000.0);
                 _logger.LogInformation("{MediaType} 下载完成 {SavePath}, 耗时: {Time}ms, 速度: {Speed:F2} MB/s ({Bps:F0} Bps)",
                     model.IsPhoto ? "图片" : "视频", mediaInfo.SavePath, downloadTimeMs, speedMBps, downloadSpeedBps);
@@ -614,6 +620,57 @@ public class ListenTelegramService : BackgroundService
             mediaInfo.DownloadTimeMs = downloadTimeMs;
             mediaInfo.DownloadSpeedBps = downloadSpeedBps;
             await repository.UpdateAsync(mediaInfo);
+        }
+    }
+
+    /// <summary>
+    /// 向 Downloader 子程序推送下载完成通知
+    /// </summary>
+    private async Task NotifyDownloaderAsync(MediaInfo mediaInfo)
+    {
+        try
+        {
+            var downloaderEnabled = await GetConfigurationInfoAsync("DownloaderEnabled");
+            if (!bool.TryParse(downloaderEnabled, out var enabled) || !enabled)
+            {
+                return;
+            }
+
+            var returnDownloadUrlPrefix = await GetConfigurationInfoAsync("ReturnDownloadUrlPrefix");
+            var replaceUrlPrefix = await GetConfigurationInfoAsync("ReplaceUrlPrefix");
+
+            if (string.IsNullOrWhiteSpace(returnDownloadUrlPrefix) || string.IsNullOrWhiteSpace(replaceUrlPrefix))
+            {
+                return;
+            }
+
+            var downloadUrl = $"{Path.Combine(returnDownloadUrlPrefix,
+                mediaInfo.SavePath.Replace(replaceUrlPrefix, string.Empty).Replace("\\", "/"))}";
+
+            using var scope = _serviceProvider.CreateScope();
+            var hubContext = scope.ServiceProvider.GetRequiredService<IHubContext<DownloadNotificationHub>>();
+
+            var notification = new MediaDownloadNotificationDto
+            {
+                FileName = Path.GetFileName(mediaInfo.SavePath),
+                FileSize = mediaInfo.Size,
+                MimeType = mediaInfo.MimeType,
+                DownloadUrl = downloadUrl,
+                SourceType = "Telegram",
+                SourceId = mediaInfo.Id,
+                ChatId = mediaInfo.ChatId,
+                ChatTitle = mediaInfo.ChatTitle,
+                CompletedAt = DateTime.UtcNow
+            };
+
+            await hubContext.Clients.Group("DownloadNotify")
+                .SendAsync("DownloadCompleted", notification);
+
+            _logger.LogInformation("已推送下载完成通知到 Downloader: {FileName}", notification.FileName);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "推送下载完成通知失败，不影响主流程");
         }
     }
 

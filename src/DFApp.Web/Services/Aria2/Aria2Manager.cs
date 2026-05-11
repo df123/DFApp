@@ -1,8 +1,14 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Threading.Tasks;
 using DFApp.Aria2.Notifications;
+using DFApp.Media;
 using DFApp.Web.Data;
+using DFApp.Web.Data.Configuration;
+using DFApp.Web.DTOs.Media;
+using DFApp.Web.Hubs;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
@@ -175,6 +181,61 @@ public class Aria2Manager
 
                 fileIndex++;
             }
+        }
+
+        // 向 Downloader 子程序推送下载完成通知
+        await NotifyDownloaderAsync(scope, taskDto, tellStatusResult.Id);
+    }
+
+    /// <summary>
+    /// 向 Downloader 子程序推送 Aria2 下载完成通知
+    /// </summary>
+    private async Task NotifyDownloaderAsync(IServiceScope scope, Aria2TaskDto taskDto, long tellStatusResultId)
+    {
+        try
+        {
+            var configurationInfoRepository = scope.ServiceProvider.GetRequiredService<IConfigurationInfoRepository>();
+            var downloaderEnabled = await configurationInfoRepository
+                .GetConfigurationInfoValue("DownloaderEnabled", MediaBackgroudConst.ModuleName);
+            if (!bool.TryParse(downloaderEnabled, out var enabled) || !enabled)
+            {
+                return;
+            }
+
+            var aria2ApachePrefix = await configurationInfoRepository
+                .GetConfigurationInfoValue("Aria2ApachePathPrefix", MediaBackgroudConst.ModuleName);
+            if (string.IsNullOrWhiteSpace(aria2ApachePrefix))
+            {
+                return;
+            }
+
+            var filePath = taskDto.Files?.Count > 0 ? taskDto.Files[0].Path : "";
+            var fileName = Path.GetFileName(filePath);
+            var downloadUrl = $"{aria2ApachePrefix.TrimEnd('/')}/{fileName}";
+
+            var hubContext = scope.ServiceProvider.GetRequiredService<IHubContext<DownloadNotificationHub>>();
+
+            var notification = new Aria2DownloadNotificationDto
+            {
+                FileName = fileName,
+                FileSize = taskDto.TotalLength,
+                MimeType = "application/octet-stream",
+                DownloadUrl = downloadUrl,
+                SourceType = "Aria2",
+                SourceId = tellStatusResultId,
+                Gid = taskDto.Gid,
+                TorrentName = Path.GetFileName(taskDto.Dir),
+                CompletedAt = DateTime.UtcNow
+            };
+
+            await hubContext.Clients.Group("DownloadNotify")
+                .SendAsync("DownloadCompleted", notification);
+
+            _logger.LogInformation("已推送 Aria2 下载完成通知到 Downloader: {FileName}", notification.FileName);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "推送 Aria2 下载完成通知失败，不影响主流程");
         }
     }
 }

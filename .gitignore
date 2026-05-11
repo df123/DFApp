@@ -330,3 +330,20 @@ pnpm-debug.log*
 .DS_Store
 Thumbs.db
 .playwright-cli/
+
+# ============================
+# DFApp.Downloader 相关忽略规则
+# ============================
+
+# 前端构建产物
+DFApp.Downloader/web/dist/
+DFApp.Downloader/web/node_modules/
+
+# 应用运行时文件
+DFApp.Downloader/src/DFApp.Downloader.App/wwwroot/
+DFApp.Downloader/src/DFApp.Downloader.App/settings.json
+DFApp.Downloader/src/DFApp.Downloader.App/downloader.db
+DFApp.Downloader/src/DFApp.Downloader.App/logs/
+
+# 日志
+DFApp.Downloader/logs/

@@ -285,6 +285,7 @@ public class Program
 
             app.MapControllers();
             app.MapHub<Aria2Hub>(Aria2Hub.HubUrl);
+            app.MapHub<DownloadNotificationHub>(DownloadNotificationHub.HubUrl);
 
             await app.RunAsync();
             return 0;
