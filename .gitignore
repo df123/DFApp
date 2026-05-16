@@ -273,6 +273,7 @@ src/DF.Telegram.Blazor.Server.Tiered/Logs/*
 /DFApp.db
 /DFApp.db-shm
 /DFApp.db-wal
+/DFApp-old.db
 /src/DF.Telegram.Web/host/default
 /src/DF.Telegram.Web/.config
 /src/DF.Telegram.Web/publish.ps1
@@ -292,3 +293,58 @@ src/DFApp.Web/DFApp.db-wal
 .vscode/
 /.continue/
 src/Upload/
+
+# ============================
+# 前端 (client/) 相关忽略规则
+# ============================
+
+# 依赖（node_modules/ 已在上方全局忽略）
+client/node_modules/
+
+# 构建产物
+client/dist/
+
+# 环境变量（含敏感信息）
+client/.env.development
+client/.env.staging
+
+# 编辑器缓存
+.eslintcache
+
+# 测试报告
+playwright-report/
+test-results/
+client/playwright-report/
+client/test-results/
+
+# 日志
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# 锁文件（可选，保留 pnpm-lock.yaml）
+# yarn.lock
+
+# 系统文件
+.DS_Store
+Thumbs.db
+.playwright-cli/
+
+# ============================
+# DFApp.Downloader 相关忽略规则
+# ============================
+
+# 前端构建产物
+DFApp.Downloader/web/dist/
+DFApp.Downloader/web/node_modules/
+
+# 应用运行时文件
+DFApp.Downloader/src/DFApp.Downloader.App/wwwroot/
+DFApp.Downloader/src/DFApp.Downloader.App/settings.json
+DFApp.Downloader/src/DFApp.Downloader.App/downloader.db
+DFApp.Downloader/downloader.db
+DFApp.Downloader/src/DFApp.Downloader.App/logs/
+
+# 日志
+DFApp.Downloader/logs/

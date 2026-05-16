@@ -1,0 +1,6 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/DFApp.Downloader.App/DFApp.Downloader.App.csproj" />
+    <Project Path="src/DFApp.Downloader.Core/DFApp.Downloader.Core.csproj" />
+  </Folder>
+</Solution>

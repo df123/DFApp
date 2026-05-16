@@ -1,0 +1,23 @@
+using System;
+using DFApp.Web.DTOs;
+
+namespace DFApp.Web.DTOs.Media
+{
+    public class MediaInfoDto : AuditedEntityDto<long>
+    {
+        public string MediaId { get; set; } = null!;
+        public long ChatId { get; set; }
+        public string ChatTitle { get; set; } = null!;
+        public string? Message { get; set; }
+        public long Size { get; set; }
+        public string SavePath { get; set; } = null!;
+        public string MD5 { get; set; } = null!;
+        public string MimeType { get; set; } = null!;
+        public bool IsExternalLinkGenerated { get; set; }
+        public bool IsDownloadCompleted { get; set; }
+
+        // 下载速度相关字段
+        public long DownloadTimeMs { get; set; }
+        public double DownloadSpeedBps { get; set; }
+    }
+}

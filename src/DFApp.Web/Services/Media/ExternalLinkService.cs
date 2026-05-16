@@ -1,0 +1,321 @@
+using System;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.IO;
+using System.IO.Compression;
+using System.Linq;
+using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
+// MediaBackgroudConst 已迁移到 Domain/Media/MediaConst.cs
+using DFApp.Media;
+using DFApp.Web.Data;
+using DFApp.Web.Data.Configuration;
+using DFApp.Web.DTOs.Media;
+using DFApp.Web.Infrastructure;
+using DFApp.Web.Mapping;
+using DFApp.Web.Permissions;
+using DFApp.Web.Queue;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+
+namespace DFApp.Web.Services.Media;
+
+/// <summary>
+/// 媒体外链服务
+/// </summary>
+public class ExternalLinkService : CrudServiceBase<
+    MediaExternalLink,
+    long,
+    ExternalLinkDto,
+    CreateUpdateExternalLinkDto,
+    CreateUpdateExternalLinkDto>
+{
+    private readonly IBackgroundTaskQueue _backgroundTaskQueue;
+    private readonly IConfigurationInfoRepository _configurationInfoRepository;
+    private readonly MediaMapper _mapper = new();
+
+    /// <summary>
+    /// 构造函数
+    /// </summary>
+    /// <param name="currentUser">当前用户</param>
+    /// <param name="permissionChecker">权限检查器</param>
+    /// <param name="repository">外链仓储接口</param>
+    /// <param name="backgroundTaskQueue">后台任务队列</param>
+    /// <param name="configurationInfoRepository">配置信息仓储接口</param>
+    public ExternalLinkService(
+        ICurrentUser currentUser,
+        IPermissionChecker permissionChecker,
+        ISqlSugarRepository<MediaExternalLink, long> repository,
+        IBackgroundTaskQueue backgroundTaskQueue,
+        IConfigurationInfoRepository configurationInfoRepository)
+        : base(currentUser, permissionChecker, repository)
+    {
+        _backgroundTaskQueue = backgroundTaskQueue;
+        _configurationInfoRepository = configurationInfoRepository;
+    }
+
+    /// <summary>
+    /// 创建操作不允许使用
+    /// </summary>
+    public override Task<ExternalLinkDto> CreateAsync(CreateUpdateExternalLinkDto input)
+    {
+        throw new BusinessException("此接口不允许使用");
+    }
+
+    /// <summary>
+    /// 更新操作不允许使用
+    /// </summary>
+    public override Task<ExternalLinkDto> UpdateAsync(long id, CreateUpdateExternalLinkDto input)
+    {
+        throw new BusinessException("此接口不允许使用");
+    }
+
+    /// <summary>
+    /// 删除外链记录，如果文件未移除则先移除文件
+    /// </summary>
+    /// <param name="id">外链 ID</param>
+    public override async Task DeleteAsync(long id)
+    {
+        if (id <= 0)
+        {
+            throw new BusinessException("ID要大于0");
+        }
+
+        var mediaExternalLink = await Repository.GetFirstOrDefaultAsync(x => x.Id == id);
+        if (mediaExternalLink != null && !mediaExternalLink.IsRemove)
+        {
+            await RemoveFileAsync(id);
+        }
+
+        await base.DeleteAsync(id);
+    }
+
+    /// <summary>
+    /// 生成外链（后台任务）
+    /// 原始代码使用 IBackgroundTaskQueue 在后台执行，依赖 IServiceProvider 解析服务
+    /// </summary>
+    /// <returns>是否成功加入队列</returns>
+    public Task<bool> GetExternalLink()
+    {
+        _backgroundTaskQueue.EnqueueTask(async (serviceScopeFactory, cancellationToken) =>
+        {
+            Stopwatch stopwatch = new Stopwatch();
+            stopwatch.Start();
+
+            using var scope = serviceScopeFactory.CreateScope();
+            var configurationInfoRepository = scope.ServiceProvider.GetRequiredService<IConfigurationInfoRepository>();
+            var mediaInfoRepository = scope.ServiceProvider.GetRequiredService<ISqlSugarRepository<MediaInfo, long>>();
+            var externalLinkRepository = scope.ServiceProvider.GetRequiredService<ISqlSugarRepository<MediaExternalLink, long>>();
+            var mediaExternalLinkMediaIdRepository = scope.ServiceProvider.GetRequiredService<ISqlSugarRepository<MediaExternalLinkMediaIds, long>>();
+            var logger = scope.ServiceProvider.GetRequiredService<ILogger<ExternalLinkService>>();
+
+            var returnDownloadUrlPrefix = await configurationInfoRepository.GetConfigurationInfoValue("ReturnDownloadUrlPrefix", MediaBackgroudConst.ModuleName);
+            if (string.IsNullOrWhiteSpace(returnDownloadUrlPrefix))
+            {
+                throw new BusinessException(nameof(returnDownloadUrlPrefix));
+            }
+
+            string photoSavePath = await configurationInfoRepository.GetConfigurationInfoValue("SavePhotoPathPrefix", MediaBackgroudConst.ModuleName);
+            if (string.IsNullOrWhiteSpace(photoSavePath))
+            {
+                throw new BusinessException(nameof(photoSavePath));
+            }
+
+            string zipType = await configurationInfoRepository.GetConfigurationInfoValue("ZipType", MediaBackgroudConst.ModuleName);
+
+            List<MediaInfo> temp = await mediaInfoRepository.GetListAsync(x => !x.IsExternalLinkGenerated
+                && x.IsDownloadCompleted);
+
+            if (temp == null || temp.Count <= 0)
+            {
+                logger.LogWarning("没有符合条件的外链生成媒体（IsExternalLinkGenerated=false 且 IsDownloadCompleted=true）");
+                return;
+            }
+
+            logger.LogInformation("找到 {Count} 条符合条件的外链生成媒体，开始处理", temp.Count);
+
+            string datetimeName = DateTime.Now.ToString("yyyyMMddHHmmss");
+            string zipPhotoName = $"{datetimeName}.zip";
+            string zipPhotoPathName = Path.Combine(Path.GetDirectoryName(photoSavePath)!, zipPhotoName);
+
+            using ZipArchive archive = ZipFile.Open(zipPhotoPathName, ZipArchiveMode.Create);
+            long size = 0;
+
+            StringBuilder stringBuilder = new StringBuilder();
+            if (File.Exists(zipPhotoPathName))
+            {
+                stringBuilder.AppendLine(Path.Combine(returnDownloadUrlPrefix, zipPhotoName));
+            }
+
+            string replaceUrlPrefix = await configurationInfoRepository.GetConfigurationInfoValue("ReplaceUrlPrefix", MediaBackgroudConst.ModuleName);
+            foreach (var mediaInfo in temp)
+            {
+                if (zipType.Contains(mediaInfo.MimeType) && File.Exists(mediaInfo.SavePath))
+                {
+                    archive.CreateEntryFromFile(mediaInfo.SavePath, Path.GetFileName(mediaInfo.SavePath), CompressionLevel.NoCompression);
+                    mediaInfo.IsExternalLinkGenerated = true;
+                    size += mediaInfo.Size;
+
+                    continue;
+                }
+
+                if (!File.Exists(mediaInfo.SavePath))
+                {
+                    logger.LogWarning("媒体文件不存在，跳过：{SavePath}（MediaId={MediaId}）", mediaInfo.SavePath, mediaInfo.Id);
+                }
+
+                stringBuilder.AppendLine($"{Path.Combine(returnDownloadUrlPrefix, mediaInfo.SavePath.Replace(replaceUrlPrefix, string.Empty).Replace("\\", "/"))}");
+                mediaInfo.IsExternalLinkGenerated = true;
+            }
+
+            if (File.Exists(zipPhotoPathName))
+            {
+                var zipMediaInfo = new MediaInfo
+                {
+                    MediaId = Random.Shared.NextInt64(),
+                    ChatId = Random.Shared.NextInt64(),
+                    ChatTitle = "zip",
+                    Size = size,
+                    SavePath = zipPhotoPathName,
+                    MimeType = "zip",
+                    IsExternalLinkGenerated = true,
+                    IsDownloadCompleted = true,
+                };
+                // 使用 InsertReturnIdAsync 获取自增 Id，InsertAsync 不会回填自增主键
+                zipMediaInfo.Id = await mediaInfoRepository.InsertReturnIdAsync(zipMediaInfo);
+                temp.Add(zipMediaInfo);
+            }
+
+            if (temp != null && temp.Count > 0)
+            {
+                await mediaInfoRepository.UpdateAsync(temp);
+                stopwatch.Stop();
+
+                List<MediaExternalLinkMediaIds> mediaExternalLinkMediaIds = new List<MediaExternalLinkMediaIds>();
+
+                var mediaExternalLink = new MediaExternalLink
+                {
+                    Name = datetimeName,
+                    Size = size,
+                    TimeConsumed = stopwatch.ElapsedMilliseconds,
+                    IsRemove = false,
+                    LinkContent = stringBuilder.ToString(),
+                    MediaIds = mediaExternalLinkMediaIds
+                };
+
+                foreach (var mediaInfo in temp)
+                {
+                    mediaExternalLinkMediaIds.Add(new MediaExternalLinkMediaIds
+                    {
+                        MediaId = mediaInfo.Id
+                    });
+                }
+
+                // 使用 InsertReturnIdAsync 获取自增 Id，InsertAsync 不会回填自增主键
+                mediaExternalLink.Id = await externalLinkRepository.InsertReturnIdAsync(mediaExternalLink);
+
+                // 插入后获取外链 ID，为子记录赋值并批量插入
+                foreach (var item in mediaExternalLinkMediaIds)
+                {
+                    item.MediaExternalLinkId = mediaExternalLink.Id;
+                }
+                await mediaExternalLinkMediaIdRepository.InsertAsync(mediaExternalLinkMediaIds);
+
+                logger.LogInformation("外链生成完成，ID={Id}，包含 {Count} 条媒体记录，耗时 {ElapsedMs}ms",
+                    mediaExternalLink.Id, mediaExternalLinkMediaIds.Count, stopwatch.ElapsedMilliseconds);
+            }
+        });
+
+        return Task.FromResult(true);
+    }
+
+    /// <summary>
+    /// 移除外链关联的文件（后台任务）
+    /// 原始代码使用 IBackgroundTaskQueue 在后台执行，依赖 IServiceProvider 解析服务
+    /// </summary>
+    /// <param name="id">外链 ID</param>
+    /// <returns>是否成功加入队列</returns>
+    public Task<bool> RemoveFileAsync(long id)
+    {
+        if (id <= 0)
+        {
+            throw new BusinessException("ID要大于0");
+        }
+
+        _backgroundTaskQueue.EnqueueTask(async (serviceScopeFactory, cancellationToken) =>
+        {
+            using var scope = serviceScopeFactory.CreateScope();
+            var externalLinkRepository = scope.ServiceProvider.GetRequiredService<ISqlSugarRepository<MediaExternalLink, long>>();
+            var mediaInfoRepository = scope.ServiceProvider.GetRequiredService<ISqlSugarRepository<MediaInfo, long>>();
+            var configurationInfoRepository = scope.ServiceProvider.GetRequiredService<IConfigurationInfoRepository>();
+            var mediaExternalLinkMediaIdRepository = scope.ServiceProvider.GetRequiredService<ISqlSugarRepository<MediaExternalLinkMediaIds, long>>();
+
+            var mediaExternalLink = await externalLinkRepository.GetFirstOrDefaultAsync(x => x.Id == id);
+            if (mediaExternalLink != null && !mediaExternalLink.IsRemove)
+            {
+                var mediaExternalLinkMediaIds = await mediaExternalLinkMediaIdRepository.GetListAsync(x => x.MediaExternalLinkId == mediaExternalLink.Id);
+
+                List<long> ids = mediaExternalLinkMediaIds.Select(x => x.MediaId).ToList();
+                List<MediaInfo> medias = await mediaInfoRepository.GetListAsync(x => ids.Contains(x.Id));
+
+                foreach (var item in medias)
+                {
+                    if (item != null && !string.IsNullOrWhiteSpace(item.SavePath))
+                    {
+                        SpaceHelper.DeleteFile(item.SavePath!);
+                    }
+                }
+
+                var savePhotoPathPrefix = await configurationInfoRepository.GetConfigurationInfoValue("SavePhotoPathPrefix", MediaBackgroudConst.ModuleName);
+                var saveVideoPathPrefix = await configurationInfoRepository.GetConfigurationInfoValue("SaveVideoPathPrefix", MediaBackgroudConst.ModuleName);
+
+                SpaceHelper.DeleteEmptyFolders(savePhotoPathPrefix);
+                SpaceHelper.DeleteEmptyFolders(saveVideoPathPrefix);
+
+                mediaExternalLink.IsRemove = true;
+                await externalLinkRepository.UpdateAsync(mediaExternalLink);
+                await mediaInfoRepository.UpdateAsync(medias);
+            }
+        });
+
+        return Task.FromResult(true);
+    }
+
+    /// <summary>
+    /// 将实体映射为输出 DTO
+    /// </summary>
+    /// <param name="entity">外链实体</param>
+    /// <returns>外链 DTO</returns>
+    protected override ExternalLinkDto MapToGetOutputDto(MediaExternalLink entity)
+    {
+        return _mapper.MapToDto(entity);
+    }
+
+    /// <summary>
+    /// 将创建输入 DTO 映射为实体
+    /// </summary>
+    /// <param name="input">创建输入 DTO</param>
+    /// <returns>外链实体</returns>
+    protected override MediaExternalLink MapToEntity(CreateUpdateExternalLinkDto input)
+    {
+        var entity = _mapper.MapToEntity(input);
+        entity.MediaIds = new List<MediaExternalLinkMediaIds>();
+        return entity;
+    }
+
+    /// <summary>
+    /// 将更新输入 DTO 映射到现有实体
+    /// </summary>
+    /// <param name="input">更新输入 DTO</param>
+    /// <param name="entity">外链实体</param>
+    protected override void MapToEntity(CreateUpdateExternalLinkDto input, MediaExternalLink entity)
+    {
+        var mapped = _mapper.MapToEntity(input);
+        entity.Name = mapped.Name;
+        entity.Size = mapped.Size;
+        entity.TimeConsumed = mapped.TimeConsumed;
+        entity.IsRemove = mapped.IsRemove;
+        entity.LinkContent = mapped.LinkContent;
+    }
+}

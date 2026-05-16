@@ -1,11 +1,9 @@
-version: '3.8'
-
 services:
   lottery-proxy:
     build: .
     container_name: lottery-proxy
     ports:
-      - "5000:5000"
+      - "45000:8080"
     environment:
       - ASPNETCORE_ENVIRONMENT=Production
       - ProxySettings__AllowedIPs__0=
@@ -17,7 +15,7 @@ services:
       - ./logs:/app/logs
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:5000/api/health"]
+      test: ["CMD", "curl", "-f", "http://localhost:8080/api/health"]
       interval: 30s
       timeout: 10s
       retries: 3

@@ -7,22 +7,42 @@ using Microsoft.AspNetCore.Http;
 using System.Reflection;
 using Microsoft.Extensions.Options;
 using DFApp.LotteryProxy.Middleware;
+using Serilog;
 
-var builder = WebApplication.CreateBuilder(args);
+try
+{
+    var builder = WebApplication.CreateBuilder(args);
 
-// 配置服务
-ConfigureServices(builder);
+    // 配置 Serilog 作为日志提供程序
+    builder.Host.UseSerilog((context, services, configuration) => configuration
+        .ReadFrom.Configuration(context.Configuration)
+        .ReadFrom.Services(services)
+        .Enrich.FromLogContext());
 
-var app = builder.Build();
+    Log.Information("启动彩票代理服务");
 
-// 配置中间件管道
-ConfigureMiddleware(app);
+    // 配置服务
+    ConfigureServices(builder);
 
-// 配置API端点
-ConfigureEndpoints(app);
+    var app = builder.Build();
 
-// 运行应用
-app.Run();
+    // 配置中间件管道
+    ConfigureMiddleware(app);
+
+    // 配置API端点
+    ConfigureEndpoints(app);
+
+    // 运行应用
+    app.Run();
+}
+catch (Exception ex)
+{
+    Log.Fatal(ex, "应用程序启动失败");
+}
+finally
+{
+    Log.CloseAndFlush();
+}
 
 /// <summary>
 /// 配置依赖注入服务
@@ -34,7 +54,7 @@ static void ConfigureServices(WebApplicationBuilder builder)
         builder.Configuration.GetSection("ProxySettings"));
 
     // 注册ProxySettings为单例
-    builder.Services.AddSingleton(sp => 
+    builder.Services.AddSingleton(sp =>
         sp.GetRequiredService<IOptions<ProxySettings>>().Value);
 
     // 添加HTTP客户端
@@ -58,23 +78,7 @@ static void ConfigureServices(WebApplicationBuilder builder)
     if (builder.Environment.IsDevelopment())
     {
         builder.Services.AddEndpointsApiExplorer();
-        builder.Services.AddSwaggerGen(c =>
-        {
-            c.SwaggerDoc("v1", new Microsoft.OpenApi.Models.OpenApiInfo 
-            { 
-                Title = "彩票数据代理API", 
-                Version = "v1",
-                Description = "用于代理中国福利彩票网站数据的API服务"
-            });
-            
-            // 包含XML注释（如果有的话）
-            var xmlFile = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
-            var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
-            if (File.Exists(xmlPath))
-            {
-                c.IncludeXmlComments(xmlPath);
-            }
-        });
+        builder.Services.AddSwaggerGen();
     }
 }
 
@@ -107,7 +111,7 @@ static void ConfigureMiddleware(WebApplication app)
         {
             context.Response.StatusCode = 500;
             context.Response.ContentType = "application/json";
-            
+
             var exception = context.Features.Get<Microsoft.AspNetCore.Diagnostics.IExceptionHandlerFeature>()?.Error;
             var response = new
             {
@@ -115,7 +119,7 @@ static void ConfigureMiddleware(WebApplication app)
                 message = exception?.Message ?? "未知错误",
                 timestamp = DateTime.UtcNow
             };
-            
+
             await context.Response.WriteAsJsonAsync(response);
         });
     });
@@ -130,11 +134,11 @@ static void ConfigureEndpoints(WebApplication app)
     var proxyService = app.Services.CreateScope().ServiceProvider.GetRequiredService<LotteryProxyService>();
 
     // 健康检查端点
-    app.MapGet("/api/health", () => 
+    app.MapGet("/api/health", () =>
     {
-        return Results.Ok(new 
-        { 
-            status = "healthy", 
+        return Results.Ok(new
+        {
+            status = "healthy",
             timestamp = DateTime.UtcNow,
             version = "1.0.0"
         });
@@ -148,16 +152,16 @@ static void ConfigureEndpoints(WebApplication app)
     app.MapGet("/api/proxy/lottery/findDrawNotice", async (HttpContext context) =>
     {
         logger.LogInformation("收到彩票数据代理请求");
-        
+
         // 获取查询字符串
         var queryString = context.Request.QueryString.ToString();
-        
+
         // 移除开头的'?'
         if (queryString.StartsWith('?'))
         {
             queryString = queryString.Substring(1);
         }
-        
+
         // 检查查询字符串是否为空
         if (string.IsNullOrWhiteSpace(queryString))
         {
@@ -168,14 +172,14 @@ static void ConfigureEndpoints(WebApplication app)
                 title: "请求参数错误"
             );
         }
-        
+
         logger.LogInformation("查询字符串: {QueryString}", queryString);
-        
+
         // 调用代理服务
         var result = await proxyService.ProxyRequestAsync(queryString);
-        
+
         logger.LogInformation("代理请求完成");
-        
+
         return result;
     })
     .WithName("ProxyLotteryData")
@@ -191,10 +195,10 @@ static void ConfigureEndpoints(WebApplication app)
     else
     {
         // 生产环境根路径返回基本信息
-        app.MapGet("/", () => 
+        app.MapGet("/", () =>
         {
-            return Results.Ok(new 
-            { 
+            return Results.Ok(new
+            {
                 service = "彩票数据代理API",
                 status = "running",
                 timestamp = DateTime.UtcNow

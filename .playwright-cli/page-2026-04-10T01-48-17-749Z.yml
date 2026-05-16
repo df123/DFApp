@@ -1,0 +1,173 @@
+- generic [active] [ref=e1]:
+  - img
+  - generic [ref=e95]:
+    - generic [ref=e96]:
+      - link "logo PureAdmin" [ref=e98] [cursor=pointer]:
+        - /url: /welcome
+        - img "logo" [ref=e99]
+        - generic [ref=e100]: PureAdmin
+      - menubar [ref=e104]:
+        - link "首页" [ref=e105] [cursor=pointer]:
+          - /url: /
+          - menuitem "首页" [ref=e106]:
+            - img [ref=e108]
+            - generic [ref=e111]: 首页
+        - menuitem "记账管理" [ref=e112]:
+          - generic [ref=e113] [cursor=pointer]:
+            - img [ref=e115]
+            - generic [ref=e118]: 记账管理
+            - img [ref=e120]
+        - menuitem "电车管理" [ref=e122]:
+          - generic [ref=e123] [cursor=pointer]:
+            - img [ref=e125]
+            - generic [ref=e127]: 电车管理
+            - img [ref=e129]
+        - menuitem "彩票管理" [ref=e131]:
+          - generic [ref=e132] [cursor=pointer]:
+            - img [ref=e134]
+            - generic [ref=e137]: 彩票管理
+            - img [ref=e139]
+        - menuitem "Telegram管理" [ref=e141]:
+          - generic [ref=e142] [cursor=pointer]:
+            - img [ref=e144]
+            - generic [ref=e147]: Telegram管理
+            - img [ref=e149]
+        - menuitem "下载与订阅" [ref=e151]:
+          - generic [ref=e152] [cursor=pointer]:
+            - img [ref=e154]
+            - generic [ref=e156]: 下载与订阅
+            - img [ref=e158]
+        - menuitem "系统管理" [ref=e160]:
+          - generic [ref=e161] [cursor=pointer]:
+            - img [ref=e163]
+            - generic [ref=e165]: 系统管理
+            - img [ref=e167]
+        - menuitem "异常页面" [ref=e169]:
+          - generic [ref=e170] [cursor=pointer]:
+            - img [ref=e172]
+            - generic [ref=e174]: 异常页面
+            - img [ref=e176]
+      - img [ref=e179] [cursor=pointer]
+    - generic [ref=e182]:
+      - generic [ref=e183]:
+        - generic [ref=e184]:
+          - navigation "面包屑" [ref=e185]:
+            - link "首页" [ref=e187]
+          - generic [ref=e188]:
+            - img [ref=e191] [cursor=pointer]
+            - img [ref=e194] [cursor=pointer]
+            - button "7" [ref=e197] [cursor=pointer]:
+              - generic [ref=e198]:
+                - img [ref=e200]
+                - superscript [ref=e204]: "7"
+            - button [ref=e206] [cursor=pointer]:
+              - img [ref=e207]
+            - generic "打开系统配置" [ref=e208] [cursor=pointer]:
+              - img [ref=e209]
+        - generic [ref=e211]:
+          - generic [ref=e214] [cursor=pointer]: 首页
+          - button [ref=e217] [cursor=pointer]:
+            - img [ref=e218]
+      - generic [ref=e224]:
+        - generic [ref=e227]:
+          - alert [ref=e228]:
+            - heading "恭喜，DFApp 已成功运行！" [level=5] [ref=e229]:
+              - text: 恭喜，
+              - strong [ref=e230]: DFApp
+              - text: 已成功运行！
+          - heading "欢迎使用应用程序" [level=1] [ref=e231]
+          - paragraph [ref=e232]: 欢迎使用 DFApp 应用程序，这是一个功能强大的管理系统。
+        - generic [ref=e233]:
+          - text: Copyright © 2020-present
+          - link "PureAdmin" [ref=e234] [cursor=pointer]:
+            - /url: https://github.com/pure-admin
+    - generic [ref=e235]:
+      - generic [ref=e236]:
+        - heading "系统配置" [level=4] [ref=e237]
+        - img [ref=e239] [cursor=pointer]
+      - generic [ref=e244]:
+        - paragraph [ref=e245]: 整体风格
+        - generic [ref=e247]:
+          - generic [ref=e249] [cursor=pointer]:
+            - radio "浅色"
+            - generic [ref=e250]:
+              - img [ref=e252]
+              - generic [ref=e255]: 浅色
+          - generic [ref=e256] [cursor=pointer]:
+            - radio "深色"
+            - generic [ref=e257]:
+              - img [ref=e259]
+              - generic [ref=e262]: 深色
+          - generic [ref=e263] [cursor=pointer]:
+            - radio "自动"
+            - generic [ref=e264]:
+              - img [ref=e266]
+              - generic [ref=e269]: 自动
+        - paragraph [ref=e270]: 主题色
+        - list [ref=e271]:
+          - listitem [ref=e272] [cursor=pointer]:
+            - img [ref=e274]
+          - listitem [ref=e276] [cursor=pointer]:
+            - img [ref=e278]
+          - listitem [ref=e280] [cursor=pointer]:
+            - img [ref=e282]
+          - listitem [ref=e284] [cursor=pointer]:
+            - img [ref=e286]
+          - listitem [ref=e288] [cursor=pointer]:
+            - img [ref=e290]
+          - listitem [ref=e292] [cursor=pointer]:
+            - img [ref=e294]
+          - listitem [ref=e296] [cursor=pointer]:
+            - img [ref=e298]
+          - listitem [ref=e300] [cursor=pointer]:
+            - img [ref=e302]
+        - paragraph [ref=e304]: 导航模式
+        - list [ref=e305]:
+          - listitem [ref=e306] [cursor=pointer]
+          - listitem [ref=e309] [cursor=pointer]
+          - listitem [ref=e311] [cursor=pointer]
+        - paragraph [ref=e314]: 页签风格
+        - generic [ref=e316]:
+          - generic [ref=e318] [cursor=pointer]:
+            - radio "灵动"
+            - generic [ref=e320]: 灵动
+          - generic [ref=e321] [cursor=pointer]:
+            - radio "卡片"
+            - generic [ref=e323]: 卡片
+          - generic [ref=e324] [cursor=pointer]:
+            - radio "谷歌"
+            - generic [ref=e326]: 谷歌
+        - paragraph [ref=e327]: 界面显示
+        - list [ref=e328]:
+          - listitem [ref=e329]:
+            - generic [ref=e330]: 灰色模式
+            - generic [ref=e331]:
+              - switch
+              - generic [ref=e334] [cursor=pointer]: 关
+          - listitem [ref=e336]:
+            - generic [ref=e337]: 色弱模式
+            - generic [ref=e338]:
+              - switch
+              - generic [ref=e341] [cursor=pointer]: 关
+          - listitem [ref=e343]:
+            - generic [ref=e344]: 隐藏标签页
+            - generic [ref=e345]:
+              - switch
+              - generic [ref=e348] [cursor=pointer]: 关
+          - listitem [ref=e350]:
+            - generic [ref=e351]: 隐藏页脚
+            - generic [ref=e352]:
+              - switch
+              - generic [ref=e355] [cursor=pointer]: 关
+          - listitem [ref=e357]:
+            - generic [ref=e358]: Logo
+            - generic [ref=e359]:
+              - switch [checked]
+              - generic [ref=e362] [cursor=pointer]: 开
+          - listitem [ref=e364]:
+            - generic [ref=e365]: 页签持久化
+            - generic [ref=e366]:
+              - switch
+              - generic [ref=e369] [cursor=pointer]: 关
+      - button "清空缓存" [ref=e372] [cursor=pointer]:
+        - generic [ref=e373]: 清空缓存
