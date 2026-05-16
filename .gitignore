@@ -343,6 +343,7 @@ DFApp.Downloader/web/node_modules/
 DFApp.Downloader/src/DFApp.Downloader.App/wwwroot/
 DFApp.Downloader/src/DFApp.Downloader.App/settings.json
 DFApp.Downloader/src/DFApp.Downloader.App/downloader.db
+DFApp.Downloader/downloader.db
 DFApp.Downloader/src/DFApp.Downloader.App/logs/
 
 # 日志

@@ -33,7 +33,7 @@ public class DownloadNotificationClient : IAsyncDisposable
     /// </summary>
     public async Task LoginAsync(DownloaderSettings settings, HttpClient httpClient)
     {
-        var loginUrl = $"{settings.DfAppUrl}/api/account/login";
+        var loginUrl = $"{settings.DfAppUrl}/api/app/account/login";
         var request = new LoginRequest
         {
             UserName = settings.DfAppUsername,
@@ -44,7 +44,7 @@ public class DownloadNotificationClient : IAsyncDisposable
         response.EnsureSuccessStatusCode();
 
         var result = await response.Content.ReadFromJsonAsync<LoginResponse>();
-        _jwtToken = result?.AccessToken;
+        _jwtToken = result?.Data?.AccessToken;
 
         if (string.IsNullOrEmpty(_jwtToken))
         {

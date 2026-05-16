@@ -12,7 +12,7 @@
     <PackageReference Include="Microsoft.Extensions.Http" Version="10.0.0-preview.4.25258.6" />
     <PackageReference Include="Serilog" Version="4.2.0" />
     <PackageReference Include="Serilog.Sinks.File" Version="6.0.0" />
-    <PackageReference Include="SqlSugar" Version="5.1.4.169" />
+    <PackageReference Include="SqlSugarCore" Version="5.1.4.169" />
     <PackageReference Include="System.Text.Json" Version="10.0.0-preview.4.25258.6" />
   </ItemGroup>
 

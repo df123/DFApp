@@ -8,27 +8,8 @@
 
 - .NET 10.0 SDK
 - Node.js 18+ (pnpm)
-- DFApp 后端服务运行中（默认端口 44369）
 
-### 1. 配置 DFApp 后端
-
-在 DFApp 数据库中执行配置 SQL：
-
-```bash
-sqlite3 DFApp.db < sql/19-add-downloader-config.sql
-```
-
-然后在 DFApp 管理界面的「配置管理」中设置以下项：
-
-| 配置项 | 说明 | 示例 |
-|--------|------|------|
-| `DownloaderEnabled` | 启用推送 | `true` |
-| `ApacheBaseUrl` | Apache 地址 | `http://192.168.1.100:8080` |
-| `ApacheUsername` | Apache 用户名 | `admin` |
-| `ApachePassword` | Apache 密码 | `***` |
-| `Aria2ApachePathPrefix` | Aria2 文件的 Apache 路径 | `http://192.168.1.100:8080/aria2` |
-
-### 2. 构建前端
+### 1. 构建前端
 
 ```bash
 cd DFApp.Downloader/web
@@ -38,7 +19,7 @@ pnpm run build
 
 构建产物会自动复制到 `src/DFApp.Downloader.App/wwwroot/`（如果已存在则覆盖）。
 
-### 3. 运行
+### 2. 运行
 
 ```bash
 cd DFApp.Downloader
@@ -47,7 +28,7 @@ dotnet run --project src/DFApp.Downloader.App
 
 首次启动后打开浏览器访问 `http://localhost:9550` 进行配置。
 
-### 4. 发布（Windows 单文件）
+### 3. 发布（Windows 单文件）
 
 ```bash
 dotnet publish src/DFApp.Downloader.App -c Release -r win-x64 --self-contained false -p:PublishSingleFile=true -o publish
@@ -111,6 +92,7 @@ dotnet run --project src/DFApp.Downloader.App
 | PUT | `/api/settings` | 更新设置 |
 | GET | `/api/status` | 全局状态 |
 | GET | `/api/connection` | 连接状态 |
+| POST | `/api/connection/reconnect` | 重新连接 |
 
 ## 运行时文件
 

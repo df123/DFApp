@@ -21,7 +21,7 @@ public class DownloadManager : IAsyncDisposable
     private readonly DownloaderSettings _settings;
     private readonly HttpClient _httpClient;
     private readonly ILogger<DownloadManager> _logger;
-    private readonly ConcurrentQueue<long> _pendingQueue = new();
+    private readonly ConcurrentQueue<int> _pendingQueue = new();
     private readonly SemaphoreSlim _queueSignal = new(0);
     private CancellationTokenSource? _processCts;
     private Task? _processTask;
@@ -55,21 +55,44 @@ public class DownloadManager : IAsyncDisposable
     /// </summary>
     public async Task StartAsync()
     {
-        // 初始化数据库
-        _dbContext.InitDatabase();
-
-        // 登录并连接 SignalR
-        await _notificationClient.LoginAsync(_settings, _httpClient);
-        await _notificationClient.StartAsync(_settings);
+        // 确保数据库表存在
+        _dbContext.EnsureTablesCreated();
 
         // 启动队列处理
         _processCts = new CancellationTokenSource();
         _processTask = ProcessQueueAsync(_processCts.Token);
 
+        // 尝试连接 DFApp 后端（失败不阻止启动）
+        await TryConnectAsync();
+
         // 恢复未完成的任务
         await ResumePendingDownloadsAsync();
 
         _logger.LogInformation("下载管理器已启动");
+    }
+
+    /// <summary>
+    /// 尝试连接 DFApp 后端
+    /// </summary>
+    public async Task TryConnectAsync()
+    {
+        try
+        {
+            if (string.IsNullOrEmpty(_settings.DfAppUrl) ||
+                string.IsNullOrEmpty(_settings.DfAppUsername) ||
+                string.IsNullOrEmpty(_settings.DfAppPassword))
+            {
+                _logger.LogWarning("DFApp 后端未配置，请在设置页面配置连接信息");
+                return;
+            }
+
+            await _notificationClient.LoginAsync(_settings, _httpClient);
+            await _notificationClient.StartAsync(_settings);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "连接 DFApp 后端失败，请检查配置或后端服务是否启动");
+        }
     }
 
     /// <summary>
@@ -199,7 +222,7 @@ public class DownloadManager : IAsyncDisposable
     /// <summary>
     /// 下载完成回调
     /// </summary>
-    private void OnDownloadCompleted(long itemId)
+    private void OnDownloadCompleted(int itemId)
     {
         try
         {
@@ -226,7 +249,7 @@ public class DownloadManager : IAsyncDisposable
     /// <summary>
     /// 下载失败回调
     /// </summary>
-    private void OnDownloadFailed(long itemId, string errorMessage)
+    private void OnDownloadFailed(int itemId, string errorMessage)
     {
         try
         {
@@ -278,7 +301,7 @@ public class DownloadManager : IAsyncDisposable
     /// <summary>
     /// 暂停下载
     /// </summary>
-    public void PauseDownload(long itemId)
+    public void PauseDownload(int itemId)
     {
         _downloadEngine.PauseDownload(itemId);
 
@@ -295,7 +318,7 @@ public class DownloadManager : IAsyncDisposable
     /// <summary>
     /// 恢复下载
     /// </summary>
-    public void ResumeDownload(long itemId)
+    public void ResumeDownload(int itemId)
     {
         using var db = _dbContext.CreateClient();
         var item = db.Queryable<DownloadItem>().InSingle(itemId);
@@ -313,7 +336,7 @@ public class DownloadManager : IAsyncDisposable
     /// <summary>
     /// 取消下载
     /// </summary>
-    public void CancelDownload(long itemId)
+    public void CancelDownload(int itemId)
     {
         _downloadEngine.PauseDownload(itemId);
 

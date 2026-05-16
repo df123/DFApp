@@ -21,7 +21,7 @@ public static class DownloadStatus
 public class DownloadItem
 {
     [SugarColumn(IsPrimaryKey = true, IsIdentity = true)]
-    public long Id { get; set; }
+    public int Id { get; set; }
 
     /// <summary>来源类型：Telegram | Aria2</summary>
     public string SourceType { get; set; } = string.Empty;
@@ -68,10 +68,10 @@ public class DownloadItem
 public class DownloadSegment
 {
     [SugarColumn(IsPrimaryKey = true, IsIdentity = true)]
-    public long Id { get; set; }
+    public int Id { get; set; }
 
     /// <summary>关联的下载项 ID</summary>
-    public long DownloadItemId { get; set; }
+    public int DownloadItemId { get; set; }
 
     /// <summary>分片索引</summary>
     public int SegmentIndex { get; set; }

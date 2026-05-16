@@ -98,17 +98,17 @@ public class DownloadEngine
     private readonly DownloaderSettings _settings;
     private readonly HttpClient _httpClient;
     private readonly ILogger<DownloadEngine> _logger;
-    private readonly ConcurrentDictionary<long, CancellationTokenSource> _activeDownloads = new();
+    private readonly ConcurrentDictionary<int, CancellationTokenSource> _activeDownloads = new();
     private readonly SemaphoreSlim _concurrencySemaphore;
 
     /// <summary>下载进度事件</summary>
     public event Action<DownloadProgress>? OnProgress;
 
     /// <summary>下载完成事件</summary>
-    public event Action<long>? OnDownloadCompleted;
+    public event Action<int>? OnDownloadCompleted;
 
     /// <summary>下载失败事件</summary>
-    public event Action<long, string>? OnDownloadFailed;
+    public event Action<int, string>? OnDownloadFailed;
 
     public DownloadEngine(DownloaderSettings settings, HttpClient httpClient, ILogger<DownloadEngine> logger)
     {
@@ -150,7 +150,7 @@ public class DownloadEngine
     /// <summary>
     /// 暂停下载
     /// </summary>
-    public void PauseDownload(long itemId)
+    public void PauseDownload(int itemId)
     {
         if (_activeDownloads.TryGetValue(itemId, out var cts))
         {

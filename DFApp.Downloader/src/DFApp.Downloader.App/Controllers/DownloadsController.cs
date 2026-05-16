@@ -46,7 +46,7 @@ public class DownloadsController : ControllerBase
 
     /// <summary>下载详情</summary>
     [HttpGet("downloads/{id}")]
-    public IActionResult GetDownload(long id)
+    public IActionResult GetDownload(int id)
     {
         using var db = _dbContext.CreateClient();
         var item = db.Queryable<DownloadItem>().InSingle(id);
@@ -79,7 +79,7 @@ public class DownloadsController : ControllerBase
 
     /// <summary>暂停</summary>
     [HttpPost("downloads/{id}/pause")]
-    public IActionResult Pause(long id)
+    public IActionResult Pause(int id)
     {
         _manager.PauseDownload(id);
         return Ok();
@@ -87,7 +87,7 @@ public class DownloadsController : ControllerBase
 
     /// <summary>恢复</summary>
     [HttpPost("downloads/{id}/resume")]
-    public IActionResult Resume(long id)
+    public IActionResult Resume(int id)
     {
         _manager.ResumeDownload(id);
         return Ok();
@@ -95,7 +95,7 @@ public class DownloadsController : ControllerBase
 
     /// <summary>取消/删除</summary>
     [HttpDelete("downloads/{id}")]
-    public IActionResult Delete(long id)
+    public IActionResult Delete(int id)
     {
         _manager.CancelDownload(id);
         return Ok();
@@ -144,6 +144,14 @@ public class DownloadsController : ControllerBase
     [HttpGet("connection")]
     public IActionResult GetConnection()
     {
+        return Ok(new { isConnected = _manager.GetStatus() });
+    }
+
+    /// <summary>重新连接 DFApp 后端</summary>
+    [HttpPost("connection/reconnect")]
+    public async Task<IActionResult> Reconnect()
+    {
+        await _manager.TryConnectAsync();
         return Ok(new { isConnected = _manager.GetStatus() });
     }
 }

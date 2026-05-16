@@ -29,9 +29,9 @@ public class DownloaderDbContext
     }
 
     /// <summary>
-    /// 初始化数据库表
+    /// 创建数据库表（如果不存在）
     /// </summary>
-    public void InitDatabase()
+    public void EnsureTablesCreated()
     {
         using var db = CreateClient();
         db.CodeFirst.InitTables(

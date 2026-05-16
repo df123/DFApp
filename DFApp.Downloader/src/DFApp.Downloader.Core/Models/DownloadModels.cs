@@ -62,7 +62,16 @@ public class LoginRequest
 /// </summary>
 public class LoginResponse
 {
+    public bool Success { get; set; }
+    public LoginResponseData? Data { get; set; }
+}
+
+/// <summary>
+/// DFApp 登录响应数据
+/// </summary>
+public class LoginResponseData
+{
     public string AccessToken { get; set; } = string.Empty;
-    public string RefreshToken { get; set; } = string.Empty;
-    public int ExpiresIn { get; set; }
+    public long ExpiresAt { get; set; }
+    public string Username { get; set; } = string.Empty;
 }

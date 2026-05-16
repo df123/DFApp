@@ -85,6 +85,9 @@ public class Program
 
             app.MapControllers();
 
+            // SPA fallback：非文件请求回退到 index.html
+            app.MapFallbackToFile("index.html");
+
             // 启动下载管理器
             var manager = app.Services.GetRequiredService<DownloadManager>();
             await manager.StartAsync();
