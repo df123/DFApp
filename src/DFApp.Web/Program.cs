@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.HttpOverrides;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -196,6 +197,12 @@ public class Program
                     options.JsonSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
                 });
 
+            // 统一模型校验失败响应，替换 [ApiController] 默认的 ProblemDetails（含 traceId 与详细 errors）
+            builder.Services.Configure<ApiBehaviorOptions>(options =>
+            {
+                options.InvalidModelStateResponseFactory = ApiErrorResponseFactory.CreateModelStateResponse;
+            });
+
             // 配置 SignalR
             builder.Services.AddSignalR(options =>
             {
@@ -259,6 +266,11 @@ public class Program
             if (env.IsDevelopment())
             {
                 app.UseDeveloperExceptionPage();
+            }
+            else
+            {
+                // 非开发环境统一异常处理，避免泄露 traceId、堆栈及 System.Text.Json 等框架细节
+                app.UseExceptionHandler(errorApp => errorApp.Run(ApiErrorResponseFactory.WriteExceptionResponse));
             }
 
             app.UseRouting();
