@@ -277,11 +277,15 @@ public class Program
             app.UseMiddleware<CurrentUserMiddleware>();
             app.UseAuthorization();
 
-            app.UseSwagger();
-            app.UseSwaggerUI(options =>
+            // 生产环境关闭 Swagger UI，避免接口结构泄露；仅开发/Staging 等非生产环境启用
+            if (!env.IsProduction())
             {
-                options.SwaggerEndpoint("/swagger/v1/swagger.json", "DFApp API");
-            });
+                app.UseSwagger();
+                app.UseSwaggerUI(options =>
+                {
+                    options.SwaggerEndpoint("/swagger/v1/swagger.json", "DFApp API");
+                });
+            }
 
             app.MapControllers();
             app.MapHub<Aria2Hub>(Aria2Hub.HubUrl);
