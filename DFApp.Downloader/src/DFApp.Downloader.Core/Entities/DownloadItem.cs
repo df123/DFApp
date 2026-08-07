@@ -51,14 +51,14 @@ public class DownloadItem
     public string MimeType { get; set; } = string.Empty;
 
     /// <summary>聊天标题（Telegram 来源）</summary>
-    public string? ChatTitle { get; set; }
+    public string ChatTitle { get; set; } = string.Empty;
 
     /// <summary>错误信息</summary>
-    public string? ErrorMessage { get; set; }
+    public string ErrorMessage { get; set; } = string.Empty;
 
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
-    public DateTime? CompletedAt { get; set; }
+    public DateTime CompletedAt { get; set; } = DateTime.MinValue;
 }
 
 /// <summary>
