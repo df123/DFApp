@@ -1,5 +1,6 @@
 using System.Collections.Concurrent;
 using System.Net.Http.Headers;
+using System.Text;
 using DFApp.Downloader.Core.Configuration;
 using DFApp.Downloader.Core.Entities;
 using DFApp.Downloader.Core.Models;
@@ -14,11 +15,29 @@ public class SegmentDownloader
 {
     private readonly HttpClient _httpClient;
     private readonly ILogger _logger;
+    private readonly string _username;
+    private readonly string _password;
 
-    public SegmentDownloader(HttpClient httpClient, ILogger logger)
+    public SegmentDownloader(HttpClient httpClient, ILogger logger, string username, string password)
     {
         _httpClient = httpClient;
         _logger = logger;
+        _username = username;
+        _password = password;
+    }
+
+    /// <summary>
+    /// 为请求添加 Apache Basic Auth 认证头
+    /// </summary>
+    private void SetBasicAuth(HttpRequestMessage request)
+    {
+        if (string.IsNullOrEmpty(_username))
+        {
+            return;
+        }
+
+        var credentials = Convert.ToBase64String(Encoding.UTF8.GetBytes($"{_username}:{_password}"));
+        request.Headers.Authorization = new AuthenticationHeaderValue("Basic", credentials);
     }
 
     /// <summary>
@@ -34,6 +53,7 @@ public class SegmentDownloader
         IProgress<long>? progress = null)
     {
         var request = new HttpRequestMessage(HttpMethod.Get, url);
+        SetBasicAuth(request);
         var resumeStart = startOffset + alreadyDownloaded;
         if (resumeStart <= endOffset)
         {
@@ -69,6 +89,7 @@ public class SegmentDownloader
         try
         {
             var request = new HttpRequestMessage(HttpMethod.Head, url);
+            SetBasicAuth(request);
             using var response = await _httpClient.SendAsync(request);
             return response.Headers.AcceptRanges.Contains("bytes");
         }
@@ -84,6 +105,7 @@ public class SegmentDownloader
     public async Task<long> GetFileSizeAsync(string url)
     {
         var request = new HttpRequestMessage(HttpMethod.Head, url);
+        SetBasicAuth(request);
         using var response = await _httpClient.SendAsync(request);
         response.EnsureSuccessStatusCode();
         return response.Content.Headers.ContentLength ?? 0;
@@ -163,7 +185,7 @@ public class DownloadEngine
     /// </summary>
     private async Task ExecuteDownloadAsync(DownloadItem item, CancellationToken cancellationToken)
     {
-        var downloader = new SegmentDownloader(_httpClient, _logger);
+        var downloader = new SegmentDownloader(_httpClient, _logger, _settings.ApacheUsername, _settings.ApachePassword);
 
         // 检查是否支持 Range
         var supportsRange = await downloader.CheckRangeSupportAsync(item.DownloadUrl);
