@@ -4,7 +4,7 @@
 name: .NET
 
 on:
-  pull_request:
+  push:
     branches: [ "master" ]
 
 # 添加权限配置
