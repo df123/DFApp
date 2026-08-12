@@ -42,16 +42,21 @@ public class Program
                 return new DownloaderDbContext(dbPath);
             });
 
-            // 配置 HttpClient（支持 Apache Basic Auth）
+            // 配置 HttpClient（支持 Apache Basic Auth）；统一禁用系统代理，直连服务器
             builder.Services.AddHttpClient("Apache", client =>
             {
                 if (!string.IsNullOrEmpty(settings.ApacheBaseUrl))
                 {
                     client.BaseAddress = new Uri(settings.ApacheBaseUrl);
                 }
-            });
+            }).ConfigurePrimaryHttpMessageHandler(() => new SocketsHttpHandler { UseProxy = false });
 
-            builder.Services.AddHttpClient<DownloadNotificationClient>();
+            builder.Services.AddHttpClient<DownloadNotificationClient>()
+                .ConfigurePrimaryHttpMessageHandler(() => new SocketsHttpHandler { UseProxy = false });
+
+            // 默认 HttpClient（DownloadManager / DownloadEngine 注入，空名 options）：同样禁用代理
+            builder.Services.AddHttpClient(string.Empty)
+                .ConfigurePrimaryHttpMessageHandler(() => new SocketsHttpHandler { UseProxy = false });
 
             builder.Services.AddSingleton<DownloadEngine>();
             builder.Services.AddSingleton<DownloadNotificationClient>();

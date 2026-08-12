@@ -125,6 +125,15 @@ public class DownloadNotificationClient : IAsyncDisposable
             .WithUrl($"{settings.DfAppUrl}/hubs/download-notification", options =>
             {
                 options.AccessTokenProvider = () => Task.FromResult(_jwtToken);
+                // SignalR 内部自建 HttpClient，不受 DI 的 IHttpClientFactory 代理配置影响，这里显式禁用代理
+                options.HttpMessageHandlerFactory = handler =>
+                {
+                    if (handler is HttpClientHandler c)
+                    {
+                        c.UseProxy = false;
+                    }
+                    return handler;
+                };
             })
             .WithAutomaticReconnect(new[] {
                 TimeSpan.FromSeconds(0),
