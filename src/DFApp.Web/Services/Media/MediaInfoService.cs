@@ -122,6 +122,28 @@ public class MediaInfoService : CrudServiceBase<MediaInfo, long, MediaInfoDto, C
     }
 
     /// <summary>
+    /// 仅删除指定媒体的物理文件（不删 DB 记录、不改任何字段）。
+    /// 下载器取回本地后调用，以释放远程服务器存储空间。
+    /// </summary>
+    /// <param name="id">MediaInfo 主键 Id</param>
+    /// <returns>实体不存在返回 false；存在返回 true（文件不存在视为已删除）</returns>
+    public async Task<bool> DeletePhysicalFileAsync(long id)
+    {
+        var entity = await Repository.GetFirstOrDefaultAsync(x => x.Id == id);
+        if (entity == null)
+        {
+            return false;
+        }
+
+        if (!string.IsNullOrWhiteSpace(entity.SavePath))
+        {
+            SpaceHelper.DeleteFile(entity.SavePath);
+        }
+
+        return true;
+    }
+
+    /// <summary>
     /// 生成 Apache 外链下载 URL，逻辑与 ListenTelegramService 推送通知一致
     /// </summary>
     private static string BuildDownloadUrl(string savePath, string? returnPrefix, string? replacePrefix)

@@ -261,10 +261,10 @@ public class DownloadManager : IAsyncDisposable
                 _logger.LogInformation("下载完成: {FileName}", item.FileName);
                 OnStateChanged?.Invoke();
 
-                // Telegram 来源：回写后端标记外链已生成（已取回本地），使其移出补漏同步集合
+                // Telegram 来源：先回写已取回标记（让补漏同步不再返回），再删除远程物理文件释放服务器空间
                 if (item.SourceType == "Telegram" && item.SourceId > 0)
                 {
-                    _ = MarkExternalLinkGeneratedAsync(item.SourceId);
+                    _ = NotifyRetrievedAndCleanupAsync(item.SourceId);
                 }
             }
         }
@@ -275,7 +275,17 @@ public class DownloadManager : IAsyncDisposable
     }
 
     /// <summary>
-    /// 回写后端：标记指定媒体外链已生成（下载器已取回本地）。fire-and-forget，失败仅记日志。
+    /// 下载完成后的远程收尾：先标记已取回本地（让补漏同步不再返回），再删除远程物理文件释放服务器空间。
+    /// 串行执行以保证顺序——即使删文件失败，标记已成功则不会重复下载。fire-and-forget，失败仅记日志。
+    /// </summary>
+    private async Task NotifyRetrievedAndCleanupAsync(long mediaInfoId)
+    {
+        await MarkExternalLinkGeneratedAsync(mediaInfoId);
+        await DeleteRemoteFileAsync(mediaInfoId);
+    }
+
+    /// <summary>
+    /// 回写后端：标记指定媒体外链已生成（下载器已取回本地）。失败仅记日志。
     /// </summary>
     private async Task MarkExternalLinkGeneratedAsync(long mediaInfoId)
     {
@@ -301,6 +311,40 @@ public class DownloadManager : IAsyncDisposable
         catch (Exception ex)
         {
             _logger.LogError(ex, "回写外链标记异常（mediaInfoId={Id}）", mediaInfoId);
+        }
+    }
+
+    /// <summary>
+    /// 删除远程服务器上的物理文件（仅删文件，不删 DB 记录）。失败仅记日志——下次同步命中本地去重不会重复下载。
+    /// </summary>
+    private async Task DeleteRemoteFileAsync(long mediaInfoId)
+    {
+        try
+        {
+            var token = _notificationClient.AccessToken;
+            if (string.IsNullOrEmpty(token))
+            {
+                _logger.LogWarning("删除远程文件失败：未登录 DFApp（mediaInfoId={Id}）", mediaInfoId);
+                return;
+            }
+
+            var url = $"{_settings.DfAppUrl}/api/app/media-info/{mediaInfoId}/file";
+            using var request = new HttpRequestMessage(HttpMethod.Delete, url);
+            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+
+            using var response = await _httpClient.SendAsync(request);
+            if (!response.IsSuccessStatusCode)
+            {
+                _logger.LogWarning("删除远程文件失败：HTTP {Status}（mediaInfoId={Id}）", (int)response.StatusCode, mediaInfoId);
+            }
+            else
+            {
+                _logger.LogInformation("已删除远程服务器文件（mediaInfoId={Id}）", mediaInfoId);
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "删除远程文件异常（mediaInfoId={Id}）", mediaInfoId);
         }
     }
 

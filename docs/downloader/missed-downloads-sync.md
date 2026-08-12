@@ -19,6 +19,7 @@
 |------|------|------|
 | GET | `/api/app/media-info/completed?sinceId=0&pageIndex=1&pageSize=100` | 分页返回 `IsDownloadCompleted=true && IsExternalLinkGenerated=false`（已到服务器、未取回本地）的媒体，含 `downloadUrl` |
 | POST | `/api/app/media-info/{id}/mark-external-link-generated` | 下载器取回本地后回写，置 `IsExternalLinkGenerated=true`（移出补漏集合） |
+| DELETE | `/api/app/media-info/{id}/file` | 仅删除 `SavePath` 指向的物理文件（不删 DB 记录、不改字段）。下载器取回本地后调用，释放服务器存储空间 |
 
 **返回结构**（复用 `MediaDownloadNotificationDto`，字段与推送通知一致，便于下载器复用入队逻辑）：
 ```json
@@ -145,5 +146,31 @@ downloadUrl = Path.Combine(ReturnDownloadUrlPrefix, SavePath.Replace(ReplaceUrlP
 `IsExternalLinkGenerated` 同时被 `ExternalLinkService`（前端「外部链接管理」页的"新增外部链接"按钮）使用：它查询 `!IsExternalLinkGenerated && IsDownloadCompleted` 的媒体来生成分享外链（打包 zip 或拼 apache URL），生成后置 true。下载器取回后也置 true，意味着**被下载器取回的媒体不再进入「外部链接管理」的生成队列**。
 
 此影响已确认接受（语义统一为"已处理/已取回"）。此外该字段还被 `ListenTelegramService` 的磁盘清理复用为软删除标记（已删除的也置 true），属既有耦合。
+
+## 九、下载完成删除远程物理文件（释放服务器空间）
+
+### 背景
+远程服务器只是 Telegram 媒体的**中转站**：媒体先下载到服务器（`IsDownloadCompleted=true`），再由下载器取回本地。取回本地后，服务器上的物理文件即失去意义，长期堆积会耗尽磁盘。
+
+### 删除范围（2026-08-12 确认）
+下载器取回本地后，**仅删除远程物理文件，保留 `MediaInfo` DB 记录并保持 `IsExternalLinkGenerated=true`**。
+- 物理文件删除后，该媒体的下载链接（`GET /download`）将失效（文件已不在）——这是可接受的，因为本地已有副本。
+- DB 记录保留作为历史索引；补漏同步因 `IsExternalLinkGenerated=true` 不再返回该记录。
+- **不删 DB 记录**：保留可追溯性，且避免 `ExternalLinkService` 等关联查询出现悬挂引用。
+
+### 改动
+1. **后端 `MediaInfoService.DeletePhysicalFileAsync(long id)`**：按 Id 查实体 → `SpaceHelper.DeleteFile(entity.SavePath)`（忽略错误，文件不存在视为已删除）→ 不删 DB、不改字段。实体不存在返回 false。
+2. **后端 `MediaInfoController` 新增 `DELETE /api/app/media-info/{id}/file`**：权限 `Medias.Download`（下载器账号已具备），调上述服务方法，返回 `Success/Fail`。路由与现有 `DELETE /{id}`（删 DB）和 `DELETE /invalid` 不冲突（`{id:long}/file` 多一段）。
+3. **下载器 `DownloadManager.NotifyRetrievedAndCleanupAsync(long mediaInfoId)`**：`OnDownloadCompleted` 中对 `SourceType=="Telegram"` 的项 fire-and-forget 调用，**串行**执行：
+   1. `MarkExternalLinkGeneratedAsync`（先标记 `IsExternalLinkGenerated=true`，让补漏同步不再返回）
+   2. `DeleteRemoteFileAsync`（`DELETE {DfAppUrl}/api/app/media-info/{id}/file`）
+   - 串行保证：即使删文件失败，标记已成功则不会重复下载；删文件失败仅记日志，下次同步命中本地去重兜底。
+
+### 容错
+- 删除远程文件是 fire-and-forget，任何异常（网络/权限/接口未部署）仅记日志，不影响本地下载流程。
+- 远程后端未部署该接口时返回 `404`，日志记录"删除远程文件失败：HTTP 404"，标记步骤仍成功（补漏闭环不受影响）。
+
+### ⚠️ 远程部署要求
+`DELETE /api/app/media-info/{id}/file` 必须**部署到远程后端**（`cc.bdbfbp.top`）才能生效。部署前，下载器下载完成时删除调用会收到 `404`，物理文件不会被删除（但回写标记正常）。
 
 

@@ -108,6 +108,19 @@ public class MediaInfoController : DFAppControllerBase
     }
 
     /// <summary>
+    /// 仅删除指定媒体的物理文件（不删 DB 记录、不改字段）。
+    /// 下载器取回本地后调用，释放远程服务器存储空间。
+    /// </summary>
+    /// <param name="id">MediaInfo 主键 Id</param>
+    [HttpDelete("{id:long}/file")]
+    [Permission(DFAppPermissions.Medias.Download)]
+    public async Task<IActionResult> DeletePhysicalFileAsync([FromRoute] long id)
+    {
+        var ok = await _mediaInfoService.DeletePhysicalFileAsync(id);
+        return ok ? Success() : Fail("媒体记录不存在");
+    }
+
+    /// <summary>
     /// 创建媒体信息
     /// </summary>
     [HttpPost]
