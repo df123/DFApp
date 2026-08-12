@@ -1,4 +1,6 @@
 using System.Collections.Concurrent;
+using System.Collections.Generic;
+using System.Linq;
 using System.Net.Http.Headers;
 using System.Text.Json;
 using DFApp.Downloader.Core.Configuration;
@@ -328,9 +330,24 @@ public class DownloadManager : IAsyncDisposable
         var pageIndex = 1;
         const int pageSize = 100;
 
+        // 一次性加载本地已有的 Telegram SourceId（用于去重）和最大 SourceId（增量游标）
+        HashSet<long> existingIds;
+        long sinceId;
+        using (var db = _dbContext.CreateClient())
+        {
+            var localIds = db.Queryable<DownloadItem>()
+                .Where(x => x.SourceType == "Telegram")
+                .Select(x => x.SourceId)
+                .ToList();
+            existingIds = localIds.ToHashSet();
+            sinceId = localIds.Count > 0 ? localIds.Max() : 0L;
+        }
+
+        _logger.LogInformation("补漏同步开始：本地已记录 {Exist} 项，增量游标 sinceId={SinceId}", existingIds.Count, sinceId);
+
         while (true)
         {
-            var url = $"{_settings.DfAppUrl}/api/app/media-info/completed?pageIndex={pageIndex}&pageSize={pageSize}";
+            var url = $"{_settings.DfAppUrl}/api/app/media-info/completed?sinceId={sinceId}&pageIndex={pageIndex}&pageSize={pageSize}";
             using var request = new HttpRequestMessage(HttpMethod.Get, url);
             request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
@@ -360,16 +377,10 @@ public class DownloadManager : IAsyncDisposable
                     continue;
                 }
 
-                // 与本地去重维度一致：SourceType + SourceId
-                using (var db = _dbContext.CreateClient())
+                // 内存比对（与本地去重维度一致：SourceType + SourceId）
+                if (existingIds.Contains(sourceId))
                 {
-                    var exists = db.Queryable<DownloadItem>()
-                        .Where(x => x.SourceType == "Telegram" && x.SourceId == sourceId)
-                        .First();
-                    if (exists != null)
-                    {
-                        continue;
-                    }
+                    continue;
                 }
 
                 var notification = new MediaDownloadNotification
@@ -385,6 +396,7 @@ public class DownloadManager : IAsyncDisposable
                 };
 
                 OnNotificationReceived(notification);
+                existingIds.Add(sourceId);
                 added++;
             }
 

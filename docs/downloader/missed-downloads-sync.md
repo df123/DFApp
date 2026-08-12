@@ -104,4 +104,21 @@ downloadUrl = Path.Combine(ReturnDownloadUrlPrefix, SavePath.Replace(ReplaceUrlP
 
 > 该回退策略修复了实时推送通知链路：此前 `ReplaceUrlPrefix` 读不到会抛异常，被推送通知的 `try-catch` 吞掉（日志报"推送下载完成通知失败"），导致通知里的 downloadUrl 一直异常。修复后实时通知的 downloadUrl 也能正确生成。
 
+## 七、增量同步优化（避免每次全量拉取）
+
+初版补漏同步每次都从第 1 页拉取全部已完成媒体（数万条），即便本地已下载大部分——绝大部分流量和请求只用于比对后跳过，不合理。
+
+### 优化：sinceId 增量游标
+- **后端** `GET /completed` 新增 `sinceId` 参数（默认 0）：只返回 `Id > sinceId` 的记录（按 Id 升序）。
+- **下载器** `SyncMissedDownloadsAsync`：先查本地 `DownloadItems` 中 `SourceType=Telegram` 的最大 `SourceId` 作为 `sinceId`，请求时带上；后端只返回比它新的。
+- 保留 `HashSet` 内存去重作为双保险（防止增量边界处的重复）。
+
+### 效果
+| 场景 | 拉取量 |
+|------|--------|
+| 首次同步（本地空） | sinceId=0，拉全部（一次性，必然） |
+| 后续同步 | sinceId=本地最大，只拉新增量（通常几条到几十条） |
+
+> 局限：sinceId 只补"比本地最新的"，不补"中间空洞"。正常按顺序下载场景无空洞。
+
 

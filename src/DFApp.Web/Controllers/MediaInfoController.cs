@@ -81,15 +81,17 @@ public class MediaInfoController : DFAppControllerBase
     }
 
     /// <summary>
-    /// 获取已下载完成的媒体列表（供下载器补漏同步，返回含下载外链的下载通知格式）
+    /// 获取已下载完成的媒体列表（供下载器补漏同步，返回含下载外链的下载通知格式）。
+    /// sinceId 用于增量同步：只返回 Id 大于 sinceId 的记录。
     /// </summary>
+    /// <param name="sinceId">增量游标，只返回 Id 大于此值的记录（默认 0 = 全量）</param>
     /// <param name="pageIndex">页码（从 1 开始）</param>
     /// <param name="pageSize">每页大小</param>
     [HttpGet("completed")]
     [Permission(DFAppPermissions.Medias.Download)]
-    public async Task<IActionResult> GetDownloadCompletedAsync([FromQuery] int pageIndex = 1, [FromQuery] int pageSize = 100)
+    public async Task<IActionResult> GetDownloadCompletedAsync([FromQuery] long sinceId = 0, [FromQuery] int pageIndex = 1, [FromQuery] int pageSize = 100)
     {
-        var (items, totalCount) = await _mediaInfoService.GetDownloadCompletedAsync(pageIndex, pageSize);
+        var (items, totalCount) = await _mediaInfoService.GetDownloadCompletedAsync(sinceId, pageIndex, pageSize);
         return Success(new { Items = items, TotalCount = totalCount });
     }
 

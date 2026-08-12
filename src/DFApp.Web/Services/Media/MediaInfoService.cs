@@ -69,12 +69,13 @@ public class MediaInfoService : CrudServiceBase<MediaInfo, long, MediaInfoDto, C
     }
 
     /// <summary>
-    /// 获取已下载完成的媒体列表（供下载器补漏同步），返回下载通知格式的数据
+    /// 获取已下载完成的媒体列表（供下载器补漏同步），返回下载通知格式的数据。
+    /// 支持 sinceId 增量：只返回 Id 大于 sinceId 的记录，避免下载器每次全量拉取。
     /// </summary>
-    public async Task<(List<MediaDownloadNotificationDto> Items, int TotalCount)> GetDownloadCompletedAsync(int pageIndex, int pageSize)
+    public async Task<(List<MediaDownloadNotificationDto> Items, int TotalCount)> GetDownloadCompletedAsync(long sinceId, int pageIndex, int pageSize)
     {
         var (entities, totalCount) = await Repository.GetPagedListAsync(
-            x => x.IsDownloadCompleted, pageIndex, pageSize, x => x.Id, OrderByType.Asc);
+            x => x.IsDownloadCompleted && x.Id > sinceId, pageIndex, pageSize, x => x.Id, OrderByType.Asc);
 
         if (entities.Count == 0)
         {
