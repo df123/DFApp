@@ -10,10 +10,19 @@ const status = ref<GlobalStatus>({
   downloading: 0,
   completed: 0,
   failed: 0,
+  totalSpeedBytesPerSecond: 0,
   lastError: null,
 })
 const reconnecting = ref(false)
 let timer: ReturnType<typeof setInterval> | null = null
+
+const formatSpeed = (bytesPerSec: number) => {
+  if (!bytesPerSec || bytesPerSec <= 0) return '0 B/s'
+  if (bytesPerSec < 1024) return bytesPerSec.toFixed(0) + ' B/s'
+  if (bytesPerSec < 1024 * 1024) return (bytesPerSec / 1024).toFixed(1) + ' KB/s'
+  if (bytesPerSec < 1024 * 1024 * 1024) return (bytesPerSec / 1024 / 1024).toFixed(1) + ' MB/s'
+  return (bytesPerSec / 1024 / 1024 / 1024).toFixed(2) + ' GB/s'
+}
 
 const fetchStatus = async () => {
   try {
@@ -148,6 +157,18 @@ onUnmounted(() => {
             </div>
           </template>
           <div class="status-value number danger">{{ status.failed }}</div>
+        </el-card>
+      </el-col>
+
+      <el-col :span="6">
+        <el-card shadow="hover">
+          <template #header>
+            <div class="card-header">
+              <el-icon><DataLine /></el-icon>
+              <span>下载速度</span>
+            </div>
+          </template>
+          <div class="status-value number primary">{{ formatSpeed(status.totalSpeedBytesPerSecond) }}</div>
         </el-card>
       </el-col>
     </el-row>

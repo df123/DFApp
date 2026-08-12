@@ -45,6 +45,7 @@ export interface GlobalStatus {
   downloading: number
   completed: number
   failed: number
+  totalSpeedBytesPerSecond: number
   lastError?: string | null
 }
 

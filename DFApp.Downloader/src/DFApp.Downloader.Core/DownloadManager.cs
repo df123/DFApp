@@ -24,6 +24,7 @@ public record DownloaderStatus(
     int Downloading,
     int Completed,
     int Failed,
+    double TotalSpeedBytesPerSecond,
     string? LastError);
 
 /// <summary>
@@ -41,6 +42,10 @@ public class DownloadManager : IAsyncDisposable
     private readonly SemaphoreSlim _queueSignal = new(0);
     private CancellationTokenSource? _processCts;
     private Task? _processTask;
+    // 速度采样：记录每个下载项上次采样的(已下载字节, 时间)
+    private readonly ConcurrentDictionary<int, (long Bytes, DateTime Time)> _speedSamples = new();
+    // 当前各活跃下载项的平滑速度（字节/秒），GetStatus 时求和得到总速度
+    private readonly ConcurrentDictionary<int, double> _activeSpeeds = new();
 
     /// <summary>全局状态变化事件</summary>
     public event Action? OnStateChanged;
@@ -64,6 +69,7 @@ public class DownloadManager : IAsyncDisposable
         _notificationClient.OnDownloadCompleted += OnNotificationReceived;
         _downloadEngine.OnDownloadCompleted += OnDownloadCompleted;
         _downloadEngine.OnDownloadFailed += OnDownloadFailed;
+        _downloadEngine.OnProgress += OnProgressReceived;
     }
 
     /// <summary>
@@ -240,6 +246,7 @@ public class DownloadManager : IAsyncDisposable
     /// </summary>
     private void OnDownloadCompleted(int itemId)
     {
+        ClearSpeedSample(itemId);
         try
         {
             using var db = _dbContext.CreateClient();
@@ -303,6 +310,7 @@ public class DownloadManager : IAsyncDisposable
     /// </summary>
     private void OnDownloadFailed(int itemId, string errorMessage)
     {
+        ClearSpeedSample(itemId);
         try
         {
             using var db = _dbContext.CreateClient();
@@ -322,6 +330,42 @@ public class DownloadManager : IAsyncDisposable
         {
             _logger.LogError(ex, "更新下载失败状态失败");
         }
+    }
+
+    /// <summary>
+    /// 下载进度回调：按下载项计算瞬时速度并做 EMA 平滑，供状态查询聚合
+    /// </summary>
+    private void OnProgressReceived(DownloadProgress progress)
+    {
+        var itemId = (int)progress.DownloadItemId;
+        var now = DateTime.UtcNow;
+
+        if (_speedSamples.TryGetValue(itemId, out var prev))
+        {
+            var elapsed = (now - prev.Time).TotalSeconds;
+            if (elapsed > 0.2) // 每 200ms 采样一次，避免高频抖动
+            {
+                var instant = elapsed > 0 ? (progress.DownloadedBytes - prev.Bytes) / elapsed : 0;
+                var prevSpeed = _activeSpeeds.GetValueOrDefault(itemId, 0);
+                // EMA 平滑（新值权重 0.5）
+                var speed = prevSpeed <= 0 ? instant : instant * 0.5 + prevSpeed * 0.5;
+                _activeSpeeds[itemId] = Math.Max(0, speed);
+                _speedSamples[itemId] = (progress.DownloadedBytes, now);
+            }
+        }
+        else
+        {
+            _speedSamples[itemId] = (progress.DownloadedBytes, now);
+        }
+    }
+
+    /// <summary>
+    /// 清除指定下载项的速度采样（下载结束调用）
+    /// </summary>
+    private void ClearSpeedSample(int itemId)
+    {
+        _activeSpeeds.TryRemove(itemId, out _);
+        _speedSamples.TryRemove(itemId, out _);
     }
 
     /// <summary>
@@ -523,6 +567,7 @@ public class DownloadManager : IAsyncDisposable
             Downloading: downloading,
             Completed: completed,
             Failed: failed,
+            TotalSpeedBytesPerSecond: _activeSpeeds.Values.Sum(),
             LastError: _notificationClient.LastConnectionError);
     }
 
