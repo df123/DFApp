@@ -69,6 +69,7 @@ public class DownloadManager : IAsyncDisposable
         _notificationClient.OnDownloadCompleted += OnNotificationReceived;
         _downloadEngine.OnDownloadCompleted += OnDownloadCompleted;
         _downloadEngine.OnDownloadFailed += OnDownloadFailed;
+        _downloadEngine.OnDownloadStarted += OnDownloadStarted;
         _downloadEngine.OnProgress += OnProgressReceived;
     }
 
@@ -220,12 +221,10 @@ public class DownloadManager : IAsyncDisposable
                     using var db = _dbContext.CreateClient();
                     var item = db.Queryable<DownloadItem>().InSingle(itemId);
 
+                    // 保持 Pending 状态提交到引擎；真正拿到并发槽位开始下载时，
+                    // 由 OnDownloadStarted 标记 Downloading——避免大量排队任务虚占"下载中"
                     if (item != null && item.Status == DownloadStatus.Pending)
                     {
-                        item.Status = DownloadStatus.Downloading;
-                        item.UpdatedAt = DateTime.UtcNow;
-                        db.Updateable(item).ExecuteCommand();
-
                         await _downloadEngine.SubmitDownloadAsync(item);
                     }
                 }
@@ -306,6 +305,29 @@ public class DownloadManager : IAsyncDisposable
     }
 
     /// <summary>
+    /// 下载开始回调：任务已获得并发槽位真正开始下载，标记 Downloading 状态。
+    /// 排队等待的任务仍为 Pending，从而列表中"下载中"只反映真正在下载的任务。
+    /// </summary>
+    private void OnDownloadStarted(int itemId)
+    {
+        try
+        {
+            using var db = _dbContext.CreateClient();
+            var item = db.Queryable<DownloadItem>().InSingle(itemId);
+            if (item != null)
+            {
+                item.Status = DownloadStatus.Downloading;
+                item.UpdatedAt = DateTime.UtcNow;
+                db.Updateable(item).ExecuteCommand();
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "更新下载开始状态失败");
+        }
+    }
+
+    /// <summary>
     /// 下载失败回调
     /// </summary>
     private void OnDownloadFailed(int itemId, string errorMessage)
@@ -366,6 +388,14 @@ public class DownloadManager : IAsyncDisposable
     {
         _activeSpeeds.TryRemove(itemId, out _);
         _speedSamples.TryRemove(itemId, out _);
+    }
+
+    /// <summary>
+    /// 获取指定下载项的实时速度（字节/秒），非活跃下载返回 0
+    /// </summary>
+    public double GetItemSpeed(int itemId)
+    {
+        return _activeSpeeds.GetValueOrDefault(itemId, 0);
     }
 
     /// <summary>

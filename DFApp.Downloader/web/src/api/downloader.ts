@@ -15,6 +15,7 @@ export interface DownloadItem {
   localPath: string
   status: string
   downloadedBytes: number
+  speedBytesPerSecond?: number
   mimeType: string
   chatTitle?: string
   errorMessage?: string

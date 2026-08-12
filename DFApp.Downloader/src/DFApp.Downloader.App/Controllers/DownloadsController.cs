@@ -36,10 +36,19 @@ public class DownloadsController : ControllerBase
 
         var total = query.Count();
         var items = query
-            .OrderByDescending(x => x.CreatedAt)
+            // 下载中（Downloading）排最前；组内再按 UpdatedAt 倒序——正在下载的任务会被
+            // OnDownloadStarted 回调刷新 UpdatedAt，从而浮到排队等待任务之上
+            .OrderBy("CASE WHEN Status='Downloading' THEN 0 ELSE 1 END")
+            .OrderByDescending(x => x.UpdatedAt)
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
             .ToList();
+
+        // 填充实时速度（仅活跃下载有值）
+        foreach (var item in items)
+        {
+            item.SpeedBytesPerSecond = _manager.GetItemSpeed(item.Id);
+        }
 
         return Ok(new { items, total, page, pageSize });
     }
@@ -51,6 +60,7 @@ public class DownloadsController : ControllerBase
         using var db = _dbContext.CreateClient();
         var item = db.Queryable<DownloadItem>().InSingle(id);
         if (item == null) return NotFound();
+        item.SpeedBytesPerSecond = _manager.GetItemSpeed(item.Id);
         return Ok(item);
     }
 
@@ -62,6 +72,10 @@ public class DownloadsController : ControllerBase
         var items = db.Queryable<DownloadItem>()
             .Where(x => x.Status == DownloadStatus.Downloading)
             .ToList();
+        foreach (var item in items)
+        {
+            item.SpeedBytesPerSecond = _manager.GetItemSpeed(item.Id);
+        }
         return Ok(items);
     }
 

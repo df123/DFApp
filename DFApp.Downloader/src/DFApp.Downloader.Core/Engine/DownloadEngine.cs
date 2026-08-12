@@ -126,6 +126,9 @@ public class DownloadEngine
     /// <summary>下载进度事件</summary>
     public event Action<DownloadProgress>? OnProgress;
 
+    /// <summary>下载开始事件（拿到并发信号量、真正开始下载时触发）</summary>
+    public event Action<int>? OnDownloadStarted;
+
     /// <summary>下载完成事件</summary>
     public event Action<int>? OnDownloadCompleted;
 
@@ -141,32 +144,38 @@ public class DownloadEngine
     }
 
     /// <summary>
-    /// 提交下载任务
+    /// 提交下载任务。立即返回，下载在后台执行；
+    /// 并发由 _concurrencySemaphore 控制，避免阻塞队列处理器导致只能串行下载。
     /// </summary>
-    public async Task SubmitDownloadAsync(DownloadItem item)
+    public Task SubmitDownloadAsync(DownloadItem item)
     {
         var cts = new CancellationTokenSource();
         _activeDownloads[item.Id] = cts;
 
-        try
+        _ = Task.Run(async () =>
         {
-            await _concurrencySemaphore.WaitAsync(cts.Token);
-            await ExecuteDownloadAsync(item, cts.Token);
-        }
-        catch (OperationCanceledException)
-        {
-            _logger.LogInformation("下载已取消: {FileName}", item.FileName);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "下载失败: {FileName}", item.FileName);
-            OnDownloadFailed?.Invoke(item.Id, ex.Message);
-        }
-        finally
-        {
-            _activeDownloads.TryRemove(item.Id, out _);
-            _concurrencySemaphore.Release();
-        }
+            try
+            {
+                await _concurrencySemaphore.WaitAsync(cts.Token);
+                await ExecuteDownloadAsync(item, cts.Token);
+            }
+            catch (OperationCanceledException)
+            {
+                _logger.LogInformation("下载已取消: {FileName}", item.FileName);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "下载失败: {FileName}", item.FileName);
+                OnDownloadFailed?.Invoke(item.Id, ex.Message);
+            }
+            finally
+            {
+                _activeDownloads.TryRemove(item.Id, out _);
+                _concurrencySemaphore.Release();
+            }
+        });
+
+        return Task.CompletedTask;
     }
 
     /// <summary>
@@ -185,6 +194,8 @@ public class DownloadEngine
     /// </summary>
     private async Task ExecuteDownloadAsync(DownloadItem item, CancellationToken cancellationToken)
     {
+        // 通知外部：已获得并发槽位，真正开始下载（用于刷新 UpdatedAt，使其在列表中排到前面）
+        OnDownloadStarted?.Invoke(item.Id);
         var downloader = new SegmentDownloader(_httpClient, _logger, _settings.ApacheUsername, _settings.ApachePassword);
 
         // 检查是否支持 Range

@@ -71,6 +71,14 @@ const formatBytes = (bytes: number) => {
   return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
 }
 
+const formatSpeed = (bytesPerSec?: number) => {
+  if (!bytesPerSec || bytesPerSec <= 0) return '-'
+  const k = 1024
+  const sizes = ['B/s', 'KB/s', 'MB/s', 'GB/s']
+  const i = Math.floor(Math.log(bytesPerSec) / Math.log(k))
+  return parseFloat((bytesPerSec / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
+}
+
 const formatTime = (dateStr?: string) => {
   if (!dateStr) return '-'
   return new Date(dateStr).toLocaleString('zh-CN')
@@ -120,6 +128,13 @@ onUnmounted(() => {
       </el-table-column>
       <el-table-column label="已下载" width="100">
         <template #default="{ row }">{{ formatBytes(row.downloadedBytes) }}</template>
+      </el-table-column>
+      <el-table-column label="速度" width="100">
+        <template #default="{ row }">
+          <span :style="{ color: row.status === 'Downloading' && row.speedBytesPerSecond > 0 ? '#67c23a' : '' }">
+            {{ formatSpeed(row.speedBytesPerSecond) }}
+          </span>
+        </template>
       </el-table-column>
       <el-table-column label="状态" width="100">
         <template #default="{ row }">

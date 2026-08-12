@@ -59,6 +59,10 @@ public class DownloadItem
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
     public DateTime CompletedAt { get; set; } = DateTime.MinValue;
+
+    /// <summary>实时下载速度（字节/秒），非持久化字段，仅活跃下载有值，由 DownloadManager 填充</summary>
+    [SugarColumn(IsIgnore = true)]
+    public double SpeedBytesPerSecond { get; set; }
 }
 
 /// <summary>
