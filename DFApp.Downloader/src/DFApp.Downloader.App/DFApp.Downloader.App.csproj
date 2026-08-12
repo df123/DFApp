@@ -16,4 +16,11 @@
     <PackageReference Include="Serilog.Sinks.Console" Version="6.1.1" />
   </ItemGroup>
 
+  <!-- wwwroot 随 build 复制到输出目录，避免 dotnet xxx.dll 运行时找不到 Web 管理界面静态文件 -->
+  <ItemGroup>
+    <Content Update="wwwroot\**">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
 </Project>
