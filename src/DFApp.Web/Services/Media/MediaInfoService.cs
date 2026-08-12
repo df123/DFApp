@@ -69,13 +69,14 @@ public class MediaInfoService : CrudServiceBase<MediaInfo, long, MediaInfoDto, C
     }
 
     /// <summary>
-    /// 获取已下载完成的媒体列表（供下载器补漏同步），返回下载通知格式的数据。
-    /// 支持 sinceId 增量：只返回 Id 大于 sinceId 的记录，避免下载器每次全量拉取。
+    /// 获取已下载完成且尚未取回本地的媒体列表（供下载器补漏同步），返回下载通知格式的数据。
+    /// 仅返回 IsDownloadCompleted=true && IsExternalLinkGenerated=false 的记录；
+    /// sinceId 用于增量：只返回 Id 大于 sinceId 的记录，避免下载器每次全量拉取。
     /// </summary>
     public async Task<(List<MediaDownloadNotificationDto> Items, int TotalCount)> GetDownloadCompletedAsync(long sinceId, int pageIndex, int pageSize)
     {
         var (entities, totalCount) = await Repository.GetPagedListAsync(
-            x => x.IsDownloadCompleted && x.Id > sinceId, pageIndex, pageSize, x => x.Id, OrderByType.Asc);
+            x => x.IsDownloadCompleted && !x.IsExternalLinkGenerated && x.Id > sinceId, pageIndex, pageSize, x => x.Id, OrderByType.Asc);
 
         if (entities.Count == 0)
         {
@@ -100,6 +101,24 @@ public class MediaInfoService : CrudServiceBase<MediaInfo, long, MediaInfoDto, C
         }).ToList();
 
         return (items, totalCount);
+    }
+
+    /// <summary>
+    /// 标记指定媒体的外链已生成（下载器取回本地后回写），把 IsExternalLinkGenerated 置 true
+    /// </summary>
+    /// <param name="id">MediaInfo 主键 Id</param>
+    /// <returns>实体不存在返回 false</returns>
+    public async Task<bool> MarkExternalLinkGeneratedAsync(long id)
+    {
+        var entity = await Repository.GetFirstOrDefaultAsync(x => x.Id == id);
+        if (entity == null)
+        {
+            return false;
+        }
+
+        entity.IsExternalLinkGenerated = true;
+        await Repository.UpdateAsync(entity);
+        return true;
     }
 
     /// <summary>

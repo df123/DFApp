@@ -17,7 +17,8 @@
 
 | 方法 | 路由 | 说明 |
 |------|------|------|
-| GET | `/api/app/media-info/completed?pageIndex=1&pageSize=100` | 分页返回 `IsDownloadCompleted=true` 的媒体，含 `downloadUrl` |
+| GET | `/api/app/media-info/completed?sinceId=0&pageIndex=1&pageSize=100` | 分页返回 `IsDownloadCompleted=true && IsExternalLinkGenerated=false`（已到服务器、未取回本地）的媒体，含 `downloadUrl` |
+| POST | `/api/app/media-info/{id}/mark-external-link-generated` | 下载器取回本地后回写，置 `IsExternalLinkGenerated=true`（移出补漏集合） |
 
 **返回结构**（复用 `MediaDownloadNotificationDto`，字段与推送通知一致，便于下载器复用入队逻辑）：
 ```json
@@ -120,5 +121,29 @@ downloadUrl = Path.Combine(ReturnDownloadUrlPrefix, SavePath.Replace(ReplaceUrlP
 | 后续同步 | sinceId=本地最大，只拉新增量（通常几条到几十条） |
 
 > 局限：sinceId 只补"比本地最新的"，不补"中间空洞"。正常按顺序下载场景无空洞。
+
+## 八、IsExternalLinkGenerated 语义统一与下载完成回写闭环
+
+### 字段语义澄清（2026-08-12 确认）
+`MediaInfo` 的两个 bool 字段：
+- `IsDownloadCompleted` = 内容已从外部（Telegram）下载到**服务器**。
+- `IsExternalLinkGenerated` = 已生成外链 / 已被下载器**取回本地**（复用此字段）。
+
+补漏同步的目标集合 = `IsDownloadCompleted=true && IsExternalLinkGenerated=false`：已到服务器、尚未取回本地的媒体。本地下载完成后回写后端置 `IsExternalLinkGenerated=true`，该媒体即移出目标集合 → **天然增量，彻底解决"每次扫描数万条"的问题**。
+
+### 改动
+1. **后端过滤**：`MediaInfoService.GetDownloadCompletedAsync` 过滤条件由 `IsDownloadCompleted && Id > sinceId` 改为 `IsDownloadCompleted && !IsExternalLinkGenerated && Id > sinceId`。
+2. **回写 API**：`MediaInfoController` 新增 `POST /api/app/media-info/{id}/mark-external-link-generated`（权限 `Medias.Download`）；`MediaInfoService.MarkExternalLinkGeneratedAsync(long id)` 按 Id 查实体置 true 并更新。
+3. **下载器回写**：`DownloadManager.OnDownloadCompleted` 本地写库成功后，对 `SourceType=="Telegram"` 的项 fire-and-forget 调用回写 API（Bearer token）；失败仅记日志，下次同步会再命中，本地去重兜底。
+
+### 闭环效果
+- 补漏同步只返回真正"未取回"的 → 扫描量从"所有已下载"降为"已下载未取回"。
+- 下载器下载完成即回写 → 后端集合持续缩小。
+- 本地 `SourceType+SourceId` 去重 + 后端 `IsExternalLinkGenerated` 标记双重保险。
+
+### ⚠️ 对「外部链接管理」功能的影响（已确认接受）
+`IsExternalLinkGenerated` 同时被 `ExternalLinkService`（前端「外部链接管理」页的"新增外部链接"按钮）使用：它查询 `!IsExternalLinkGenerated && IsDownloadCompleted` 的媒体来生成分享外链（打包 zip 或拼 apache URL），生成后置 true。下载器取回后也置 true，意味着**被下载器取回的媒体不再进入「外部链接管理」的生成队列**。
+
+此影响已确认接受（语义统一为"已处理/已取回"）。此外该字段还被 `ListenTelegramService` 的磁盘清理复用为软删除标记（已删除的也置 true），属既有耦合。
 
 

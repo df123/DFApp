@@ -254,11 +254,47 @@ public class DownloadManager : IAsyncDisposable
 
                 _logger.LogInformation("下载完成: {FileName}", item.FileName);
                 OnStateChanged?.Invoke();
+
+                // Telegram 来源：回写后端标记外链已生成（已取回本地），使其移出补漏同步集合
+                if (item.SourceType == "Telegram" && item.SourceId > 0)
+                {
+                    _ = MarkExternalLinkGeneratedAsync(item.SourceId);
+                }
             }
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "更新下载完成状态失败");
+        }
+    }
+
+    /// <summary>
+    /// 回写后端：标记指定媒体外链已生成（下载器已取回本地）。fire-and-forget，失败仅记日志。
+    /// </summary>
+    private async Task MarkExternalLinkGeneratedAsync(long mediaInfoId)
+    {
+        try
+        {
+            var token = _notificationClient.AccessToken;
+            if (string.IsNullOrEmpty(token))
+            {
+                _logger.LogWarning("回写外链标记失败：未登录 DFApp（mediaInfoId={Id}）", mediaInfoId);
+                return;
+            }
+
+            var url = $"{_settings.DfAppUrl}/api/app/media-info/{mediaInfoId}/mark-external-link-generated";
+            using var request = new HttpRequestMessage(HttpMethod.Post, url);
+            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+
+            using var response = await _httpClient.SendAsync(request);
+            if (!response.IsSuccessStatusCode)
+            {
+                _logger.LogWarning("回写外链标记失败：HTTP {Status}（mediaInfoId={Id}）", (int)response.StatusCode, mediaInfoId);
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "回写外链标记异常（mediaInfoId={Id}）", mediaInfoId);
         }
     }
 

@@ -96,6 +96,18 @@ public class MediaInfoController : DFAppControllerBase
     }
 
     /// <summary>
+    /// 标记指定媒体的外链已生成（下载器取回本地后回写）
+    /// </summary>
+    /// <param name="id">MediaInfo 主键 Id</param>
+    [HttpPost("{id:long}/mark-external-link-generated")]
+    [Permission(DFAppPermissions.Medias.Download)]
+    public async Task<IActionResult> MarkExternalLinkGeneratedAsync([FromRoute] long id)
+    {
+        var ok = await _mediaInfoService.MarkExternalLinkGeneratedAsync(id);
+        return ok ? Success() : Fail("媒体记录不存在");
+    }
+
+    /// <summary>
     /// 创建媒体信息
     /// </summary>
     [HttpPost]
