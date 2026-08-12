@@ -88,3 +88,20 @@ downloadUrl = Path.Combine(ReturnDownloadUrlPrefix, SavePath.Replace(ReplaceUrlP
 
 部署完成后，下载器无需任何改动，直接在设置页点"同步遗漏下载"即可。
 
+## 六、配置 ModuleName 历史遗留兼容性修复
+
+排查补漏 400 时发现：`AppConfigurationInfo` 表里部分配置的 `ModuleName` 是旧模块名，与代码中的 `ModuleName` 常量不一致，导致 `GetConfigurationInfoValue`（按 module 精确匹配）查不到而抛 `BusinessException("配置参数不存在")`。
+
+实测不匹配的配置（本地库）：
+| 配置名 | 实际 ModuleName | 代码期望 |
+|--------|-----------------|----------|
+| `api_id` / `api_hash` / `phone_number` | `DFApp.Background.ListenTelegramService` | `DFApp.Web.Background.ListenTelegramService`（多 `.Web`） |
+| `ReplaceUrlPrefix` | `DFApp.Background.MediaBackgroudService` | 同上 |
+
+### 修复（两处，均已编译通过）
+1. **`MediaInfoService.GetDownloadCompletedAsync`**：直接按配置名查询（`GetFirstOrDefaultAsync(x => x.ConfigurationName == name)`，忽略 module），从源头规避不匹配。
+2. **`ListenTelegramService.GetConfigurationInfoAsync`**：加回退策略——先按 module 查，捕获 `BusinessException` 后回退到按配置名查询（忽略 module），仍查不到则重新抛出。既修复 `ReplaceUrlPrefix`（推送通知的 downloadUrl）等不匹配配置，又不影响正常匹配的配置读取。
+
+> 该回退策略修复了实时推送通知链路：此前 `ReplaceUrlPrefix` 读不到会抛异常，被推送通知的 `try-catch` 吞掉（日志报"推送下载完成通知失败"），导致通知里的 downloadUrl 一直异常。修复后实时通知的 downloadUrl 也能正确生成。
+
+

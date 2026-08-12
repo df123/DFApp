@@ -26,9 +26,6 @@ public class MediaInfoService : CrudServiceBase<MediaInfo, long, MediaInfoDto, C
     private readonly MediaMapper _mapper = new();
     private readonly IConfigurationInfoRepository _configRepository;
 
-    // 下载 URL 生成所需配置所属模块，与 ListenTelegramService 一致
-    private const string TelegramModule = "DFApp.Web.Background.ListenTelegramService";
-
     /// <summary>
     /// 构造函数
     /// </summary>
@@ -84,9 +81,9 @@ public class MediaInfoService : CrudServiceBase<MediaInfo, long, MediaInfoDto, C
             return (new List<MediaDownloadNotificationDto>(), totalCount);
         }
 
-        // 读取下载 URL 生成所需的前缀配置（与推送通知时同款逻辑）
-        var returnPrefix = await _configRepository.GetConfigurationInfoValue("ReturnDownloadUrlPrefix", TelegramModule);
-        var replacePrefix = await _configRepository.GetConfigurationInfoValue("ReplaceUrlPrefix", TelegramModule);
+        // 按配置名读取前缀（忽略 ModuleName，兼容历史遗留的模块名不一致）
+        var returnPrefix = await GetConfigurationValueAsync("ReturnDownloadUrlPrefix");
+        var replacePrefix = await GetConfigurationValueAsync("ReplaceUrlPrefix");
 
         var items = entities.Select(e => new MediaDownloadNotificationDto
         {
@@ -116,6 +113,22 @@ public class MediaInfoService : CrudServiceBase<MediaInfo, long, MediaInfoDto, C
 
         var relative = savePath.Replace(replacePrefix, string.Empty).Replace("\\", "/");
         return Path.Combine(returnPrefix, relative.TrimStart('/')).Replace("\\", "/");
+    }
+
+    /// <summary>
+    /// 按配置名读取值（忽略模块名，兼容历史遗留的 ModuleName 不一致；读不到返回 null）
+    /// </summary>
+    private async Task<string?> GetConfigurationValueAsync(string configurationName)
+    {
+        try
+        {
+            var info = await _configRepository.GetFirstOrDefaultAsync(x => x.ConfigurationName == configurationName);
+            return info?.ConfigurationValue;
+        }
+        catch
+        {
+            return null;
+        }
     }
 
     /// <summary>

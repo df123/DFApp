@@ -192,7 +192,20 @@ public class ListenTelegramService : BackgroundService
     {
         using var scope = _serviceProvider.CreateScope();
         var configRepo = scope.ServiceProvider.GetRequiredService<IConfigurationInfoRepository>();
-        return await configRepo.GetConfigurationInfoValue(configurationName, ModuleName);
+        try
+        {
+            return await configRepo.GetConfigurationInfoValue(configurationName, ModuleName);
+        }
+        catch (BusinessException)
+        {
+            // 按 module 查不到时回退到按配置名查询（忽略 module，兼容历史遗留的 ModuleName 不一致）
+            var info = await configRepo.GetFirstOrDefaultAsync(x => x.ConfigurationName == configurationName);
+            if (info == null)
+            {
+                throw;
+            }
+            return info.ConfigurationValue!;
+        }
     }
 
     /// <summary>
