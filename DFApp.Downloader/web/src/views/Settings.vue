@@ -18,6 +18,7 @@ const settings = ref<DownloaderSettings>({
   autoStart: false,
 })
 const loading = ref(false)
+const syncing = ref(false)
 
 const fetchSettings = async () => {
   loading.value = true
@@ -37,6 +38,22 @@ const handleSave = async () => {
     ElMessage.success('设置已保存')
   } catch {
     ElMessage.error('保存失败')
+  }
+}
+
+const handleSyncMissed = async () => {
+  syncing.value = true
+  try {
+    const { data } = await downloadApi.syncMissed()
+    if (data.added > 0) {
+      ElMessage.success(`扫描 ${data.scanned} 项，新增 ${data.added} 项到下载队列`)
+    } else {
+      ElMessage.info(`扫描 ${data.scanned} 项，无遗漏`)
+    }
+  } catch {
+    ElMessage.error('同步失败，请先确认已连接 DFApp 后端')
+  } finally {
+    syncing.value = false
   }
 }
 
@@ -60,6 +77,13 @@ onMounted(fetchSettings)
 
       <el-form-item label="密码">
         <el-input v-model="settings.dfAppPassword" type="password" show-password placeholder="登录密码" />
+      </el-form-item>
+
+      <el-form-item label="遗漏同步">
+        <el-button type="warning" :loading="syncing" @click="handleSyncMissed">
+          同步遗漏下载
+        </el-button>
+        <span style="margin-left: 10px; color: #909399; font-size: 12px">拉取服务器已下载完成但本地缺失的媒体</span>
       </el-form-item>
 
       <el-divider content-position="left">Apache 下载服务器</el-divider>

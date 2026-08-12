@@ -18,6 +18,11 @@ const router = createRouter({
       component: () => import('../views/DownloadQueue.vue'),
     },
     {
+      path: '/logs',
+      name: 'Logs',
+      component: () => import('../views/Logs.vue'),
+    },
+    {
       path: '/settings',
       name: 'Settings',
       component: () => import('../views/Settings.vue'),

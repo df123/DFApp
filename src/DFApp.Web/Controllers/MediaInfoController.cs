@@ -81,6 +81,19 @@ public class MediaInfoController : DFAppControllerBase
     }
 
     /// <summary>
+    /// 获取已下载完成的媒体列表（供下载器补漏同步，返回含下载外链的下载通知格式）
+    /// </summary>
+    /// <param name="pageIndex">页码（从 1 开始）</param>
+    /// <param name="pageSize">每页大小</param>
+    [HttpGet("completed")]
+    [Permission(DFAppPermissions.Medias.Download)]
+    public async Task<IActionResult> GetDownloadCompletedAsync([FromQuery] int pageIndex = 1, [FromQuery] int pageSize = 100)
+    {
+        var (items, totalCount) = await _mediaInfoService.GetDownloadCompletedAsync(pageIndex, pageSize);
+        return Success(new { Items = items, TotalCount = totalCount });
+    }
+
+    /// <summary>
     /// 创建媒体信息
     /// </summary>
     [HttpPost]

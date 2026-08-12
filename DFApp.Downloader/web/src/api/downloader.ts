@@ -45,7 +45,29 @@ export interface GlobalStatus {
   downloading: number
   completed: number
   failed: number
+  lastError?: string | null
 }
+
+export interface ConnectionInfo {
+  isConnected: boolean
+  lastError?: string | null
+}
+
+export interface LogFileInfo {
+  fileName: string
+  sizeBytes: number
+  lastWriteTime: string
+}
+
+export interface LogContent {
+  fileName: string
+  content: string
+  returnedLines: number
+  totalLines: number
+  order: 'tail' | 'head'
+}
+
+export type LogOrder = 'tail' | 'head'
 
 export const downloadApi = {
   getList: (page = 1, pageSize = 20, status?: string) =>
@@ -79,7 +101,19 @@ export const downloadApi = {
     api.get<GlobalStatus>('/status'),
 
   getConnection: () =>
-    api.get<{ isConnected: boolean }>('/connection'),
+    api.get<ConnectionInfo>('/connection'),
+
+  reconnect: () =>
+    api.post<ConnectionInfo>('/connection/reconnect'),
+
+  syncMissed: () =>
+    api.post<{ scanned: number; added: number }>('/downloads/sync-missed'),
+
+  getLogList: () =>
+    api.get<{ items: LogFileInfo[] }>('/logs'),
+
+  getLogContent: (fileName: string, lines?: number, order?: LogOrder) =>
+    api.get<LogContent>(`/logs/${encodeURIComponent(fileName)}`, { params: { lines, order } }),
 }
 
 export default api

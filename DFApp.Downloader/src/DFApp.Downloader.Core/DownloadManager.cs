@@ -1,4 +1,6 @@
 using System.Collections.Concurrent;
+using System.Net.Http.Headers;
+using System.Text.Json;
 using DFApp.Downloader.Core.Configuration;
 using DFApp.Downloader.Core.Data;
 using DFApp.Downloader.Core.Engine;
@@ -9,6 +11,18 @@ using Microsoft.Extensions.Logging;
 using SqlSugar;
 
 namespace DFApp.Downloader.Core;
+
+/// <summary>
+/// 下载器全局状态
+/// </summary>
+public record DownloaderStatus(
+    bool IsConnected,
+    int ActiveDownloads,
+    int Pending,
+    int Downloading,
+    int Completed,
+    int Failed,
+    string? LastError);
 
 /// <summary>
 /// 下载管理器，协调 SignalR 通知、下载队列和下载引擎
@@ -299,6 +313,94 @@ public class DownloadManager : IAsyncDisposable
     }
 
     /// <summary>
+    /// 补漏同步：从 DFApp 后端拉取已下载完成的媒体，与本地比对，把缺失的补入下载队列
+    /// </summary>
+    public async Task<(int Scanned, int Added)> SyncMissedDownloadsAsync()
+    {
+        var token = _notificationClient.AccessToken;
+        if (string.IsNullOrEmpty(token))
+        {
+            throw new InvalidOperationException("未登录 DFApp，无法同步遗漏下载（请先重连）");
+        }
+
+        var scanned = 0;
+        var added = 0;
+        var pageIndex = 1;
+        const int pageSize = 100;
+
+        while (true)
+        {
+            var url = $"{_settings.DfAppUrl}/api/app/media-info/completed?pageIndex={pageIndex}&pageSize={pageSize}";
+            using var request = new HttpRequestMessage(HttpMethod.Get, url);
+            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+
+            using var response = await _httpClient.SendAsync(request);
+            response.EnsureSuccessStatusCode();
+
+            var body = await response.Content.ReadAsStringAsync();
+            using var doc = JsonDocument.Parse(body);
+
+            // 后端响应结构：{ success, data: { items, totalCount } }
+            if (!doc.RootElement.TryGetProperty("data", out var data))
+            {
+                break;
+            }
+
+            var total = data.TryGetProperty("totalCount", out var tcEl) ? tcEl.GetInt32() : 0;
+            if (!data.TryGetProperty("items", out var itemsEl) || itemsEl.GetArrayLength() == 0)
+            {
+                break;
+            }
+
+            foreach (var item in itemsEl.EnumerateArray())
+            {
+                var sourceId = item.TryGetProperty("sourceId", out var sidEl) ? sidEl.GetInt64() : 0L;
+                if (sourceId == 0)
+                {
+                    continue;
+                }
+
+                // 与本地去重维度一致：SourceType + SourceId
+                using (var db = _dbContext.CreateClient())
+                {
+                    var exists = db.Queryable<DownloadItem>()
+                        .Where(x => x.SourceType == "Telegram" && x.SourceId == sourceId)
+                        .First();
+                    if (exists != null)
+                    {
+                        continue;
+                    }
+                }
+
+                var notification = new MediaDownloadNotification
+                {
+                    FileName = item.TryGetProperty("fileName", out var fnEl) ? fnEl.GetString() ?? string.Empty : string.Empty,
+                    FileSize = item.TryGetProperty("fileSize", out var fsEl) ? fsEl.GetInt64() : 0L,
+                    MimeType = item.TryGetProperty("mimeType", out var mtEl) ? mtEl.GetString() ?? string.Empty : string.Empty,
+                    DownloadUrl = item.TryGetProperty("downloadUrl", out var duEl) ? duEl.GetString() ?? string.Empty : string.Empty,
+                    SourceType = "Telegram",
+                    SourceId = sourceId,
+                    ChatId = item.TryGetProperty("chatId", out var ciEl) ? ciEl.GetInt64() : 0L,
+                    ChatTitle = item.TryGetProperty("chatTitle", out var ctEl) ? ctEl.GetString() ?? string.Empty : string.Empty
+                };
+
+                OnNotificationReceived(notification);
+                added++;
+            }
+
+            scanned = total;
+            if (pageIndex * pageSize >= total)
+            {
+                break;
+            }
+            pageIndex++;
+        }
+
+        _logger.LogInformation("补漏同步完成：扫描 {Scanned} 项，新增 {Added} 项", scanned, added);
+        return (scanned, added);
+    }
+
+    /// <summary>
     /// 暂停下载
     /// </summary>
     public void PauseDownload(int itemId)
@@ -358,7 +460,7 @@ public class DownloadManager : IAsyncDisposable
     /// <summary>
     /// 获取全局状态
     /// </summary>
-    public object GetStatus()
+    public DownloaderStatus GetStatus()
     {
         using var db = _dbContext.CreateClient();
         var pending = db.Queryable<DownloadItem>().Where(x => x.Status == DownloadStatus.Pending).Count();
@@ -366,15 +468,14 @@ public class DownloadManager : IAsyncDisposable
         var completed = db.Queryable<DownloadItem>().Where(x => x.Status == DownloadStatus.Completed).Count();
         var failed = db.Queryable<DownloadItem>().Where(x => x.Status == DownloadStatus.Failed).Count();
 
-        return new
-        {
-            IsConnected = _notificationClient.IsConnected,
-            ActiveDownloads = _downloadEngine.ActiveDownloadCount,
-            Pending = pending,
-            Downloading = downloading,
-            Completed = completed,
-            Failed = failed
-        };
+        return new DownloaderStatus(
+            IsConnected: _notificationClient.IsConnected,
+            ActiveDownloads: _downloadEngine.ActiveDownloadCount,
+            Pending: pending,
+            Downloading: downloading,
+            Completed: completed,
+            Failed: failed,
+            LastError: _notificationClient.LastConnectionError);
     }
 
     public async ValueTask DisposeAsync()

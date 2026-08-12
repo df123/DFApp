@@ -1,4 +1,5 @@
 using System.Net.Http.Json;
+using System.Text.Json;
 using DFApp.Downloader.Core.Configuration;
 using DFApp.Downloader.Core.Models;
 using Microsoft.AspNetCore.SignalR.Client;
@@ -14,6 +15,18 @@ public class DownloadNotificationClient : IAsyncDisposable
     private HubConnection? _connection;
     private readonly ILogger<DownloadNotificationClient> _logger;
     private string? _jwtToken;
+
+    /// <summary>最近一次连接/登录失败的错误信息，连接成功时为 null</summary>
+    public string? LastConnectionError { get; private set; }
+
+    /// <summary>登录后的 JWT 访问令牌，未登录时为 null（供调后端补漏 API 用）</summary>
+    public string? AccessToken => _jwtToken;
+
+    // 后端返回 camelCase，需匹配命名策略才能正确反序列化 accessToken 等字段
+    private static readonly JsonSerializerOptions JsonOptions = new()
+    {
+        PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+    };
 
     /// <summary>下载完成事件</summary>
     public event Action<DownloadNotification>? OnDownloadCompleted;
@@ -36,22 +49,66 @@ public class DownloadNotificationClient : IAsyncDisposable
         var loginUrl = $"{settings.DfAppUrl}/api/app/account/login";
         var request = new LoginRequest
         {
-            UserName = settings.DfAppUsername,
+            Username = settings.DfAppUsername,
             Password = settings.DfAppPassword
         };
 
-        var response = await httpClient.PostAsJsonAsync(loginUrl, request);
-        response.EnsureSuccessStatusCode();
-
-        var result = await response.Content.ReadFromJsonAsync<LoginResponse>();
-        _jwtToken = result?.Data?.AccessToken;
-
-        if (string.IsNullOrEmpty(_jwtToken))
+        try
         {
-            throw new InvalidOperationException("登录失败，未获取到 AccessToken");
+            var response = await httpClient.PostAsJsonAsync(loginUrl, request);
+            var body = await response.Content.ReadAsStringAsync();
+
+            if (!response.IsSuccessStatusCode)
+            {
+                // 优先使用响应体中的业务错误消息（如"用户名或密码错误""登录尝试次数过多"）
+                LastConnectionError = TryExtractMessage(body) ?? $"HTTP {(int)response.StatusCode} {response.ReasonPhrase}";
+                throw new InvalidOperationException($"登录失败: {LastConnectionError}");
+            }
+
+            var result = JsonSerializer.Deserialize<LoginResponse>(body, JsonOptions);
+            _jwtToken = result?.Data?.AccessToken;
+
+            if (string.IsNullOrEmpty(_jwtToken))
+            {
+                LastConnectionError = "登录失败，未获取到 AccessToken";
+                throw new InvalidOperationException(LastConnectionError);
+            }
+
+            LastConnectionError = null;
+            _logger.LogInformation("登录 DFApp 成功");
+        }
+        catch (HttpRequestException ex)
+        {
+            // 网络层错误（DNS、连接拒绝、超时等）
+            LastConnectionError = $"网络错误: {ex.Message}";
+            throw;
+        }
+    }
+
+    /// <summary>
+    /// 从后端响应体中提取业务错误消息（兼容 { message: "..." } 结构）
+    /// </summary>
+    private static string? TryExtractMessage(string? body)
+    {
+        if (string.IsNullOrWhiteSpace(body))
+        {
+            return null;
         }
 
-        _logger.LogInformation("登录 DFApp 成功");
+        try
+        {
+            using var doc = JsonDocument.Parse(body);
+            if (doc.RootElement.TryGetProperty("message", out var msgEl))
+            {
+                return msgEl.GetString();
+            }
+        }
+        catch
+        {
+            // 响应体非 JSON，忽略
+        }
+
+        return null;
     }
 
     /// <summary>
@@ -98,11 +155,22 @@ public class DownloadNotificationClient : IAsyncDisposable
             return Task.CompletedTask;
         };
 
-        await _connection.StartAsync();
-        await _connection.SendAsync("JoinDownloadGroup");
+        try
+        {
+            await _connection.StartAsync();
+            await _connection.SendAsync("JoinDownloadGroup");
 
-        _logger.LogInformation("SignalR 连接已建立");
-        OnConnectionChanged?.Invoke(true);
+            LastConnectionError = null;
+            _logger.LogInformation("SignalR 连接已建立");
+            OnConnectionChanged?.Invoke(true);
+        }
+        catch (Exception ex)
+        {
+            // SignalR negotiate/连接失败（常见于反向代理未正确转发 /hubs 路径，返回了 HTML）
+            LastConnectionError = $"SignalR 连接失败: {ex.Message}";
+            _logger.LogError(ex, "SignalR 连接失败");
+            throw;
+        }
     }
 
     /// <summary>

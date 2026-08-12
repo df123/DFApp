@@ -144,7 +144,8 @@ public class DownloadsController : ControllerBase
     [HttpGet("connection")]
     public IActionResult GetConnection()
     {
-        return Ok(new { isConnected = _manager.GetStatus() });
+        var status = _manager.GetStatus();
+        return Ok(new { isConnected = status.IsConnected, lastError = status.LastError });
     }
 
     /// <summary>重新连接 DFApp 后端</summary>
@@ -152,6 +153,22 @@ public class DownloadsController : ControllerBase
     public async Task<IActionResult> Reconnect()
     {
         await _manager.TryConnectAsync();
-        return Ok(new { isConnected = _manager.GetStatus() });
+        var status = _manager.GetStatus();
+        return Ok(new { isConnected = status.IsConnected, lastError = status.LastError });
+    }
+
+    /// <summary>补漏同步：拉取服务器已下载完成但本地缺失的媒体</summary>
+    [HttpPost("downloads/sync-missed")]
+    public async Task<IActionResult> SyncMissed()
+    {
+        try
+        {
+            var (scanned, added) = await _manager.SyncMissedDownloadsAsync();
+            return Ok(new { scanned, added });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
     }
 }

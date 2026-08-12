@@ -53,7 +53,8 @@ public class DownloadProgress
 /// </summary>
 public class LoginRequest
 {
-    public string UserName { get; set; } = string.Empty;
+    // 与后端 LoginDto.Username 保持一致，序列化为 username（小写 n）
+    public string Username { get; set; } = string.Empty;
     public string Password { get; set; } = string.Empty;
 }
 

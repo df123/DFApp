@@ -91,8 +91,11 @@ dotnet run --project src/DFApp.Downloader.App
 | GET | `/api/settings` | 获取设置 |
 | PUT | `/api/settings` | 更新设置 |
 | GET | `/api/status` | 全局状态 |
-| GET | `/api/connection` | 连接状态 |
-| POST | `/api/connection/reconnect` | 重新连接 |
+| GET | `/api/connection` | 连接状态（含 lastError 失败原因） |
+| POST | `/api/connection/reconnect` | 重新连接（返回 isConnected + lastError） |
+| POST | `/api/downloads/sync-missed` | 补漏同步：拉取服务器已完成但本地缺失的媒体 |
+| GET | `/api/logs` | 日志文件列表（按修改时间倒序） |
+| GET | `/api/logs/{fileName}?lines=800&order=tail` | 读取日志内容（lines 上限 5000，order: tail/head） |
 
 ## 运行时文件
 

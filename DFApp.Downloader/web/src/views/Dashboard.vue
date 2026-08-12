@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from 'vue'
 import { downloadApi, type GlobalStatus } from '../api/downloader'
+import { ElMessage } from 'element-plus'
 
 const status = ref<GlobalStatus>({
   isConnected: false,
@@ -9,7 +10,9 @@ const status = ref<GlobalStatus>({
   downloading: 0,
   completed: 0,
   failed: 0,
+  lastError: null,
 })
+const reconnecting = ref(false)
 let timer: ReturnType<typeof setInterval> | null = null
 
 const fetchStatus = async () => {
@@ -18,6 +21,24 @@ const fetchStatus = async () => {
     status.value = data
   } catch {
     // 静默处理
+  }
+}
+
+const handleReconnect = async () => {
+  reconnecting.value = true
+  try {
+    const { data } = await downloadApi.reconnect()
+    status.value.isConnected = data.isConnected
+    status.value.lastError = data.lastError
+    if (data.isConnected) {
+      ElMessage.success('已连接 DFApp 后端')
+    } else {
+      ElMessage.warning(data.lastError || '连接失败')
+    }
+  } catch {
+    ElMessage.error('重连请求失败')
+  } finally {
+    reconnecting.value = false
   }
 }
 
@@ -42,6 +63,14 @@ onUnmounted(() => {
             <div class="card-header">
               <el-icon><Connection /></el-icon>
               <span>连接状态</span>
+              <el-button
+                style="margin-left: auto"
+                size="small"
+                :loading="reconnecting"
+                @click="handleReconnect"
+              >
+                重新连接
+              </el-button>
             </div>
           </template>
           <div class="status-value">
@@ -49,6 +78,14 @@ onUnmounted(() => {
               {{ status.isConnected ? '已连接' : '未连接' }}
             </el-tag>
           </div>
+          <el-alert
+            v-if="!status.isConnected && status.lastError"
+            :title="status.lastError"
+            type="error"
+            :closable="false"
+            show-icon
+            style="margin-top: 10px; text-align: left"
+          />
         </el-card>
       </el-col>
 

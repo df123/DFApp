@@ -1,16 +1,20 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Threading.Tasks;
 using DFApp.Media;
 using DFApp.Web.Data;
+using DFApp.Web.Data.Configuration;
 using DFApp.Web.Infrastructure;
 using DFApp.Web.Mapping;
 using DFApp.Web.Permissions;
+using SqlSugar;
 using CreateUpdateMediaInfoDto = DFApp.Web.DTOs.Media.CreateUpdateMediaInfoDto;
 using ChartDataDto = DFApp.Web.DTOs.Media.ChartDataDto;
 using MediaInfoDto = DFApp.Web.DTOs.Media.MediaInfoDto;
+using MediaDownloadNotificationDto = DFApp.Web.DTOs.Media.MediaDownloadNotificationDto;
 
 namespace DFApp.Web.Services.Media;
 
@@ -20,6 +24,10 @@ namespace DFApp.Web.Services.Media;
 public class MediaInfoService : CrudServiceBase<MediaInfo, long, MediaInfoDto, CreateUpdateMediaInfoDto, CreateUpdateMediaInfoDto>
 {
     private readonly MediaMapper _mapper = new();
+    private readonly IConfigurationInfoRepository _configRepository;
+
+    // 下载 URL 生成所需配置所属模块，与 ListenTelegramService 一致
+    private const string TelegramModule = "DFApp.Web.Background.ListenTelegramService";
 
     /// <summary>
     /// 构造函数
@@ -27,12 +35,15 @@ public class MediaInfoService : CrudServiceBase<MediaInfo, long, MediaInfoDto, C
     /// <param name="currentUser">当前用户</param>
     /// <param name="permissionChecker">权限检查器</param>
     /// <param name="repository">仓储接口</param>
+    /// <param name="configRepository">配置仓储（读取下载 URL 前缀）</param>
     public MediaInfoService(
         ICurrentUser currentUser,
         IPermissionChecker permissionChecker,
-        ISqlSugarRepository<MediaInfo, long> repository)
+        ISqlSugarRepository<MediaInfo, long> repository,
+        IConfigurationInfoRepository configRepository)
         : base(currentUser, permissionChecker, repository)
     {
+        _configRepository = configRepository;
     }
 
     /// <summary>
@@ -58,6 +69,53 @@ public class MediaInfoService : CrudServiceBase<MediaInfo, long, MediaInfoDto, C
         {
             return await GetPagedListAsync(pageIndex, pageSize);
         }
+    }
+
+    /// <summary>
+    /// 获取已下载完成的媒体列表（供下载器补漏同步），返回下载通知格式的数据
+    /// </summary>
+    public async Task<(List<MediaDownloadNotificationDto> Items, int TotalCount)> GetDownloadCompletedAsync(int pageIndex, int pageSize)
+    {
+        var (entities, totalCount) = await Repository.GetPagedListAsync(
+            x => x.IsDownloadCompleted, pageIndex, pageSize, x => x.Id, OrderByType.Asc);
+
+        if (entities.Count == 0)
+        {
+            return (new List<MediaDownloadNotificationDto>(), totalCount);
+        }
+
+        // 读取下载 URL 生成所需的前缀配置（与推送通知时同款逻辑）
+        var returnPrefix = await _configRepository.GetConfigurationInfoValue("ReturnDownloadUrlPrefix", TelegramModule);
+        var replacePrefix = await _configRepository.GetConfigurationInfoValue("ReplaceUrlPrefix", TelegramModule);
+
+        var items = entities.Select(e => new MediaDownloadNotificationDto
+        {
+            FileName = Path.GetFileName(e.SavePath),
+            FileSize = e.Size,
+            MimeType = e.MimeType,
+            DownloadUrl = BuildDownloadUrl(e.SavePath, returnPrefix, replacePrefix),
+            SourceType = "Telegram",
+            SourceId = e.Id,
+            ChatId = e.ChatId,
+            ChatTitle = e.ChatTitle,
+            CompletedAt = e.LastModificationTime ?? DateTime.UtcNow
+        }).ToList();
+
+        return (items, totalCount);
+    }
+
+    /// <summary>
+    /// 生成 Apache 外链下载 URL，逻辑与 ListenTelegramService 推送通知一致
+    /// </summary>
+    private static string BuildDownloadUrl(string savePath, string? returnPrefix, string? replacePrefix)
+    {
+        if (string.IsNullOrWhiteSpace(returnPrefix) || string.IsNullOrWhiteSpace(replacePrefix))
+        {
+            return string.Empty;
+        }
+
+        var relative = savePath.Replace(replacePrefix, string.Empty).Replace("\\", "/");
+        return Path.Combine(returnPrefix, relative.TrimStart('/')).Replace("\\", "/");
     }
 
     /// <summary>
