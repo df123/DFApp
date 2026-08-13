@@ -785,22 +785,10 @@ public class ListenTelegramService : BackgroundService
                     break;
                 }
 
-                // 检查是否启用循环下载
-                var isLoopDownload = bool.Parse(await GetConfigurationInfoAsync("IsLoopDownload"));
-                MediaInfo? mediaToDelete;
-
-                if (isLoopDownload)
-                {
-                    _logger.LogInformation("循环下载已启用，使用时间密度算法删除视频");
-                    mediaToDelete = GetHighDensityMediaToDelete(queryable);
-                }
-                else
-                {
-                    _logger.LogInformation("循环下载未启用，删除最旧的文件");
-                    mediaToDelete = queryable
-                        .OrderBy(x => x.CreationTime)
-                        .FirstOrDefault();
-                }
+                // 删除最旧的文件腾出空间
+                var mediaToDelete = queryable
+                    .OrderBy(x => x.CreationTime)
+                    .FirstOrDefault();
 
                 if (mediaToDelete == null)
                 {
@@ -823,123 +811,6 @@ public class ListenTelegramService : BackgroundService
                 break;
             }
         }
-    }
-
-    /// <summary>
-    /// 时间密度删除算法：优先删除同一时间窗口内聚集的旧文件
-    /// 时间密度高的定义：同一时间窗口内获取到的多个已下载完成的视频
-    /// </summary>
-    /// <param name="mediaList">已下载完成的媒体列表</param>
-    /// <returns>需要删除的媒体文件</returns>
-    private MediaInfo? GetHighDensityMediaToDelete(List<MediaInfo> mediaList)
-    {
-        if (mediaList == null || mediaList.Count == 0)
-        {
-            _logger.LogWarning("媒体列表为空，无法执行时间密度删除算法");
-            return null;
-        }
-
-        // 从配置中获取时间窗口大小（分钟），默认为2分钟
-        int timeWindowMinutes = 2;
-        try
-        {
-            var configValue = GetConfigurationInfoAsync("TimeDensityWindowMinutes").GetAwaiter().GetResult();
-            timeWindowMinutes = int.Parse(configValue);
-            _logger.LogInformation("从配置中读取时间密度窗口大小: {Minutes} 分钟", timeWindowMinutes);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogWarning("无法从配置中读取时间密度窗口大小，使用默认值 2 分钟。错误: {Error}", ex.Message);
-        }
-
-        _logger.LogInformation("开始执行时间密度删除算法，共有 {Count} 个已下载完成的媒体文件，时间窗口: {Minutes} 分钟",
-            mediaList.Count, timeWindowMinutes);
-
-        // 按创建时间分组，计算每个时间窗口的媒体数量
-        var mediaGroups = mediaList
-            .GroupBy(x =>
-            {
-                var time = x.CreationTime;
-                int timeBlock = time.Minute / timeWindowMinutes;
-                return new
-                {
-                    Year = time.Year,
-                    Month = time.Month,
-                    Day = time.Day,
-                    Hour = time.Hour,
-                    TimeBlock = timeBlock
-                };
-            })
-            .Select(g => new
-            {
-                TimeKey = g.Key,
-                Count = g.Count(),
-                Medias = g.ToList(),
-                StartMinute = g.Key.TimeBlock * timeWindowMinutes,
-                EndMinute = Math.Min((g.Key.TimeBlock * timeWindowMinutes) + timeWindowMinutes - 1, 59)
-            })
-            .OrderByDescending(g => g.Count)
-            .ThenBy(g => g.TimeKey.Year)
-            .ThenBy(g => g.TimeKey.Month)
-            .ThenBy(g => g.TimeKey.Day)
-            .ThenBy(g => g.TimeKey.Hour)
-            .ThenBy(g => g.TimeKey.TimeBlock)
-            .ToList();
-
-        _logger.LogInformation("时间分组完成，共分为 {Count} 个时间组（按每 {Minutes} 分钟分组）",
-            mediaGroups.Count, timeWindowMinutes);
-
-        // 记录每个时间组的详细信息（只记录前5个）
-        foreach (var group in mediaGroups.Take(5))
-        {
-            _logger.LogInformation(
-                "时间组 {Year}-{Month:D2}-{Day:D2} {Hour:D2}:{Start:D2}-{End:D2} 包含 {Count} 个已下载完成的文件",
-                group.TimeKey.Year, group.TimeKey.Month, group.TimeKey.Day,
-                group.TimeKey.Hour, group.StartMinute, group.EndMinute, group.Count);
-        }
-
-        // 没有高密度分组时，删除最旧的文件
-        if (mediaGroups.Count == 0 || mediaGroups.All(g => g.Count == 1))
-        {
-            _logger.LogInformation("未找到高密度时间组，删除最旧的文件");
-            var oldestFile = mediaList.OrderBy(x => x.CreationTime).FirstOrDefault();
-            if (oldestFile != null)
-            {
-                _logger.LogInformation("选择删除最旧的文件: {Path}, 创建时间: {Time}",
-                    oldestFile.SavePath, oldestFile.CreationTime.ToString("yyyy-MM-dd HH:mm:ss"));
-            }
-            return oldestFile;
-        }
-
-        // 找到第一个数量大于1的分组（时间密度最高的分组）
-        var highDensityGroup = mediaGroups.FirstOrDefault(g => g.Count > 1);
-        if (highDensityGroup != null)
-        {
-            _logger.LogInformation(
-                "找到高密度时间组: {Year}-{Month:D2}-{Day:D2} {Hour:D2}:{Start:D2}-{End:D2}, 包含 {Count} 个文件",
-                highDensityGroup.TimeKey.Year, highDensityGroup.TimeKey.Month, highDensityGroup.TimeKey.Day,
-                highDensityGroup.TimeKey.Hour, highDensityGroup.StartMinute, highDensityGroup.EndMinute,
-                highDensityGroup.Count);
-
-            // 在高密度分组中删除最旧的文件
-            var oldestInHighDensity = highDensityGroup.Medias.OrderBy(x => x.CreationTime).FirstOrDefault();
-            if (oldestInHighDensity != null)
-            {
-                _logger.LogInformation("在高密度时间组中选择删除最旧的文件: {Path}, 创建时间: {Time}",
-                    oldestInHighDensity.SavePath, oldestInHighDensity.CreationTime.ToString("yyyy-MM-dd HH:mm:ss"));
-            }
-            return oldestInHighDensity;
-        }
-
-        // 兜底：删除最旧的文件
-        _logger.LogInformation("未找到高密度时间组，删除最旧的文件");
-        var defaultOldestFile = mediaList.OrderBy(x => x.CreationTime).FirstOrDefault();
-        if (defaultOldestFile != null)
-        {
-            _logger.LogInformation("选择删除最旧的文件: {Path}, 创建时间: {Time}",
-                defaultOldestFile.SavePath, defaultOldestFile.CreationTime.ToString("yyyy-MM-dd HH:mm:ss"));
-        }
-        return defaultOldestFile;
     }
 
     #endregion
