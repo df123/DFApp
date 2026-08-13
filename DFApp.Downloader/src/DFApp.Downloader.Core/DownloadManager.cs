@@ -42,10 +42,15 @@ public class DownloadManager : IAsyncDisposable
     private readonly SemaphoreSlim _queueSignal = new(0);
     private CancellationTokenSource? _processCts;
     private Task? _processTask;
-    // 速度采样：记录每个下载项上次采样的(已下载字节, 时间)
-    private readonly ConcurrentDictionary<int, (long Bytes, DateTime Time)> _speedSamples = new();
-    // 当前各活跃下载项的平滑速度（字节/秒），GetStatus 时求和得到总速度
+    private Task? _watchdogTask;
+    // 进度持久化节流：记录每个下载项上次写回 DB 的时间，避免高频写库
+    private readonly ConcurrentDictionary<int, DateTime> _lastProgressSave = new();
+    // 每个下载项最后一次收到进度事件的时间，供卡死看门狗判定（每次事件都更新，不节流）
+    private readonly ConcurrentDictionary<int, DateTime> _lastProgressAt = new();
+    // 当前各活跃下载项的瞬时速度（字节/秒），由下载库直接给出，GetStatus 时求和得到总速度
     private readonly ConcurrentDictionary<int, double> _activeSpeeds = new();
+    // 卡死看门狗：下载中任务超过该时长无任何进度即判定卡死，自动暂停并重新入队
+    private static readonly TimeSpan StallTimeout = TimeSpan.FromMinutes(5);
 
     /// <summary>全局状态变化事件</summary>
     public event Action? OnStateChanged;
@@ -84,6 +89,8 @@ public class DownloadManager : IAsyncDisposable
         // 启动队列处理
         _processCts = new CancellationTokenSource();
         _processTask = ProcessQueueAsync(_processCts.Token);
+        // 启动卡死看门狗：自动重启长时间无进度的下载
+        _watchdogTask = StallWatchdogAsync(_processCts.Token);
 
         // 尝试连接 DFApp 后端（失败不阻止启动）
         await TryConnectAsync();
@@ -127,6 +134,10 @@ public class DownloadManager : IAsyncDisposable
         if (_processTask != null)
         {
             await _processTask;
+        }
+        if (_watchdogTask != null)
+        {
+            await _watchdogTask;
         }
         await _notificationClient.StopAsync();
         _logger.LogInformation("下载管理器已停止");
@@ -252,6 +263,23 @@ public class DownloadManager : IAsyncDisposable
             var item = db.Queryable<DownloadItem>().InSingle(itemId);
             if (item != null)
             {
+                // 完整性校验：本地文件实际大小必须等于期望大小，否则判定为失败。
+                // 防止分片计算错误、服务器截断、磁盘写满等被误判为"下载完成"，
+                // 尤其避免向远程回写"已取回"并删除源文件导致数据丢失。
+                var actualLength = File.Exists(item.LocalPath) ? new FileInfo(item.LocalPath).Length : -1L;
+                if (item.FileSize > 0 && actualLength != item.FileSize)
+                {
+                    item.Status = DownloadStatus.Failed;
+                    item.ErrorMessage = $"文件大小不匹配，下载不完整：期望 {item.FileSize} 字节，实际 {actualLength} 字节";
+                    item.UpdatedAt = DateTime.UtcNow;
+                    db.Updateable(item).ExecuteCommand();
+
+                    _logger.LogError("下载不完整，已标记失败: {FileName}（期望 {Expect}，实际 {Actual}）",
+                        item.FileName, item.FileSize, actualLength);
+                    OnStateChanged?.Invoke();
+                    return;
+                }
+
                 item.Status = DownloadStatus.Completed;
                 item.DownloadedBytes = item.FileSize;
                 item.CompletedAt = DateTime.UtcNow;
@@ -354,6 +382,8 @@ public class DownloadManager : IAsyncDisposable
     /// </summary>
     private void OnDownloadStarted(int itemId)
     {
+        // 记录开始时间，供卡死看门狗计算无进度时长
+        _lastProgressAt[itemId] = DateTime.UtcNow;
         try
         {
             using var db = _dbContext.CreateClient();
@@ -399,39 +429,49 @@ public class DownloadManager : IAsyncDisposable
     }
 
     /// <summary>
-    /// 下载进度回调：按下载项计算瞬时速度并做 EMA 平滑，供状态查询聚合
+    /// 下载进度回调：速度直接取自下载库；并节流写回 DownloadedBytes（每项至多 1s 一次），
+    /// 让界面进度条实时更新（此前回调只更新内存速度，DB 的 DownloadedBytes 仅在完成时才写，故界面恒为 0）。
     /// </summary>
     private void OnProgressReceived(DownloadProgress progress)
     {
         var itemId = (int)progress.DownloadItemId;
         var now = DateTime.UtcNow;
 
-        if (_speedSamples.TryGetValue(itemId, out var prev))
+        // 速度：直接用下载库给出的瞬时速度
+        _activeSpeeds[itemId] = Math.Max(0, progress.SpeedBytesPerSecond);
+
+        // 记录最近进度时间（每次事件都更新，供卡死看门狗判定；有进度即说明连接存活）
+        _lastProgressAt[itemId] = now;
+
+        // 节流持久化已下载字节（仅更新这两列，绝不覆盖别处设置的 Status）
+        if (_lastProgressSave.TryGetValue(itemId, out var last) && (now - last).TotalSeconds < 1)
         {
-            var elapsed = (now - prev.Time).TotalSeconds;
-            if (elapsed > 0.2) // 每 200ms 采样一次，避免高频抖动
-            {
-                var instant = elapsed > 0 ? (progress.DownloadedBytes - prev.Bytes) / elapsed : 0;
-                var prevSpeed = _activeSpeeds.GetValueOrDefault(itemId, 0);
-                // EMA 平滑（新值权重 0.5）
-                var speed = prevSpeed <= 0 ? instant : instant * 0.5 + prevSpeed * 0.5;
-                _activeSpeeds[itemId] = Math.Max(0, speed);
-                _speedSamples[itemId] = (progress.DownloadedBytes, now);
-            }
+            return;
         }
-        else
+        _lastProgressSave[itemId] = now;
+
+        try
         {
-            _speedSamples[itemId] = (progress.DownloadedBytes, now);
+            using var db = _dbContext.CreateClient();
+            db.Updateable<DownloadItem>()
+                .SetColumns(it => new DownloadItem { DownloadedBytes = progress.DownloadedBytes, UpdatedAt = now })
+                .Where(it => it.Id == itemId)
+                .ExecuteCommand();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "持久化下载进度失败（itemId={Id}）", itemId);
         }
     }
 
     /// <summary>
-    /// 清除指定下载项的速度采样（下载结束调用）
+    /// 清除指定下载项的速度与节流记录（下载结束调用）
     /// </summary>
     private void ClearSpeedSample(int itemId)
     {
         _activeSpeeds.TryRemove(itemId, out _);
-        _speedSamples.TryRemove(itemId, out _);
+        _lastProgressSave.TryRemove(itemId, out _);
+        _lastProgressAt.TryRemove(itemId, out _);
     }
 
     /// <summary>
@@ -440,6 +480,77 @@ public class DownloadManager : IAsyncDisposable
     public double GetItemSpeed(int itemId)
     {
         return _activeSpeeds.GetValueOrDefault(itemId, 0);
+    }
+
+    /// <summary>
+    /// 卡死看门狗：周期检查"下载中但超过 StallTimeout 无任何进度"的任务（分片连接被静默掐断时
+    /// 下载库可能永远挂起），自动暂停、清掉临时文件并重新入队，避免任务永久卡在下载中。
+    /// </summary>
+    private async Task StallWatchdogAsync(CancellationToken cancellationToken)
+    {
+        while (!cancellationToken.IsCancellationRequested)
+        {
+            try
+            {
+                await Task.Delay(TimeSpan.FromSeconds(60), cancellationToken);
+
+                var now = DateTime.UtcNow;
+                using var db = _dbContext.CreateClient();
+                var downloading = db.Queryable<DownloadItem>()
+                    .Where(x => x.Status == DownloadStatus.Downloading)
+                    .ToList();
+
+                foreach (var item in downloading)
+                {
+                    // 无进度时间戳（例如刚启动尚未收到事件）则跳过本轮
+                    if (!_lastProgressAt.TryGetValue(item.Id, out var last))
+                    {
+                        continue;
+                    }
+
+                    var idleMinutes = (now - last).TotalMinutes;
+                    if (idleMinutes < StallTimeout.TotalMinutes)
+                    {
+                        continue;
+                    }
+
+                    _logger.LogWarning("下载疑似卡死（已 {IdleMinutes:F1} 分钟无进度），自动重启: {FileName}",
+                        idleMinutes, item.FileName);
+
+                    // 停止当前下载并清掉临时文件，从头干净重下
+                    _downloadEngine.PauseDownload(item.Id);
+                    try
+                    {
+                        var tmp = item.LocalPath + ".download";
+                        if (File.Exists(tmp))
+                        {
+                            File.Delete(tmp);
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogWarning(ex, "删除卡死临时文件失败: {Path}", item.LocalPath);
+                    }
+
+                    item.Status = DownloadStatus.Pending;
+                    item.DownloadedBytes = 0;
+                    item.ErrorMessage = "";
+                    item.UpdatedAt = DateTime.UtcNow;
+                    db.Updateable(item).ExecuteCommand();
+
+                    _pendingQueue.Enqueue(item.Id);
+                    _queueSignal.Release();
+                }
+            }
+            catch (OperationCanceledException)
+            {
+                break;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "卡死看门狗检查出错");
+            }
+        }
     }
 
     /// <summary>

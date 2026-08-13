@@ -7,6 +7,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Downloader" Version="5.9.5" />
     <PackageReference Include="Microsoft.AspNetCore.SignalR.Client" Version="10.0.0-preview.4.25258.6" />
     <PackageReference Include="Microsoft.Extensions.Hosting" Version="10.0.0-preview.4.25258.6" />
     <PackageReference Include="Microsoft.Extensions.Http" Version="10.0.0-preview.4.25258.6" />

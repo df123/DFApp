@@ -1,124 +1,23 @@
 using System.Collections.Concurrent;
+using System.ComponentModel;
+using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text;
 using DFApp.Downloader.Core.Configuration;
 using DFApp.Downloader.Core.Entities;
 using DFApp.Downloader.Core.Models;
+using Downloader;
 using Microsoft.Extensions.Logging;
 
 namespace DFApp.Downloader.Core.Engine;
 
 /// <summary>
-/// 分段下载器
-/// </summary>
-public class SegmentDownloader
-{
-    private readonly HttpClient _httpClient;
-    private readonly ILogger _logger;
-    private readonly string _username;
-    private readonly string _password;
-
-    public SegmentDownloader(HttpClient httpClient, ILogger logger, string username, string password)
-    {
-        _httpClient = httpClient;
-        _logger = logger;
-        _username = username;
-        _password = password;
-    }
-
-    /// <summary>
-    /// 为请求添加 Apache Basic Auth 认证头
-    /// </summary>
-    private void SetBasicAuth(HttpRequestMessage request)
-    {
-        if (string.IsNullOrEmpty(_username))
-        {
-            return;
-        }
-
-        var credentials = Convert.ToBase64String(Encoding.UTF8.GetBytes($"{_username}:{_password}"));
-        request.Headers.Authorization = new AuthenticationHeaderValue("Basic", credentials);
-    }
-
-    /// <summary>
-    /// 下载单个分片
-    /// </summary>
-    public async Task<long> DownloadSegmentAsync(
-        string url,
-        string filePath,
-        long startOffset,
-        long endOffset,
-        long alreadyDownloaded,
-        CancellationToken cancellationToken,
-        IProgress<long>? progress = null)
-    {
-        var request = new HttpRequestMessage(HttpMethod.Get, url);
-        SetBasicAuth(request);
-        var resumeStart = startOffset + alreadyDownloaded;
-        if (resumeStart <= endOffset)
-        {
-            request.Headers.Range = new RangeHeaderValue(resumeStart, endOffset);
-        }
-
-        using var response = await _httpClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
-        response.EnsureSuccessStatusCode();
-
-        var totalBytes = alreadyDownloaded;
-        var buffer = new byte[81920];
-
-        await using var stream = await response.Content.ReadAsStreamAsync(cancellationToken);
-        await using var fileStream = new FileStream(filePath, FileMode.OpenOrCreate, FileAccess.Write, FileShare.Write);
-        fileStream.Seek(resumeStart, SeekOrigin.Begin);
-
-        int bytesRead;
-        while ((bytesRead = await stream.ReadAsync(buffer, cancellationToken)) > 0)
-        {
-            await fileStream.WriteAsync(buffer.AsMemory(0, bytesRead), cancellationToken);
-            totalBytes += bytesRead;
-            progress?.Report(bytesRead);
-        }
-
-        return totalBytes - alreadyDownloaded;
-    }
-
-    /// <summary>
-    /// 检查服务器是否支持 Range 请求
-    /// </summary>
-    public async Task<bool> CheckRangeSupportAsync(string url)
-    {
-        try
-        {
-            var request = new HttpRequestMessage(HttpMethod.Head, url);
-            SetBasicAuth(request);
-            using var response = await _httpClient.SendAsync(request);
-            return response.Headers.AcceptRanges.Contains("bytes");
-        }
-        catch
-        {
-            return false;
-        }
-    }
-
-    /// <summary>
-    /// 获取文件大小
-    /// </summary>
-    public async Task<long> GetFileSizeAsync(string url)
-    {
-        var request = new HttpRequestMessage(HttpMethod.Head, url);
-        SetBasicAuth(request);
-        using var response = await _httpClient.SendAsync(request);
-        response.EnsureSuccessStatusCode();
-        return response.Content.Headers.ContentLength ?? 0;
-    }
-}
-
-/// <summary>
-/// 下载引擎，管理并发下载任务
+/// 下载引擎，管理并发下载任务。底层使用 Downloader（bezzad）库完成多分片并行下载，
+/// 不再自行实现分片/Range 逻辑。
 /// </summary>
 public class DownloadEngine
 {
     private readonly DownloaderSettings _settings;
-    private readonly HttpClient _httpClient;
     private readonly ILogger<DownloadEngine> _logger;
     private readonly ConcurrentDictionary<int, CancellationTokenSource> _activeDownloads = new();
     private readonly SemaphoreSlim _concurrencySemaphore;
@@ -135,10 +34,9 @@ public class DownloadEngine
     /// <summary>下载失败事件</summary>
     public event Action<int, string>? OnDownloadFailed;
 
-    public DownloadEngine(DownloaderSettings settings, HttpClient httpClient, ILogger<DownloadEngine> logger)
+    public DownloadEngine(DownloaderSettings settings, ILogger<DownloadEngine> logger)
     {
         _settings = settings;
-        _httpClient = httpClient;
         _logger = logger;
         _concurrencySemaphore = new SemaphoreSlim(settings.MaxConcurrentDownloads);
     }
@@ -179,7 +77,7 @@ public class DownloadEngine
     }
 
     /// <summary>
-    /// 暂停下载
+    /// 暂停下载（取消正在进行的任务；恢复时会重新入队整文件重下）
     /// </summary>
     public void PauseDownload(int itemId)
     {
@@ -190,103 +88,94 @@ public class DownloadEngine
     }
 
     /// <summary>
-    /// 执行下载
+    /// 执行单个下载任务：基于 Downloader 库，自动多分片并行、断点续传、失败重试。
     /// </summary>
     private async Task ExecuteDownloadAsync(DownloadItem item, CancellationToken cancellationToken)
     {
         // 通知外部：已获得并发槽位，真正开始下载（用于刷新 UpdatedAt，使其在列表中排到前面）
         OnDownloadStarted?.Invoke(item.Id);
-        var downloader = new SegmentDownloader(_httpClient, _logger, _settings.ApacheUsername, _settings.ApachePassword);
 
-        // 检查是否支持 Range
-        var supportsRange = await downloader.CheckRangeSupportAsync(item.DownloadUrl);
+        using var service = new DownloadService(BuildConfiguration());
 
-        if (!supportsRange || item.FileSize < _settings.SegmentSize)
+        // 进度：库直接给出已下载字节与瞬时速度
+        service.DownloadProgressChanged += (_, e) =>
         {
-            // 单线程下载
-            await DownloadSingleThreadAsync(item, downloader, cancellationToken);
-        }
-        else
-        {
-            // 多线程下载
-            await DownloadMultiThreadAsync(item, downloader, cancellationToken);
-        }
-    }
-
-    /// <summary>
-    /// 单线程下载
-    /// </summary>
-    private async Task DownloadSingleThreadAsync(DownloadItem item, SegmentDownloader downloader, CancellationToken cancellationToken)
-    {
-        var progress = new Progress<long>(bytes =>
-        {
-            item.DownloadedBytes += bytes;
             OnProgress?.Invoke(new DownloadProgress
             {
                 DownloadItemId = item.Id,
-                DownloadedBytes = item.DownloadedBytes,
-                TotalBytes = item.FileSize,
-                SpeedBytesPerSecond = 0 // 速度由外部计算
+                DownloadedBytes = e.ReceivedBytesSize,
+                TotalBytes = e.TotalBytesToReceive > 0 ? e.TotalBytesToReceive : item.FileSize,
+                SpeedBytesPerSecond = e.BytesPerSecondSpeed
             });
-        });
+        };
 
-        await downloader.DownloadSegmentAsync(
-            item.DownloadUrl,
-            item.LocalPath,
-            0,
-            item.FileSize - 1,
-            item.DownloadedBytes,
-            cancellationToken,
-            progress);
+        // 完成结果：库以 DownloadFileCompleted 事件交付成败（任务本身不一定抛异常），用 TCS 桥接以获得确定结果
+        var tcs = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+        EventHandler<AsyncCompletedEventArgs> onCompleted = (_, e) =>
+        {
+            if (e.Cancelled)
+            {
+                tcs.TrySetCanceled();
+            }
+            else if (e.Error != null)
+            {
+                tcs.TrySetException(e.Error);
+            }
+            else
+            {
+                tcs.TrySetResult(true);
+            }
+        };
+        service.DownloadFileCompleted += onCompleted;
 
-        OnDownloadCompleted?.Invoke(item.Id);
+        try
+        {
+            await service.DownloadFileTaskAsync(item.DownloadUrl, item.LocalPath, cancellationToken);
+            // 以完成事件为准，确认最终结果（成功时立即返回，失败/取消时抛出对应异常）
+            await tcs.Task;
+            OnDownloadCompleted?.Invoke(item.Id);
+        }
+        catch (OperationCanceledException)
+        {
+            _logger.LogInformation("下载已取消: {FileName}", item.FileName);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "下载失败: {FileName}", item.FileName);
+            OnDownloadFailed?.Invoke(item.Id, ex.Message);
+        }
+        finally
+        {
+            service.DownloadFileCompleted -= onCompleted;
+        }
     }
 
     /// <summary>
-    /// 多线程下载
+    /// 构建下载库配置：多分片并行、Apache Basic Auth、禁用系统代理、失败自动重试。
     /// </summary>
-    private async Task DownloadMultiThreadAsync(DownloadItem item, SegmentDownloader downloader, CancellationToken cancellationToken)
+    private DownloadConfiguration BuildConfiguration()
     {
-        var segmentSize = _settings.SegmentSize;
-        var segmentCount = (int)Math.Ceiling((double)item.FileSize / segmentSize);
-        segmentCount = Math.Min(segmentCount, _settings.MaxSegmentsPerFile);
+        var chunkCount = Math.Max(1, _settings.MaxSegmentsPerFile);
 
-        var tasks = new List<Task<long>>();
-        var progressLock = new object();
-
-        for (int i = 0; i < segmentCount; i++)
+        var config = new DownloadConfiguration
         {
-            var startOffset = i * segmentSize;
-            var endOffset = Math.Min((i + 1) * segmentSize - 1, item.FileSize - 1);
-            var segmentIndex = i;
+            ChunkCount = chunkCount,
+            ParallelDownload = true,
+            ParallelCount = chunkCount,
+            MaxTryAgainOnFailure = 3,
+            // 禁用系统代理：运行环境存在 http(s)_proxy 指向本地 127.0.0.1:10079，
+            // 下载 Cloudflare 直链需绕过，与原注入 HttpClient 的 UseProxy=false 行为一致
+            CustomHttpMessageHandlerFactory = () => new SocketsHttpHandler { UseProxy = false }
+        };
 
-            var progress = new Progress<long>(bytes =>
-            {
-                lock (progressLock)
-                {
-                    item.DownloadedBytes += bytes;
-                    OnProgress?.Invoke(new DownloadProgress
-                    {
-                        DownloadItemId = item.Id,
-                        DownloadedBytes = item.DownloadedBytes,
-                        TotalBytes = item.FileSize,
-                        SpeedBytesPerSecond = 0
-                    });
-                }
-            });
-
-            tasks.Add(downloader.DownloadSegmentAsync(
-                item.DownloadUrl,
-                item.LocalPath,
-                startOffset,
-                endOffset,
-                0,
-                cancellationToken,
-                progress));
+        // Apache Basic Auth（与原 SegmentDownloader.SetBasicAuth 等价）
+        if (!string.IsNullOrEmpty(_settings.ApacheUsername))
+        {
+            var credentials = Convert.ToBase64String(Encoding.UTF8.GetBytes($"{_settings.ApacheUsername}:{_settings.ApachePassword}"));
+            config.RequestConfiguration.Authorization = new AuthenticationHeaderValue("Basic", credentials);
         }
 
-        await Task.WhenAll(tasks);
-        OnDownloadCompleted?.Invoke(item.Id);
+        return config;
     }
 
     /// <summary>
