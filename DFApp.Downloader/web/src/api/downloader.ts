@@ -28,7 +28,6 @@ export interface DownloaderSettings {
   dfAppUrl: string
   dfAppUsername: string
   dfAppPassword: string
-  apacheBaseUrl: string
   apacheUsername: string
   apachePassword: string
   downloadPath: string

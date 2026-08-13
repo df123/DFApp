@@ -7,7 +7,6 @@ const settings = ref<DownloaderSettings>({
   dfAppUrl: '',
   dfAppUsername: '',
   dfAppPassword: '',
-  apacheBaseUrl: '',
   apacheUsername: '',
   apachePassword: '',
   downloadPath: '',
@@ -87,10 +86,6 @@ onMounted(fetchSettings)
       </el-form-item>
 
       <el-divider content-position="left">Apache 下载服务器</el-divider>
-
-      <el-form-item label="Apache 地址">
-        <el-input v-model="settings.apacheBaseUrl" placeholder="http://192.168.1.100:8080" />
-      </el-form-item>
 
       <el-form-item label="用户名">
         <el-input v-model="settings.apacheUsername" placeholder="Apache Basic Auth 用户名" />

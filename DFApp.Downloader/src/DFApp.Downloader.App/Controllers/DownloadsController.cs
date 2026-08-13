@@ -130,7 +130,6 @@ public class DownloadsController : ControllerBase
         _settings.DfAppUrl = newSettings.DfAppUrl;
         _settings.DfAppUsername = newSettings.DfAppUsername;
         _settings.DfAppPassword = newSettings.DfAppPassword;
-        _settings.ApacheBaseUrl = newSettings.ApacheBaseUrl;
         _settings.ApacheUsername = newSettings.ApacheUsername;
         _settings.ApachePassword = newSettings.ApachePassword;
         _settings.DownloadPath = newSettings.DownloadPath;

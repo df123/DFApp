@@ -14,9 +14,6 @@ public class DownloaderSettings
     /// <summary>DFApp 登录密码</summary>
     public string DfAppPassword { get; set; } = string.Empty;
 
-    /// <summary>Apache 下载服务器基础 URL</summary>
-    public string ApacheBaseUrl { get; set; } = string.Empty;
-
     /// <summary>Apache Basic Auth 用户名</summary>
     public string ApacheUsername { get; set; } = string.Empty;
 
