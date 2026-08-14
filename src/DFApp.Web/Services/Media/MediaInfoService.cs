@@ -25,6 +25,7 @@ public class MediaInfoService : CrudServiceBase<MediaInfo, long, MediaInfoDto, C
 {
     private readonly MediaMapper _mapper = new();
     private readonly IConfigurationInfoRepository _configRepository;
+    private readonly MediaRetrievalTracker _retrievalTracker;
 
     /// <summary>
     /// 构造函数
@@ -33,14 +34,17 @@ public class MediaInfoService : CrudServiceBase<MediaInfo, long, MediaInfoDto, C
     /// <param name="permissionChecker">权限检查器</param>
     /// <param name="repository">仓储接口</param>
     /// <param name="configRepository">配置仓储（读取下载 URL 前缀）</param>
+    /// <param name="retrievalTracker">下载器取回保护（清理时跳过未取回媒体）</param>
     public MediaInfoService(
         ICurrentUser currentUser,
         IPermissionChecker permissionChecker,
         ISqlSugarRepository<MediaInfo, long> repository,
-        IConfigurationInfoRepository configRepository)
+        IConfigurationInfoRepository configRepository,
+        MediaRetrievalTracker retrievalTracker)
         : base(currentUser, permissionChecker, repository)
     {
         _configRepository = configRepository;
+        _retrievalTracker = retrievalTracker;
     }
 
     /// <summary>
@@ -100,6 +104,12 @@ public class MediaInfoService : CrudServiceBase<MediaInfo, long, MediaInfoDto, C
             CompletedAt = e.LastModificationTime ?? DateTime.UtcNow
         }).ToList();
 
+        // 下发的媒体全部纳入取回保护，清理时跳过，避免下载过程中源文件被删除
+        foreach (var entity in entities)
+        {
+            _retrievalTracker.MarkPending(entity.Id);
+        }
+
         return (items, totalCount);
     }
 
@@ -118,6 +128,9 @@ public class MediaInfoService : CrudServiceBase<MediaInfo, long, MediaInfoDto, C
 
         entity.IsExternalLinkGenerated = true;
         await Repository.UpdateAsync(entity);
+
+        // 下载器已确认取回，解除取回保护
+        _retrievalTracker.ClearPending(id);
         return true;
     }
 

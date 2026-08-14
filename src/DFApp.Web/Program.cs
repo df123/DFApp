@@ -108,6 +108,9 @@ public class Program
             builder.Services.AddHostedService<Aria2BackgroundWorker>();
             builder.Services.AddHostedService<ListenTelegramService>();
 
+            // 下载器取回保护（单例）：空间清理时跳过已下发下载器但未确认取回的媒体
+            builder.Services.AddSingleton<DFApp.Web.Services.Media.MediaRetrievalTracker>();
+
             // 配置应用服务
             builder.Services.AddScoped<DFApp.Web.Services.TG.TGLoginService>();
             builder.Services.AddScoped<DFApp.Web.Services.Account.AccountAppService>();

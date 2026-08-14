@@ -43,6 +43,7 @@ public class ListenTelegramService : BackgroundService
 
     private readonly IServiceProvider _serviceProvider;
     private readonly ILogger<ListenTelegramService> _logger;
+    private readonly Services.Media.MediaRetrievalTracker _retrievalTracker;
 
     /// <summary>
     /// 需要用户配置的参数名称（null 表示已连接）
@@ -61,10 +62,12 @@ public class ListenTelegramService : BackgroundService
 
     public ListenTelegramService(
         IServiceProvider serviceProvider,
-        ILogger<ListenTelegramService> logger)
+        ILogger<ListenTelegramService> logger,
+        Services.Media.MediaRetrievalTracker retrievalTracker)
     {
         _serviceProvider = serviceProvider;
         _logger = logger;
+        _retrievalTracker = retrievalTracker;
     }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -83,6 +86,9 @@ public class ListenTelegramService : BackgroundService
                     await Task.Delay(5000, stoppingToken);
                     continue;
                 }
+
+                // 启动时为存量未取回媒体重建取回保护，避免后端重启后空间清理误删正在下载的文件
+                await RestoreRetrievalProtectionAsync();
 
                 // 登录成功后启动媒体下载任务
                 var downloadTask = DownloadMediaAsync(stoppingToken);
@@ -546,8 +552,15 @@ public class ListenTelegramService : BackgroundService
                     }
                     else
                     {
-                        // 循环下载模式：删除旧文件腾出空间
+                        // 循环下载模式：删除旧文件腾出空间（跳过处于下载器取回保护期的文件）
                         await DeleteOldestMediaUntilSpaceAvailableAsync(fileSize);
+
+                        // 清理后空间仍不足（例如可删文件均处于取回保护期），跳过本次下载避免写盘失败
+                        if (await IsSpaceUpperLimitAsync(fileSize))
+                        {
+                            _logger.LogWarning("清理后磁盘空间仍不足，跳过本次下载: {FileName}", Path.GetFileName(mediaInfo.SavePath));
+                            continue;
+                        }
                     }
                 }
 
@@ -679,6 +692,9 @@ public class ListenTelegramService : BackgroundService
             await hubContext.Clients.Group("DownloadNotify")
                 .SendAsync("DownloadCompleted", notification);
 
+            // 标记取回保护：下载器取回确认前，空间清理不得删除该文件
+            _retrievalTracker.MarkPending(mediaInfo.Id);
+
             _logger.LogInformation("已推送下载完成通知到 Downloader: {FileName}", notification.FileName);
         }
         catch (Exception ex)
@@ -785,14 +801,15 @@ public class ListenTelegramService : BackgroundService
                     break;
                 }
 
-                // 删除最旧的文件腾出空间
+                // 跳过处于下载器取回保护期的媒体，避免下载过程中源文件被删除导致下载失败
                 var mediaToDelete = queryable
+                    .Where(x => !_retrievalTracker.IsProtected(x.Id))
                     .OrderBy(x => x.CreationTime)
                     .FirstOrDefault();
 
                 if (mediaToDelete == null)
                 {
-                    _logger.LogWarning("未找到可删除的媒体文件");
+                    _logger.LogWarning("待删除的媒体均处于下载器取回保护期，跳过本轮清理（共 {Count} 项）", queryable.Count);
                     break;
                 }
 
@@ -810,6 +827,29 @@ public class ListenTelegramService : BackgroundService
                 _logger.LogError(ex, "删除旧媒体文件失败");
                 break;
             }
+        }
+    }
+
+    /// <summary>
+    /// 为存量未取回媒体重建取回保护（后端重启后调用，防止清理误删已下发下载器但未取回的文件）
+    /// </summary>
+    private async Task RestoreRetrievalProtectionAsync()
+    {
+        try
+        {
+            using var scope = _serviceProvider.CreateScope();
+            var repository = scope.ServiceProvider.GetRequiredService<ISqlSugarRepository<MediaInfo, long>>();
+            var pending = await repository.GetListAsync(x => x.IsDownloadCompleted && !x.IsExternalLinkGenerated);
+
+            _retrievalTracker.ProtectAll(pending.Select(x => x.Id));
+            if (pending.Count > 0)
+            {
+                _logger.LogInformation("已为 {Count} 个未取回媒体重建取回保护", pending.Count);
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "重建取回保护失败，不影响主流程");
         }
     }
 
