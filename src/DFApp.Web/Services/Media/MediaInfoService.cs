@@ -82,13 +82,14 @@ public class MediaInfoService : CrudServiceBase<MediaInfo, long, MediaInfoDto, C
 
     /// <summary>
     /// 获取已下载完成且尚未取回本地的媒体列表（供下载器补漏同步），返回下载通知格式的数据。
-    /// 仅返回 IsDownloadCompleted=true && IsExternalLinkGenerated=false 的记录；
-    /// sinceId 用于增量：只返回 Id 大于 sinceId 的记录，避免下载器每次全量拉取。
+    /// 返回 IsDownloadCompleted=true && IsExternalLinkGenerated=false 的全部记录。
+    /// 不使用增量游标：目标集合本身是"已下载未取回"（下载器取回后即移出），
+    /// 全量返回 + 下载器本地去重即可，游标会漏掉失败/删除造成的中间空洞。
     /// </summary>
-    public async Task<(List<MediaDownloadNotificationDto> Items, int TotalCount)> GetDownloadCompletedAsync(long sinceId, int pageIndex, int pageSize)
+    public async Task<(List<MediaDownloadNotificationDto> Items, int TotalCount)> GetDownloadCompletedAsync(int pageIndex, int pageSize)
     {
         var (entities, totalCount) = await Repository.GetPagedListAsync(
-            x => x.IsDownloadCompleted && !x.IsExternalLinkGenerated && x.Id > sinceId, pageIndex, pageSize, x => x.Id, OrderByType.Asc);
+            x => x.IsDownloadCompleted && !x.IsExternalLinkGenerated, pageIndex, pageSize, x => x.Id, OrderByType.Asc);
 
         if (entities.Count == 0)
         {

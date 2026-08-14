@@ -626,7 +626,9 @@ public class DownloadManager : IAsyncDisposable
     }
 
     /// <summary>
-    /// 补漏同步：从 DFApp 后端拉取已下载完成的媒体，与本地比对，把缺失的补入下载队列
+    /// 补漏同步：从 DFApp 后端拉取已下载完成的媒体，与本地比对，把缺失的补入下载队列。
+    /// 后端返回全部"已下载未取回"媒体（无增量游标），本地按 SourceType+SourceId 去重——
+    /// 用最大 SourceId 作游标会漏掉失败/删除产生的中间空洞。
     /// </summary>
     public async Task<(int Scanned, int Added)> SyncMissedDownloadsAsync()
     {
@@ -641,9 +643,8 @@ public class DownloadManager : IAsyncDisposable
         var pageIndex = 1;
         const int pageSize = 100;
 
-        // 一次性加载本地已有的 Telegram SourceId（用于去重）和最大 SourceId（增量游标）
+        // 一次性加载本地已有的 Telegram SourceId（用于去重）
         HashSet<long> existingIds;
-        long sinceId;
         using (var db = _dbContext.CreateClient())
         {
             var localIds = db.Queryable<DownloadItem>()
@@ -651,14 +652,13 @@ public class DownloadManager : IAsyncDisposable
                 .Select(x => x.SourceId)
                 .ToList();
             existingIds = localIds.ToHashSet();
-            sinceId = localIds.Count > 0 ? localIds.Max() : 0L;
         }
 
-        _logger.LogInformation("补漏同步开始：本地已记录 {Exist} 项，增量游标 sinceId={SinceId}", existingIds.Count, sinceId);
+        _logger.LogInformation("补漏同步开始：本地已记录 {Exist} 项", existingIds.Count);
 
         while (true)
         {
-            var url = $"{_settings.DfAppUrl}/api/app/media-info/completed?sinceId={sinceId}&pageIndex={pageIndex}&pageSize={pageSize}";
+            var url = $"{_settings.DfAppUrl}/api/app/media-info/completed?pageIndex={pageIndex}&pageSize={pageSize}";
             using var request = new HttpRequestMessage(HttpMethod.Get, url);
             request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
 

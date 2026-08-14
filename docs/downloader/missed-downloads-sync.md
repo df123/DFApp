@@ -106,22 +106,30 @@ downloadUrl = Path.Combine(ReturnDownloadUrlPrefix, SavePath.Replace(ReplaceUrlP
 
 > 该回退策略修复了实时推送通知链路：此前 `ReplaceUrlPrefix` 读不到会抛异常，被推送通知的 `try-catch` 吞掉（日志报"推送下载完成通知失败"），导致通知里的 downloadUrl 一直异常。修复后实时通知的 downloadUrl 也能正确生成。
 
-## 七、增量同步优化（避免每次全量拉取）
+## 七、增量同步游标已移除（2026-08-14 修复）
 
-初版补漏同步每次都从第 1 页拉取全部已完成媒体（数万条），即便本地已下载大部分——绝大部分流量和请求只用于比对后跳过，不合理。
+**原设计**：初版补漏同步每次都全量拉取（数万条），后加了 `sinceId` 增量游标——后端只返回 `Id > sinceId`（下载器本地最大 SourceId）的记录。
 
-### 优化：sinceId 增量游标
-- **后端** `GET /completed` 新增 `sinceId` 参数（默认 0）：只返回 `Id > sinceId` 的记录（按 Id 升序）。
-- **下载器** `SyncMissedDownloadsAsync`：先查本地 `DownloadItems` 中 `SourceType=Telegram` 的最大 `SourceId` 作为 `sinceId`，请求时带上；后端只返回比它新的。
-- 保留 `HashSet` 内存去重作为双保险（防止增量边界处的重复）。
+**问题**：`sinceId = 本地最大 SourceId` 是"高水位"游标，会跳过中间所有空洞。一旦出现以下情况，空洞里的媒体**永远无法被补漏同步命中**：
+- 下载失败后用户手动删除了下载器本地记录；
+- 通知丢失（下载器离线/推送失败）；
+- 任何 `Id` 小于本地最大 SourceId 但未取回的媒体。
+
+实测（本地库）：后端未取回媒体最大 Id=53586，下载器本地最大 SourceId=67548 → `Id > 67548` 一条都不返回，**全部未取回媒体同步不到**。
+
+**修复**：**移除 `sinceId` 游标**（后端与下载器同步改）：
+- 后端 `GET /api/app/media-info/completed` 返回**全部** `IsDownloadCompleted && !IsExternalLinkGenerated` 的记录（分页，按 Id 升序），不再有 `sinceId` 参数。
+- 下载器 `SyncMissedDownloadsAsync` 不再计算/携带游标，全量拉取 + 本地 `SourceType+SourceId` HashSet 去重。
+- 目标集合本身就是"已下载未取回"（取回后回写 `IsExternalLinkGenerated=true` 即移出），通常只有几十条，全量拉取开销可忽略。
+
+> 向后兼容：后端忽略多余的 `sinceId` 查询参数（旧下载器仍可用）；下载器不传 `sinceId` 时旧后端默认全量（也正确）。两端一起部署后彻底移除。
 
 ### 效果
 | 场景 | 拉取量 |
 |------|--------|
-| 首次同步（本地空） | sinceId=0，拉全部（一次性，必然） |
-| 后续同步 | sinceId=本地最大，只拉新增量（通常几条到几十条） |
-
-> 局限：sinceId 只补"比本地最新的"，不补"中间空洞"。正常按顺序下载场景无空洞。
+| 首次同步（本地空） | 全部未取回（一次性） |
+| 后续同步 | 全部未取回（通常几十条，取回即移出集合） |
+| **存在失败/删除/通知丢失的空洞** | **可重新命中（原游标方案漏掉）** |
 
 ## 八、IsExternalLinkGenerated 语义统一与下载完成回写闭环
 
@@ -133,7 +141,7 @@ downloadUrl = Path.Combine(ReturnDownloadUrlPrefix, SavePath.Replace(ReplaceUrlP
 补漏同步的目标集合 = `IsDownloadCompleted=true && IsExternalLinkGenerated=false`：已到服务器、尚未取回本地的媒体。本地下载完成后回写后端置 `IsExternalLinkGenerated=true`，该媒体即移出目标集合 → **天然增量，彻底解决"每次扫描数万条"的问题**。
 
 ### 改动
-1. **后端过滤**：`MediaInfoService.GetDownloadCompletedAsync` 过滤条件由 `IsDownloadCompleted && Id > sinceId` 改为 `IsDownloadCompleted && !IsExternalLinkGenerated && Id > sinceId`。
+1. **后端过滤**：`MediaInfoService.GetDownloadCompletedAsync` 过滤条件为 `IsDownloadCompleted && !IsExternalLinkGenerated`（游标已移除，见第七节）。
 2. **回写 API**：`MediaInfoController` 新增 `POST /api/app/media-info/{id}/mark-external-link-generated`（权限 `Medias.Download`）；`MediaInfoService.MarkExternalLinkGeneratedAsync(long id)` 按 Id 查实体置 true 并更新。
 3. **下载器回写**：`DownloadManager.OnDownloadCompleted` 本地写库成功后，对 `SourceType=="Telegram"` 的项 fire-and-forget 调用回写 API（Bearer token）；失败仅记日志，下次同步会再命中，本地去重兜底。
 
