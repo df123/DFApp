@@ -56,6 +56,9 @@ public class DownloadItem
     /// <summary>错误信息</summary>
     public string ErrorMessage { get; set; } = string.Empty;
 
+    /// <summary>失败自动重试次数（超过最大值后标记失败，需用户手动处理）</summary>
+    public int RetryCount { get; set; }
+
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
     public DateTime CompletedAt { get; set; } = DateTime.MinValue;

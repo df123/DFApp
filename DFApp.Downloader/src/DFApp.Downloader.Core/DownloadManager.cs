@@ -52,6 +52,9 @@ public class DownloadManager : IAsyncDisposable
     // 卡死看门狗：下载中任务超过该时长无任何进度即判定卡死，自动暂停并重新入队
     private static readonly TimeSpan StallTimeout = TimeSpan.FromMinutes(5);
 
+    // 下载失败最大自动重试次数：重试超过该次数后标记 Failed，需用户手动处理
+    private const int MaxDownloadRetries = 3;
+
     /// <summary>全局状态变化事件</summary>
     public event Action? OnStateChanged;
 
@@ -269,14 +272,13 @@ public class DownloadManager : IAsyncDisposable
                 var actualLength = File.Exists(item.LocalPath) ? new FileInfo(item.LocalPath).Length : -1L;
                 if (item.FileSize > 0 && actualLength != item.FileSize)
                 {
-                    item.Status = DownloadStatus.Failed;
-                    item.ErrorMessage = $"文件大小不匹配，下载不完整：期望 {item.FileSize} 字节，实际 {actualLength} 字节";
-                    item.UpdatedAt = DateTime.UtcNow;
-                    db.Updateable(item).ExecuteCommand();
+                    _logger.LogError("下载不完整（期望 {Expect}，实际 {Actual}）: {FileName}",
+                        item.FileSize, actualLength, item.FileName);
 
-                    _logger.LogError("下载不完整，已标记失败: {FileName}（期望 {Expect}，实际 {Actual}）",
-                        item.FileName, item.FileSize, actualLength);
-                    OnStateChanged?.Invoke();
+                    // 校验失败按下载失败处理（重新入队自动重试前删除本地错误文件）
+                    TryRequeueOrFail(db, item,
+                        $"文件大小不匹配，下载不完整：期望 {item.FileSize} 字节，实际 {actualLength} 字节",
+                        deleteLocalFile: true);
                     return;
                 }
 
@@ -402,7 +404,7 @@ public class DownloadManager : IAsyncDisposable
     }
 
     /// <summary>
-    /// 下载失败回调
+    /// 下载失败回调：未超过最大重试次数则重新入队自动重试，超过则标记失败等待用户手动处理
     /// </summary>
     private void OnDownloadFailed(int itemId, string errorMessage)
     {
@@ -413,18 +415,62 @@ public class DownloadManager : IAsyncDisposable
             var item = db.Queryable<DownloadItem>().InSingle(itemId);
             if (item != null)
             {
-                item.Status = DownloadStatus.Failed;
-                item.ErrorMessage = errorMessage;
-                item.UpdatedAt = DateTime.UtcNow;
-                db.Updateable(item).ExecuteCommand();
-
-                _logger.LogError("下载失败: {FileName}, 错误: {Error}", item.FileName, errorMessage);
-                OnStateChanged?.Invoke();
+                TryRequeueOrFail(db, item, errorMessage, deleteLocalFile: false);
             }
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "更新下载失败状态失败");
+        }
+    }
+
+    /// <summary>
+    /// 失败重试判定：未超过 MaxDownloadRetries 时重置为 Pending 并重新入队自动重试，
+    /// 超过则标记 Failed（需用户手动处理）。deleteLocalFile 为 true 时重新入队前删除本地文件
+    /// （用于下载完成但完整性校验失败的场景，避免断点续传基于错误文件继续）。
+    /// </summary>
+    private void TryRequeueOrFail(ISqlSugarClient db, DownloadItem item, string errorMessage, bool deleteLocalFile)
+    {
+        if (item.RetryCount < MaxDownloadRetries)
+        {
+            if (deleteLocalFile)
+            {
+                try
+                {
+                    if (File.Exists(item.LocalPath))
+                    {
+                        File.Delete(item.LocalPath);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(ex, "删除校验失败文件失败: {Path}", item.LocalPath);
+                }
+            }
+
+            item.RetryCount++;
+            item.Status = DownloadStatus.Pending;
+            item.ErrorMessage = "";
+            item.UpdatedAt = DateTime.UtcNow;
+            db.Updateable(item).ExecuteCommand();
+
+            _pendingQueue.Enqueue(item.Id);
+            _queueSignal.Release();
+
+            _logger.LogWarning("下载失败，自动重试（第 {RetryCount}/{MaxRetries} 次）: {FileName}, 错误: {Error}",
+                item.RetryCount, MaxDownloadRetries, item.FileName, errorMessage);
+            OnStateChanged?.Invoke();
+        }
+        else
+        {
+            item.Status = DownloadStatus.Failed;
+            item.ErrorMessage = errorMessage;
+            item.UpdatedAt = DateTime.UtcNow;
+            db.Updateable(item).ExecuteCommand();
+
+            _logger.LogError("下载失败（已自动重试 {RetryCount} 次，需手动处理）: {FileName}, 错误: {Error}",
+                item.RetryCount, item.FileName, errorMessage);
+            OnStateChanged?.Invoke();
         }
     }
 
@@ -695,7 +741,7 @@ public class DownloadManager : IAsyncDisposable
     }
 
     /// <summary>
-    /// 恢复下载
+    /// 恢复下载（手动恢复视为新一轮尝试，重置自动重试计数）
     /// </summary>
     public void ResumeDownload(int itemId)
     {
@@ -704,6 +750,7 @@ public class DownloadManager : IAsyncDisposable
         if (item != null)
         {
             item.Status = DownloadStatus.Pending;
+            item.RetryCount = 0;
             item.UpdatedAt = DateTime.UtcNow;
             db.Updateable(item).ExecuteCommand();
 

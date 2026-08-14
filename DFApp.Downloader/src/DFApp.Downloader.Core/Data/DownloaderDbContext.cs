@@ -38,5 +38,18 @@ public class DownloaderDbContext
             typeof(Entities.DownloadItem),
             typeof(Entities.DownloadSegment)
         );
+
+        // 兼容旧库：补充新增的失败重试计数字段
+        var columns = db.DbMaintenance.GetColumnInfosByTableName("DownloadItems");
+        if (columns.All(c => c.DbColumnName != nameof(Entities.DownloadItem.RetryCount)))
+        {
+            db.DbMaintenance.AddColumn("DownloadItems", new DbColumnInfo
+            {
+                DbColumnName = nameof(Entities.DownloadItem.RetryCount),
+                DataType = "int",
+                IsNullable = false,
+                DefaultValue = "0"
+            });
+        }
     }
 }

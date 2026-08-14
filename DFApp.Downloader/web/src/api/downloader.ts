@@ -19,6 +19,7 @@ export interface DownloadItem {
   mimeType: string
   chatTitle?: string
   errorMessage?: string
+  retryCount?: number
   createdAt: string
   updatedAt: string
   completedAt?: string

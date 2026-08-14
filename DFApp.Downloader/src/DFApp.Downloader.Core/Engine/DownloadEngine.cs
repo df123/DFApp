@@ -41,6 +41,19 @@ public class DownloadEngine
         _concurrencySemaphore = new SemaphoreSlim(settings.MaxConcurrentDownloads);
     }
 
+    /// <summary>下载结果</summary>
+    private enum DownloadOutcome
+    {
+        /// <summary>成功</summary>
+        Success,
+
+        /// <summary>失败</summary>
+        Failed,
+
+        /// <summary>已取消</summary>
+        Canceled
+    }
+
     /// <summary>
     /// 提交下载任务。立即返回，下载在后台执行；
     /// 并发由 _concurrencySemaphore 控制，避免阻塞队列处理器导致只能串行下载。
@@ -52,10 +65,12 @@ public class DownloadEngine
 
         _ = Task.Run(async () =>
         {
+            var outcome = DownloadOutcome.Canceled;
+            string? failureMessage = null;
             try
             {
                 await _concurrencySemaphore.WaitAsync(cts.Token);
-                await ExecuteDownloadAsync(item, cts.Token);
+                (outcome, failureMessage) = await ExecuteDownloadAsync(item, cts.Token);
             }
             catch (OperationCanceledException)
             {
@@ -64,12 +79,24 @@ public class DownloadEngine
             catch (Exception ex)
             {
                 _logger.LogError(ex, "下载失败: {FileName}", item.FileName);
-                OnDownloadFailed?.Invoke(item.Id, ex.Message);
+                outcome = DownloadOutcome.Failed;
+                failureMessage = ex.Message;
             }
             finally
             {
+                // 先清理活动下载登记并释放并发槽位，再触发完成/失败回调：
+                // 失败回调会立即重新入队，若回调先于清理执行，重试任务会覆盖/被误删同一活动条目
                 _activeDownloads.TryRemove(item.Id, out _);
                 _concurrencySemaphore.Release();
+
+                if (outcome == DownloadOutcome.Success)
+                {
+                    OnDownloadCompleted?.Invoke(item.Id);
+                }
+                else if (outcome == DownloadOutcome.Failed && failureMessage != null)
+                {
+                    OnDownloadFailed?.Invoke(item.Id, failureMessage);
+                }
             }
         });
 
@@ -89,8 +116,9 @@ public class DownloadEngine
 
     /// <summary>
     /// 执行单个下载任务：基于 Downloader 库，自动多分片并行、断点续传、失败重试。
+    /// 返回下载结果与失败信息，由调用方在清理完成后统一触发完成/失败回调。
     /// </summary>
-    private async Task ExecuteDownloadAsync(DownloadItem item, CancellationToken cancellationToken)
+    private async Task<(DownloadOutcome Outcome, string? FailureMessage)> ExecuteDownloadAsync(DownloadItem item, CancellationToken cancellationToken)
     {
         // 通知外部：已获得并发槽位，真正开始下载（用于刷新 UpdatedAt，使其在列表中排到前面）
         OnDownloadStarted?.Invoke(item.Id);
@@ -133,16 +161,17 @@ public class DownloadEngine
             await service.DownloadFileTaskAsync(item.DownloadUrl, item.LocalPath, cancellationToken);
             // 以完成事件为准，确认最终结果（成功时立即返回，失败/取消时抛出对应异常）
             await tcs.Task;
-            OnDownloadCompleted?.Invoke(item.Id);
+            return (DownloadOutcome.Success, null);
         }
         catch (OperationCanceledException)
         {
             _logger.LogInformation("下载已取消: {FileName}", item.FileName);
+            return (DownloadOutcome.Canceled, null);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "下载失败: {FileName}", item.FileName);
-            OnDownloadFailed?.Invoke(item.Id, ex.Message);
+            return (DownloadOutcome.Failed, ex.Message);
         }
         finally
         {

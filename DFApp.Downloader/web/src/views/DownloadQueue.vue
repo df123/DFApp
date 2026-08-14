@@ -52,6 +52,16 @@ const handleResume = async (id: number) => {
   }
 }
 
+const handleRetry = async (id: number) => {
+  try {
+    await downloadApi.resume(id)
+    ElMessage.success('已重新加入队列')
+    fetchDownloads()
+  } catch {
+    ElMessage.error('重试失败')
+  }
+}
+
 const handleCancel = async (id: number) => {
   try {
     await ElMessageBox.confirm('确定要取消并删除此下载任务吗？', '确认', { type: 'warning' })
@@ -143,6 +153,9 @@ onUnmounted(() => {
           </el-tag>
         </template>
       </el-table-column>
+      <el-table-column label="重试" width="80">
+        <template #default="{ row }">{{ row.retryCount ? `${row.retryCount}/3` : '-' }}</template>
+      </el-table-column>
       <el-table-column prop="sourceType" label="来源" width="80" />
       <el-table-column label="创建时间" width="180">
         <template #default="{ row }">{{ formatTime(row.createdAt) }}</template>
@@ -161,6 +174,12 @@ onUnmounted(() => {
             size="small"
             @click="handleResume(row.id)"
           >恢复</el-button>
+          <el-button
+            v-if="row.status === 'Failed'"
+            type="primary"
+            size="small"
+            @click="handleRetry(row.id)"
+          >重试</el-button>
           <el-button
             v-if="row.status !== 'Completed'"
             type="danger"
