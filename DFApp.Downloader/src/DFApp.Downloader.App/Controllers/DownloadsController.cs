@@ -176,8 +176,8 @@ public class DownloadsController : ControllerBase
     {
         try
         {
-            var (scanned, added) = await _manager.SyncMissedDownloadsAsync();
-            return Ok(new { scanned, added });
+            var (scanned, added, reconciled) = await _manager.SyncMissedDownloadsAsync();
+            return Ok(new { scanned, added, reconciled });
         }
         catch (InvalidOperationException ex)
         {

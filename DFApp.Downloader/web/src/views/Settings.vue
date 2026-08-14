@@ -44,8 +44,8 @@ const handleSyncMissed = async () => {
   syncing.value = true
   try {
     const { data } = await downloadApi.syncMissed()
-    if (data.added > 0) {
-      ElMessage.success(`扫描 ${data.scanned} 项，新增 ${data.added} 项到下载队列`)
+    if (data.added > 0 || data.reconciled > 0) {
+      ElMessage.success(`扫描 ${data.scanned} 项，新增 ${data.added} 项到下载队列，修复回写 ${data.reconciled} 项`)
     } else {
       ElMessage.info(`扫描 ${data.scanned} 项，无遗漏`)
     }

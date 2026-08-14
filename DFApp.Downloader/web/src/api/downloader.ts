@@ -109,7 +109,7 @@ export const downloadApi = {
     api.post<ConnectionInfo>('/connection/reconnect'),
 
   syncMissed: () =>
-    api.post<{ scanned: number; added: number }>('/downloads/sync-missed'),
+    api.post<{ scanned: number; added: number; reconciled: number }>('/downloads/sync-missed'),
 
   getLogList: () =>
     api.get<{ items: LogFileInfo[] }>('/logs'),

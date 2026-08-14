@@ -1,6 +1,8 @@
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using System.Net;
 using System.Net.Http.Headers;
 using System.Text.Json;
 using DFApp.Downloader.Core.Configuration;
@@ -315,27 +317,40 @@ public class DownloadManager : IAsyncDisposable
     }
 
     /// <summary>
-    /// 回写后端：标记指定媒体外链已生成（下载器已取回本地）。失败仅记日志。
+    /// 回写后端：标记指定媒体外链已生成（下载器已取回本地）。401（token 过期）时重新登录后重试一次。
     /// </summary>
     private async Task MarkExternalLinkGeneratedAsync(long mediaInfoId)
     {
         try
         {
-            var token = _notificationClient.AccessToken;
-            if (string.IsNullOrEmpty(token))
+            for (var attempt = 0; attempt < 2; attempt++)
             {
-                _logger.LogWarning("回写外链标记失败：未登录 DFApp（mediaInfoId={Id}）", mediaInfoId);
-                return;
-            }
+                var token = _notificationClient.AccessToken;
+                if (string.IsNullOrEmpty(token))
+                {
+                    _logger.LogWarning("回写外链标记失败：未登录 DFApp（mediaInfoId={Id}）", mediaInfoId);
+                    return;
+                }
 
-            var url = $"{_settings.DfAppUrl}/api/app/media-info/{mediaInfoId}/mark-external-link-generated";
-            using var request = new HttpRequestMessage(HttpMethod.Post, url);
-            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+                var url = $"{_settings.DfAppUrl}/api/app/media-info/{mediaInfoId}/mark-external-link-generated";
+                using var request = new HttpRequestMessage(HttpMethod.Post, url);
+                request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
-            using var response = await _httpClient.SendAsync(request);
-            if (!response.IsSuccessStatusCode)
-            {
+                using var response = await _httpClient.SendAsync(request);
+                if (response.IsSuccessStatusCode)
+                {
+                    return;
+                }
+
+                if (response.StatusCode == HttpStatusCode.Unauthorized && attempt == 0)
+                {
+                    _logger.LogWarning("回写外链标记 401，重新登录后重试（mediaInfoId={Id}）", mediaInfoId);
+                    await _notificationClient.LoginAsync(_settings, _httpClient);
+                    continue;
+                }
+
                 _logger.LogWarning("回写外链标记失败：HTTP {Status}（mediaInfoId={Id}）", (int)response.StatusCode, mediaInfoId);
+                return;
             }
         }
         catch (Exception ex)
@@ -345,31 +360,41 @@ public class DownloadManager : IAsyncDisposable
     }
 
     /// <summary>
-    /// 删除远程服务器上的物理文件（仅删文件，不删 DB 记录）。失败仅记日志——下次同步命中本地去重不会重复下载。
+    /// 删除远程服务器上的物理文件（仅删文件，不删 DB 记录）。401（token 过期）时重新登录后重试一次。
     /// </summary>
     private async Task DeleteRemoteFileAsync(long mediaInfoId)
     {
         try
         {
-            var token = _notificationClient.AccessToken;
-            if (string.IsNullOrEmpty(token))
+            for (var attempt = 0; attempt < 2; attempt++)
             {
-                _logger.LogWarning("删除远程文件失败：未登录 DFApp（mediaInfoId={Id}）", mediaInfoId);
-                return;
-            }
+                var token = _notificationClient.AccessToken;
+                if (string.IsNullOrEmpty(token))
+                {
+                    _logger.LogWarning("删除远程文件失败：未登录 DFApp（mediaInfoId={Id}）", mediaInfoId);
+                    return;
+                }
 
-            var url = $"{_settings.DfAppUrl}/api/app/media-info/{mediaInfoId}/file";
-            using var request = new HttpRequestMessage(HttpMethod.Delete, url);
-            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+                var url = $"{_settings.DfAppUrl}/api/app/media-info/{mediaInfoId}/file";
+                using var request = new HttpRequestMessage(HttpMethod.Delete, url);
+                request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
-            using var response = await _httpClient.SendAsync(request);
-            if (!response.IsSuccessStatusCode)
-            {
+                using var response = await _httpClient.SendAsync(request);
+                if (response.IsSuccessStatusCode)
+                {
+                    _logger.LogInformation("已删除远程服务器文件（mediaInfoId={Id}）", mediaInfoId);
+                    return;
+                }
+
+                if (response.StatusCode == HttpStatusCode.Unauthorized && attempt == 0)
+                {
+                    _logger.LogWarning("删除远程文件 401，重新登录后重试（mediaInfoId={Id}）", mediaInfoId);
+                    await _notificationClient.LoginAsync(_settings, _httpClient);
+                    continue;
+                }
+
                 _logger.LogWarning("删除远程文件失败：HTTP {Status}（mediaInfoId={Id}）", (int)response.StatusCode, mediaInfoId);
-            }
-            else
-            {
-                _logger.LogInformation("已删除远程服务器文件（mediaInfoId={Id}）", mediaInfoId);
+                return;
             }
         }
         catch (Exception ex)
@@ -629,8 +654,9 @@ public class DownloadManager : IAsyncDisposable
     /// 补漏同步：从 DFApp 后端拉取已下载完成的媒体，与本地比对，把缺失的补入下载队列。
     /// 后端返回全部"已下载未取回"媒体（无增量游标），本地按 SourceType+SourceId 去重——
     /// 用最大 SourceId 作游标会漏掉失败/删除产生的中间空洞。
+    /// 对"本地已下载完成但服务器仍标记未取回"的记录（回写 401 失败导致）补一次回写并删除远程文件。
     /// </summary>
-    public async Task<(int Scanned, int Added)> SyncMissedDownloadsAsync()
+    public async Task<(int Scanned, int Added, int Reconciled)> SyncMissedDownloadsAsync()
     {
         var token = _notificationClient.AccessToken;
         if (string.IsNullOrEmpty(token))
@@ -640,19 +666,20 @@ public class DownloadManager : IAsyncDisposable
 
         var scanned = 0;
         var added = 0;
+        var reconciled = 0;
         var pageIndex = 1;
         const int pageSize = 100;
 
-        // 一次性加载本地已有的 Telegram SourceId（用于去重）
-        HashSet<long> existingIds;
+        // 一次性加载本地已有的 Telegram 记录（用于去重；已完成但回写失败的用于补回写）
+        List<DownloadItem> localItems;
         using (var db = _dbContext.CreateClient())
         {
-            var localIds = db.Queryable<DownloadItem>()
+            localItems = db.Queryable<DownloadItem>()
                 .Where(x => x.SourceType == "Telegram")
-                .Select(x => x.SourceId)
                 .ToList();
-            existingIds = localIds.ToHashSet();
         }
+        var existingIds = localItems.Select(x => x.SourceId).ToHashSet();
+        var localBySourceId = localItems.GroupBy(x => x.SourceId).ToDictionary(g => g.Key, g => g.First());
 
         _logger.LogInformation("补漏同步开始：本地已记录 {Exist} 项", existingIds.Count);
 
@@ -688,9 +715,17 @@ public class DownloadManager : IAsyncDisposable
                     continue;
                 }
 
-                // 内存比对（与本地去重维度一致：SourceType + SourceId）
                 if (existingIds.Contains(sourceId))
                 {
+                    // 本地已有记录：若已下载完成且文件存在但服务器仍标记未取回（回写失败），补一次回写并删除远程文件
+                    if (localBySourceId.TryGetValue(sourceId, out var local)
+                        && local.Status == DownloadStatus.Completed
+                        && File.Exists(local.LocalPath))
+                    {
+                        reconciled++;
+                        await MarkExternalLinkGeneratedAsync(sourceId);
+                        await DeleteRemoteFileAsync(sourceId);
+                    }
                     continue;
                 }
 
@@ -719,8 +754,8 @@ public class DownloadManager : IAsyncDisposable
             pageIndex++;
         }
 
-        _logger.LogInformation("补漏同步完成：扫描 {Scanned} 项，新增 {Added} 项", scanned, added);
-        return (scanned, added);
+        _logger.LogInformation("补漏同步完成：扫描 {Scanned} 项，新增 {Added} 项，修复回写 {Reconciled} 项", scanned, added, reconciled);
+        return (scanned, added, reconciled);
     }
 
     /// <summary>

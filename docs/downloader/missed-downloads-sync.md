@@ -131,6 +131,16 @@ downloadUrl = Path.Combine(ReturnDownloadUrlPrefix, SavePath.Replace(ReplaceUrlP
 | 后续同步 | 全部未取回（通常几十条，取回即移出集合） |
 | **存在失败/删除/通知丢失的空洞** | **可重新命中（原游标方案漏掉）** |
 
+## 七·二、回写 401 与同步修复回写（2026-08-14 新增）
+
+**背景**：下载器 JWT 有有效期，长时间下载（大文件、批量）后 token 过期，下载完成时的回写（`mark-external-link-generated` + `DELETE /file`）以 401 失败——此前仅记日志不重试，而补漏同步又因本地去重跳过这些项，导致**服务器永远停留在"未取回"**（实测 28 项，本地文件其实已下载完成）。
+
+**修复（下载器 `DownloadManager`）**：
+1. **回写 401 自动重试**：`MarkExternalLinkGeneratedAsync` / `DeleteRemoteFileAsync` 遇 401 时重新登录（`LoginAsync`）后重试一次，从源头避免失败。
+2. **同步修复回写**：`SyncMissedDownloadsAsync` 对"服务器未取回、但本地记录已 `Completed` 且文件存在"的项，视为回写失败残留，**补一次回写并删除远程文件**（幂等，使用同步时的有效 token）。返回新增 `reconciled`（修复回写数）字段，前端提示"扫描 X 项，新增 Y 项到下载队列，修复回写 Z 项"。
+
+> 效果：任何历史/未来的回写失败，在下一次补漏同步时自动纠正服务器状态；服务器 UI 的"是否生成外部链接"与实际取回情况保持一致。
+
 ## 八、IsExternalLinkGenerated 语义统一与下载完成回写闭环
 
 ### 字段语义澄清（2026-08-12 确认）
