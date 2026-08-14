@@ -92,26 +92,28 @@ const formatBytes = (bytes: number) => {
   return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
 }
 
-// 页面滚动超过一屏时显示"回到顶部"，点击平滑滚回顶部
+// 页面滚动超过一屏时显示"回到顶部"，点击平滑滚回顶部。
+// 滚动容器是 App.vue 的 #main-content（el-main，布局固定 100vh 时由它承载滚动）
 const onScroll = () => {
-  showBackToTop.value = window.scrollY > window.innerHeight
+  const scroller = document.getElementById('main-content')
+  showBackToTop.value = !!scroller && scroller.scrollTop > scroller.clientHeight
 }
 
 const scrollToTop = () => {
-  window.scrollTo({ top: 0, behavior: 'smooth' })
+  document.getElementById('main-content')?.scrollTo({ top: 0, behavior: 'smooth' })
 }
 
 onMounted(() => {
   updateColumns()
   window.addEventListener('resize', updateColumns)
-  window.addEventListener('scroll', onScroll)
+  document.getElementById('main-content')?.addEventListener('scroll', onScroll)
   fetchGallery()
   timer = setInterval(fetchGallery, 30000)
 })
 
 onUnmounted(() => {
   window.removeEventListener('resize', updateColumns)
-  window.removeEventListener('scroll', onScroll)
+  document.getElementById('main-content')?.removeEventListener('scroll', onScroll)
   if (timer) clearInterval(timer)
 })
 </script>

@@ -45,7 +45,7 @@ router.afterEach((to) => {
         </el-menu-item>
       </el-menu>
     </el-aside>
-    <el-main style="padding: 20px; background-color: #f5f7fa">
+    <el-main id="main-content" style="padding: 20px; background-color: #f5f7fa">
       <router-view />
     </el-main>
   </el-container>
