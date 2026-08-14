@@ -48,9 +48,11 @@ const fetchGallery = async () => {
   }
 }
 
-// 通过注册的 vlc:// 协议直接唤起 Windows 侧 VLC 播放本地文件
+// 通过注册的 vlc: 协议直接唤起 Windows 侧 VLC 播放本地文件
+// 注意不能用 vlc://（双斜杠）：浏览器会按带主机名解析，把 D: 当 authority 吃掉盘符冒号；
+// vlc: 是 opaque path，浏览器原样传递
 const playWithVlc = (item: GalleryItem) => {
-  window.location.href = `vlc://${item.windowsPath}`
+  window.location.href = `vlc:${item.windowsPath}`
 }
 
 const formatBytes = (bytes: number) => {

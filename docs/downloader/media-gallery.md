@@ -20,17 +20,19 @@
 
 网页无法直接启动本地桌面程序，采用 Windows 自定义 URL 协议方案：
 
-1. 注册表注册 `vlc://` 协议（HKCU，无需管理员）：
+1. 注册表注册 `vlc:` 协议（HKCU，无需管理员）：
    ```
    HKCU\Software\Classes\vlc
      (Default)      = "URL:VLC Protocol"
      URL Protocol   = ""
    HKCU\Software\Classes\vlc\shell\open\command
-     (Default)      = powershell.exe -NoProfile -WindowStyle Hidden -Command "$u=[uri]::UnescapeDataString('%1').Substring(6); Start-Process 'C:\Program Files\VideoLAN\VLC\vlc.exe' -ArgumentList $u"
+     (Default)      = powershell.exe -NoProfile -WindowStyle Hidden -Command "$u=[uri]::UnescapeDataString('%1').Substring(4); Start-Process 'C:\Program Files\VideoLAN\VLC\vlc.exe' -ArgumentList $u"
    ```
-   PowerShell 包装的目的：VLC 不识别 `vlc://` 前缀（实测报"无法打开 MRL"），需剥掉前缀后再把路径交给 VLC；`UnescapeDataString` 处理浏览器 URL 编码（空格 → %20 等）。
+   PowerShell 包装的目的：VLC 不识别 `vlc:` 前缀（实测报"无法打开 MRL"），需剥掉前缀后再把路径交给 VLC；`UnescapeDataString` 处理浏览器 URL 编码（空格 → %20 等）。
 2. 下载器 `GET /api/gallery` 返回 `windowsPath`（如 `D:\DFApp\xxx.mp4`，WSL 路径 `/mnt/d/...` → Windows 路径转换）
-3. 前端按钮：`window.location.href = 'vlc://' + item.windowsPath`
+3. 前端按钮：`window.location.href = 'vlc:' + item.windowsPath`
+
+> ⚠️ **必须用 `vlc:`（单冒号）**。`vlc://`（双斜杠）会被浏览器按"带主机名"解析，`D:` 被当作 authority 吃掉盘符冒号、`\` 被规范化为 `/`，VLC 收到相对路径（实测报 `file:///C:/WINDOWS/system32/D%2F/DFApp/...`）。`vlc:` 是 opaque path，浏览器原样传递。
 
 ### 部署提醒
 
