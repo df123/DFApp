@@ -49,3 +49,14 @@
 | `GET /api/gallery?page&pageSize` | 已完成媒体分页列表（含 chatTitle/message/mediaUrl/windowsPath） |
 | `POST /api/gallery/backfill-messages` | 回填历史记录的聊天标题与消息 |
 | `POST /api/gallery/{id}/play` | （备用）后端调用 VLC；前端已改用 vlc:// 协议，此接口保留 |
+
+## 视频缩略图（2026-08-14 新增）
+
+**功能**：媒体库视频卡片显示视频首帧缩略图（不再只有 🎬 占位），点击缩略图同样唤起 VLC 播放。
+
+**实现**：
+- **ffmpeg**：静态构建 7.0.2 位于 `~/ffmpeg/ffmpeg`（johnvansickle 官方静态包，无需安装依赖；可用环境变量 `FFMPEG_PATH` 覆盖）。若该机器无 ffmpeg 需重新下载解压到 `~/ffmpeg/` 或配置 `FFMPEG_PATH`。
+- **生成**：`DownloadManager.GenerateThumbnailAsync` 用 `ffmpeg -ss 5 -frames:v 1 -vf scale=480:-2` 抽取距片头 5 秒一帧（避开首帧黑屏）为 JPEG；已存在则跳过，失败仅记日志不影响下载。
+- **时机**：① 视频下载完成时自动生成（`OnDownloadCompleted`）；② 下载器启动时后台批量补齐历史视频（`BackfillThumbnailsAsync`，实测 65 个视频约 1 分钟补齐）。
+- **存储**：`{DownloadPath}/thumbs/{视频文件名}.jpg`——注意目录名**不带点**（ASP.NET Core 静态文件中间件默认不提供 `.` 开头的隐藏目录），经 `/media/thumbs/...` 访问。
+- **API**：`GET /api/gallery` 返回 `thumbUrl`（缩略图存在时），前端视频卡片 `el-image` 显示；无缩略图时回退 🎬 占位。

@@ -13,6 +13,7 @@ interface GalleryItem {
   completedAt: string
   mediaUrl: string
   windowsPath: string
+  thumbUrl?: string | null
 }
 
 const items = ref<GalleryItem[]>([])
@@ -97,15 +98,22 @@ onUnmounted(() => {
           fit="cover"
           style="width: 100%; height: 220px; border-radius: 6px; cursor: zoom-in"
         />
-        <!-- 视频：封面占位 + VLC 播放按钮 -->
+        <!-- 视频：缩略图 + 点击 VLC 播放（无缩略图时显示占位） -->
         <div
           v-else-if="isVideo(item)"
-          style="width: 100%; height: 220px; border-radius: 6px; background: #0d1117; display: flex; align-items: center; justify-content: center; color: #fff; flex-direction: column; gap: 12px"
+          style="width: 100%; height: 220px; border-radius: 6px; background: #0d1117; display: flex; align-items: center; justify-content: center; color: #fff; flex-direction: column; gap: 12px; overflow: hidden; position: relative; cursor: pointer"
+          @click="playWithVlc(item)"
         >
-          <span style="font-size: 40px">🎬</span>
-          <el-button type="primary" size="small" @click="playWithVlc(item)">
-            用 VLC 播放
-          </el-button>
+          <el-image
+            v-if="item.thumbUrl"
+            :src="item.thumbUrl"
+            fit="cover"
+            style="width: 100%; height: 100%"
+          />
+          <span v-else style="font-size: 40px">🎬</span>
+          <span
+            style="position: absolute; bottom: 8px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.6); padding: 4px 12px; border-radius: 4px; font-size: 12px"
+          >▶ 用 VLC 播放</span>
         </div>
         <div v-else style="width: 100%; height: 220px; border-radius: 6px; background: #f0f2f5; display: flex; align-items: center; justify-content: center; color: #909399">
           {{ item.mimeType || '未知类型' }}

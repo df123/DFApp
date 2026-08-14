@@ -208,8 +208,12 @@ public class DownloadsController : ControllerBase
                 x.CompletedAt,
                 // 相对下载目录的访问路径，供 /media 静态映射加载
                 MediaUrl = $"/media/{Path.GetFileName(x.LocalPath)}",
-                // Windows 路径，供前端拼 vlc:// 协议链接直接唤起 VLC
-                WindowsPath = ConvertToWindowsPath(x.LocalPath)
+                // Windows 路径，供前端拼 vlc: 协议链接直接唤起 VLC
+                WindowsPath = ConvertToWindowsPath(x.LocalPath),
+                // 视频缩略图：下载目录/.thumbs/{文件名}.jpg，存在才返回
+                ThumbUrl = System.IO.File.Exists(GetThumbnailPath(x.FileName))
+                    ? $"/media/{ThumbnailDirName}/{Path.GetFileNameWithoutExtension(x.FileName)}.jpg"
+                    : null
             })
             .ToList();
 
@@ -282,5 +286,15 @@ public class DownloadsController : ControllerBase
             return $"{drive}:{rest}";
         }
         return full.Replace('/', '\\');
+    }
+
+    /// <summary>缩略图存放目录名（下载目录下，与 DownloadManager 保持一致）</summary>
+    private const string ThumbnailDirName = "thumbs";
+
+    /// <summary>缩略图完整路径：{下载目录}/.thumbs/{文件名}.jpg</summary>
+    private string GetThumbnailPath(string fileName)
+    {
+        var dir = Path.Combine(_settings.DownloadPath, ThumbnailDirName);
+        return Path.Combine(dir, Path.GetFileNameWithoutExtension(fileName) + ".jpg");
     }
 }

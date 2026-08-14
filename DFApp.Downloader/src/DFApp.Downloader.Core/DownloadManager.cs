@@ -106,6 +106,9 @@ public class DownloadManager : IAsyncDisposable
         // 恢复未完成的任务
         await ResumePendingDownloadsAsync();
 
+        // 补齐历史视频的缩略图（后台执行）
+        _ = BackfillThumbnailsAsync();
+
         _logger.LogInformation("下载管理器已启动");
     }
 
@@ -296,6 +299,12 @@ public class DownloadManager : IAsyncDisposable
 
                 _logger.LogInformation("下载完成: {FileName}", item.FileName);
                 OnStateChanged?.Invoke();
+
+                // 视频下载完成后异步生成缩略图（媒体库展示用）
+                if (IsVideo(item.MimeType, item.FileName))
+                {
+                    _ = GenerateThumbnailAsync(item);
+                }
 
                 // Telegram 来源：先回写已取回标记（让补漏同步不再返回），再删除远程物理文件释放服务器空间
                 if (item.SourceType == "Telegram" && item.SourceId > 0)
@@ -911,6 +920,112 @@ public class DownloadManager : IAsyncDisposable
                 // 文件被占用等情况不影响删除任务本身，仅记录日志
                 _logger.LogWarning(ex, "删除本地文件失败: {Path}", path);
             }
+        }
+    }
+
+    /// <summary>缩略图存放目录名（下载目录下）</summary>
+    private const string ThumbnailDirName = "thumbs";
+
+    /// <summary>ffmpeg 可执行文件路径（静态构建，媒体库缩略图抽帧用）</summary>
+    private readonly string _ffmpegPath = Environment.GetEnvironmentVariable("FFMPEG_PATH")
+        ?? "/home/df/ffmpeg/ffmpeg";
+
+    /// <summary>
+    /// 判断是否视频：按 MIME 前缀或扩展名
+    /// </summary>
+    private static bool IsVideo(string? mimeType, string fileName)
+    {
+        if (!string.IsNullOrEmpty(mimeType) && mimeType.StartsWith("video", StringComparison.OrdinalIgnoreCase))
+        {
+            return true;
+        }
+        var ext = Path.GetExtension(fileName).ToLowerInvariant();
+        return ext is ".mp4" or ".mkv" or ".avi" or ".mov" or ".webm" or ".ts" or ".m4v";
+    }
+
+    /// <summary>缩略图完整路径：{下载目录}/.thumbs/{文件名}.jpg</summary>
+    private string GetThumbnailPath(string fileName)
+    {
+        var dir = Path.Combine(_settings.DownloadPath, ThumbnailDirName);
+        Directory.CreateDirectory(dir);
+        return Path.Combine(dir, Path.GetFileNameWithoutExtension(fileName) + ".jpg");
+    }
+
+    /// <summary>
+    /// 用 ffmpeg 抽取视频某一帧生成缩略图。已存在则跳过；失败仅记日志，不影响下载流程。
+    /// </summary>
+    public async Task GenerateThumbnailAsync(DownloadItem item)
+    {
+        try
+        {
+            if (!IsVideo(item.MimeType, item.FileName) || !File.Exists(item.LocalPath))
+            {
+                return;
+            }
+
+            var thumbPath = GetThumbnailPath(item.FileName);
+            if (File.Exists(thumbPath))
+            {
+                return;
+            }
+
+            var psi = new System.Diagnostics.ProcessStartInfo
+            {
+                FileName = _ffmpegPath,
+                // 抽取距片头 5 秒处一帧，缩放到宽 480（保持比例），避免首帧黑屏
+                ArgumentList = {
+                    "-y", "-ss", "5", "-i", item.LocalPath,
+                    "-frames:v", "1", "-vf", "scale=480:-2", "-q:v", "4",
+                    thumbPath
+                },
+                UseShellExecute = false,
+                CreateNoWindow = true,
+                RedirectStandardError = true
+            };
+            using var process = System.Diagnostics.Process.Start(psi);
+            if (process == null)
+            {
+                _logger.LogWarning("缩略图生成失败：无法启动 ffmpeg: {FfmpegPath}", _ffmpegPath);
+                return;
+            }
+            await process.WaitForExitAsync();
+
+            if (process.ExitCode != 0)
+            {
+                var err = await process.StandardError.ReadToEndAsync();
+                _logger.LogWarning("缩略图生成失败（exit={Exit}）: {File} {Error}",
+                    process.ExitCode, item.FileName, err.Trim());
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "生成缩略图异常: {File}", item.FileName);
+        }
+    }
+
+    /// <summary>
+    /// 启动时批量补齐已完成视频的缩略图（后台执行，不阻塞启动）
+    /// </summary>
+    private async Task BackfillThumbnailsAsync()
+    {
+        try
+        {
+            using var db = _dbContext.CreateClient();
+            var videos = db.Queryable<DownloadItem>()
+                .Where(x => x.Status == DownloadStatus.Completed)
+                .ToList()
+                .Where(x => IsVideo(x.MimeType, x.FileName))
+                .ToList();
+
+            foreach (var item in videos)
+            {
+                await GenerateThumbnailAsync(item);
+            }
+            _logger.LogInformation("缩略图补齐完成：共检查 {Count} 个视频", videos.Count);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "缩略图补齐异常");
         }
     }
 
