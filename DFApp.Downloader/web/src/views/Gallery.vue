@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { downloadApi } from '../api/downloader'
-import { ElMessage } from 'element-plus'
+import { ElMessage, ElImageViewer } from 'element-plus'
 
 interface GalleryItem {
   id: number
@@ -22,7 +22,15 @@ const page = ref(1)
 const pageSize = ref(60)
 const loading = ref(false)
 const filter = ref('image') // image | video | all
+const columnCount = ref(3)
 let timer: ReturnType<typeof setInterval> | null = null
+
+// 大图预览状态
+const viewerVisible = ref(false)
+const viewerIndex = ref(0)
+const previewList = computed(() =>
+  filteredItems().filter(isImage).map(i => i.mediaUrl),
+)
 
 const isVideo = (item: GalleryItem) =>
   item.mimeType?.toLowerCase().startsWith('video') || /\.(mp4|mkv|avi|mov|webm)$/i.test(item.fileName)
@@ -34,6 +42,28 @@ const filteredItems = () => {
   if (filter.value === 'image') return items.value.filter(isImage)
   if (filter.value === 'video') return items.value.filter(isVideo)
   return items.value
+}
+
+// 瀑布流分列：按顺序轮流放入各列，保持从左到右的阅读顺序
+const columns = computed(() => {
+  const list = filteredItems()
+  const cols: GalleryItem[][] = Array.from({ length: columnCount.value }, () => [])
+  list.forEach((item, i) => cols[i % columnCount.value].push(item))
+  return cols
+})
+
+// 按窗口宽度调整列数（响应式），图片列宽随之变大
+const updateColumns = () => {
+  const w = window.innerWidth
+  columnCount.value = w >= 1800 ? 4 : w >= 1200 ? 3 : w >= 700 ? 2 : 1
+}
+
+const openPreview = (item: GalleryItem) => {
+  const idx = previewList.value.indexOf(item.mediaUrl)
+  if (idx >= 0) {
+    viewerIndex.value = idx
+    viewerVisible.value = true
+  }
 }
 
 const fetchGallery = async () => {
@@ -65,11 +95,14 @@ const formatBytes = (bytes: number) => {
 }
 
 onMounted(() => {
+  updateColumns()
+  window.addEventListener('resize', updateColumns)
   fetchGallery()
   timer = setInterval(fetchGallery, 30000)
 })
 
 onUnmounted(() => {
+  window.removeEventListener('resize', updateColumns)
   if (timer) clearInterval(timer)
 })
 </script>
@@ -87,54 +120,67 @@ onUnmounted(() => {
 
     <el-empty v-if="!loading && filteredItems().length === 0" description="暂无媒体" />
 
-    <div v-loading="loading" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 16px">
-      <el-card v-for="item in filteredItems()" :key="item.id" shadow="hover" :body-style="{ padding: '10px' }">
-        <!-- 图片：点击放大 -->
-        <el-image
-          v-if="isImage(item)"
-          :src="item.mediaUrl"
-          :preview-src-list="filteredItems().filter(isImage).map(i => i.mediaUrl)"
-          :initial-index="filteredItems().filter(isImage).findIndex(i => i.id === item.id)"
-          fit="cover"
-          style="width: 100%; height: 220px; border-radius: 6px; cursor: zoom-in"
-        />
-        <!-- 视频：缩略图 + 点击 VLC 播放（无缩略图时显示占位） -->
-        <div
-          v-else-if="isVideo(item)"
-          style="width: 100%; height: 220px; border-radius: 6px; background: #0d1117; display: flex; align-items: center; justify-content: center; color: #fff; flex-direction: column; gap: 12px; overflow: hidden; position: relative; cursor: pointer"
-          @click="playWithVlc(item)"
+    <div v-loading="loading" style="display: flex; gap: 16px; align-items: flex-start">
+      <!-- 瀑布流：每列独立纵向排列，图片高度自适应（不再裁剪），宽度随列数自动加大 -->
+      <div
+        v-for="(col, ci) in columns"
+        :key="ci"
+        style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 16px"
+      >
+        <el-card
+          v-for="item in col"
+          :key="item.id"
+          shadow="hover"
+          :body-style="{ padding: '10px' }"
+          style="break-inside: avoid"
         >
-          <el-image
-            v-if="item.thumbUrl"
-            :src="item.thumbUrl"
-            fit="cover"
-            style="width: 100%; height: 100%"
+          <!-- 图片：自适应高度显示原始比例，点击放大 -->
+          <img
+            v-if="isImage(item)"
+            :src="item.mediaUrl"
+            :alt="item.fileName"
+            loading="lazy"
+            style="width: 100%; display: block; border-radius: 6px; cursor: zoom-in"
+            @click="openPreview(item)"
           />
-          <span v-else style="font-size: 40px">🎬</span>
-          <span
-            style="position: absolute; bottom: 8px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.6); padding: 4px 12px; border-radius: 4px; font-size: 12px"
-          >▶ 用 VLC 播放</span>
-        </div>
-        <div v-else style="width: 100%; height: 220px; border-radius: 6px; background: #f0f2f5; display: flex; align-items: center; justify-content: center; color: #909399">
-          {{ item.mimeType || '未知类型' }}
-        </div>
-
-        <div style="margin-top: 8px">
-          <div style="font-weight: 600; font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap">
-            {{ item.chatTitle || '（无标题）' }}
-          </div>
+          <!-- 视频：缩略图（16:9 裁切）+ 点击 VLC 播放（无缩略图时显示占位） -->
           <div
-            v-if="item.message"
-            style="font-size: 12px; color: #606266; margin-top: 4px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden"
+            v-else-if="isVideo(item)"
+            style="width: 100%; border-radius: 6px; background: #0d1117; display: flex; align-items: center; justify-content: center; color: #fff; flex-direction: column; gap: 12px; overflow: hidden; position: relative; cursor: pointer; aspect-ratio: 16 / 9"
+            @click="playWithVlc(item)"
           >
-            {{ item.message }}
+            <el-image
+              v-if="item.thumbUrl"
+              :src="item.thumbUrl"
+              fit="cover"
+              style="width: 100%; height: 100%"
+            />
+            <span v-else style="font-size: 40px">🎬</span>
+            <span
+              style="position: absolute; bottom: 8px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.6); padding: 4px 12px; border-radius: 4px; font-size: 12px"
+            >▶ 用 VLC 播放</span>
           </div>
-          <div style="font-size: 12px; color: #909399; margin-top: 4px; display: flex; justify-content: space-between">
-            <span>{{ formatBytes(item.fileSize) }}</span>
-            <span>{{ item.fileName }}</span>
+          <div v-else style="width: 100%; aspect-ratio: 16 / 9; border-radius: 6px; background: #f0f2f5; display: flex; align-items: center; justify-content: center; color: #909399">
+            {{ item.mimeType || '未知类型' }}
           </div>
-        </div>
-      </el-card>
+
+          <div style="margin-top: 8px">
+            <div style="font-weight: 600; font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap">
+              {{ item.chatTitle || '（无标题）' }}
+            </div>
+            <div
+              v-if="item.message"
+              style="font-size: 12px; color: #606266; margin-top: 4px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden"
+            >
+              {{ item.message }}
+            </div>
+            <div style="font-size: 12px; color: #909399; margin-top: 4px; display: flex; justify-content: space-between">
+              <span>{{ formatBytes(item.fileSize) }}</span>
+              <span>{{ item.fileName }}</span>
+            </div>
+          </div>
+        </el-card>
+      </div>
     </div>
 
     <el-pagination
@@ -144,6 +190,14 @@ onUnmounted(() => {
       layout="total, prev, pager, next"
       style="margin-top: 20px; justify-content: flex-end"
       @current-change="fetchGallery"
+    />
+
+    <!-- 大图预览（el-image-viewer 全屏查看） -->
+    <el-image-viewer
+      v-if="viewerVisible"
+      :url-list="previewList"
+      :initial-index="viewerIndex"
+      @close="viewerVisible = false"
     />
   </div>
 </template>
