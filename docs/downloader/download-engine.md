@@ -65,3 +65,15 @@
 - 全程记录 WARN 日志"下载疑似卡死…自动重启"。
 
 **效果**：分片连接挂起后最多 ~6 分钟即被自动重启（5 分钟阈值 + 1 分钟检查间隔），不再无限挂起。
+
+## 八、SignalR Token 过期与自动重连（2026-08-14 新增）
+
+**背景**：后端 JWT 有效期 60 分钟（`Jwt:ExpirationMinutes`），且 `ValidateLifetime=true` + `ClockSkew=0`——token 一过期，任何新的 SignalR 握手都会 401 拒绝。此前 `DownloadNotificationClient` 只在启动时登录一次，`AccessTokenProvider` 永远返回旧 token；内置 `WithAutomaticReconnect` 仅 5 次重试，耗尽后进入 `Closed` 永久掉线——下载器运行超过 60 分钟后一旦断线就无法恢复，远程新下载不再自动拉取。
+
+**机制**（`DownloadNotificationClient`）：
+- `LoginAsync` 保存 `settings`/`httpClient` 引用，供后续重新登录使用；
+- `Reconnecting` 事件：连接断开后先调用 `RefreshTokenSafelyAsync()`（重新登录刷新 `_jwtToken`），SignalR 内置自动重连的每次握手都会重新调用 `AccessTokenProvider`，从而带着新 token 重试；
+- `Closed` 事件：内置 5 次重试耗尽后接管，启动 `ReconnectLoopAsync()` 手动无限重连——每次重连前同样先刷新 token，成功后 `JoinDownloadGroup` 重新入组；指数退避 5s 起、上限 60s；`_reconnectRunning`（`Interlocked`）防止并发重连循环；
+- `StopAsync`/`DisposeAsync` 置 `_isStopping` 并取消 `_stopCts`，正常停止时不会触发重连循环。
+
+**验证**：进程 SIGSTOP 45 秒强制服务端断开连接后恢复，日志依次出现 `SignalR 连接断开，正在刷新 Token 并重连` → `登录 DFApp 成功` → `SignalR 重新连接成功`，断线自动恢复正常。
