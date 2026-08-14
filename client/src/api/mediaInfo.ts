@@ -24,6 +24,18 @@ class MediaInfoApi {
   }
 
   /**
+   * 一键清理已标记取回但服务器仍保留的媒体文件
+   * @returns 删除数、跳过数（被有效外链引用）、无需处理数
+   */
+  async cleanupRetrievedFiles(): Promise<{
+    deleted: number;
+    skipped: number;
+    noFile: number;
+  }> {
+    return http.post(`${this.baseUrl}/cleanup-retrieved-files`);
+  }
+
+  /**
    * 创建媒体信息
    */
   async create(request: CreateUpdateMediaInfoDto): Promise<MediaInfoDto> {

@@ -33,7 +33,18 @@
 
 > 保护期内文件不参与空间回收，空间不足时优先阻塞新的 Telegram 下载，保证下载器在途任务不被破坏。
 
-## 四、2026-08-13 变更：移除"时间密度算法"
+## 四、一键清理已取回媒体文件（2026-08-14 新增）
+
+**背景**：下载器确认取回（`IsExternalLinkGenerated=true`）后应删除远程文件，但删除失败（网络中断、HTTP 错误）时文件会残留在服务器上，占用磁盘且界面上无法区分。
+
+**功能**：媒体管理页面新增"清理已取回文件"按钮，调用 `POST /api/app/media-info/cleanup-retrieved-files`（`MediaInfoService.CleanupRetrievedFilesAsync`）：
+- 扫描所有 `IsExternalLinkGenerated=true` 的媒体；
+- 跳过仍被**有效（未移除）外链**引用的媒体（删除会破坏外链内容）；
+- 其余媒体若物理文件仍存在则删除，返回统计：`Deleted`（删除数）、`Skipped`（被外链引用跳过数）、`NoFile`（路径为空或文件已不存在，无需处理）。
+
+> 仅删除物理文件，不删 DB 记录、不改任何字段——与下载器取回后的单文件删除（`DELETE /file`）行为一致，可重复执行。
+
+## 五、2026-08-13 变更：移除"时间密度算法"
 
 **原行为**：`IsLoopDownload=true` 时曾用 `GetHighDensityMediaToDelete`（时间密度算法）选择删除目标——优先删同一时间窗口（默认 2 分钟，配置 `TimeDensityWindowMinutes`）内聚集的旧文件。
 

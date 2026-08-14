@@ -121,6 +121,18 @@ public class MediaInfoController : DFAppControllerBase
     }
 
     /// <summary>
+    /// 一键清理：删除已标记取回（IsExternalLinkGenerated=true）但服务器仍保留的媒体文件。
+    /// 跳过仍被有效（未移除）外链引用的媒体。
+    /// </summary>
+    [HttpPost("cleanup-retrieved-files")]
+    [Permission(DFAppPermissions.Medias.Delete)]
+    public async Task<IActionResult> CleanupRetrievedFilesAsync()
+    {
+        var (deleted, skipped, noFile) = await _mediaInfoService.CleanupRetrievedFilesAsync();
+        return Success(new { Deleted = deleted, Skipped = skipped, NoFile = noFile });
+    }
+
+    /// <summary>
     /// 创建媒体信息
     /// </summary>
     [HttpPost]

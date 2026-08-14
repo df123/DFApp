@@ -26,6 +26,8 @@ public class MediaInfoService : CrudServiceBase<MediaInfo, long, MediaInfoDto, C
     private readonly MediaMapper _mapper = new();
     private readonly IConfigurationInfoRepository _configRepository;
     private readonly MediaRetrievalTracker _retrievalTracker;
+    private readonly ISqlSugarRepository<MediaExternalLink, long> _externalLinkRepository;
+    private readonly ISqlSugarRepository<MediaExternalLinkMediaIds, long> _externalLinkMediaIdRepository;
 
     /// <summary>
     /// 构造函数
@@ -35,16 +37,22 @@ public class MediaInfoService : CrudServiceBase<MediaInfo, long, MediaInfoDto, C
     /// <param name="repository">仓储接口</param>
     /// <param name="configRepository">配置仓储（读取下载 URL 前缀）</param>
     /// <param name="retrievalTracker">下载器取回保护（清理时跳过未取回媒体）</param>
+    /// <param name="externalLinkRepository">外链仓储（判断媒体是否仍被有效外链引用）</param>
+    /// <param name="externalLinkMediaIdRepository">外链媒体关联仓储</param>
     public MediaInfoService(
         ICurrentUser currentUser,
         IPermissionChecker permissionChecker,
         ISqlSugarRepository<MediaInfo, long> repository,
         IConfigurationInfoRepository configRepository,
-        MediaRetrievalTracker retrievalTracker)
+        MediaRetrievalTracker retrievalTracker,
+        ISqlSugarRepository<MediaExternalLink, long> externalLinkRepository,
+        ISqlSugarRepository<MediaExternalLinkMediaIds, long> externalLinkMediaIdRepository)
         : base(currentUser, permissionChecker, repository)
     {
         _configRepository = configRepository;
         _retrievalTracker = retrievalTracker;
+        _externalLinkRepository = externalLinkRepository;
+        _externalLinkMediaIdRepository = externalLinkMediaIdRepository;
     }
 
     /// <summary>
@@ -154,6 +162,47 @@ public class MediaInfoService : CrudServiceBase<MediaInfo, long, MediaInfoDto, C
         }
 
         return true;
+    }
+
+    /// <summary>
+    /// 一键清理：删除已标记取回（IsExternalLinkGenerated=true）但服务器仍保留的媒体物理文件。
+    /// 跳过仍被有效（未移除）外链引用的媒体，避免破坏外链内容。
+    /// </summary>
+    /// <returns>删除数、跳过数（被有效外链引用）、无需处理数（路径为空或文件不存在）</returns>
+    public async Task<(int Deleted, int Skipped, int NoFile)> CleanupRetrievedFilesAsync()
+    {
+        var retrieved = await Repository.GetListAsync(x => x.IsExternalLinkGenerated);
+
+        // 仍被有效（未移除）外链引用的媒体不删除
+        var activeLinks = await _externalLinkRepository.GetListAsync(x => !x.IsRemove);
+        var activeLinkIds = activeLinks.Select(x => x.Id).ToList();
+        var referencedMediaIds = new HashSet<long>();
+        if (activeLinkIds.Count > 0)
+        {
+            var linkMediaIds = await _externalLinkMediaIdRepository.GetListAsync(x => activeLinkIds.Contains(x.MediaExternalLinkId));
+            referencedMediaIds = linkMediaIds.Select(x => x.MediaId).ToHashSet();
+        }
+
+        int deleted = 0, skipped = 0, noFile = 0;
+        foreach (var media in retrieved)
+        {
+            if (referencedMediaIds.Contains(media.Id))
+            {
+                skipped++;
+                continue;
+            }
+
+            if (string.IsNullOrWhiteSpace(media.SavePath) || !File.Exists(media.SavePath))
+            {
+                noFile++;
+                continue;
+            }
+
+            SpaceHelper.DeleteFile(media.SavePath);
+            deleted++;
+        }
+
+        return (deleted, skipped, noFile);
     }
 
     /// <summary>

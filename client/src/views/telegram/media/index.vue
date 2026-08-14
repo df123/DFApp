@@ -18,6 +18,9 @@
               </template>
             </el-input>
             <el-button type="primary" @click="handleSearch">搜索</el-button>
+            <el-button type="warning" @click="handleCleanupRetrievedFiles">
+              清理已取回文件
+            </el-button>
             <el-button type="danger" @click="handleDeleteInvalidItems">
               删除无效项目
             </el-button>
@@ -219,6 +222,32 @@ const handleDeleteInvalidItems = async () => {
     if (error !== "cancel") {
       console.error("删除无效项目失败:", error);
       ElMessage.error("删除无效项目失败");
+    }
+  }
+};
+
+// 处理一键清理已取回文件
+const handleCleanupRetrievedFiles = async () => {
+  try {
+    await ElMessageBox.confirm(
+      "将删除所有已标记取回但服务器仍保留的媒体文件（仍被有效外链引用的文件会跳过）。确定继续吗？",
+      "清理确认",
+      {
+        confirmButtonText: "确定",
+        cancelButtonText: "取消",
+        type: "warning"
+      }
+    );
+
+    const result = await mediaInfoApi.cleanupRetrievedFiles();
+    ElMessage.success(
+      `清理完成：删除 ${result.deleted} 个文件，跳过 ${result.skipped} 个（被外链引用），${result.noFile} 个无需处理`
+    );
+    await getMediaList();
+  } catch (error) {
+    if (error !== "cancel") {
+      console.error("清理已取回文件失败:", error);
+      ElMessage.error("清理已取回文件失败");
     }
   }
 };
