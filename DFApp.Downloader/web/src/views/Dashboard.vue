@@ -12,6 +12,8 @@ const status = ref<GlobalStatus>({
   failed: 0,
   totalSpeedBytesPerSecond: 0,
   lastError: null,
+  totalDownloadedBytes: 0,
+  videoCount: 0,
 })
 const reconnecting = ref(false)
 let timer: ReturnType<typeof setInterval> | null = null

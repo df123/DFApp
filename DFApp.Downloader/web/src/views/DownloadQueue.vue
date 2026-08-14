@@ -9,6 +9,7 @@ const page = ref(1)
 const pageSize = ref(20)
 const statusFilter = ref('')
 const loading = ref(false)
+const stats = ref({ totalDownloadedBytes: 0, videoCount: 0, completed: 0 })
 let timer: ReturnType<typeof setInterval> | null = null
 
 const statusMap: Record<string, { label: string; type: string }> = {
@@ -29,6 +30,19 @@ const fetchDownloads = async () => {
     ElMessage.error('获取下载列表失败')
   } finally {
     loading.value = false
+  }
+}
+
+const fetchStats = async () => {
+  try {
+    const { data } = await downloadApi.getStatus()
+    stats.value = {
+      totalDownloadedBytes: data.totalDownloadedBytes ?? 0,
+      videoCount: data.videoCount ?? 0,
+      completed: data.completed ?? 0,
+    }
+  } catch {
+    // 统计获取失败不打扰用户
   }
 }
 
@@ -101,7 +115,11 @@ const getProgress = (item: DownloadItem) => {
 
 onMounted(() => {
   fetchDownloads()
-  timer = setInterval(fetchDownloads, 3000)
+  fetchStats()
+  timer = setInterval(() => {
+    fetchDownloads()
+    fetchStats()
+  }, 3000)
 })
 
 onUnmounted(() => {
@@ -122,6 +140,14 @@ onUnmounted(() => {
         <el-option label="失败" value="Failed" />
       </el-select>
     </div>
+
+    <el-card shadow="never" style="margin-bottom: 20px">
+      <div style="display: flex; gap: 40px; font-size: 14px">
+        <span>累计下载：<b>{{ formatBytes(stats.totalDownloadedBytes) }}</b></span>
+        <span>视频：<b>{{ stats.videoCount }}</b> 个</span>
+        <span>文件：<b>{{ stats.completed }}</b> 个</span>
+      </div>
+    </el-card>
 
     <el-table :data="downloads" v-loading="loading" stripe style="width: 100%">
       <el-table-column prop="fileName" label="文件名" min-width="200" show-overflow-tooltip />

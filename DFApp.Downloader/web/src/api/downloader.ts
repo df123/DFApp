@@ -48,6 +48,8 @@ export interface GlobalStatus {
   failed: number
   totalSpeedBytesPerSecond: number
   lastError?: string | null
+  totalDownloadedBytes: number
+  videoCount: number
 }
 
 export interface ConnectionInfo {

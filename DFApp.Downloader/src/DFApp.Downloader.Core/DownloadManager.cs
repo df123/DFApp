@@ -27,7 +27,10 @@ public record DownloaderStatus(
     int Completed,
     int Failed,
     double TotalSpeedBytesPerSecond,
-    string? LastError);
+    string? LastError,
+    // 已完成任务的累计下载大小（字节）与视频数量
+    long TotalDownloadedBytes,
+    int VideoCount);
 
 /// <summary>
 /// 下载管理器，协调 SignalR 通知、下载队列和下载引擎
@@ -846,6 +849,14 @@ public class DownloadManager : IAsyncDisposable
         var completed = db.Queryable<DownloadItem>().Where(x => x.Status == DownloadStatus.Completed).Count();
         var failed = db.Queryable<DownloadItem>().Where(x => x.Status == DownloadStatus.Failed).Count();
 
+        // 已完成任务的统计：累计大小按 FileSize 计（进度写回可能滞后），视频按 MimeType 前缀判定
+        var completedItems = db.Queryable<DownloadItem>()
+            .Where(x => x.Status == DownloadStatus.Completed)
+            .Select(x => new { x.FileSize, x.MimeType })
+            .ToList();
+        var totalDownloadedBytes = completedItems.Sum(x => x.FileSize);
+        var videoCount = completedItems.Count(x => x.MimeType?.StartsWith("video", StringComparison.OrdinalIgnoreCase) == true);
+
         return new DownloaderStatus(
             IsConnected: _notificationClient.IsConnected,
             ActiveDownloads: _downloadEngine.ActiveDownloadCount,
@@ -854,7 +865,9 @@ public class DownloadManager : IAsyncDisposable
             Completed: completed,
             Failed: failed,
             TotalSpeedBytesPerSecond: _activeSpeeds.Values.Sum(),
-            LastError: _notificationClient.LastConnectionError);
+            LastError: _notificationClient.LastConnectionError,
+            TotalDownloadedBytes: totalDownloadedBytes,
+            VideoCount: videoCount);
     }
 
     public async ValueTask DisposeAsync()

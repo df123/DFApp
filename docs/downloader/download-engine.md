@@ -77,3 +77,12 @@
 - `StopAsync`/`DisposeAsync` 置 `_isStopping` 并取消 `_stopCts`，正常停止时不会触发重连循环。
 
 **验证**：进程 SIGSTOP 45 秒强制服务端断开连接后恢复，日志依次出现 `SignalR 连接断开，正在刷新 Token 并重连` → `登录 DFApp 成功` → `SignalR 重新连接成功`，断线自动恢复正常。
+
+## 九、下载统计（2026-08-14 新增）
+
+**功能**：下载队列页顶部展示累计下载大小、视频数、文件数，每 3 秒随列表刷新。
+
+**实现**：
+- `DownloaderStatus` record 新增 `TotalDownloadedBytes`（已完成任务 `FileSize` 总和）与 `VideoCount`（已完成且 `MimeType` 以 `video` 开头，不区分大小写）；
+- `DownloadManager.GetStatus` 一次性查询已完成任务的 `FileSize`/`MimeType` 聚合得出；
+- 前端 `GlobalStatus` 接口与 `DownloadQueue.vue` 统计卡片（`el-card` + `formatBytes`）展示。
