@@ -11,8 +11,11 @@ namespace DFApp.Web.Services.Media;
 /// </summary>
 public class MediaRetrievalTracker
 {
-    /// <summary>保护时长：超过该时长仍未确认取回则视为下载器不再取回，允许清理</summary>
-    private static readonly TimeSpan ProtectionTimeout = TimeSpan.FromHours(6);
+    /// <summary>
+    /// 保护时长：超过该时长仍未确认取回则视为下载器不再取回，允许清理。
+    /// 默认 2 小时，可通过配置 RetrievalProtectionHours（小时）调整。
+    /// </summary>
+    public TimeSpan ProtectionTimeout { get; set; } = TimeSpan.FromHours(2);
 
     private readonly ConcurrentDictionary<long, DateTime> _pending = new();
 

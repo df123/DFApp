@@ -835,6 +835,20 @@ public class ListenTelegramService : BackgroundService
     /// </summary>
     private async Task RestoreRetrievalProtectionAsync()
     {
+        // 读取取回保护时长配置（小时），缺省使用默认值
+        try
+        {
+            var hoursText = await GetConfigurationInfoAsync("RetrievalProtectionHours");
+            if (double.TryParse(hoursText, out var hours) && hours > 0)
+            {
+                _retrievalTracker.ProtectionTimeout = TimeSpan.FromHours(hours);
+            }
+        }
+        catch
+        {
+            // 配置缺失时使用默认保护时长
+        }
+
         try
         {
             using var scope = _serviceProvider.CreateScope();
@@ -844,7 +858,8 @@ public class ListenTelegramService : BackgroundService
             _retrievalTracker.ProtectAll(pending.Select(x => x.Id));
             if (pending.Count > 0)
             {
-                _logger.LogInformation("已为 {Count} 个未取回媒体重建取回保护", pending.Count);
+                _logger.LogInformation("已为 {Count} 个未取回媒体重建取回保护（保护时长 {Hours} 小时）",
+                    pending.Count, _retrievalTracker.ProtectionTimeout.TotalHours);
             }
         }
         catch (Exception ex)

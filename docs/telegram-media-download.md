@@ -24,8 +24,9 @@
 **背景**：空间清理按 `CreationTime` 最旧优先删除，而下载器（DFApp.Downloader）也是按通知/队列顺序取回——清理命中的往往正是下载器**正在下载**的那个文件，导致下载中途源文件消失、任务失败（且清理后媒体被标记为已取回，补漏同步不会再下发，内容永久丢失）。
 
 **机制**（新增 `Services/Media/MediaRetrievalTracker.cs`，内存态、单例）：
-- **标记保护**：媒体下载完成推送下载器通知时（`NotifyDownloaderAsync`）与补漏同步下发时（`GetDownloadCompletedAsync`）调用 `MarkPending`，进入取回保护期（**6 小时** TTL，超时自动失效，防止下载器失联导致磁盘永远无法回收）。
-- **解除保护**：下载器确认取回回写 `mark-external-link-generated` 时调用 `ClearPending`。
+- **标记保护**：媒体下载完成推送下载器通知时（`NotifyDownloaderAsync`）与补漏同步下发时（`GetDownloadCompletedAsync`）调用 `MarkPending`，进入取回保护期。
+- **解除保护（提前清除）**：下载器确认取回回写 `mark-external-link-generated` 时立即调用 `ClearPending`——正常流程下保护只持续"通知→下载完成"的几分钟，**不等到超时**。
+- **保护时长**：默认 **2 小时**，可配置 `RetrievalProtectionHours`（小时，sql/20-add-retrieval-protection-config.sql）。超时仍未确认取回（如下载器失联）则自动失效，防止磁盘永远无法回收。
 - **清理跳过**：`DeleteOldestMediaUntilSpaceAvailableAsync` 只删除**非保护期**的媒体；全部处于保护期时跳过本轮清理（记 WARN 日志）。
 - **重启重建**：`ListenTelegramService` 启动时为存量 `IsDownloadCompleted && !IsExternalLinkGenerated` 媒体统一重建保护，避免后端重启后清理误删。
 - **兜底**：清理后磁盘空间仍不足时（可删项均处于保护期）跳过本次 Telegram 下载，避免写盘失败。
