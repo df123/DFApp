@@ -17,9 +17,6 @@ interface GalleryItem {
 }
 
 const items = ref<GalleryItem[]>([])
-const total = ref(0)
-const page = ref(1)
-const pageSize = ref(60)
 const loading = ref(false)
 const filter = ref('image') // image | video | all
 const columnCount = ref(3)
@@ -69,9 +66,9 @@ const openPreview = (item: GalleryItem) => {
 const fetchGallery = async () => {
   loading.value = true
   try {
-    const { data } = await downloadApi.getGallery(page.value, pageSize.value)
+    // 瀑布流一次性加载全部已完成媒体（图片懒加载，量级可接受）
+    const { data } = await downloadApi.getGallery(1, 10000)
     items.value = data.items
-    total.value = data.total
   } catch {
     ElMessage.error('获取媒体库失败')
   } finally {
@@ -182,15 +179,6 @@ onUnmounted(() => {
         </el-card>
       </div>
     </div>
-
-    <el-pagination
-      v-model:current-page="page"
-      v-model:page-size="pageSize"
-      :total="total"
-      layout="total, prev, pager, next"
-      style="margin-top: 20px; justify-content: flex-end"
-      @current-change="fetchGallery"
-    />
 
     <!-- 大图预览（el-image-viewer 全屏查看） -->
     <el-image-viewer
