@@ -149,7 +149,13 @@ onUnmounted(() => {
       </div>
     </el-card>
 
-    <el-table :data="downloads" v-loading="loading" stripe style="width: 100%">
+    <el-table
+      :data="downloads"
+      v-loading="loading"
+      stripe
+      style="width: 100%"
+      height="calc(100vh - 240px)"
+    >
       <el-table-column prop="fileName" label="文件名" min-width="200" show-overflow-tooltip />
       <el-table-column label="大小" width="100">
         <template #default="{ row }">{{ formatBytes(row.fileSize) }}</template>
