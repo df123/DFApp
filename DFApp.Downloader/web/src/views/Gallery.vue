@@ -20,6 +20,7 @@ const items = ref<GalleryItem[]>([])
 const loading = ref(false)
 const filter = ref('image') // image | video | all
 const columnCount = ref(3)
+const showBackToTop = ref(false)
 let timer: ReturnType<typeof setInterval> | null = null
 
 // 大图预览状态
@@ -91,15 +92,26 @@ const formatBytes = (bytes: number) => {
   return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
 }
 
+// 页面滚动超过一屏时显示"回到顶部"，点击平滑滚回顶部
+const onScroll = () => {
+  showBackToTop.value = window.scrollY > window.innerHeight
+}
+
+const scrollToTop = () => {
+  window.scrollTo({ top: 0, behavior: 'smooth' })
+}
+
 onMounted(() => {
   updateColumns()
   window.addEventListener('resize', updateColumns)
+  window.addEventListener('scroll', onScroll)
   fetchGallery()
   timer = setInterval(fetchGallery, 30000)
 })
 
 onUnmounted(() => {
   window.removeEventListener('resize', updateColumns)
+  window.removeEventListener('scroll', onScroll)
   if (timer) clearInterval(timer)
 })
 </script>
@@ -179,6 +191,18 @@ onUnmounted(() => {
         </el-card>
       </div>
     </div>
+
+    <!-- 回到顶部（滚动超过一屏时显示） -->
+    <el-button
+      v-if="showBackToTop"
+      type="primary"
+      circle
+      style="position: fixed; right: 30px; bottom: 40px; z-index: 10"
+      title="回到顶部"
+      @click="scrollToTop"
+    >
+      <el-icon><Top /></el-icon>
+    </el-button>
 
     <!-- 大图预览（el-image-viewer 全屏查看） -->
     <el-image-viewer
