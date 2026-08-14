@@ -805,14 +805,33 @@ public class DownloadManager : IAsyncDisposable
         var item = db.Queryable<DownloadItem>().InSingle(itemId);
         if (item != null)
         {
-            // 删除本地文件（如果是未完成的）
-            if (item.Status != DownloadStatus.Completed && File.Exists(item.LocalPath))
-            {
-                File.Delete(item.LocalPath);
-            }
+            // 删除本地文件（含已完成）及下载中的 .download 临时文件，避免磁盘残留
+            DeleteLocalFiles(item.LocalPath);
 
             db.Deleteable<DownloadItem>().In(itemId).ExecuteCommand();
             db.Deleteable<DownloadSegment>().Where(x => x.DownloadItemId == itemId).ExecuteCommand();
+        }
+    }
+
+    /// <summary>
+    /// 删除本地目标文件及其 .download 临时文件（文件不存在时静默跳过）
+    /// </summary>
+    private void DeleteLocalFiles(string localPath)
+    {
+        foreach (var path in new[] { localPath, localPath + ".download" })
+        {
+            try
+            {
+                if (File.Exists(path))
+                {
+                    File.Delete(path);
+                }
+            }
+            catch (Exception ex)
+            {
+                // 文件被占用等情况不影响删除任务本身，仅记录日志
+                _logger.LogWarning(ex, "删除本地文件失败: {Path}", path);
+            }
         }
     }
 
