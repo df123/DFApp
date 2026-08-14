@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { downloadApi } from '../api/downloader'
-import { ElMessage, ElImageViewer } from 'element-plus'
+import { ElMessage, ElMessageBox, ElImageViewer } from 'element-plus'
 
 interface GalleryItem {
   id: number
@@ -82,6 +82,27 @@ const fetchGallery = async () => {
 // vlc: 是 opaque path，浏览器原样传递
 const playWithVlc = (item: GalleryItem) => {
   window.location.href = `vlc:${item.windowsPath}`
+}
+
+// 删除媒体：确认后调用删除接口（同时删除本地文件与 .download 临时文件），成功后刷新列表
+const handleDelete = async (item: GalleryItem) => {
+  try {
+    await ElMessageBox.confirm(
+      `确定要删除「${item.fileName}」吗？本地文件将一并删除。`,
+      '删除确认',
+      { type: 'warning', confirmButtonText: '删除', cancelButtonText: '取消' },
+    )
+  } catch {
+    return // 用户取消
+  }
+
+  try {
+    await downloadApi.cancel(item.id)
+    ElMessage.success('已删除')
+    fetchGallery()
+  } catch {
+    ElMessage.error('删除失败')
+  }
 }
 
 const formatBytes = (bytes: number) => {
@@ -185,10 +206,12 @@ onUnmounted(() => {
             >
               {{ item.message }}
             </div>
-            <div style="font-size: 12px; color: #909399; margin-top: 4px; display: flex; justify-content: space-between">
-              <span>{{ formatBytes(item.fileSize) }}</span>
-              <span>{{ item.fileName }}</span>
-            </div>
+          <div style="font-size: 12px; color: #909399; margin-top: 4px; display: flex; justify-content: space-between; align-items: center">
+            <span>{{ formatBytes(item.fileSize) }}</span>
+            <span style="display: flex; align-items: center; gap: 6px">
+              <el-button type="danger" size="small" plain @click="handleDelete(item)">删除</el-button>
+            </span>
+          </div>
           </div>
         </el-card>
       </div>

@@ -60,3 +60,7 @@
 - **时机**：① 视频下载完成时自动生成（`OnDownloadCompleted`）；② 下载器启动时后台批量补齐历史视频（`BackfillThumbnailsAsync`，实测 65 个视频约 1 分钟补齐）。
 - **存储**：`{DownloadPath}/thumbs/{视频文件名}.jpg`——注意目录名**不带点**（ASP.NET Core 静态文件中间件默认不提供 `.` 开头的隐藏目录），经 `/media/thumbs/...` 访问。
 - **API**：`GET /api/gallery` 返回 `thumbUrl`（缩略图存在时），前端视频卡片 `el-image` 显示；无缩略图时回退 🎬 占位。
+
+## 媒体库删除功能（2026-08-14 新增）
+
+每张卡片右下角"删除"按钮：`ElMessageBox` 确认后调用 `DELETE /api/downloads/{id}`（复用下载队列的 `CancelDownload`），同步删除本地文件与 `.download` 临时文件、DB 记录与分片记录，成功后刷新瀑布流。
