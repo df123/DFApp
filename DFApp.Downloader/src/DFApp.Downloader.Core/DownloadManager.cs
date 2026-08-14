@@ -207,6 +207,7 @@ public class DownloadManager : IAsyncDisposable
             if (notification is MediaDownloadNotification media)
             {
                 item.ChatTitle = media.ChatTitle;
+                item.Message = media.Message;
             }
 
             item.Id = db.Insertable(item).ExecuteReturnIdentity();
@@ -741,7 +742,8 @@ public class DownloadManager : IAsyncDisposable
                     SourceType = "Telegram",
                     SourceId = sourceId,
                     ChatId = item.TryGetProperty("chatId", out var ciEl) ? ciEl.GetInt64() : 0L,
-                    ChatTitle = item.TryGetProperty("chatTitle", out var ctEl) ? ctEl.GetString() ?? string.Empty : string.Empty
+                    ChatTitle = item.TryGetProperty("chatTitle", out var ctEl) ? ctEl.GetString() ?? string.Empty : string.Empty,
+                    Message = item.TryGetProperty("message", out var msgEl) ? msgEl.GetString() : null
                 };
 
                 OnNotificationReceived(notification);
@@ -759,6 +761,80 @@ public class DownloadManager : IAsyncDisposable
 
         _logger.LogInformation("补漏同步完成：扫描 {Scanned} 项，新增 {Added} 项，修复回写 {Reconciled} 项", scanned, added, reconciled);
         return (scanned, added, reconciled);
+    }
+
+    /// <summary>
+    /// 回填历史记录的聊天标题与消息：按文件名（即 mediaId）从后端查询缺失的 ChatTitle/Message。
+    /// 补漏同步只下发未取回的新媒体，历史已完成记录的聊天消息在此补上。
+    /// </summary>
+    public async Task<int> BackfillGalleryMessagesAsync()
+    {
+        var token = _notificationClient.AccessToken;
+        if (string.IsNullOrEmpty(token))
+        {
+            throw new InvalidOperationException("未登录 DFApp，无法回填聊天消息（请先重连）");
+        }
+
+        var updated = 0;
+        List<DownloadItem> pendingItems;
+        using (var db = _dbContext.CreateClient())
+        {
+            // 已完成且聊天标题或消息缺失的记录
+            pendingItems = db.Queryable<DownloadItem>()
+                .Where(x => x.Status == DownloadStatus.Completed
+                    && (x.ChatTitle == null || x.ChatTitle == "" || x.Message == null || x.Message == ""))
+                .ToList();
+        }
+
+        foreach (var item in pendingItems)
+        {
+            // 文件名（不含扩展名）即远程 mediaId，按此过滤查询
+            var mediaId = Path.GetFileNameWithoutExtension(item.FileName);
+            if (string.IsNullOrEmpty(mediaId))
+            {
+                continue;
+            }
+
+            var url = $"{_settings.DfAppUrl}/api/app/media-info/paged?filter={Uri.EscapeDataString(mediaId)}&pageIndex=1&pageSize=1";
+            using var request = new HttpRequestMessage(HttpMethod.Get, url);
+            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+
+            try
+            {
+                using var response = await _httpClient.SendAsync(request);
+                if (!response.IsSuccessStatusCode)
+                {
+                    continue;
+                }
+
+                var body = await response.Content.ReadAsStringAsync();
+                using var doc = JsonDocument.Parse(body);
+                if (!doc.RootElement.TryGetProperty("data", out var data)
+                    || !data.TryGetProperty("items", out var itemsEl)
+                    || itemsEl.GetArrayLength() == 0)
+                {
+                    continue;
+                }
+
+                var first = itemsEl[0];
+                var chatTitle = first.TryGetProperty("chatTitle", out var ctEl) ? ctEl.GetString() ?? string.Empty : string.Empty;
+                var message = first.TryGetProperty("message", out var msgEl) ? msgEl.GetString() : null;
+
+                item.ChatTitle = string.IsNullOrEmpty(item.ChatTitle) ? chatTitle : item.ChatTitle;
+                item.Message = string.IsNullOrEmpty(item.Message) ? message : item.Message;
+                item.UpdatedAt = DateTime.UtcNow;
+                using var db = _dbContext.CreateClient();
+                db.Updateable(item).ExecuteCommand();
+                updated++;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "回填聊天消息失败: {FileName}", item.FileName);
+            }
+        }
+
+        _logger.LogInformation("回填聊天消息完成：更新 {Count} 条", updated);
+        return updated;
     }
 
     /// <summary>

@@ -21,6 +21,9 @@ public class MediaDownloadNotification : DownloadNotification
 {
     public long ChatId { get; set; }
     public string ChatTitle { get; set; } = string.Empty;
+
+    /// <summary>聊天消息文本</summary>
+    public string? Message { get; set; }
 }
 
 /// <summary>

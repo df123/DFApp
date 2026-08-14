@@ -51,3 +51,12 @@
 **现行为**：已删除该方法及其配置读取，统一改为**删除最旧的文件**（按 `CreationTime` 升序）。
 
 > 注：磁盘空间不足时仍会删除媒体（仅选择方式由"密度优先"改为"最旧优先"）。下载器在途/未取回媒体由取回保护机制（见第三节）排除在清理范围之外。
+
+## 六、2026-08-14 变更：聊天消息（Message）随下载通知下发
+
+**背景**：下载器媒体库页面需要展示每条媒体的聊天消息文本，此前 `MediaDownloadNotificationDto` 只下发 `ChatTitle` 不含 `Message`。
+
+**变更**：
+- `MediaDownloadNotificationDto` 新增 `Message` 字段（对应 `MediaInfo.Message`）；
+- `MediaInfoService.GetDownloadCompletedAsync` 映射时填充 `Message = e.Message`；
+- 下载器 `DownloadItem`/`MediaDownloadNotification` 同步新增 `Message`，旧记录由下载器按 mediaId 从 `media-info/paged` 回填（详见 `docs/downloader/media-gallery.md`）。

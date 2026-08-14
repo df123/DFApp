@@ -39,6 +39,9 @@ public class MediaDownloadNotificationDto : DownloadNotificationDto
 
     /// <summary>聊天标题</summary>
     public string ChatTitle { get; set; } = string.Empty;
+
+    /// <summary>聊天消息（原始消息文本）</summary>
+    public string? Message { get; set; }
 }
 
 /// <summary>

@@ -51,5 +51,16 @@ public class DownloaderDbContext
                 DefaultValue = "0"
             });
         }
+
+        // 兼容旧库：补充聊天消息字段（可空，历史记录留空）
+        if (columns.All(c => c.DbColumnName != nameof(Entities.DownloadItem.Message)))
+        {
+            db.DbMaintenance.AddColumn("DownloadItems", new DbColumnInfo
+            {
+                DbColumnName = nameof(Entities.DownloadItem.Message),
+                DataType = "text",
+                IsNullable = true
+            });
+        }
     }
 }

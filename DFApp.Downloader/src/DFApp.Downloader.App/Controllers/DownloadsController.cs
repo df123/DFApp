@@ -184,4 +184,103 @@ public class DownloadsController : ControllerBase
             return BadRequest(new { message = ex.Message });
         }
     }
+
+    /// <summary>媒体库（大图浏览）：已完成且本地文件存在的记录，含聊天标题与消息</summary>
+    [HttpGet("gallery")]
+    public IActionResult GetGallery([FromQuery] int page = 1, [FromQuery] int pageSize = 60)
+    {
+        using var db = _dbContext.CreateClient();
+        var query = db.Queryable<DownloadItem>()
+            .Where(x => x.Status == DownloadStatus.Completed)
+            .OrderByDescending(x => x.CompletedAt);
+
+        var total = query.Count();
+        var items = query.Skip((page - 1) * pageSize).Take(pageSize).ToList()
+            .Where(x => System.IO.File.Exists(x.LocalPath)) // 本地文件被清理的记录不展示
+            .Select(x => new
+            {
+                x.Id,
+                x.FileName,
+                x.FileSize,
+                x.MimeType,
+                x.ChatTitle,
+                x.Message,
+                x.CompletedAt,
+                // 相对下载目录的访问路径，供 /media 静态映射加载
+                MediaUrl = $"/media/{Path.GetFileName(x.LocalPath)}",
+                // Windows 路径，供前端拼 vlc:// 协议链接直接唤起 VLC
+                WindowsPath = ConvertToWindowsPath(x.LocalPath)
+            })
+            .ToList();
+
+        return Ok(new { items, total, page, pageSize });
+    }
+
+    /// <summary>回填历史记录的聊天标题与消息（从后端按 mediaId 查询）</summary>
+    [HttpPost("gallery/backfill-messages")]
+    public async Task<IActionResult> BackfillMessages()
+    {
+        try
+        {
+            var updated = await _manager.BackfillGalleryMessagesAsync();
+            return Ok(new { updated });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+    }
+
+    /// <summary>用 VLC 播放本地视频文件（通过 Windows 侧 vlc.exe 打开）</summary>
+    [HttpPost("gallery/{id}/play")]
+    public IActionResult PlayWithVlc(int id)
+    {
+        using var db = _dbContext.CreateClient();
+        var item = db.Queryable<DownloadItem>().InSingle(id);
+        if (item == null)
+        {
+            return NotFound(new { message = "记录不存在" });
+        }
+
+        if (!System.IO.File.Exists(item.LocalPath))
+        {
+            return NotFound(new { message = "本地文件不存在" });
+        }
+
+        // WSL 环境：/mnt/d/xxx 对应 Windows 的 D:\xxx，VLC 需以 Windows 路径打开
+        var windowsPath = ConvertToWindowsPath(item.LocalPath);
+        var vlcPath = "/mnt/c/Program Files/VideoLAN/VLC/vlc.exe";
+
+        try
+        {
+            var psi = new System.Diagnostics.ProcessStartInfo
+            {
+                // 直接经 WSL interop 启动 Windows 侧 vlc.exe（经 cmd.exe 会因 UNC 当前目录失败）
+                FileName = vlcPath,
+                UseShellExecute = false,
+                // 避免继承 WSL UNC 工作目录
+                WorkingDirectory = "/tmp"
+            };
+            psi.ArgumentList.Add(windowsPath);
+            System.Diagnostics.Process.Start(psi);
+            return Ok(new { message = "已调用 VLC 播放", path = windowsPath });
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new { message = $"调用 VLC 失败: {ex.Message}" });
+        }
+    }
+
+    /// <summary>将 WSL 路径（/mnt/d/...）转换为 Windows 路径（D:\...）</summary>
+    private static string ConvertToWindowsPath(string path)
+    {
+        var full = Path.GetFullPath(path);
+        if (full.StartsWith("/mnt/", StringComparison.OrdinalIgnoreCase))
+        {
+            var drive = char.ToUpperInvariant(full[5]);
+            var rest = full[6..].Replace('/', '\\');
+            return $"{drive}:{rest}";
+        }
+        return full.Replace('/', '\\');
+    }
 }

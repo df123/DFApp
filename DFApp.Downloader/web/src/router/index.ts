@@ -18,6 +18,11 @@ const router = createRouter({
       component: () => import('../views/DownloadQueue.vue'),
     },
     {
+      path: '/gallery',
+      name: 'Gallery',
+      component: () => import('../views/Gallery.vue'),
+    },
+    {
       path: '/logs',
       name: 'Logs',
       component: () => import('../views/Logs.vue'),

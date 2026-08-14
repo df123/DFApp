@@ -110,6 +110,7 @@ public class MediaInfoService : CrudServiceBase<MediaInfo, long, MediaInfoDto, C
             SourceId = e.Id,
             ChatId = e.ChatId,
             ChatTitle = e.ChatTitle,
+            Message = e.Message,
             CompletedAt = e.LastModificationTime ?? DateTime.UtcNow
         }).ToList();
 

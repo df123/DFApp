@@ -31,6 +31,10 @@ router.afterEach((to) => {
           <el-icon><Download /></el-icon>
           <span>下载队列</span>
         </el-menu-item>
+        <el-menu-item index="/gallery">
+          <el-icon><Picture /></el-icon>
+          <span>媒体库</span>
+        </el-menu-item>
         <el-menu-item index="/logs">
           <el-icon><Document /></el-icon>
           <span>日志</span>

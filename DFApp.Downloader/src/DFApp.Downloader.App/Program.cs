@@ -79,6 +79,17 @@ public class Program
             app.UseDefaultFiles();
             app.UseStaticFiles();
 
+            // 下载目录静态映射：图片大图预览等通过 /media/{文件名} 访问
+            var downloadPath = Environment.ExpandEnvironmentVariables(settings.DownloadPath);
+            if (Directory.Exists(downloadPath))
+            {
+                app.UseStaticFiles(new StaticFileOptions
+                {
+                    FileProvider = new Microsoft.Extensions.FileProviders.PhysicalFileProvider(downloadPath),
+                    RequestPath = "/media"
+                });
+            }
+
             app.MapControllers();
 
             // SPA fallback：非文件请求回退到 index.html

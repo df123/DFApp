@@ -113,6 +113,15 @@ export const downloadApi = {
   syncMissed: () =>
     api.post<{ scanned: number; added: number; reconciled: number }>('/downloads/sync-missed'),
 
+  getGallery: (page = 1, pageSize = 60) =>
+    api.get<{ items: any[]; total: number }>('/gallery', { params: { page, pageSize } }),
+
+  playWithVlc: (id: number) =>
+    api.post<{ message: string; path: string }>(`/gallery/${id}/play`),
+
+  backfillMessages: () =>
+    api.post<{ updated: number }>('/gallery/backfill-messages'),
+
   getLogList: () =>
     api.get<{ items: LogFileInfo[] }>('/logs'),
 

@@ -53,6 +53,9 @@ public class DownloadItem
     /// <summary>聊天标题（Telegram 来源）</summary>
     public string ChatTitle { get; set; } = string.Empty;
 
+    /// <summary>聊天消息文本（Telegram 来源）</summary>
+    public string? Message { get; set; }
+
     /// <summary>错误信息</summary>
     public string ErrorMessage { get; set; } = string.Empty;
 
