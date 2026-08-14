@@ -659,6 +659,7 @@ public class ListenTelegramService : BackgroundService
             var downloaderEnabled = await GetConfigurationInfoAsync("DownloaderEnabled");
             if (!bool.TryParse(downloaderEnabled, out var enabled) || !enabled)
             {
+                _logger.LogWarning("DownloaderEnabled 未启用（当前值: {Value}），跳过下载通知推送", downloaderEnabled);
                 return;
             }
 
@@ -667,6 +668,7 @@ public class ListenTelegramService : BackgroundService
 
             if (string.IsNullOrWhiteSpace(returnDownloadUrlPrefix) || string.IsNullOrWhiteSpace(replaceUrlPrefix))
             {
+                _logger.LogWarning("下载 URL 前缀配置缺失（ReturnDownloadUrlPrefix/ReplaceUrlPrefix），跳过下载通知推送");
                 return;
             }
 
@@ -686,6 +688,7 @@ public class ListenTelegramService : BackgroundService
                 SourceId = mediaInfo.Id,
                 ChatId = mediaInfo.ChatId,
                 ChatTitle = mediaInfo.ChatTitle,
+                Message = mediaInfo.Message,
                 CompletedAt = DateTime.UtcNow
             };
 
