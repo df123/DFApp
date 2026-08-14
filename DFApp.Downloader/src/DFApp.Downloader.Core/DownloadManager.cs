@@ -972,10 +972,10 @@ public class DownloadManager : IAsyncDisposable
             var psi = new System.Diagnostics.ProcessStartInfo
             {
                 FileName = _ffmpegPath,
-                // 抽取距片头 5 秒处一帧，缩放到宽 480（保持比例），避免首帧黑屏
+                // 抽取距片头 5 秒处一帧，缩放到宽 960（保持比例，比旧版 480 更清晰），避免首帧黑屏
                 ArgumentList = {
                     "-y", "-ss", "5", "-i", item.LocalPath,
-                    "-frames:v", "1", "-vf", "scale=480:-2", "-q:v", "4",
+                    "-frames:v", "1", "-vf", "scale=960:-2", "-q:v", "4",
                     thumbPath
                 },
                 UseShellExecute = false,

@@ -175,17 +175,18 @@ onUnmounted(() => {
             style="width: 100%; display: block; border-radius: 6px; cursor: zoom-in"
             @click="openPreview(item)"
           />
-          <!-- 视频：缩略图（16:9 裁切）+ 点击 VLC 播放（无缩略图时显示占位） -->
+          <!-- 视频：缩略图按原比例自适应（不裁切），点击 VLC 播放（无缩略图时显示占位） -->
           <div
             v-else-if="isVideo(item)"
-            style="width: 100%; border-radius: 6px; background: #0d1117; display: flex; align-items: center; justify-content: center; color: #fff; flex-direction: column; gap: 12px; overflow: hidden; position: relative; cursor: pointer; aspect-ratio: 16 / 9"
+            style="width: 100%; border-radius: 6px; background: #0d1117; display: flex; align-items: center; justify-content: center; color: #fff; flex-direction: column; gap: 12px; overflow: hidden; position: relative; cursor: pointer"
             @click="playWithVlc(item)"
           >
-            <el-image
+            <img
               v-if="item.thumbUrl"
               :src="item.thumbUrl"
-              fit="cover"
-              style="width: 100%; height: 100%"
+              :alt="item.fileName"
+              loading="lazy"
+              style="width: 100%; display: block"
             />
             <span v-else style="font-size: 40px">🎬</span>
             <span
@@ -202,7 +203,7 @@ onUnmounted(() => {
             </div>
             <div
               v-if="item.message"
-              style="font-size: 12px; color: #606266; margin-top: 4px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden"
+              style="font-size: 12px; color: #606266; margin-top: 4px; white-space: pre-wrap; word-break: break-word"
             >
               {{ item.message }}
             </div>

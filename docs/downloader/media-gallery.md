@@ -7,7 +7,7 @@
 下载队列之外的新页面（`/gallery`，侧边栏"媒体库"入口），用于浏览已下载完成的媒体：
 
 - **图片**：**瀑布流**（多列、图片按原始比例自适应高度不裁剪）展示，点击放大预览（`el-image-viewer` 全屏查看，支持前后切换），显示聊天标题与消息文本；列数随窗口宽度响应式调整（≥1800px 4 列 / ≥1200px 3 列 / ≥700px 2 列 / 其余 1 列），列宽加大后图片显示更大
-- **视频**：卡片显示视频缩略图（16:9 裁切）+ "用 VLC 播放"按钮，点击通过 `vlc:` 协议唤起 Windows 侧 VLC 播放本地文件
+- **视频**：卡片显示视频缩略图（960 宽高清，按原始比例自适应不裁切）+ "用 VLC 播放"按钮，点击通过 `vlc:` 协议唤起 Windows 侧 VLC 播放本地文件
 - 顶部 tab 切换：图片 / 视频 / 全部
 - **无分页**：一次性加载全部已完成媒体（瀑布流连续滚动；图片 `loading="lazy"` 懒加载，几十 KB 级缩略图量级可接受），每 30 秒自动刷新
 
@@ -56,7 +56,7 @@
 
 **实现**：
 - **ffmpeg**：静态构建 7.0.2 位于 `~/ffmpeg/ffmpeg`（johnvansickle 官方静态包，无需安装依赖；可用环境变量 `FFMPEG_PATH` 覆盖）。若该机器无 ffmpeg 需重新下载解压到 `~/ffmpeg/` 或配置 `FFMPEG_PATH`。
-- **生成**：`DownloadManager.GenerateThumbnailAsync` 用 `ffmpeg -ss 5 -frames:v 1 -vf scale=480:-2` 抽取距片头 5 秒一帧（避开首帧黑屏）为 JPEG；已存在则跳过，失败仅记日志不影响下载。
+- **生成**：`DownloadManager.GenerateThumbnailAsync` 用 `ffmpeg -ss 5 -frames:v 1 -vf scale=960:-2` 抽取距片头 5 秒一帧（避开首帧黑屏）为 JPEG（宽 960，比初版 480 更清晰）；已存在则跳过，失败仅记日志不影响下载。
 - **时机**：① 视频下载完成时自动生成（`OnDownloadCompleted`）；② 下载器启动时后台批量补齐历史视频（`BackfillThumbnailsAsync`，实测 65 个视频约 1 分钟补齐）。
 - **存储**：`{DownloadPath}/thumbs/{视频文件名}.jpg`——注意目录名**不带点**（ASP.NET Core 静态文件中间件默认不提供 `.` 开头的隐藏目录），经 `/media/thumbs/...` 访问。
 - **API**：`GET /api/gallery` 返回 `thumbUrl`（缩略图存在时），前端视频卡片 `el-image` 显示；无缩略图时回退 🎬 占位。
