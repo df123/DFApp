@@ -195,13 +195,6 @@ public class Aria2Manager
         try
         {
             var configurationInfoRepository = scope.ServiceProvider.GetRequiredService<IConfigurationInfoRepository>();
-            var downloaderEnabled = await configurationInfoRepository
-                .GetConfigurationInfoValue("DownloaderEnabled", MediaBackgroudConst.ModuleName);
-            if (!bool.TryParse(downloaderEnabled, out var enabled) || !enabled)
-            {
-                return;
-            }
-
             var aria2ApachePrefix = await configurationInfoRepository
                 .GetConfigurationInfoValue("Aria2ApachePathPrefix", MediaBackgroudConst.ModuleName);
             if (string.IsNullOrWhiteSpace(aria2ApachePrefix))

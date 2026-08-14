@@ -60,3 +60,12 @@
 - `MediaDownloadNotificationDto` 新增 `Message` 字段（对应 `MediaInfo.Message`）；
 - `MediaInfoService.GetDownloadCompletedAsync` 映射时填充 `Message = e.Message`；
 - 下载器 `DownloadItem`/`MediaDownloadNotification` 同步新增 `Message`，旧记录由下载器按 mediaId 从 `media-info/paged` 回填（详见 `docs/downloader/media-gallery.md`）。
+
+## 七、2026-08-14 变更：移除 DownloaderEnabled 开关
+
+**背景**：`DownloaderEnabled` 配置（SQL 种子默认 `false`）控制是否向 Downloader 子程序推送下载完成通知。实际部署后从未置为 `true`，导致通知一直静默不推送——下载器只能靠手动/启动补漏同步拉取新任务，表现为"远程有新媒体但本地不自动下载"。
+
+**变更**：
+- 删除 `ListenTelegramService.NotifyDownloaderAsync` 与 `Aria2Manager.NotifyDownloaderAsync` 中的 `DownloaderEnabled` 检查，**改为无条件推送**——下载器是本项目配套组件，通知推送为必需功能，无需开关（避免"忘配置 → 静默不推送"的坑）；
+- 保留 `ReturnDownloadUrlPrefix`/`ReplaceUrlPrefix`（Telegram）与 `Aria2ApachePathPrefix`（Aria2）的前缀配置检查，并改为 WARN 日志（不再静默）；
+- `sql/19-add-downloader-config.sql` 移除该配置种子；新增 `sql/21-remove-downloader-enabled-config.sql` 供远程清理存量配置。

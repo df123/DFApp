@@ -1,8 +1,6 @@
 -- 新增 Downloader 相关配置项
 -- 模块名：DFApp.Media
-
-INSERT INTO AppConfigurationInfo (ModuleName, ConfigurationName, ConfigurationValue, Remark)
-VALUES ('DFApp.Media', 'DownloaderEnabled', 'false', '是否启用 Downloader 子程序推送通知');
+-- 注：DownloaderEnabled（是否推送下载通知）已移除——通知推送为下载器的必需功能，不再需要开关（2026-08-14）
 
 INSERT INTO AppConfigurationInfo (ModuleName, ConfigurationName, ConfigurationValue, Remark)
 VALUES ('DFApp.Media', 'ApacheBaseUrl', '', 'Apache 下载服务器基础 URL，如 http://192.168.1.100:8080');

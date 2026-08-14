@@ -656,13 +656,6 @@ public class ListenTelegramService : BackgroundService
     {
         try
         {
-            var downloaderEnabled = await GetConfigurationInfoAsync("DownloaderEnabled");
-            if (!bool.TryParse(downloaderEnabled, out var enabled) || !enabled)
-            {
-                _logger.LogWarning("DownloaderEnabled 未启用（当前值: {Value}），跳过下载通知推送", downloaderEnabled);
-                return;
-            }
-
             var returnDownloadUrlPrefix = await GetConfigurationInfoAsync("ReturnDownloadUrlPrefix");
             var replaceUrlPrefix = await GetConfigurationInfoAsync("ReplaceUrlPrefix");
 
