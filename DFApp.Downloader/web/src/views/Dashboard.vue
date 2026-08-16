@@ -26,6 +26,14 @@ const formatSpeed = (bytesPerSec: number) => {
   return (bytesPerSec / 1024 / 1024 / 1024).toFixed(2) + ' GB/s'
 }
 
+const formatBytes = (bytes: number) => {
+  if (!bytes || bytes <= 0) return '0 B'
+  const k = 1024
+  const sizes = ['B', 'KB', 'MB', 'GB', 'TB']
+  const i = Math.min(Math.floor(Math.log(bytes) / Math.log(k)), sizes.length - 1)
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
+}
+
 const fetchStatus = async () => {
   try {
     const { data } = await downloadApi.getStatus()
@@ -171,6 +179,44 @@ onUnmounted(() => {
             </div>
           </template>
           <div class="status-value number primary">{{ formatSpeed(status.totalSpeedBytesPerSecond) }}</div>
+        </el-card>
+      </el-col>
+    </el-row>
+
+    <el-row :gutter="20" style="margin-top: 20px">
+      <el-col :span="8">
+        <el-card shadow="hover">
+          <template #header>
+            <div class="card-header">
+              <el-icon><Coin /></el-icon>
+              <span>累计下载</span>
+            </div>
+          </template>
+          <div class="status-value number">{{ formatBytes(status.totalDownloadedBytes) }}</div>
+        </el-card>
+      </el-col>
+
+      <el-col :span="8">
+        <el-card shadow="hover">
+          <template #header>
+            <div class="card-header">
+              <el-icon><VideoCamera /></el-icon>
+              <span>视频</span>
+            </div>
+          </template>
+          <div class="status-value number">{{ status.videoCount }} 个</div>
+        </el-card>
+      </el-col>
+
+      <el-col :span="8">
+        <el-card shadow="hover">
+          <template #header>
+            <div class="card-header">
+              <el-icon><Files /></el-icon>
+              <span>文件</span>
+            </div>
+          </template>
+          <div class="status-value number">{{ status.completed }} 个</div>
         </el-card>
       </el-col>
     </el-row>

@@ -80,9 +80,9 @@
 
 ## 九、下载统计（2026-08-14 新增）
 
-**功能**：下载队列页顶部展示累计下载大小、视频数、文件数，每 3 秒随列表刷新。
+**功能**：仪表盘页展示累计下载大小、视频数、文件数，随状态接口每 3 秒刷新（2026-08-16 从下载队列页迁移至仪表盘）。
 
 **实现**：
 - `DownloaderStatus` record 新增 `TotalDownloadedBytes`（已完成任务 `FileSize` 总和）与 `VideoCount`（已完成且 `MimeType` 以 `video` 开头，不区分大小写）；
 - `DownloadManager.GetStatus` 一次性查询已完成任务的 `FileSize`/`MimeType` 聚合得出；
-- 前端 `GlobalStatus` 接口与 `DownloadQueue.vue` 统计卡片（`el-card` + `formatBytes`）展示。
+- 前端 `GlobalStatus` 接口 + `Dashboard.vue` 统计卡片行（累计下载/视频/文件，`el-card` + `formatBytes`）展示，数据直接取自已有的 `getStatus` 轮询；下载队列页不再单独拉取状态接口。
