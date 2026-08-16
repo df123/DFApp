@@ -36,9 +36,9 @@ public class DownloadsController : ControllerBase
 
         var total = query.Count();
         var items = query
-            // 下载中（Downloading）排最前；组内再按 UpdatedAt 倒序——正在下载的任务会被
-            // OnDownloadStarted 回调刷新 UpdatedAt，从而浮到排队等待任务之上
-            .OrderBy("CASE WHEN Status='Downloading' THEN 0 ELSE 1 END")
+            // 优先级：下载中 > 等待中 > 失败 > 已暂停 > 已完成；组内按 UpdatedAt 倒序
+            // ——正在下载的任务会被 OnDownloadStarted 回调刷新 UpdatedAt，从而浮到组内顶部
+            .OrderBy("CASE WHEN Status='Downloading' THEN 0 WHEN Status='Pending' THEN 1 WHEN Status='Failed' THEN 2 WHEN Status='Paused' THEN 3 ELSE 4 END")
             .OrderByDescending(x => x.UpdatedAt)
             .Skip((page - 1) * pageSize)
             .Take(pageSize)

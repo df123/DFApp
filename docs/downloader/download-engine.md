@@ -100,3 +100,7 @@
 **修复**：`DownloadsController` 新增 `MarkUtc()` 帮助方法，列表/详情/活跃/队列四个端点返回实体前调用 `DateTime.SpecifyKind(..., DateTimeKind.Utc)` 补标记；gallery 端点的 `CompletedAt` 同样处理。序列化后带 `Z` 后缀，前端 `toLocaleString('zh-CN')` 自动换算为浏览器本地时间。`CompletedAt` 为 `MinValue`（未完成）时跳过，避免前端解析出 Invalid Date。
 
 **注意**：新增返回 `DownloadItem` 的端点时必须调用 `MarkUtc()`，否则该端点时间又会偏差 8 小时。日志接口（`LogsController`）返回的是本地时间字符串，不受影响。
+
+## 十一、下载列表排序优先级（2026-08-16 调整）
+
+`GET /api/downloads` 列表排序：**下载中 > 等待中 > 失败 > 已暂停 > 已完成**，组内按 `UpdatedAt` 倒序（正在下载的任务会被回调刷新 `UpdatedAt` 浮到组内顶部）。SQL 为 `CASE WHEN Status=... THEN 0/1/2/3/4`，前端按返回顺序直接展示。
