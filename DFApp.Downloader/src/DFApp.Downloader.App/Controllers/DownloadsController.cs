@@ -48,6 +48,7 @@ public class DownloadsController : ControllerBase
         foreach (var item in items)
         {
             item.SpeedBytesPerSecond = _manager.GetItemSpeed(item.Id);
+            MarkUtc(item);
         }
 
         return Ok(new { items, total, page, pageSize });
@@ -61,6 +62,7 @@ public class DownloadsController : ControllerBase
         var item = db.Queryable<DownloadItem>().InSingle(id);
         if (item == null) return NotFound();
         item.SpeedBytesPerSecond = _manager.GetItemSpeed(item.Id);
+        MarkUtc(item);
         return Ok(item);
     }
 
@@ -75,6 +77,7 @@ public class DownloadsController : ControllerBase
         foreach (var item in items)
         {
             item.SpeedBytesPerSecond = _manager.GetItemSpeed(item.Id);
+            MarkUtc(item);
         }
         return Ok(items);
     }
@@ -88,6 +91,10 @@ public class DownloadsController : ControllerBase
             .Where(x => x.Status == DownloadStatus.Pending)
             .OrderBy(x => x.CreatedAt)
             .ToList();
+        foreach (var item in items)
+        {
+            MarkUtc(item);
+        }
         return Ok(items);
     }
 
@@ -205,7 +212,7 @@ public class DownloadsController : ControllerBase
                 x.MimeType,
                 x.ChatTitle,
                 x.Message,
-                x.CompletedAt,
+                CompletedAt = DateTime.SpecifyKind(x.CompletedAt, DateTimeKind.Utc),
                 // 相对下载目录的访问路径，供 /media 静态映射加载
                 MediaUrl = $"/media/{Path.GetFileName(x.LocalPath)}",
                 // Windows 路径，供前端拼 vlc: 协议链接直接唤起 VLC
@@ -286,6 +293,20 @@ public class DownloadsController : ControllerBase
             return $"{drive}:{rest}";
         }
         return full.Replace('/', '\\');
+    }
+
+    /// <summary>
+    /// 给时间字段标记 UTC Kind。SQLite 读取的 DateTime.Kind 为 Unspecified，
+    /// 序列化时不带 Z 后缀，前端会误按本地时区解析导致显示偏差 8 小时
+    /// </summary>
+    private static void MarkUtc(DownloadItem item)
+    {
+        item.CreatedAt = DateTime.SpecifyKind(item.CreatedAt, DateTimeKind.Utc);
+        item.UpdatedAt = DateTime.SpecifyKind(item.UpdatedAt, DateTimeKind.Utc);
+        if (item.CompletedAt != DateTime.MinValue)
+        {
+            item.CompletedAt = DateTime.SpecifyKind(item.CompletedAt, DateTimeKind.Utc);
+        }
     }
 
     /// <summary>缩略图存放目录名（下载目录下，与 DownloadManager 保持一致）</summary>

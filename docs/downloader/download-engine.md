@@ -86,3 +86,17 @@
 - `DownloaderStatus` record 新增 `TotalDownloadedBytes`（已完成任务 `FileSize` 总和）与 `VideoCount`（已完成且 `MimeType` 以 `video` 开头，不区分大小写）；
 - `DownloadManager.GetStatus` 一次性查询已完成任务的 `FileSize`/`MimeType` 聚合得出；
 - 前端 `GlobalStatus` 接口 + `Dashboard.vue` 统计卡片行（累计下载/视频/文件，`el-card` + `formatBytes`）展示，数据直接取自已有的 `getStatus` 轮询；下载队列页不再单独拉取状态接口。
+
+## 十、API 时间字段 UTC 标记（2026-08-16 修复）
+
+**问题**：下载队列/媒体库页面的时间显示比真实本地时间早 8 小时。
+
+**根因链**：
+1. 实体以 `DateTime.UtcNow` 正确存 UTC；
+2. SQLite 无时区概念，SqlSugar 读回的 `DateTime.Kind` 为 `Unspecified`（丢失 UTC 标记）；
+3. System.Text.Json 序列化 `Unspecified` 时不输出 `Z` 后缀；
+4. 前端 `new Date('...T06:41:45')` 对无时区字符串按浏览器本地时区解析，把 UTC 数值当成本地时间。
+
+**修复**：`DownloadsController` 新增 `MarkUtc()` 帮助方法，列表/详情/活跃/队列四个端点返回实体前调用 `DateTime.SpecifyKind(..., DateTimeKind.Utc)` 补标记；gallery 端点的 `CompletedAt` 同样处理。序列化后带 `Z` 后缀，前端 `toLocaleString('zh-CN')` 自动换算为浏览器本地时间。`CompletedAt` 为 `MinValue`（未完成）时跳过，避免前端解析出 Invalid Date。
+
+**注意**：新增返回 `DownloadItem` 的端点时必须调用 `MarkUtc()`，否则该端点时间又会偏差 8 小时。日志接口（`LogsController`）返回的是本地时间字符串，不受影响。
