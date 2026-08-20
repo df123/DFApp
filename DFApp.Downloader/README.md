@@ -36,6 +36,8 @@ dotnet publish src/DFApp.Downloader.App -c Release -r win-x64 --self-contained f
 
 发布后运行 `publish/DFApp.Downloader.App.exe`。
 
+Linux 使用框架依赖发布时，请指定 `linux-x64` 运行时标识。项目会将运行时所需的 `Microsoft.AspNetCore.WebUtilities.dll` 一并发布，以兼容缺少该程序集的系统 ASP.NET Core 运行时包。
+
 ## 项目结构
 
 ```
@@ -88,9 +90,11 @@ dotnet run --project src/DFApp.Downloader.App
 | POST | `/api/downloads/{id}/pause` | 暂停 |
 | POST | `/api/downloads/{id}/resume` | 恢复 |
 | DELETE | `/api/downloads/{id}` | 取消/删除 |
+| DELETE | `/api/downloads/failed` | 批量删除失败任务及本地临时文件 |
 | GET | `/api/settings` | 获取设置 |
 | PUT | `/api/settings` | 更新设置 |
 | GET | `/api/status` | 全局状态 |
+| GET | `/api/speed-history?range=24h` | 速度记录（range: 1h/6h/24h/7d/30d，按时间桶聚合） |
 | GET | `/api/connection` | 连接状态（含 lastError 失败原因） |
 | POST | `/api/connection/reconnect` | 重新连接（返回 isConnected + lastError） |
 | POST | `/api/downloads/sync-missed` | 补漏同步：拉取服务器已完成但本地缺失的媒体 |

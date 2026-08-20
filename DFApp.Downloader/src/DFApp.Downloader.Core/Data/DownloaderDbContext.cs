@@ -36,7 +36,8 @@ public class DownloaderDbContext
         using var db = CreateClient();
         db.CodeFirst.InitTables(
             typeof(Entities.DownloadItem),
-            typeof(Entities.DownloadSegment)
+            typeof(Entities.DownloadSegment),
+            typeof(Entities.DownloadSpeedSample)
         );
 
         // 兼容旧库：补充新增的失败重试计数字段

@@ -48,14 +48,21 @@ public class DownloadManager : IAsyncDisposable
     private CancellationTokenSource? _processCts;
     private Task? _processTask;
     private Task? _watchdogTask;
+    private Task? _speedSamplerTask;
     // 进度持久化节流：记录每个下载项上次写回 DB 的时间，避免高频写库
     private readonly ConcurrentDictionary<int, DateTime> _lastProgressSave = new();
     // 每个下载项最后一次收到进度事件的时间，供卡死看门狗判定（每次事件都更新，不节流）
     private readonly ConcurrentDictionary<int, DateTime> _lastProgressAt = new();
     // 当前各活跃下载项的瞬时速度（字节/秒），由下载库直接给出，GetStatus 时求和得到总速度
     private readonly ConcurrentDictionary<int, double> _activeSpeeds = new();
+    // 上次清理过期速度样本的时间（清理低频执行，避免每次采样都删）
+    private DateTime _lastSpeedCleanupUtc = DateTime.MinValue;
     // 卡死看门狗：下载中任务超过该时长无任何进度即判定卡死，自动暂停并重新入队
     private static readonly TimeSpan StallTimeout = TimeSpan.FromMinutes(5);
+
+    // 速度采样：全局总速度的记录间隔与样本保留时长（供仪表盘"速度记录"图表查询）
+    private static readonly TimeSpan SpeedSampleInterval = TimeSpan.FromMinutes(1);
+    private static readonly TimeSpan SpeedSampleRetention = TimeSpan.FromDays(30);
 
     // 下载失败最大自动重试次数：重试超过该次数后标记 Failed，需用户手动处理
     private const int MaxDownloadRetries = 3;
@@ -99,6 +106,8 @@ public class DownloadManager : IAsyncDisposable
         _processTask = ProcessQueueAsync(_processCts.Token);
         // 启动卡死看门狗：自动重启长时间无进度的下载
         _watchdogTask = StallWatchdogAsync(_processCts.Token);
+        // 启动速度采样：周期记录全局总速度，供仪表盘查看不同时间段的速度情况
+        _speedSamplerTask = SpeedSamplerAsync(_processCts.Token);
 
         // 尝试连接 DFApp 后端（失败不阻止启动）
         await TryConnectAsync();
@@ -149,6 +158,10 @@ public class DownloadManager : IAsyncDisposable
         if (_watchdogTask != null)
         {
             await _watchdogTask;
+        }
+        if (_speedSamplerTask != null)
+        {
+            await _speedSamplerTask;
         }
         await _notificationClient.StopAsync();
         _logger.LogInformation("下载管理器已停止");
@@ -638,6 +651,49 @@ public class DownloadManager : IAsyncDisposable
     }
 
     /// <summary>
+    /// 速度采样循环：周期把全局总速度写入 DownloadSpeedSamples（仅在有活跃下载时写入，
+    /// 空闲期无样本即视为 0 速度），并定期清理超过保留时长的旧样本。
+    /// </summary>
+    private async Task SpeedSamplerAsync(CancellationToken cancellationToken)
+    {
+        while (!cancellationToken.IsCancellationRequested)
+        {
+            try
+            {
+                await Task.Delay(SpeedSampleInterval, cancellationToken);
+
+                if (_activeSpeeds.IsEmpty)
+                {
+                    continue;
+                }
+
+                using var db = _dbContext.CreateClient();
+                db.Insertable(new DownloadSpeedSample
+                {
+                    RecordedAt = DateTime.UtcNow,
+                    SpeedBytesPerSecond = _activeSpeeds.Values.Sum()
+                }).ExecuteCommand();
+
+                if ((DateTime.UtcNow - _lastSpeedCleanupUtc).TotalHours >= 1)
+                {
+                    _lastSpeedCleanupUtc = DateTime.UtcNow;
+                    db.Deleteable<DownloadSpeedSample>()
+                        .Where(x => x.RecordedAt < DateTime.UtcNow - SpeedSampleRetention)
+                        .ExecuteCommand();
+                }
+            }
+            catch (OperationCanceledException)
+            {
+                break;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "速度采样写入失败");
+            }
+        }
+    }
+
+    /// <summary>
     /// 恢复未完成的下载
     /// </summary>
     private async Task ResumePendingDownloadsAsync()
@@ -899,6 +955,25 @@ public class DownloadManager : IAsyncDisposable
             db.Deleteable<DownloadItem>().In(itemId).ExecuteCommand();
             db.Deleteable<DownloadSegment>().Where(x => x.DownloadItemId == itemId).ExecuteCommand();
         }
+    }
+
+    /// <summary>
+    /// 批量删除失败下载
+    /// </summary>
+    public int DeleteFailedDownloads()
+    {
+        using var db = _dbContext.CreateClient();
+        var itemIds = db.Queryable<DownloadItem>()
+            .Where(x => x.Status == DownloadStatus.Failed)
+            .Select(x => x.Id)
+            .ToList();
+
+        foreach (var itemId in itemIds)
+        {
+            CancelDownload(itemId);
+        }
+
+        return itemIds.Count;
     }
 
     /// <summary>

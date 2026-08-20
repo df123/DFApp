@@ -122,6 +122,14 @@ public class DownloadsController : ControllerBase
         return Ok();
     }
 
+    /// <summary>批量删除失败任务</summary>
+    [HttpDelete("downloads/failed")]
+    public IActionResult DeleteFailed()
+    {
+        var deletedCount = _manager.DeleteFailedDownloads();
+        return Ok(new { deletedCount });
+    }
+
     /// <summary>获取设置</summary>
     [HttpGet("settings")]
     public IActionResult GetSettings()
@@ -158,6 +166,75 @@ public class DownloadsController : ControllerBase
     public IActionResult GetStatus()
     {
         return Ok(_manager.GetStatus());
+    }
+
+    /// <summary>速度记录支持的时间范围与对应聚合桶粒度</summary>
+    private static readonly Dictionary<string, (TimeSpan Span, TimeSpan Bucket)> SpeedHistoryRanges = new()
+    {
+        ["1h"] = (TimeSpan.FromHours(1), TimeSpan.FromMinutes(1)),
+        ["6h"] = (TimeSpan.FromHours(6), TimeSpan.FromMinutes(5)),
+        ["24h"] = (TimeSpan.FromHours(24), TimeSpan.FromMinutes(15)),
+        ["7d"] = (TimeSpan.FromDays(7), TimeSpan.FromHours(1)),
+        ["30d"] = (TimeSpan.FromDays(30), TimeSpan.FromHours(3)),
+    };
+
+    /// <summary>
+    /// 速度记录：按时间桶聚合的历史全局下载速度（range: 1h|6h|24h|7d|30d，默认 24h）。
+    /// 空闲期不采样，对应桶的速度为 0。
+    /// </summary>
+    [HttpGet("speed-history")]
+    public IActionResult GetSpeedHistory([FromQuery] string range = "24h")
+    {
+        if (!SpeedHistoryRanges.TryGetValue(range.ToLowerInvariant(), out var conf))
+        {
+            return BadRequest(new { message = "range 仅支持 1h/6h/24h/7d/30d" });
+        }
+
+        var now = DateTime.UtcNow;
+        var from = now - conf.Span;
+        var bucketSeconds = (long)conf.Bucket.TotalSeconds;
+
+        using var db = _dbContext.CreateClient();
+        var samples = db.Queryable<DownloadSpeedSample>()
+            .Where(x => x.RecordedAt >= from && x.RecordedAt <= now)
+            .OrderBy(x => x.RecordedAt)
+            .Select(x => new { x.RecordedAt, x.SpeedBytesPerSecond })
+            .ToList();
+
+        // 按桶聚合：桶编号 = Unix 秒 / 桶秒数（各桶粒度均能整除对齐）
+        // SQLite 读回的 DateTime.Kind 为 Unspecified，必须显式标记 UTC，否则会按本地时区解释导致桶键偏移 8 小时
+        var buckets = new Dictionary<long, (double Sum, double Max, int Count)>();
+        foreach (var s in samples)
+        {
+            var key = new DateTimeOffset(DateTime.SpecifyKind(s.RecordedAt, DateTimeKind.Utc)).ToUnixTimeSeconds() / bucketSeconds;
+            if (buckets.TryGetValue(key, out var b))
+            {
+                buckets[key] = (b.Sum + s.SpeedBytesPerSecond, Math.Max(b.Max, s.SpeedBytesPerSecond), b.Count + 1);
+            }
+            else
+            {
+                buckets[key] = (s.SpeedBytesPerSecond, s.SpeedBytesPerSecond, 1);
+            }
+        }
+
+        // 生成连续桶序列，无样本的桶（空闲期）速度为 0
+        var startKey = new DateTimeOffset(from).ToUnixTimeSeconds() / bucketSeconds;
+        var endKey = new DateTimeOffset(now).ToUnixTimeSeconds() / bucketSeconds;
+        var items = new List<object>(capacity: (int)(endKey - startKey + 1));
+        for (var key = startKey; key <= endKey; key++)
+        {
+            var time = DateTimeOffset.FromUnixTimeSeconds(key * bucketSeconds).UtcDateTime;
+            if (buckets.TryGetValue(key, out var b))
+            {
+                items.Add(new { time, avgSpeed = b.Sum / b.Count, maxSpeed = b.Max });
+            }
+            else
+            {
+                items.Add(new { time, avgSpeed = 0.0, maxSpeed = 0.0 });
+            }
+        }
+
+        return Ok(new { range = range.ToLowerInvariant(), bucketSeconds, items });
     }
 
     /// <summary>SignalR 连接状态</summary>

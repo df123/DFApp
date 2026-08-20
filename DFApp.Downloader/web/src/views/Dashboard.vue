@@ -1,7 +1,8 @@
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from 'vue'
-import { downloadApi, type GlobalStatus } from '../api/downloader'
+import { ref, onMounted, onUnmounted, nextTick } from 'vue'
+import { downloadApi, type GlobalStatus, type SpeedHistory, type SpeedHistoryRange } from '../api/downloader'
 import { ElMessage } from 'element-plus'
+import * as echarts from 'echarts'
 
 const status = ref<GlobalStatus>({
   isConnected: false,
@@ -17,6 +18,20 @@ const status = ref<GlobalStatus>({
 })
 const reconnecting = ref(false)
 let timer: ReturnType<typeof setInterval> | null = null
+
+const speedRange = ref<SpeedHistoryRange>('24h')
+const chartLoading = ref(false)
+const speedChartEl = ref<HTMLElement | null>(null)
+let chartInstance: echarts.ECharts | null = null
+let speedTimer: ReturnType<typeof setInterval> | null = null
+
+const speedRangeOptions: { label: string; value: SpeedHistoryRange }[] = [
+  { label: '最近1小时', value: '1h' },
+  { label: '最近6小时', value: '6h' },
+  { label: '最近24小时', value: '24h' },
+  { label: '最近7天', value: '7d' },
+  { label: '最近30天', value: '30d' },
+]
 
 const formatSpeed = (bytesPerSec: number) => {
   if (!bytesPerSec || bytesPerSec <= 0) return '0 B/s'
@@ -61,13 +76,98 @@ const handleReconnect = async () => {
   }
 }
 
-onMounted(() => {
+const fetchSpeedHistory = async () => {
+  chartLoading.value = true
+  try {
+    const { data } = await downloadApi.getSpeedHistory(speedRange.value)
+    renderSpeedChart(data)
+  } catch {
+    // 静默处理
+  } finally {
+    chartLoading.value = false
+  }
+}
+
+const renderSpeedChart = (history: SpeedHistory) => {
+  if (!speedChartEl.value) return
+  if (!chartInstance) {
+    chartInstance = echarts.init(speedChartEl.value)
+  }
+
+  const pad = (n: number) => String(n).padStart(2, '0')
+  const withDate = history.bucketSeconds > 900
+  const labels = history.items.map((p) => {
+    const d = new Date(p.time)
+    const hm = `${pad(d.getHours())}:${pad(d.getMinutes())}`
+    return withDate ? `${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${hm}` : hm
+  })
+
+  chartInstance.setOption({
+    grid: { left: 12, right: 20, top: 36, bottom: 8, containLabel: true },
+    tooltip: {
+      trigger: 'axis',
+      formatter: (params: unknown) => {
+        const list = Array.isArray(params) ? params : [params]
+        const idx = (list[0] as { dataIndex: number }).dataIndex
+        const point = history.items[idx]
+        if (!point) return ''
+        return `${labels[idx]}<br/>平均速度：${formatSpeed(point.avgSpeed)}<br/>峰值速度：${formatSpeed(point.maxSpeed)}`
+      },
+    },
+    legend: { data: ['平均速度', '峰值速度'], top: 0, right: 0, icon: 'plain' },
+    xAxis: {
+      type: 'category',
+      boundaryGap: false,
+      data: labels,
+      axisLabel: { hideOverlap: true },
+    },
+    yAxis: {
+      type: 'value',
+      axisLabel: { formatter: (v: number) => formatSpeed(v) },
+      splitLine: { lineStyle: { type: 'dashed' } },
+    },
+    series: [
+      {
+        name: '平均速度',
+        type: 'line',
+        smooth: true,
+        symbol: 'none',
+        data: history.items.map((p) => p.avgSpeed),
+        itemStyle: { color: '#409eff' },
+        lineStyle: { width: 2 },
+        areaStyle: { opacity: 0.12 },
+      },
+      {
+        name: '峰值速度',
+        type: 'line',
+        smooth: true,
+        symbol: 'none',
+        data: history.items.map((p) => p.maxSpeed),
+        itemStyle: { color: '#e6a23c' },
+        lineStyle: { width: 1.5, type: 'dashed' },
+      },
+    ],
+  })
+}
+
+const handleResize = () => chartInstance?.resize()
+
+onMounted(async () => {
   fetchStatus()
   timer = setInterval(fetchStatus, 3000)
+
+  await nextTick()
+  fetchSpeedHistory()
+  speedTimer = setInterval(fetchSpeedHistory, 60000)
+  window.addEventListener('resize', handleResize)
 })
 
 onUnmounted(() => {
   if (timer) clearInterval(timer)
+  if (speedTimer) clearInterval(speedTimer)
+  window.removeEventListener('resize', handleResize)
+  chartInstance?.dispose()
+  chartInstance = null
 })
 </script>
 
@@ -220,6 +320,21 @@ onUnmounted(() => {
         </el-card>
       </el-col>
     </el-row>
+
+    <el-card shadow="hover" style="margin-top: 20px" v-loading="chartLoading">
+      <template #header>
+        <div class="card-header">
+          <el-icon><TrendCharts /></el-icon>
+          <span>速度记录</span>
+          <el-radio-group v-model="speedRange" size="small" style="margin-left: auto" @change="fetchSpeedHistory">
+            <el-radio-button v-for="opt in speedRangeOptions" :key="opt.value" :value="opt.value">
+              {{ opt.label }}
+            </el-radio-button>
+          </el-radio-group>
+        </div>
+      </template>
+      <div ref="speedChartEl" style="height: 320px"></div>
+    </el-card>
   </div>
 </template>
 

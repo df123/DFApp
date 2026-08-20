@@ -57,6 +57,20 @@ export interface ConnectionInfo {
   lastError?: string | null
 }
 
+export interface SpeedHistoryPoint {
+  time: string
+  avgSpeed: number
+  maxSpeed: number
+}
+
+export interface SpeedHistory {
+  range: string
+  bucketSeconds: number
+  items: SpeedHistoryPoint[]
+}
+
+export type SpeedHistoryRange = '1h' | '6h' | '24h' | '7d' | '30d'
+
 export interface LogFileInfo {
   fileName: string
   sizeBytes: number
@@ -95,6 +109,9 @@ export const downloadApi = {
   cancel: (id: number) =>
     api.delete(`/downloads/${id}`),
 
+  deleteFailed: () =>
+    api.delete<{ deletedCount: number }>('/downloads/failed'),
+
   getSettings: () =>
     api.get<DownloaderSettings>('/settings'),
 
@@ -103,6 +120,9 @@ export const downloadApi = {
 
   getStatus: () =>
     api.get<GlobalStatus>('/status'),
+
+  getSpeedHistory: (range: SpeedHistoryRange = '24h') =>
+    api.get<SpeedHistory>('/speed-history', { params: { range } }),
 
   getConnection: () =>
     api.get<ConnectionInfo>('/connection'),
