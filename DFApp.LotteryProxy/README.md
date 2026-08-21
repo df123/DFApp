@@ -192,7 +192,7 @@ export ProxySettings__RetryCount=5
 - 路径：`logs/lottery-proxy-.log`
 - 滚动策略：按日滚动（每天一个新文件）
 - 文件名格式：`lottery-proxy-YYYYMMDD.log`
-- 保留策略：保留最近30天的日志文件
+- 保留策略：保留最近7天的日志文件
 - 文件大小限制：单个日志文件最大100MB，超过自动创建新文件
 - 格式：`[{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} {Level:u3}] {Message:lj}{NewLine}{Exception}`
 
