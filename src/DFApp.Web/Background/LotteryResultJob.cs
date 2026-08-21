@@ -28,6 +28,7 @@ public class LotteryResultJob : IJob
     private readonly IHttpClientFactory _httpClientFactory;
     private readonly IConfiguration _configuration;
     private readonly ILogger<LotteryResultJob> _logger;
+    private readonly TimeProvider _timeProvider;
 
     public LotteryResultJob(
         ISqlSugarRepository<LotteryResult, long> lotteryResultRepository,
@@ -37,7 +38,8 @@ public class LotteryResultJob : IJob
         LotteryMapper mapper,
         IHttpClientFactory httpClientFactory,
         IConfiguration configuration,
-        ILogger<LotteryResultJob> logger)
+        ILogger<LotteryResultJob> logger,
+        TimeProvider? timeProvider = null)
     {
         _lotteryResultRepository = lotteryResultRepository;
         _resultReadOnly = resultReadOnly;
@@ -47,6 +49,7 @@ public class LotteryResultJob : IJob
         _httpClientFactory = httpClientFactory;
         _configuration = configuration;
         _logger = logger;
+        _timeProvider = timeProvider ?? TimeProvider.System;
     }
 
     public async Task Execute(IJobExecutionContext context)
@@ -88,7 +91,7 @@ public class LotteryResultJob : IJob
                 _logger.LogInformation("未找到历史数据，开始获取所有历史数据");
                 string dayStart, dayEnd;
                 dayStart = "2013-01-01"; // KL8的开始时间是2020年，小于2013年所有可以直接用2013
-                dayEnd = DateTime.Now.ToString("yyyy-MM-dd");
+                dayEnd = _timeProvider.GetLocalNow().DateTime.ToString("yyyy-MM-dd");
                 _logger.LogInformation("获取历史数据范围: {DayStart} 至 {DayEnd}", dayStart, dayEnd);
                 await GetAllLotteryResults(dayStart, dayEnd, 1, lotteryTypeEng);
             }
@@ -98,18 +101,20 @@ public class LotteryResultJob : IJob
             }
 
             // 检查是否需要获取最新数据
-            bool shouldFetchLatest = DateTime.Now.DayOfWeek == DayOfWeek.Sunday
-                || DateTime.Now.DayOfWeek == DayOfWeek.Thursday
-                || DateTime.Now.DayOfWeek == DayOfWeek.Tuesday
+            var now = _timeProvider.GetLocalNow().DateTime;
+            bool shouldFetchLatest = now.DayOfWeek == DayOfWeek.Sunday
+                || now.DayOfWeek == DayOfWeek.Thursday
+                || now.DayOfWeek == DayOfWeek.Tuesday
                 || lotteryType == LotteryConst.KL8;
 
-            _logger.LogInformation("是否需要获取最新数据: {ShouldFetchLatest} (当前星期: {DayOfWeek})", shouldFetchLatest, DateTime.Now.DayOfWeek);
+            _logger.LogInformation("是否需要获取最新数据: {ShouldFetchLatest} (当前星期: {DayOfWeek})", shouldFetchLatest, now.DayOfWeek);
 
             if (shouldFetchLatest)
             {
-                string day = DateTime.Now.ToString("yyyy-MM-dd");
-                _logger.LogInformation("检查今天 ({Day}) 是否已有数据", day);
-                List<LotteryResult> result1 = await _resultReadOnly.GetListAsync(item => item.Date != null && item.Date.StartsWith(day));
+                string day = now.ToString("yyyy-MM-dd");
+                _logger.LogInformation("检查今天 ({Day}) 是否已有 {LotteryType} 数据", day, lotteryType);
+                // 必须按彩种过滤：否则其他彩种（快乐8 每天开奖）先写入后，当前彩种会误判今天已有数据而跳过
+                List<LotteryResult> result1 = await _resultReadOnly.GetListAsync(item => item.Name == lotteryType && item.Date != null && item.Date.StartsWith(day));
                 _logger.LogInformation("今天的数据条数: {Count}", result1?.Count ?? 0);
 
                 if (result1 == null || result1.Count <= 0)
@@ -127,11 +132,16 @@ public class LotteryResultJob : IJob
                     }
 
                     _logger.LogInformation("获取最新一期开奖结果作为起始点");
-                    LotteryResult lotteryResult = _resultReadOnly.GetQueryable().OrderByDescending(x => x.Code).First();
+                    // 按彩种过滤：快乐8 期号比双色球更新，不能拿别的彩种的最新日期当起点
+                    LotteryResult lotteryResult = _resultReadOnly.GetQueryable()
+                        .Where(x => x.Name == lotteryType)
+                        .OrderByDescending(x => x.Code)
+                        .First();
                     string dayStart = (lotteryResult.Date!.Split('('))[0];
                     _logger.LogInformation("从 {DayStart} 开始获取最新数据", dayStart);
 
-                    await GetCurrentLotteryResult(dayStart, 0, lotteryTypeEng);
+                    // 上游 pageNo 从 1 开始（pageNo=0 返回 404）
+                    await GetCurrentLotteryResult(dayStart, 1, lotteryTypeEng);
                     _logger.LogInformation("最新数据获取完成");
                 }
                 else
@@ -201,7 +211,7 @@ public class LotteryResultJob : IJob
 
     private async Task GetCurrentLotteryResult(string dayStart, int pageNo, string lotteryType)
     {
-        string dayEnd = DateTime.Now.ToString("yyyy-MM-dd");
+        string dayEnd = _timeProvider.GetLocalNow().DateTime.ToString("yyyy-MM-dd");
         _logger.LogInformation("获取当前彩票结果 - 起始日期: {DayStart}, 结束日期: {DayEnd}, 彩票类型: {LotteryType}, 页码: {PageNo}", dayStart, dayEnd, lotteryType, pageNo);
 
         LotteryInputDto dto = await GetLotteryResult(dayStart, dayEnd, pageNo, lotteryType);

@@ -27,6 +27,8 @@ test/
     │   └── (待添加)
     ├── Infrastructure/
     │   └── GlobalExceptionFilterTests.cs
+    ├── Background/
+    │   └── LotteryResultJobTests.cs
     └── Hubs/
         └── (待添加)
 ```
@@ -198,6 +200,20 @@ private ExceptionContext CreateExceptionContext(Exception exception)
         Exception = exception
     };
 }
+```
+
+## 后台任务（Job）测试模式
+
+`Background/LotteryResultJobTests.cs` 是首个 Job 级集成测试，验证了可测 Job 的三个改造要点：
+
+1. **时钟注入** - Job 构造函数接收 `TimeProvider?`（默认 `TimeProvider.System`），测试传入固定时钟的 `FixedLocalTimeProvider`（只重写 `GetUtcNow()`，`GetLocalNow` 非虚方法不能重写）
+2. **假上游服务** - `HttpListener` 在随机回环端口起假中转代理，完整模拟上游契约（分页、中英文彩种名映射、非法页号返回 404），并记录每次请求供断言
+3. **临时数据库** - 临时 SQLite 文件 + 生产同构 DDL 建表（不要用 CodeFirst，`long` 主键映射为 BIGINT 与 SQLite AUTOINCREMENT 的 INTEGER 约束冲突），配合 SqlSugar AOP 填充审计字段
+
+运行：
+
+```bash
+dotnet test --filter "FullyQualifiedName~LotteryResultJobTests"
 ```
 
 ## 运行测试
