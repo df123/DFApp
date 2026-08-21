@@ -34,8 +34,8 @@
 
 ## 数据库设计
 
-- `AppLotteryResult` - 开奖主表：Name（中文名）、Code（期号）、Date（"yyyy-MM-dd(周X)"）、Red/Blue、Sales/PoolMoney 等；`ExtraProperties TEXT NOT NULL`（存量表结构保留列，实体固定写 `"{}"`）
-- `AppLotteryPrizegrades` - 奖级表：LotteryResultId 关联主表，Type/TypeNum/TypeMoney；同样带 `ExtraProperties TEXT NOT NULL`
+- `AppLotteryResult` - 开奖主表：Name（中文名）、Code（期号）、Date（"yyyy-MM-dd(周X)"）、Red/Blue、Sales/PoolMoney 等审计字段；`ExtraProperties`/`IsDeleted` 遗留列已随 sql/03 删除，实体不再映射
+- `AppLotteryPrizegrades` - 奖级表：LotteryResultId 关联主表，Type/TypeNum/TypeMoney 及审计字段
 
 ## 文件结构
 
@@ -68,7 +68,7 @@
 1. **增量起点页号错误** - `GetCurrentLotteryResult(dayStart, 0, ...)` 传 pageNo=0，上游 nginx 直接 404，每次必失败。已改为从 1 开始。
 2. **"今天已有数据"检查未按彩种过滤** - 双色球写入后，同晚快乐8 误判"今天有数据"而跳过。已加 `item.Name == lotteryType` 过滤。
 3. **最新期号选取未按彩种过滤** - 快乐8 期号比双色球新，双色球把快乐8 的日期当起点导致漏抓/错乱。已在 `OrderByDescending(Code)` 前加 `Where(x => x.Name == lotteryType)`。
-4. **实体缺少 ExtraProperties 列** - 存量表该列 NOT NULL 无默认值，实体不携带导致所有插入失败。实体已补 `public string ExtraProperties { get; set; } = "{}";`（LotteryResult、LotteryPrizegrades 两处）。
+4. **实体与已迁移表结构不一致（2026-08-21 修复）** - 远程库 sql/03 已删除两表的 `ExtraProperties`/`IsDeleted` 遗留列，但断档修复时为适配本地旧库给实体补了 `ExtraProperties` 属性，导致远程所有查询报 `no such column: ExtraProperties`（列表接口 500）。已从实体删除该属性并对齐表结构，本地开发库补跑了同款 DROP。
 
 另将 `DateTime.Now` 全部替换为注入的 `TimeProvider`，使时钟可控可测。
 
@@ -82,7 +82,7 @@
 
 | 用例 | 覆盖缺陷 |
 | --- | --- |
-| 断档补数_应从最后日期续到今天并写入全部缺漏期数 | pageNo=0、ExtraProperties 缺失 |
+| 断档补数_应从最后日期续到今天并写入全部缺漏期数 | pageNo=0 起点页号 |
 | 今日已有其他彩种数据时_当前彩种仍应正常拉取 | 今天检查未按彩种过滤 |
 | 断档起点_应取当前彩种自己的最新期号 | 最新期号选取未按彩种过滤 |
 | 手动触发_应在后台执行完整补数并立即返回 | 手动触发接口（后台执行 + 立即返回） |
@@ -102,5 +102,5 @@
 ## 故障排查
 
 - **持续无法补数**：先 `curl` 中转代理确认存活；再看日志是否出现 404（pageNo 问题已修复，出现则说明上游契约再变）
-- **写入报 NOT NULL 约束失败**：确认实体 `ExtraProperties` 默认值仍在
+- **查询/写入报 no such column: ExtraProperties**：说明运行的库还带 sql/03 之前的遗留列结构或实体带了多余映射；实体已不映射该列，本地开发库已同步 DROP，远程无需任何 SQL
 - **某彩种停更**：检查当天判断与最新期号选取是否带 `Name == lotteryType` 过滤

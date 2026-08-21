@@ -448,7 +448,7 @@ public class LotteryResultJobTests : IDisposable
         });
     }
 
-    /// <summary>建临时库并按生产 DDL 建表（含 ExtraProperties NOT NULL 等真实约束）</summary>
+    /// <summary>建临时库并按生产 DDL 建表（与远程 sql/03 迁移后的真实结构一致，无 ExtraProperties/IsDeleted 遗留列）</summary>
     private static SqlSugarClient CreateTestDb(out string path)
     {
         path = Path.Combine(Path.GetTempPath(), $"lottery-test-{Guid.NewGuid():N}.db");
@@ -467,8 +467,6 @@ CREATE TABLE ""AppLotteryResult"" (
     ""Date"" TEXT NULL, ""Week"" TEXT NULL, ""Red"" TEXT NULL, ""Blue"" TEXT NULL, ""Blue2"" TEXT NULL,
     ""Sales"" TEXT NULL, ""PoolMoney"" TEXT NULL, ""Content"" TEXT NULL, ""AddMoney"" TEXT NULL,
     ""AddMoney2"" TEXT NULL, ""Msg"" TEXT NULL, ""Z2Add"" TEXT NULL, ""M2Add"" TEXT NULL,
-    ""IsDeleted"" INTEGER NOT NULL DEFAULT 0,
-    ""ExtraProperties"" TEXT NOT NULL,
     ""ConcurrencyStamp"" TEXT NOT NULL,
     ""CreationTime"" TEXT NOT NULL,
     ""CreatorId"" TEXT NULL, ""LastModificationTime"" TEXT NULL, ""LastModifierId"" TEXT NULL
@@ -476,7 +474,6 @@ CREATE TABLE ""AppLotteryResult"" (
 CREATE TABLE ""AppLotteryPrizegrades"" (
     ""Id"" INTEGER NOT NULL CONSTRAINT ""PK_AppLotteryPrizegrades"" PRIMARY KEY AUTOINCREMENT,
     ""ConcurrencyStamp"" TEXT NOT NULL, ""CreationTime"" TEXT NOT NULL, ""CreatorId"" TEXT NULL,
-    ""ExtraProperties"" TEXT NOT NULL, ""IsDeleted"" INTEGER NOT NULL DEFAULT 0,
     ""LastModificationTime"" TEXT NULL, ""LastModifierId"" TEXT NULL,
     ""LotteryResultId"" INTEGER NOT NULL, ""Type"" TEXT NULL, ""TypeMoney"" TEXT NULL, ""TypeNum"" TEXT NULL
 );
@@ -506,17 +503,17 @@ CREATE TABLE ""AppConfigurationInfo"" (
     private static void SeedResult(SqlSugarClient db, string name, string code, string date, string week)
     {
         db.Ado.ExecuteCommand(
-            "INSERT INTO AppLotteryResult (Name, Code, Date, Week, Red, Blue, IsDeleted, ExtraProperties, ConcurrencyStamp, CreationTime) " +
-            "VALUES (@name, @code, @date, @week, '01,02,03,04,05,06', '07', 0, '{}', 'seed', '2026-01-01 00:00:00');",
+            "INSERT INTO AppLotteryResult (Name, Code, Date, Week, Red, Blue, ConcurrencyStamp, CreationTime) " +
+            "VALUES (@name, @code, @date, @week, '01,02,03,04,05,06', '07', 'seed', '2026-01-01 00:00:00');",
             new { name, code, date, week });
     }
 
     private static void SeedPrizegrades(SqlSugarClient db, long resultId)
     {
         db.Ado.ExecuteCommand(
-            "INSERT INTO AppLotteryPrizegrades (LotteryResultId, Type, TypeNum, TypeMoney, IsDeleted, ExtraProperties, ConcurrencyStamp, CreationTime) " +
-            "VALUES (@resultId, '1', '5', '10000000', 0, '{}', 'seed', '2026-01-01 00:00:00')," +
-            "       (@resultId, '2', '100', '5000', 0, '{}', 'seed', '2026-01-01 00:00:00');",
+            "INSERT INTO AppLotteryPrizegrades (LotteryResultId, Type, TypeNum, TypeMoney, ConcurrencyStamp, CreationTime) " +
+            "VALUES (@resultId, '1', '5', '10000000', 'seed', '2026-01-01 00:00:00')," +
+            "       (@resultId, '2', '100', '5000', 'seed', '2026-01-01 00:00:00');",
             new { resultId });
     }
 

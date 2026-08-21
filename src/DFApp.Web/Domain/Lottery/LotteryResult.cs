@@ -41,9 +41,6 @@ namespace DFApp.Lottery
 
         public string? M2Add { get; set; }
 
-        // 存量表结构保留列（NOT NULL 无默认值），实体不携带会导致插入失败，固定写 "{}"
-        public string ExtraProperties { get; set; } = "{}";
-
         [SugarColumn(IsIgnore = true)]
         public List<LotteryPrizegrades>? Prizegrades { get; set; }
     }
