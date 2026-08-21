@@ -23,7 +23,7 @@ namespace DFApp.Web.Background
         private readonly ISqlSugarRepository<RssMirrorItem, long> _rssMirrorItemRepository;
         private readonly ISqlSugarRepository<RssWordSegment, long> _rssWordSegmentRepository;
         private readonly IWordSegmentService _wordSegmentService;
-        private readonly RssMirrorDbConnection _rssDb;
+        private readonly TransientDbConnection _transientDb;
         private readonly ILogger<RssMirrorFetchJob> _logger;
 
         /// <summary>
@@ -39,14 +39,14 @@ namespace DFApp.Web.Background
             ISqlSugarRepository<RssMirrorItem, long> rssMirrorItemRepository,
             ISqlSugarRepository<RssWordSegment, long> rssWordSegmentRepository,
             IWordSegmentService wordSegmentService,
-            RssMirrorDbConnection rssDb,
+            TransientDbConnection transientDb,
             ILogger<RssMirrorFetchJob> logger)
         {
             _rssSourceRepository = rssSourceRepository;
             _rssMirrorItemRepository = rssMirrorItemRepository;
             _rssWordSegmentRepository = rssWordSegmentRepository;
             _wordSegmentService = wordSegmentService;
-            _rssDb = rssDb;
+            _transientDb = transientDb;
             _logger = logger;
         }
 
@@ -82,7 +82,7 @@ namespace DFApp.Web.Background
         /// <summary>
         /// 抓取单个RSS源的数据。
         /// HTTP 抓取在事务外执行（最长 60 秒，不持有数据库锁）；
-        /// 条目+分词写入独立 RssMirror.db 的单事务；源状态在主库独立更新，
+        /// 条目+分词写入独立 Transient.db 的单事务；源状态在主库独立更新，
         /// 失败重抓时按 Link 去重，数据写入幂等。
         /// </summary>
         private async Task FetchRssSource(RssSource source)
@@ -137,7 +137,7 @@ namespace DFApp.Web.Background
 
                 // 独立库事务：查重 + 插入镜像条目 + 插入分词
                 int newItemCount = 0;
-                _rssDb.Client.Ado.BeginTran();
+                _transientDb.Client.Ado.BeginTran();
                 try
                 {
                     var newItems = new List<RssMirrorItem>();
@@ -181,11 +181,11 @@ namespace DFApp.Web.Background
                         newItemCount++;
                     }
 
-                    _rssDb.Client.Ado.CommitTran();
+                    _transientDb.Client.Ado.CommitTran();
                 }
                 catch
                 {
-                    _rssDb.Client.Ado.RollbackTran();
+                    _transientDb.Client.Ado.RollbackTran();
                     throw;
                 }
 

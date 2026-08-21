@@ -1,9 +1,9 @@
--- RSS 镜像数据拆分到独立 SQLite 库（RssMirror.db）
+-- RSS 镜像数据拆分到独立 SQLite 库（Transient.db）
 -- 背景：AppRssMirrorItem / AppRssWordSegment 为可再生的高速增长缓存数据，
---       导致主库 DFApp.db 膨胀、拖慢远程备份。2026-08-21 起镜像数据已改存独立的 RssMirror.db
---       （连接串 ConnectionStrings:RssMirror，新库由应用启动时自动建表，空库开始积累）。
+--       导致主库 DFApp.db 膨胀、拖慢远程备份。2026-08-21 起这类可抛弃数据改存独立的
+--       Transient.db（连接串 ConnectionStrings:Transient，新库由应用启动时自动建表，空库开始积累）。
 -- 数据可抛弃，本脚本不迁移历史数据，直接删除主库两张旧表并 VACUUM 回收空间。
--- 执行时机：部署新版应用并确认启动正常（已生成 RssMirror.db）之后执行本脚本。
+-- 执行时机：部署新版应用并确认启动正常（已生成 Transient.db）之后执行本脚本。
 
 DROP TABLE IF EXISTS AppRssWordSegment;
 DROP TABLE IF EXISTS AppRssMirrorItem;

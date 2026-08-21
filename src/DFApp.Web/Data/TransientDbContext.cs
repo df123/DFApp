@@ -4,20 +4,20 @@ using SqlSugar;
 namespace DFApp.Web.Data;
 
 /// <summary>
-/// RSS 镜像独立数据库上下文（RssMirror.db）。
-/// 镜像条目与分词是可再生的高速增长数据，拆到独立 SQLite 文件，
-/// 避免主库 DFApp.db 膨胀影响远程备份。源配置 AppRssSource 仍留在主库。
+/// Transient 独立数据库上下文（Transient.db）。
+/// 存放可抛弃、可再生的非持久数据（当前为 RSS 镜像条目与分词，后续同类数据也放这里），
+/// 与主库 DFApp.db 分离，避免主库膨胀影响远程备份。
 /// </summary>
-public class RssMirrorDbContext
+public class TransientDbContext
 {
     private readonly SqlSugarConfig _sqlSugarConfig;
     private readonly string _connectionString;
 
-    public RssMirrorDbContext(SqlSugarConfig sqlSugarConfig, IConfiguration configuration)
+    public TransientDbContext(SqlSugarConfig sqlSugarConfig, IConfiguration configuration)
     {
         _sqlSugarConfig = sqlSugarConfig;
-        _connectionString = configuration.GetConnectionString("RssMirror")
-            ?? "Data Source=./RssMirror.db;";
+        _connectionString = configuration.GetConnectionString("Transient")
+            ?? "Data Source=./Transient.db;";
     }
 
     /// <summary>
