@@ -7,7 +7,7 @@ services:
     environment:
       - ASPNETCORE_ENVIRONMENT=Production
       - ProxySettings__AllowedIPs__0=
-      # 公网部署必填：与 DFApp.Web 的 LotteryProxy:Token 配成对，建议 openssl rand -hex 32
+      # 公网部署必填：与 DFApp.Web 数据库配置（AppConfigurationInfo 的 LotteryProxyToken）配成对，建议 openssl rand -hex 32
       - ProxySettings__ProxyToken=
       - ProxySettings__TargetBaseUrl=https://www.cwl.gov.cn
       - ProxySettings__TimeoutSeconds=30

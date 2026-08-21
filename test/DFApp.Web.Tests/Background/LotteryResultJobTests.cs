@@ -266,86 +266,6 @@ public class LotteryResultJobTests : IDisposable
     }
 
     [Fact]
-    public async Task 配置令牌后_补数任务所有代理请求都应携带XProxyToken()
-    {
-        var db = CreateTestDb(out var path);
-        _tempDbPaths.Add(path);
-        SeedResult(db, "双色球", "2013001", "2013-01-01(二)", "二");
-        SeedResult(db, "双色球", "2026005", "2026-01-13(二)", "二");
-        SeedPrizegrades(db, 1);
-        SeedPrizegrades(db, 2);
-
-        var draws = new List<FakeDraw>();
-        foreach (var (code, date, week) in new[]
-        {
-            ("2026006", "2026-01-15(四)", "四"), ("2026007", "2026-01-18(日)", "日"),
-            ("2026008", "2026-01-20(二)", "二"), ("2026009", "2026-01-22(四)", "四"),
-        })
-        {
-            draws.Add(new("双色球", code, date, "01,02,03,04,05,06", "07"));
-        }
-
-        using var server = new FakeLotteryProxyServer(draws);
-        var job = new LotteryResultJob(
-            new SqlSugarRepository<LotteryResult, long>(db),
-            new SqlSugarReadOnlyRepository<LotteryResult, long>(db),
-            new SqlSugarRepository<LotteryPrizegrades, long>(db),
-            new SqlSugarReadOnlyRepository<LotteryPrizegrades, long>(db),
-            new ConfigurationInfoRepository(db),
-            new LotteryMapper(),
-            new SimpleHttpClientFactory(),
-            BuildConfiguration(server, token: "job-test-token"),
-            new TestOutputLogger<LotteryResultJob>(_output),
-            new FixedLocalTimeProvider(FakeToday));
-        await job.Execute(null!);
-
-        lock (server.RequestTokens)
-        {
-            server.RequestTokens.Should().NotBeEmpty("补数任务应已发出代理请求");
-            server.RequestTokens.Should().OnlyContain(t => t == "job-test-token",
-                "暴露公网的代理要求每个请求都携带 X-Proxy-Token，漏一个该请求就会被 401 拒绝");
-        }
-    }
-
-    [Fact]
-    public async Task 配置令牌后_手动抓取代理请求也应携带XProxyToken()
-    {
-        var db = CreateTestDb(out var path);
-        _tempDbPaths.Add(path);
-
-        var draws = new List<FakeDraw>
-        {
-            new("双色球", "2026009", "2026-01-22(四)", "01,02,03,04,05,06", "07"),
-        };
-        using var server = new FakeLotteryProxyServer(draws);
-        var service = new LotteryDataFetchService(
-            new Mock<ICurrentUser>().Object,
-            new Mock<IPermissionChecker>().Object,
-            new SqlSugarRepository<LotteryResult, long>(db),
-            new SqlSugarRepository<LotteryPrizegrades, long>(db),
-            new ConfigurationInfoRepository(db),
-            CreateJob(db, server),
-            new SimpleHttpClientFactory(),
-            BuildConfiguration(server, token: "fetch-test-token"),
-            new TestOutputLogger<LotteryDataFetchService>(_output));
-
-        var response = await service.FetchLotteryData(new LotteryDataFetchRequestDto
-        {
-            LotteryType = "ssq",
-            DayStart = "2026-01-15",
-            DayEnd = "2026-01-22",
-            PageNo = 1,
-            SaveToDatabase = false,
-        });
-
-        response.Success.Should().BeTrue();
-        lock (server.RequestTokens)
-        {
-            server.RequestTokens.Should().ContainSingle().Which.Should().Be("fetch-test-token");
-        }
-    }
-
-    [Fact]
     public async Task 数据库配置令牌后_补数任务请求应携带该令牌()
     {
         var db = CreateTestDb(out var path);
@@ -389,7 +309,7 @@ public class LotteryResultJobTests : IDisposable
     }
 
     [Fact]
-    public async Task 数据库与配置文件同时配置令牌_数据库优先()
+    public async Task 配置文件配置令牌_已移除不再生效()
     {
         var db = CreateTestDb(out var path);
         _tempDbPaths.Add(path);
@@ -397,7 +317,6 @@ public class LotteryResultJobTests : IDisposable
         SeedResult(db, "双色球", "2026005", "2026-01-13(二)", "二");
         SeedPrizegrades(db, 1);
         SeedPrizegrades(db, 2);
-        SeedProxyToken(db, "db-token");
 
         var draws = new List<FakeDraw>
         {
@@ -420,8 +339,8 @@ public class LotteryResultJobTests : IDisposable
         lock (server.RequestTokens)
         {
             server.RequestTokens.Should().NotBeEmpty();
-            server.RequestTokens.Should().OnlyContain(t => t == "db-token",
-                "两处同时配置时数据库优先，避免配置漂移时行为摇摆");
+            server.RequestTokens.Should().OnlyContain(t => t == null,
+                "令牌只认数据库配置，appsettings/环境变量途径已移除，配置了也不应携带");
         }
     }
 

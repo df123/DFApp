@@ -209,9 +209,8 @@ openssl rand -hex 32
 # 代理端（docker-compose 环境变量）
 ProxySettings__ProxyToken=<生成的令牌>
 
-# DFApp.Web 端（两边配成对）
-# 优先：数据库 AppConfigurationInfo 表（模块 DFApp.Web.Lottery，名称 LotteryProxyToken，可通过配置管理界面修改，SQL 见 sql/24）
-# 回退：appsettings "LotteryProxy": { "Token": "<生成的令牌>" } 或环境变量 LotteryProxy__Token
+# DFApp.Web 端（两边配成对）：数据库 AppConfigurationInfo 表
+# 模块 DFApp.Web.Lottery，名称 LotteryProxyToken（可通过配置管理界面修改，SQL 见 sql/24）
 ```
 
 注意：令牌与 IP 白名单同时生效（两道门都要过），公网来源 IP 还需加入 `AllowedIPs`。

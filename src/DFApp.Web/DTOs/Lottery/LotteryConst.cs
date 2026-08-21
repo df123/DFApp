@@ -46,11 +46,6 @@ namespace DFApp.Web.DTOs.Lottery
         public const string LOTTERY_PROXY_URL_KEY = "LotteryProxy:Url";
 
         /// <summary>
-        /// 代理共享密钥配置键（与代理端 ProxySettings:ProxyToken 配成对）
-        /// </summary>
-        public const string LOTTERY_PROXY_TOKEN_KEY = "LotteryProxy:Token";
-
-        /// <summary>
         /// 数据库配置模块名（AppConfigurationInfo 表）
         /// </summary>
         public const string MODULE_NAME = "DFApp.Web.Lottery";
@@ -71,24 +66,13 @@ namespace DFApp.Web.DTOs.Lottery
         }
 
         /// <summary>
-        /// 获取彩票代理共享密钥，空表示代理未启用令牌校验
-        /// </summary>
-        /// <param name="configuration">配置对象</param>
-        /// <returns>共享密钥</returns>
-        public static string? GetLotteryProxyToken(IConfiguration configuration)
-        {
-            return configuration[LOTTERY_PROXY_TOKEN_KEY];
-        }
-
-        /// <summary>
-        /// 获取彩票代理共享密钥：优先读数据库配置（AppConfigurationInfo），未配置或为空时回退 appsettings
+        /// 获取彩票代理共享密钥：只读数据库配置（AppConfigurationInfo），
+        /// 未配置或为空返回 null，表示代理未启用令牌校验
         /// </summary>
         /// <param name="configurationInfoRepository">配置信息仓储</param>
-        /// <param name="configuration">配置对象</param>
         /// <returns>共享密钥</returns>
         public static async Task<string?> GetLotteryProxyTokenAsync(
-            IConfigurationInfoRepository configurationInfoRepository,
-            IConfiguration configuration)
+            IConfigurationInfoRepository configurationInfoRepository)
         {
             try
             {
@@ -101,10 +85,10 @@ namespace DFApp.Web.DTOs.Lottery
             }
             catch (BusinessException)
             {
-                // 数据库未配置该参数时回退 appsettings
+                // 数据库未配置该参数时不携带令牌
             }
 
-            return GetLotteryProxyToken(configuration);
+            return null;
         }
     }
 }

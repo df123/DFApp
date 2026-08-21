@@ -107,7 +107,7 @@ public class LotteryDataFetchService : AppServiceBase
 
             // 发送请求到代理服务器（公网部署的代理要求携带共享密钥）
             using var proxyRequest = new HttpRequestMessage(HttpMethod.Get, requestUrl);
-            string? proxyToken = await LotteryConst.GetLotteryProxyTokenAsync(_configurationInfoRepository, _configuration);
+            string? proxyToken = await LotteryConst.GetLotteryProxyTokenAsync(_configurationInfoRepository);
             if (!string.IsNullOrEmpty(proxyToken))
             {
                 proxyRequest.Headers.Add("X-Proxy-Token", proxyToken);
