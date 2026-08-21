@@ -1,5 +1,6 @@
 using DFApp.LotteryProxy.Models;
 using Microsoft.AspNetCore.Http;
+using System.Diagnostics;
 using System.Net.Http.Headers;
 using System.Text.Json;
 
@@ -7,6 +8,7 @@ namespace DFApp.LotteryProxy.Services;
 
 /// <summary>
 /// 彩票API代理服务
+/// 日志约定：每个请求只输出一行汇总（[代理] 前缀），过程细节一律 Debug，避免容器日志刷屏
 /// </summary>
 public class LotteryProxyService
 {
@@ -32,8 +34,10 @@ public class LotteryProxyService
     public async Task<IResult> ProxyRequestAsync(string queryString)
     {
         var targetUrl = $"/cwl_admin/front/cwlkj/search/kjxx/findDrawNotice?{queryString}";
+        var summary = SummarizeQuery(queryString);
+        var stopwatch = Stopwatch.StartNew();
 
-        _logger.LogInformation("代理请求到目标URL: {TargetUrl}", targetUrl);
+        _logger.LogDebug("代理请求到目标URL: {TargetUrl}", targetUrl);
 
         using var client = _httpClientFactory.CreateClient();
 
@@ -50,17 +54,40 @@ public class LotteryProxyService
         {
             try
             {
-                _logger.LogInformation("发送请求 (尝试 {Attempt}/{MaxRetries})", attempt, maxRetries);
+                _logger.LogDebug("发送请求 (尝试 {Attempt}/{MaxRetries})", attempt, maxRetries);
 
                 using var response = await client.GetAsync(targetUrl);
 
-                _logger.LogInformation("收到响应 - 状态码: {StatusCode}", response.StatusCode);
+                _logger.LogDebug("收到响应 - 状态码: {StatusCode}", response.StatusCode);
 
                 if (response.IsSuccessStatusCode)
                 {
                     // 使用UTF-8编码读取响应内容
                     var content = await response.Content.ReadAsStringAsync();
-                    _logger.LogInformation("成功获取响应内容，长度: {Length} 字符", content.Length);
+
+                    // 检查响应内容是否为有效的JSON
+                    if (string.IsNullOrWhiteSpace(content))
+                    {
+                        _logger.LogWarning("[代理] {Query} → 空响应，{Elapsed}ms（尝试 {Attempt}/{MaxRetries}）",
+                            summary, stopwatch.ElapsedMilliseconds, attempt, maxRetries);
+                        return Results.Problem(
+                            detail: "目标服务器返回空响应",
+                            statusCode: (int)System.Net.HttpStatusCode.BadGateway,
+                            title: "代理请求失败"
+                        );
+                    }
+
+                    // 检查响应内容是否为HTML（错误页面）
+                    if (content.StartsWith("<!DOCTYPE html>") || content.StartsWith("<html"))
+                    {
+                        _logger.LogWarning("[代理] {Query} → 返回HTML错误页（疑似被拦截），{Length}字符，{Elapsed}ms",
+                            summary, content.Length, stopwatch.ElapsedMilliseconds);
+                        return Results.Problem(
+                            detail: "目标服务器返回错误页面，可能是访问被拒绝",
+                            statusCode: (int)System.Net.HttpStatusCode.BadGateway,
+                            title: "代理请求失败"
+                        );
+                    }
 
                     // 记录响应内容的前500字符用于调试
                     if (content.Length > 500)
@@ -72,27 +99,9 @@ public class LotteryProxyService
                         _logger.LogDebug("响应内容: {Content}", content);
                     }
 
-                    // 检查响应内容是否为有效的JSON
-                    if (string.IsNullOrWhiteSpace(content))
-                    {
-                        _logger.LogWarning("响应内容为空，返回错误");
-                        return Results.Problem(
-                            detail: "目标服务器返回空响应",
-                            statusCode: (int)System.Net.HttpStatusCode.BadGateway,
-                            title: "代理请求失败"
-                        );
-                    }
-
-                    // 检查响应内容是否为HTML（错误页面）
-                    if (content.StartsWith("<!DOCTYPE html>") || content.StartsWith("<html"))
-                    {
-                        _logger.LogWarning("目标服务器返回HTML页面，可能是错误页面");
-                        return Results.Problem(
-                            detail: "目标服务器返回错误页面，可能是访问被拒绝",
-                            statusCode: (int)System.Net.HttpStatusCode.BadGateway,
-                            title: "代理请求失败"
-                        );
-                    }
+                    // 成功：单行汇总（常规日志里每个请求仅此一行）
+                    _logger.LogInformation("[代理] {Query} → {StatusCode}，{Length}字符，{Elapsed}ms（尝试 {Attempt}/{MaxRetries}）",
+                        summary, (int)response.StatusCode, content.Length, stopwatch.ElapsedMilliseconds, attempt, maxRetries);
 
                     // 设置响应头
                     var headers = new Dictionary<string, string>
@@ -107,7 +116,8 @@ public class LotteryProxyService
                 }
                 else if (response.StatusCode == System.Net.HttpStatusCode.Forbidden)
                 {
-                    _logger.LogWarning("目标服务器返回403 Forbidden，可能被反爬虫机制拦截");
+                    _logger.LogWarning("[代理] {Query} → 403 拒绝访问（疑似反爬拦截），{Elapsed}ms",
+                        summary, stopwatch.ElapsedMilliseconds);
                     return Results.Problem(
                         detail: "目标服务器拒绝访问，可能被反爬虫机制拦截",
                         statusCode: (int)System.Net.HttpStatusCode.BadGateway,
@@ -116,71 +126,93 @@ public class LotteryProxyService
                 }
                 else
                 {
-                    _logger.LogWarning("目标服务器返回错误状态码: {StatusCode}", response.StatusCode);
-
                     if (attempt == maxRetries)
                     {
+                        _logger.LogWarning("[代理] {Query} → {StatusCode}，重试 {MaxRetries} 次后放弃，{Elapsed}ms",
+                            summary, (int)response.StatusCode, maxRetries, stopwatch.ElapsedMilliseconds);
                         return Results.Problem(
                             detail: $"目标服务器返回错误: {response.StatusCode}",
                             statusCode: (int)System.Net.HttpStatusCode.BadGateway,
                             title: "代理请求失败"
                         );
                     }
+
+                    _logger.LogDebug("目标服务器返回错误状态码: {StatusCode}，等待重试", response.StatusCode);
                 }
             }
             catch (HttpRequestException ex)
             {
-                _logger.LogError(ex, "HTTP请求异常 (尝试 {Attempt}/{MaxRetries})", attempt, maxRetries);
-
                 if (attempt == maxRetries)
                 {
+                    _logger.LogError(ex, "[代理] {Query} → HTTP异常，重试 {MaxRetries} 次后放弃，{Elapsed}ms",
+                        summary, maxRetries, stopwatch.ElapsedMilliseconds);
                     return Results.Problem(
                         detail: $"HTTP请求异常: {ex.Message}",
                         statusCode: (int)System.Net.HttpStatusCode.BadGateway,
                         title: "代理请求失败"
                     );
                 }
+
+                _logger.LogDebug("HTTP请求异常 (尝试 {Attempt}/{MaxRetries}): {Message}", attempt, maxRetries, ex.Message);
             }
             catch (TaskCanceledException ex)
             {
-                _logger.LogError(ex, "请求超时 (尝试 {Attempt}/{MaxRetries})", attempt, maxRetries);
-
                 if (attempt == maxRetries)
                 {
+                    _logger.LogError(ex, "[代理] {Query} → 请求超时，重试 {MaxRetries} 次后放弃，{Elapsed}ms",
+                        summary, maxRetries, stopwatch.ElapsedMilliseconds);
                     return Results.Problem(
                         detail: $"请求超时: {ex.Message}",
                         statusCode: (int)System.Net.HttpStatusCode.GatewayTimeout,
                         title: "代理请求超时"
                     );
                 }
+
+                _logger.LogDebug("请求超时 (尝试 {Attempt}/{MaxRetries}): {Message}", attempt, maxRetries, ex.Message);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "未知异常 (尝试 {Attempt}/{MaxRetries})", attempt, maxRetries);
-
                 if (attempt == maxRetries)
                 {
+                    _logger.LogError(ex, "[代理] {Query} → 未知异常，重试 {MaxRetries} 次后放弃，{Elapsed}ms",
+                        summary, maxRetries, stopwatch.ElapsedMilliseconds);
                     return Results.Problem(
                         detail: $"未知异常: {ex.Message}",
                         statusCode: (int)System.Net.HttpStatusCode.InternalServerError,
                         title: "代理请求失败"
                     );
                 }
+
+                _logger.LogDebug("未知异常 (尝试 {Attempt}/{MaxRetries}): {Message}", attempt, maxRetries, ex.Message);
             }
 
             // 如果不是最后一次尝试，等待后重试
             if (attempt < maxRetries)
             {
-                _logger.LogInformation("等待 {DelaySeconds} 秒后重试...", retryDelay.TotalSeconds);
+                _logger.LogDebug("等待 {DelaySeconds} 秒后重试...", retryDelay.TotalSeconds);
                 await Task.Delay(retryDelay);
             }
         }
 
+        _logger.LogError("[代理] {Query} → 未知错误，{Elapsed}ms", summary, stopwatch.ElapsedMilliseconds);
         return Results.Problem(
             detail: "未知错误",
             statusCode: (int)System.Net.HttpStatusCode.InternalServerError,
             title: "代理请求失败"
         );
+    }
+
+    /// <summary>
+    /// 压缩查询串为关键参数，避免整段 URL 刷屏
+    /// </summary>
+    private static string SummarizeQuery(string queryString)
+    {
+        var parameters = queryString.Split('&', StringSplitOptions.RemoveEmptyEntries)
+            .Select(kv => kv.Split('=', 2))
+            .ToDictionary(kv => kv[0], kv => kv.Length > 1 ? Uri.UnescapeDataString(kv[1]) : "");
+
+        return string.Join(" ", new[] { "name", "dayStart", "dayEnd", "pageNo", "pageSize" }
+            .Select(k => $"{k}={parameters.GetValueOrDefault(k, "")}"));
     }
 
     /// <summary>

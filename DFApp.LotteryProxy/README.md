@@ -7,7 +7,7 @@
 - 🌐 **代理服务**: 转发HTTP请求到中国福利彩票网站
 - 🔒 **IP白名单**: 只允许授权的IP地址访问
 - 🔄 **重试机制**: 自动重试失败的请求
-- 📝 **详细日志**: 记录所有请求和响应信息
+- 📝 **精简日志**: 每个请求一行汇总，按天滚动文件留存细节（Debug 可开）
 - 🐳 **容器化**: 支持Docker部署
 - 📊 **健康检查**: 提供服务状态监控端点
 
@@ -209,10 +209,16 @@ docker exec lottery-proxy cat /app/logs/lottery-proxy-20250323.log
 docker exec lottery-proxy ls -lh /app/logs
 ```
 
-#### 日志级别
+#### 日志级别与分组约定
 
-- `Information`: 记录请求和响应基本信息
-- `Warning`: 记录重试和异常情况
+- `Information`: **每个请求仅一行汇总**（`[代理]` 前缀），格式为
+  `[代理] name=ssq dayStart=2026-01-15 dayEnd=2026-08-21 pageNo=1 pageSize=30 → 200，15230字符，235ms（尝试 1/3）`
+- `Warning`: 单行记录失败（空响应 / HTML 错误页 / 403 反爬 / 重试耗尽），带关键参数与耗时
+- `Error`: 单行记录重试耗尽后的异常（HTTP 异常 / 超时 / 未知异常），附异常堆栈
+- `Debug`: 请求过程细节（完整 URL、每次尝试、响应内容前 500 字符、白名单判断等），默认不输出
+- `System.Net.Http`、`Microsoft`、`Microsoft.AspNetCore` 均压到 `Warning`，避免 HttpClient 生命周期日志刷屏
+
+排查问题时临时开启细节：`Serilog__MinimumLevel__Default=Debug`
 - `Error`: 记录严重错误
 - `Debug`: 记录详细的调试信息（仅开发环境）
 

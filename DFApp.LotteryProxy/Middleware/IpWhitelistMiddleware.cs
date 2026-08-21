@@ -27,15 +27,11 @@ public class IpWhitelistMiddleware
     {
         var clientIp = GetClientIpAddress(context);
 
-        _logger.LogInformation("客户端IP: {ClientIP}", clientIp);
-        _logger.LogInformation("允许的IP列表: {AllowedIPs}", string.Join(", ", _proxySettings.AllowedIPs));
-        _logger.LogInformation("允许的IP数量: {Count}", _proxySettings.AllowedIPs?.Count ?? 0);
+        _logger.LogDebug("客户端IP: {ClientIP}，允许列表: [{AllowedIPs}]", clientIp, string.Join(", ", _proxySettings.AllowedIPs));
 
         if (!IsIpAllowed(clientIp))
         {
-            _logger.LogWarning("未授权的IP访问尝试: {ClientIP}", clientIp);
-            _logger.LogWarning("请求路径: {Path}", context.Request.Path);
-            _logger.LogWarning("请求方法: {Method}", context.Request.Method);
+            _logger.LogWarning("未授权的IP访问: {ClientIP} {Method} {Path}", clientIp, context.Request.Method, context.Request.Path);
             context.Response.StatusCode = (int)HttpStatusCode.Forbidden;
             await context.Response.WriteAsync("403 Forbidden: IP地址不在允许列表中");
             return;
@@ -49,22 +45,18 @@ public class IpWhitelistMiddleware
         // 仅使用 RemoteIpAddress，因为它来自TCP连接，无法被客户端伪造
         // 不使用 X-Forwarded-For 和 X-Real-IP 头部，因为它们可以被伪造
         var ip = context.Connection.RemoteIpAddress?.ToString();
-        _logger.LogInformation("RemoteIpAddress: {IP}", ip);
 
         // 如果是IPv6回环地址，转换为IPv4
         if (ip == "::1")
         {
             ip = "127.0.0.1";
-            _logger.LogInformation("IPv6回环地址转换为IPv4: {IP}", ip);
         }
         // 如果是IPv4映射的IPv6地址（::ffff:x.x.x.x），提取IPv4部分
         else if (ip != null && ip.StartsWith("::ffff:"))
         {
             ip = ip.Substring(7); // 移除 "::ffff:" 前缀
-            _logger.LogInformation("IPv6映射的IPv4地址转换为IPv4: {IP}", ip);
         }
 
-        _logger.LogInformation("最终获取的客户端IP: {IP}", ip);
         return ip ?? "unknown";
     }
 
@@ -78,14 +70,13 @@ public class IpWhitelistMiddleware
         // 默认允许本地访问（127.0.0.1 和 ::1）
         if (clientIp == "127.0.0.1" || clientIp == "::1")
         {
-            _logger.LogInformation("本地IP访问，自动允许: {IP}", clientIp);
             return true;
         }
 
         // 如果允许列表为空，则拒绝所有IP（生产环境）
         if (_proxySettings.AllowedIPs == null || _proxySettings.AllowedIPs.Count == 0)
         {
-            _logger.LogInformation("IP白名单为空，拒绝所有IP访问（除本地外）");
+            _logger.LogDebug("IP白名单为空，拒绝所有IP访问（除本地外）");
             return false;
         }
 

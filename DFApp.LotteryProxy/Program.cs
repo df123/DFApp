@@ -151,7 +151,7 @@ static void ConfigureEndpoints(WebApplication app)
     // 彩票数据代理端点
     app.MapGet("/api/proxy/lottery/findDrawNotice", async (HttpContext context) =>
     {
-        logger.LogInformation("收到彩票数据代理请求");
+        logger.LogDebug("收到彩票数据代理请求");
 
         // 获取查询字符串
         var queryString = context.Request.QueryString.ToString();
@@ -173,12 +173,12 @@ static void ConfigureEndpoints(WebApplication app)
             );
         }
 
-        logger.LogInformation("查询字符串: {QueryString}", queryString);
+        logger.LogDebug("查询字符串: {QueryString}", queryString);
 
         // 调用代理服务
         var result = await proxyService.ProxyRequestAsync(queryString);
 
-        logger.LogInformation("代理请求完成");
+        logger.LogDebug("代理请求完成");
 
         return result;
     })
