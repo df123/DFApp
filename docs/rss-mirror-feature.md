@@ -164,6 +164,31 @@ CREATE INDEX "IX_AppRssWordSegments_LanguageType" ON "AppRssWordSegments" ("Lang
 - 一个镜像条目可以有多个分词记录（1:N）
 - 分词表使用不区分大小写的索引来支持忽略大小写的搜索
 
+### 独立数据库存储（2026-08-21 起）
+
+镜像条目表（AppRssMirrorItem）和分词表（AppRssWordSegment）是可再生的缓存数据，
+增长速度快，曾直接写入主库 DFApp.db，导致主库膨胀、拖慢远程备份。现已将这两张表
+拆分到独立的 SQLite 数据库文件 **RssMirror.db**（与主库同目录），`AppRssSource`（源配置，
+有价值）仍留在主库。
+
+**实现要点**：
+- 连接串：`ConnectionStrings:RssMirror`（默认 `Data Source=./RssMirror.db;`），见 appsettings.json
+- 建表方式：应用启动时 `RssMirrorDbContext.EnsureTablesCreated()` 在新库执行与主库
+  相同的建表 DDL（含全部审计列与索引，幂等 IF NOT EXISTS）。不用 SqlSugar CodeFirst：
+  实体主键为 long（映射 BIGINT），SQLite 的 AUTOINCREMENT 仅允许 INTEGER PRIMARY KEY
+- 仓储切换：Program.cs 中为 `ISqlSugarRepository<RssMirrorItem, long>` 和
+  `ISqlSugarRepository<RssWordSegment, long>` 显式注册指向新库的构造泛型仓储
+  （优先于开放泛型注册），业务服务代码零改动
+- 作用域连接：`RssMirrorDbConnection`（Scoped）保证同一请求/Job 作用域内的仓储与事务
+  共享同一个新库 client
+- 抓取事务：`RssMirrorFetchJob` 中 HTTP 抓取/解析在事务外执行，新库事务只包裹
+  "查重 + 插条目 + 插分词"，提交后再更新主库的 RssSource 抓取状态
+- 两库之间无 SQL JOIN（所有关联查询通过内存 ID 列表连接），拆库不影响现有查询
+
+**主库回收空间**：部署新版并确认启动正常后，对主库执行
+`sql/23-split-rss-mirror-to-standalone-db.sql`（DROP 两张旧表 + VACUUM），
+主库文件体积随即缩小，备份恢复轻量。RssMirror.db 无需备份，可随时删除重建。
+
 ---
 
 ## 后端文件结构
@@ -1009,10 +1034,14 @@ public static class Rss
 ```json
 {
   "ConnectionStrings": {
-    "Default": "Data Source=DFApp.db"
+    "Default": "Data Source=./DFApp.db;",
+    "RssMirror": "Data Source=./RssMirror.db;"
   }
 }
 ```
+
+- `Default`：主库（RSS源配置等核心数据）
+- `RssMirror`：RSS镜像条目与分词数据的独立库（可抛弃，无需备份）
 
 ### 日志配置
 

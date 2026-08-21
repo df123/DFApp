@@ -80,6 +80,17 @@ public class Program
             builder.Services.AddScoped(typeof(ISqlSugarRepository<,>), typeof(SqlSugarRepository<,>));
             builder.Services.AddScoped(typeof(ISqlSugarReadOnlyRepository<,>), typeof(SqlSugarReadOnlyRepository<,>));
 
+            // RSS 镜像数据存独立 RssMirror.db：工厂（单例）+ 作用域连接 + 构造泛型覆盖通用仓储注册，
+            // 使镜像条目/分词仓储自动指向独立库，其余实体不受影响
+            builder.Services.AddSingleton<DFApp.Web.Data.RssMirrorDbContext>();
+            builder.Services.AddScoped<DFApp.Web.Data.RssMirrorDbConnection>();
+            builder.Services.AddScoped<ISqlSugarRepository<DFApp.Rss.RssMirrorItem, long>>(s =>
+                new SqlSugarRepository<DFApp.Rss.RssMirrorItem, long>(
+                    s.GetRequiredService<DFApp.Web.Data.RssMirrorDbConnection>().Client));
+            builder.Services.AddScoped<ISqlSugarRepository<DFApp.Rss.RssWordSegment, long>>(s =>
+                new SqlSugarRepository<DFApp.Rss.RssWordSegment, long>(
+                    s.GetRequiredService<DFApp.Web.Data.RssMirrorDbConnection>().Client));
+
             // 注册自定义仓储
             builder.Services.AddScoped<DFApp.FileFilter.IKeywordFilterRuleRepository, DFApp.FileFilter.KeywordFilterRuleRepository>();
             builder.Services.AddScoped<DFApp.Web.Data.ElectricVehicle.IGasolinePriceRepository, DFApp.Web.Data.ElectricVehicle.GasolinePriceRepository>();
@@ -263,6 +274,9 @@ public class Program
             builder.Services.AddQuartzHostedService(q => q.WaitForJobsToComplete = true);
 
             var app = builder.Build();
+
+            // 确保 RSS 镜像独立库的表存在（新库自动建表）
+            app.Services.GetRequiredService<DFApp.Web.Data.RssMirrorDbContext>().EnsureTablesCreated();
 
             var env = app.Environment;
 

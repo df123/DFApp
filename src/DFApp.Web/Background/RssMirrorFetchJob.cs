@@ -3,7 +3,6 @@ using DFApp.Web.Data;
 using DFApp.Web.Services.Rss;
 using Microsoft.Extensions.Logging;
 using Quartz;
-using SqlSugar;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -24,7 +23,7 @@ namespace DFApp.Web.Background
         private readonly ISqlSugarRepository<RssMirrorItem, long> _rssMirrorItemRepository;
         private readonly ISqlSugarRepository<RssWordSegment, long> _rssWordSegmentRepository;
         private readonly IWordSegmentService _wordSegmentService;
-        private readonly ISqlSugarClient _db;
+        private readonly RssMirrorDbConnection _rssDb;
         private readonly ILogger<RssMirrorFetchJob> _logger;
 
         /// <summary>
@@ -40,14 +39,14 @@ namespace DFApp.Web.Background
             ISqlSugarRepository<RssMirrorItem, long> rssMirrorItemRepository,
             ISqlSugarRepository<RssWordSegment, long> rssWordSegmentRepository,
             IWordSegmentService wordSegmentService,
-            ISqlSugarClient db,
+            RssMirrorDbConnection rssDb,
             ILogger<RssMirrorFetchJob> logger)
         {
             _rssSourceRepository = rssSourceRepository;
             _rssMirrorItemRepository = rssMirrorItemRepository;
             _rssWordSegmentRepository = rssWordSegmentRepository;
             _wordSegmentService = wordSegmentService;
-            _db = db;
+            _rssDb = rssDb;
             _logger = logger;
         }
 
@@ -81,7 +80,10 @@ namespace DFApp.Web.Background
         }
 
         /// <summary>
-        /// 抓取单个RSS源的数据
+        /// 抓取单个RSS源的数据。
+        /// HTTP 抓取在事务外执行（最长 60 秒，不持有数据库锁）；
+        /// 条目+分词写入独立 RssMirror.db 的单事务；源状态在主库独立更新，
+        /// 失败重抓时按 Link 去重，数据写入幂等。
         /// </summary>
         private async Task FetchRssSource(RssSource source)
         {
@@ -89,55 +91,55 @@ namespace DFApp.Web.Background
 
             try
             {
-                _db.Ado.BeginTran();
+                // 创建HttpClient并配置代理
+                using var handler = new HttpClientHandler();
+                if (!string.IsNullOrWhiteSpace(source.ProxyUrl))
+                {
+                    handler.Proxy = new WebProxy(source.ProxyUrl);
+                    if (!string.IsNullOrWhiteSpace(source.ProxyUsername) &&
+                        !string.IsNullOrWhiteSpace(source.ProxyPassword))
+                    {
+                        handler.Proxy.Credentials = new NetworkCredential(
+                            source.ProxyUsername,
+                            source.ProxyPassword);
+                    }
+                    handler.UseProxy = true;
+                }
+
+                using var client = new HttpClient(handler);
+                client.Timeout = TimeSpan.FromSeconds(60);
+
+                // 构建请求URL
+                string requestUrl = source.Url;
+                if (source.MaxItems > 0)
+                {
+                    string separator = requestUrl.Contains("?") ? "&" : "?";
+                    requestUrl = $"{requestUrl}{separator}n={source.MaxItems}";
+                }
+
+                if (!string.IsNullOrWhiteSpace(source.Query))
+                {
+                    string separator = requestUrl.Contains("?") ? "&" : "?";
+                    requestUrl = $"{requestUrl}{separator}q={Uri.EscapeDataString(source.Query)}";
+                }
+
+                _logger.LogInformation("请求URL: {RequestUrl}", requestUrl);
+
+                // 发送HTTP请求获取RSS内容
+                var response = await client.GetAsync(requestUrl);
+                response.EnsureSuccessStatusCode();
+
+                var content = await response.Content.ReadAsStringAsync();
+                _logger.LogInformation("获取到 {Length} 字符的响应内容", content.Length);
+
+                // 解析RSS XML
+                var items = ParseRssXml(content, source);
+
+                // 独立库事务：查重 + 插入镜像条目 + 插入分词
+                int newItemCount = 0;
+                _rssDb.Client.Ado.BeginTran();
                 try
                 {
-                    // 创建HttpClient并配置代理
-                    using var handler = new HttpClientHandler();
-                    if (!string.IsNullOrWhiteSpace(source.ProxyUrl))
-                    {
-                        handler.Proxy = new WebProxy(source.ProxyUrl);
-                        if (!string.IsNullOrWhiteSpace(source.ProxyUsername) &&
-                            !string.IsNullOrWhiteSpace(source.ProxyPassword))
-                        {
-                            handler.Proxy.Credentials = new NetworkCredential(
-                                source.ProxyUsername,
-                                source.ProxyPassword);
-                        }
-                        handler.UseProxy = true;
-                    }
-
-                    using var client = new HttpClient(handler);
-                    client.Timeout = TimeSpan.FromSeconds(60);
-
-                    // 构建请求URL
-                    string requestUrl = source.Url;
-                    if (source.MaxItems > 0)
-                    {
-                        string separator = requestUrl.Contains("?") ? "&" : "?";
-                        requestUrl = $"{requestUrl}{separator}n={source.MaxItems}";
-                    }
-
-                    if (!string.IsNullOrWhiteSpace(source.Query))
-                    {
-                        string separator = requestUrl.Contains("?") ? "&" : "?";
-                        requestUrl = $"{requestUrl}{separator}q={Uri.EscapeDataString(source.Query)}";
-                    }
-
-                    _logger.LogInformation("请求URL: {RequestUrl}", requestUrl);
-
-                    // 发送HTTP请求获取RSS内容
-                    var response = await client.GetAsync(requestUrl);
-                    response.EnsureSuccessStatusCode();
-
-                    var content = await response.Content.ReadAsStringAsync();
-                    _logger.LogInformation("获取到 {Length} 字符的响应内容", content.Length);
-
-                    // 解析RSS XML
-                    var items = ParseRssXml(content, source);
-
-                    // 检查重复，准备新条目
-                    int newItemCount = 0;
                     var newItems = new List<RssMirrorItem>();
 
                     foreach (var item in items)
@@ -179,22 +181,22 @@ namespace DFApp.Web.Background
                         newItemCount++;
                     }
 
-                    // 更新RSS源抓取状态
-                    var currentSource = await _rssSourceRepository.GetByIdAsync(source.Id);
-                    currentSource.LastFetchTime = DateTime.Now;
-                    currentSource.FetchStatus = 1; // 成功
-                    currentSource.ErrorMessage = null;
-                    await _rssSourceRepository.UpdateAsync(currentSource);
-
-                    _db.Ado.CommitTran();
-
-                    _logger.LogInformation("RSS源 {Name} 抓取完成，新增 {Count} 条记录", source.Name, newItemCount);
+                    _rssDb.Client.Ado.CommitTran();
                 }
                 catch
                 {
-                    _db.Ado.RollbackTran();
+                    _rssDb.Client.Ado.RollbackTran();
                     throw;
                 }
+
+                // 更新RSS源抓取状态（主库，独立于数据事务）
+                var currentSource = await _rssSourceRepository.GetByIdAsync(source.Id);
+                currentSource.LastFetchTime = DateTime.Now;
+                currentSource.FetchStatus = 1; // 成功
+                currentSource.ErrorMessage = null;
+                await _rssSourceRepository.UpdateAsync(currentSource);
+
+                _logger.LogInformation("RSS源 {Name} 抓取完成，新增 {Count} 条记录", source.Name, newItemCount);
             }
             catch (Exception ex)
             {

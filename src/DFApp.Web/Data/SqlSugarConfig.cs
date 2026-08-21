@@ -32,10 +32,20 @@ public class SqlSugarConfig
     /// <summary>
     /// 创建并配置 SqlSugar 客户端
     /// </summary>
+    /// <param name="connectionStringName">连接串名称（appsettings ConnectionStrings 节）</param>
     /// <returns>配置好的 SqlSugar 客户端</returns>
-    public ISqlSugarClient CreateClient()
+    public ISqlSugarClient CreateClient(string connectionStringName = "Default")
     {
-        var connectionString = _configuration.GetConnectionString("Default");
+        var connectionString = _configuration.GetConnectionString(connectionStringName);
+        return CreateClientFor(connectionString);
+    }
+
+    /// <summary>
+    /// 按连接串创建并配置 SqlSugar 客户端（供独立数据库复用同一套 AOP 配置）
+    /// </summary>
+    /// <param name="connectionString">数据库连接串</param>
+    public ISqlSugarClient CreateClientFor(string connectionString)
+    {
         var db = new SqlSugarClient(new ConnectionConfig()
         {
             ConnectionString = connectionString,
