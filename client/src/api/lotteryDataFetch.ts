@@ -41,6 +41,12 @@ export class LotteryDataFetchApi {
     return http.post(`${this.baseUrl}/fetch-kl8`);
   }
 
+  // POST /api/app/lottery-data-fetch/trigger-job
+  // 手动触发开奖补数任务（与每晚 23:00 定时任务同一逻辑，后台执行，立即返回）
+  async triggerResultJob(): Promise<LotteryDataFetchResponseDto> {
+    return http.post(`${this.baseUrl}/trigger-job`);
+  }
+
   // POST /api/app/lottery-data-fetch/test-connection
   async testLotteryApiConnection(
     lotteryType?: string

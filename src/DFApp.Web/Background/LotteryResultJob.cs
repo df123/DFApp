@@ -10,6 +10,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
 using System.Text.Json;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace DFApp.Web.Background;
@@ -29,6 +30,9 @@ public class LotteryResultJob : IJob
     private readonly IConfiguration _configuration;
     private readonly ILogger<LotteryResultJob> _logger;
     private readonly TimeProvider _timeProvider;
+
+    // Quartz 每次执行都会创建新的 Job 实例，防并发锁必须用 static（手动触发可能与定时任务重叠）
+    private static readonly SemaphoreSlim _executionLock = new(1, 1);
 
     public LotteryResultJob(
         ISqlSugarRepository<LotteryResult, long> lotteryResultRepository,
@@ -54,24 +58,37 @@ public class LotteryResultJob : IJob
 
     public async Task Execute(IJobExecutionContext context)
     {
-        // 处理双色球（SSQ），失败不影响其他彩票类型
-        try
+        if (!await _executionLock.WaitAsync(0))
         {
-            await StartWork(LotteryConst.SSQ, LotteryConst.SSQ_ENG, LotteryConst.SSQ_START_CODE);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "处理双色球(SSQ)时发生异常，将继续处理其他彩票类型");
+            _logger.LogWarning("开奖补数任务已在执行中，跳过本次触发");
+            return;
         }
 
-        // 处理快乐8（KL8），失败不影响其他彩票类型
         try
         {
-            await StartWork(LotteryConst.KL8, LotteryConst.KL8_ENG, LotteryConst.KL8_STRAT_CODE);
+            // 处理双色球（SSQ），失败不影响其他彩票类型
+            try
+            {
+                await StartWork(LotteryConst.SSQ, LotteryConst.SSQ_ENG, LotteryConst.SSQ_START_CODE);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "处理双色球(SSQ)时发生异常，将继续处理其他彩票类型");
+            }
+
+            // 处理快乐8（KL8），失败不影响其他彩票类型
+            try
+            {
+                await StartWork(LotteryConst.KL8, LotteryConst.KL8_ENG, LotteryConst.KL8_STRAT_CODE);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "处理快乐8(KL8)时发生异常，将继续处理其他彩票类型");
+            }
         }
-        catch (Exception ex)
+        finally
         {
-            _logger.LogError(ex, "处理快乐8(KL8)时发生异常，将继续处理其他彩票类型");
+            _executionLock.Release();
         }
     }
 

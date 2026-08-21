@@ -6,6 +6,7 @@ using System.Net.Http;
 using System.Text.Json;
 using System.Threading.Tasks;
 using DFApp.Lottery;
+using DFApp.Web.Background;
 using DFApp.Web.Data;
 using DFApp.Web.DTOs.Lottery;
 using DFApp.Web.Infrastructure;
@@ -24,6 +25,7 @@ public class LotteryDataFetchService : AppServiceBase
     private readonly LotteryMapper _mapper = new();
     private readonly ISqlSugarRepository<LotteryResult, long> _lotteryResultRepository;
     private readonly ISqlSugarRepository<LotteryPrizegrades, long> _lotteryPrizegradesRepository;
+    private readonly LotteryResultJob _resultJob;
     private readonly IHttpClientFactory _httpClientFactory;
     private readonly IConfiguration _configuration;
     private readonly ILogger<LotteryDataFetchService> _logger;
@@ -33,6 +35,7 @@ public class LotteryDataFetchService : AppServiceBase
         IPermissionChecker permissionChecker,
         ISqlSugarRepository<LotteryResult, long> lotteryResultRepository,
         ISqlSugarRepository<LotteryPrizegrades, long> lotteryPrizegradesRepository,
+        LotteryResultJob resultJob,
         IHttpClientFactory httpClientFactory,
         IConfiguration configuration,
         ILogger<LotteryDataFetchService> logger)
@@ -40,9 +43,36 @@ public class LotteryDataFetchService : AppServiceBase
     {
         _lotteryResultRepository = lotteryResultRepository;
         _lotteryPrizegradesRepository = lotteryPrizegradesRepository;
+        _resultJob = resultJob;
         _httpClientFactory = httpClientFactory;
         _configuration = configuration;
         _logger = logger;
+    }
+
+    /// <summary>
+    /// 手动触发开奖补数任务（与每晚 23:00 定时任务同一逻辑，后台执行并立即返回）
+    /// </summary>
+    public LotteryDataFetchResponseDto TriggerResultJob()
+    {
+        _ = Task.Run(async () =>
+        {
+            try
+            {
+                // Execute 不使用 Quartz 上下文参数，传 null 安全
+                await _resultJob.Execute(null!);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "手动触发的开奖补数任务执行失败");
+            }
+        });
+
+        return new LotteryDataFetchResponseDto
+        {
+            Success = true,
+            Message = "已触发补数任务，正在后台执行（双色球+快乐8 自动续抓到今天），稍后刷新列表查看结果",
+            StatusCode = 200,
+        };
     }
 
     /// <summary>

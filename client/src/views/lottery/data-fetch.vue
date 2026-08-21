@@ -7,6 +7,21 @@
         </div>
       </template>
 
+      <!-- 手动触发补数任务 -->
+      <div class="trigger-action">
+        <el-button
+          type="danger"
+          :loading="triggerLoading"
+          style="width: 100%"
+          @click="triggerResultJob"
+        >
+          立即补数（等同每晚 23:00 定时任务：双色球 + 快乐8 自动续抓到今天）
+        </el-button>
+        <div class="trigger-tip">
+          后台执行，断档较多时约需 1~3 分钟；执行中重复点击会被自动跳过
+        </div>
+      </div>
+
       <!-- 快速操作区域 -->
       <div class="quick-actions">
         <el-row :gutter="20">
@@ -272,6 +287,7 @@ const kl8Loading = ref(false);
 const ssqTestLoading = ref(false);
 const kl8TestLoading = ref(false);
 const customLoading = ref(false);
+const triggerLoading = ref(false);
 const resultLoading = ref(false);
 
 // 结果数据
@@ -280,6 +296,21 @@ const resultList = ref<any[]>([]);
 // 详情对话框
 const detailDialogVisible = ref(false);
 const currentDetail = ref<any>({});
+
+// 手动触发补数任务（后台执行，立即返回）
+const triggerResultJob = async () => {
+  triggerLoading.value = true;
+  try {
+    const result = await lotteryDataFetchApi.triggerResultJob();
+    addResult("手动触发补数任务", "ssq+kl8", result);
+    ElMessage.success(result.message || "已触发补数任务");
+  } catch (error) {
+    console.error("触发补数任务失败:", error);
+    ElMessage.error("触发补数任务失败");
+  } finally {
+    triggerLoading.value = false;
+  }
+};
 
 // 获取双色球最新数据
 const fetchSSQLatest = async () => {
@@ -430,6 +461,17 @@ onMounted(() => {
 
 .quick-actions {
   margin-bottom: 20px;
+}
+
+.trigger-action {
+  margin-bottom: 20px;
+}
+
+.trigger-tip {
+  margin-top: 8px;
+  font-size: 12px;
+  color: #909399;
+  text-align: center;
 }
 
 .custom-form {

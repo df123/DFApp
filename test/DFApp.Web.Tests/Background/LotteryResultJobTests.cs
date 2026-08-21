@@ -11,11 +11,16 @@ using System.Threading.Tasks;
 using DFApp.Lottery;
 using DFApp.Web.Background;
 using DFApp.Web.Data;
+using DFApp.Web.DTOs.Lottery;
+using DFApp.Web.Infrastructure;
 using DFApp.Web.Mapping;
+using DFApp.Web.Permissions;
+using DFApp.Web.Services.Lottery;
 using FluentAssertions;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
+using Moq;
 using SqlSugar;
 using Xunit;
 using Xunit.Abstractions;
@@ -146,17 +151,122 @@ public class LotteryResultJobTests : IDisposable
         ssq.Select(x => x.Code).Should().Contain(new[] { "2026006", "2026007", "2026008", "2026009" });
     }
 
+    [Fact]
+    public async Task 手动触发_应在后台执行完整补数并立即返回()
+    {
+        var db = CreateTestDb(out var path);
+        _tempDbPaths.Add(path);
+        SeedResult(db, "双色球", "2013001", "2013-01-01(二)", "二");
+        SeedResult(db, "双色球", "2026005", "2026-01-13(二)", "二");
+        SeedPrizegrades(db, 1);
+        SeedPrizegrades(db, 2);
+
+        var draws = new List<FakeDraw>();
+        foreach (var (code, date, week) in new[]
+        {
+            ("2026006", "2026-01-15(四)", "四"), ("2026007", "2026-01-18(日)", "日"),
+            ("2026008", "2026-01-20(二)", "二"), ("2026009", "2026-01-22(四)", "四"),
+        })
+        {
+            draws.Add(new("双色球", code, date, "01,02,03,04,05,06", "07"));
+        }
+
+        using var server = new FakeLotteryProxyServer(draws);
+        var job = CreateJob(db, server);
+        var service = new LotteryDataFetchService(
+            new Mock<ICurrentUser>().Object,
+            new Mock<IPermissionChecker>().Object,
+            new SqlSugarRepository<LotteryResult, long>(db),
+            new SqlSugarRepository<LotteryPrizegrades, long>(db),
+            job,
+            new SimpleHttpClientFactory(),
+            BuildConfiguration(server),
+            new TestOutputLogger<LotteryDataFetchService>(_output));
+
+        var response = service.TriggerResultJob();
+        response.Success.Should().BeTrue("触发接口应立即返回成功");
+
+        var polling = CreatePollingClient(path);
+        for (int i = 0; i < 200; i++)
+        {
+            if (polling.Queryable<LotteryResult>().Count(x => x.Name == "双色球") >= 6)
+            {
+                break;
+            }
+            await Task.Delay(50);
+        }
+
+        polling.Queryable<LotteryResult>().Count(x => x.Name == "双色球")
+            .Should().Be(6, "后台任务应完成 4 期补数");
+        polling.Queryable<LotteryPrizegrades>().Count()
+            .Should().Be(4 + 4 * 2, "新补的 4 期每期应带 2 条奖级");
+        lock (server.Requests)
+        {
+            server.Requests.Should().NotContain(r => r.EndsWith("|pageNo=0"));
+        }
+    }
+
+    [Fact]
+    public async Task 任务执行中重复触发_应直接跳过不产生重复数据()
+    {
+        var db = CreateTestDb(out var path);
+        _tempDbPaths.Add(path);
+        SeedResult(db, "双色球", "2013001", "2013-01-01(二)", "二");
+        SeedResult(db, "双色球", "2026005", "2026-01-13(二)", "二");
+        SeedPrizegrades(db, 1);
+        SeedPrizegrades(db, 2);
+
+        var draws = new List<FakeDraw>();
+        foreach (var (code, date, week) in new[]
+        {
+            ("2026006", "2026-01-15(四)", "四"), ("2026007", "2026-01-18(日)", "日"),
+            ("2026008", "2026-01-20(二)", "二"), ("2026009", "2026-01-22(四)", "四"),
+        })
+        {
+            draws.Add(new("双色球", code, date, "01,02,03,04,05,06", "07"));
+        }
+
+        // 阻塞门：请求到达后挂起，模拟上游响应慢，保证两次触发确实重叠
+        using var server = new FakeLotteryProxyServer(draws)
+        {
+            BlockRequests = new ManualResetEventSlim(false),
+        };
+        var job1 = CreateJob(db, server);
+        var job2 = CreateJob(db, server);
+
+        var t1 = Task.Run(() => job1.Execute(null!));
+        for (int i = 0; i < 100; i++)
+        {
+            lock (server.Requests)
+            {
+                if (server.Requests.Count > 0)
+                {
+                    break;
+                }
+            }
+            await Task.Delay(50);
+        }
+        lock (server.Requests)
+        {
+            server.Requests.Should().NotBeEmpty("前置条件：第一次触发已发出请求并阻塞");
+        }
+
+        var t2 = Task.Run(() => job2.Execute(null!));
+        var finished = await Task.WhenAny(t2, Task.Delay(3000));
+        finished.Should().Be(t2, "执行中的重复触发应立即跳过返回，而不是等待或并发执行");
+
+        server.BlockRequests!.Set();
+        await Task.WhenAll(t1, t2);
+
+        var ssq = db.Queryable<LotteryResult>().Where(x => x.Name == "双色球").ToList();
+        ssq.Should().HaveCount(6, "补数只应实际执行一次");
+        ssq.GroupBy(x => x.Code).Should().OnlyContain(g => g.Count() == 1, "不允许产生重复期号");
+    }
+
     // ==================== 测试基础设施 ====================
 
     private LotteryResultJob CreateJob(SqlSugarClient db, FakeLotteryProxyServer server)
     {
-        var configuration = new ConfigurationBuilder()
-            .AddInMemoryCollection(new Dictionary<string, string?>
-            {
-                ["LotteryProxy:Url"] = server.BaseUrl,
-            })
-            .Build();
-
         return new LotteryResultJob(
             new SqlSugarRepository<LotteryResult, long>(db),
             new SqlSugarReadOnlyRepository<LotteryResult, long>(db),
@@ -164,9 +274,31 @@ public class LotteryResultJobTests : IDisposable
             new SqlSugarReadOnlyRepository<LotteryPrizegrades, long>(db),
             new LotteryMapper(),
             new SimpleHttpClientFactory(),
-            configuration,
-            new TestOutputLogger(_output),
+            BuildConfiguration(server),
+            new TestOutputLogger<LotteryResultJob>(_output),
             new FixedLocalTimeProvider(FakeToday));
+    }
+
+    private static IConfiguration BuildConfiguration(FakeLotteryProxyServer server)
+    {
+        return new ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                ["LotteryProxy:Url"] = server.BaseUrl,
+            })
+            .Build();
+    }
+
+    /// <summary>对同一临时库文件的独立连接（后台任务写库时并发轮询用，避免争用同一 SqlSugarClient）</summary>
+    private static SqlSugarClient CreatePollingClient(string path)
+    {
+        return new SqlSugarClient(new ConnectionConfig
+        {
+            ConnectionString = $"DataSource={path}",
+            DbType = DbType.Sqlite,
+            InitKeyType = InitKeyType.Attribute,
+            IsAutoCloseConnection = true,
+        });
     }
 
     /// <summary>建临时库并按生产 DDL 建表（含 ExtraProperties NOT NULL 等真实约束）</summary>
@@ -250,6 +382,9 @@ CREATE TABLE ""AppLotteryPrizegrades"" (
         public string BaseUrl { get; }
         public List<string> Requests { get; } = new();
 
+        /// <summary>非空时每个请求在记录后挂起，直到 Set，用于构造慢上游场景</summary>
+        public ManualResetEventSlim? BlockRequests { get; init; }
+
         public FakeLotteryProxyServer(List<FakeDraw> draws)
         {
             _draws = draws;
@@ -308,6 +443,7 @@ CREATE TABLE ""AppLotteryPrizegrades"" (
             var pageSize = int.TryParse(parameters.GetValueOrDefault("pageSize"), out var s) ? s : 30;
 
             Requests.Add($"name={name}|dayStart={dayStart}|dayEnd={dayEnd}|pageNo={pageNo}");
+            BlockRequests?.Wait();
 
             // 上游真实行为：pageNo 从 0 开始请求会返回 404（nginx）
             if (pageNo <= 0)
@@ -387,7 +523,7 @@ CREATE TABLE ""AppLotteryPrizegrades"" (
     }
 
     /// <summary>把任务内部日志透传到 xUnit 输出，失败时可直接看到真实错误</summary>
-    private sealed class TestOutputLogger(ITestOutputHelper output) : ILogger<LotteryResultJob>
+    private sealed class TestOutputLogger<T>(ITestOutputHelper output) : ILogger<T>
     {
         public IDisposable? BeginScope<TState>(TState state) where TState : notnull => null;
 

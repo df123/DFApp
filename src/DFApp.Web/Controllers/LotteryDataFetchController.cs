@@ -77,4 +77,15 @@ public class LotteryDataFetchController : DFAppControllerBase
         var result = await _lotteryDataFetchService.TestLotteryApiConnection(lotteryType);
         return Success(result);
     }
+
+    /// <summary>
+    /// 手动触发开奖补数任务（与每晚 23:00 定时任务同一逻辑，后台执行，立即返回）
+    /// </summary>
+    [HttpPost("trigger-job")]
+    [Permission(DFAppPermissions.Lottery.Default)]
+    public IActionResult TriggerResultJob()
+    {
+        var result = _lotteryDataFetchService.TriggerResultJob();
+        return Success(result);
+    }
 }

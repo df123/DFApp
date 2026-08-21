@@ -104,6 +104,9 @@ public class Program
             // 注册油价刷新器（无状态，使用 Transient）
             builder.Services.AddTransient<GasolinePriceRefresher>();
 
+            // 注册开奖补数 Job 本体，供定时调度与手动触发共用
+            builder.Services.AddTransient<DFApp.Web.Background.LotteryResultJob>();
+
             // 配置 HttpClient
             builder.Services.AddHttpClient();
             builder.Services.AddHttpClient<Aria2RpcClient>();
