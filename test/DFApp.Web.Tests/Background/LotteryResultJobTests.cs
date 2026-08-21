@@ -263,6 +263,105 @@ public class LotteryResultJobTests : IDisposable
         ssq.GroupBy(x => x.Code).Should().OnlyContain(g => g.Count() == 1, "不允许产生重复期号");
     }
 
+    [Fact]
+    public async Task 配置令牌后_补数任务所有代理请求都应携带XProxyToken()
+    {
+        var db = CreateTestDb(out var path);
+        _tempDbPaths.Add(path);
+        SeedResult(db, "双色球", "2013001", "2013-01-01(二)", "二");
+        SeedResult(db, "双色球", "2026005", "2026-01-13(二)", "二");
+        SeedPrizegrades(db, 1);
+        SeedPrizegrades(db, 2);
+
+        var draws = new List<FakeDraw>();
+        foreach (var (code, date, week) in new[]
+        {
+            ("2026006", "2026-01-15(四)", "四"), ("2026007", "2026-01-18(日)", "日"),
+            ("2026008", "2026-01-20(二)", "二"), ("2026009", "2026-01-22(四)", "四"),
+        })
+        {
+            draws.Add(new("双色球", code, date, "01,02,03,04,05,06", "07"));
+        }
+
+        using var server = new FakeLotteryProxyServer(draws);
+        var job = new LotteryResultJob(
+            new SqlSugarRepository<LotteryResult, long>(db),
+            new SqlSugarReadOnlyRepository<LotteryResult, long>(db),
+            new SqlSugarRepository<LotteryPrizegrades, long>(db),
+            new SqlSugarReadOnlyRepository<LotteryPrizegrades, long>(db),
+            new LotteryMapper(),
+            new SimpleHttpClientFactory(),
+            BuildConfiguration(server, token: "job-test-token"),
+            new TestOutputLogger<LotteryResultJob>(_output),
+            new FixedLocalTimeProvider(FakeToday));
+        await job.Execute(null!);
+
+        lock (server.RequestTokens)
+        {
+            server.RequestTokens.Should().NotBeEmpty("补数任务应已发出代理请求");
+            server.RequestTokens.Should().OnlyContain(t => t == "job-test-token",
+                "暴露公网的代理要求每个请求都携带 X-Proxy-Token，漏一个该请求就会被 401 拒绝");
+        }
+    }
+
+    [Fact]
+    public async Task 配置令牌后_手动抓取代理请求也应携带XProxyToken()
+    {
+        var db = CreateTestDb(out var path);
+        _tempDbPaths.Add(path);
+
+        var draws = new List<FakeDraw>
+        {
+            new("双色球", "2026009", "2026-01-22(四)", "01,02,03,04,05,06", "07"),
+        };
+        using var server = new FakeLotteryProxyServer(draws);
+        var service = new LotteryDataFetchService(
+            new Mock<ICurrentUser>().Object,
+            new Mock<IPermissionChecker>().Object,
+            new SqlSugarRepository<LotteryResult, long>(db),
+            new SqlSugarRepository<LotteryPrizegrades, long>(db),
+            CreateJob(db, server),
+            new SimpleHttpClientFactory(),
+            BuildConfiguration(server, token: "fetch-test-token"),
+            new TestOutputLogger<LotteryDataFetchService>(_output));
+
+        var response = await service.FetchLotteryData(new LotteryDataFetchRequestDto
+        {
+            LotteryType = "ssq",
+            DayStart = "2026-01-15",
+            DayEnd = "2026-01-22",
+            PageNo = 1,
+            SaveToDatabase = false,
+        });
+
+        response.Success.Should().BeTrue();
+        lock (server.RequestTokens)
+        {
+            server.RequestTokens.Should().ContainSingle().Which.Should().Be("fetch-test-token");
+        }
+    }
+
+    [Fact]
+    public async Task 假代理探活_应能返回响应()
+    {
+        using var server = new FakeLotteryProxyServer(new List<FakeDraw>());
+        using var client = new HttpClient { Timeout = TimeSpan.FromSeconds(5) };
+        try
+        {
+            var response = await client.GetAsync($"{server.BaseUrl}/api/proxy/lottery/findDrawNotice?name=ssq&pageNo=1");
+            response.StatusCode.Should().Be(System.Net.HttpStatusCode.OK);
+        }
+        catch (Exception)
+        {
+            // 落到下方 HandlerErrors 输出真实原因
+        }
+
+        lock (server.HandlerErrors)
+        {
+            server.HandlerErrors.Should().BeEmpty(string.Join("\n", server.HandlerErrors));
+        }
+    }
+
     // ==================== 测试基础设施 ====================
 
     private LotteryResultJob CreateJob(SqlSugarClient db, FakeLotteryProxyServer server)
@@ -279,13 +378,18 @@ public class LotteryResultJobTests : IDisposable
             new FixedLocalTimeProvider(FakeToday));
     }
 
-    private static IConfiguration BuildConfiguration(FakeLotteryProxyServer server)
+    private static IConfiguration BuildConfiguration(FakeLotteryProxyServer server, string? token = null)
     {
+        var settings = new Dictionary<string, string?>
+        {
+            ["LotteryProxy:Url"] = server.BaseUrl,
+        };
+        if (token != null)
+        {
+            settings["LotteryProxy:Token"] = token;
+        }
         return new ConfigurationBuilder()
-            .AddInMemoryCollection(new Dictionary<string, string?>
-            {
-                ["LotteryProxy:Url"] = server.BaseUrl,
-            })
+            .AddInMemoryCollection(settings)
             .Build();
     }
 
@@ -382,6 +486,12 @@ CREATE TABLE ""AppLotteryPrizegrades"" (
         public string BaseUrl { get; }
         public List<string> Requests { get; } = new();
 
+        /// <summary>每个请求携带的 X-Proxy-Token（未携带为 null）</summary>
+        public List<string?> RequestTokens { get; } = new();
+
+        /// <summary>HandleAsync 抛出的异常信息，用于诊断假代理自身的问题</summary>
+        public List<string> HandlerErrors { get; } = new();
+
         /// <summary>非空时每个请求在记录后挂起，直到 Set，用于构造慢上游场景</summary>
         public ManualResetEventSlim? BlockRequests { get; init; }
 
@@ -405,8 +515,12 @@ CREATE TABLE ""AppLotteryPrizegrades"" (
                 {
                     ctx = await _listener.GetContextAsync();
                 }
-                catch (Exception)
+                catch (Exception ex)
                 {
+                    lock (HandlerErrors)
+                    {
+                        HandlerErrors.Add($"GetContextAsync: {ex}");
+                    }
                     break;
                 }
 
@@ -414,9 +528,13 @@ CREATE TABLE ""AppLotteryPrizegrades"" (
                 {
                     await HandleAsync(ctx);
                 }
-                catch (Exception)
+                catch (Exception ex)
                 {
                     // 单个请求处理异常不影响后续请求
+                    lock (HandlerErrors)
+                    {
+                        HandlerErrors.Add(ex.ToString());
+                    }
                 }
             }
         }
@@ -443,6 +561,12 @@ CREATE TABLE ""AppLotteryPrizegrades"" (
             var pageSize = int.TryParse(parameters.GetValueOrDefault("pageSize"), out var s) ? s : 30;
 
             Requests.Add($"name={name}|dayStart={dayStart}|dayEnd={dayEnd}|pageNo={pageNo}");
+            // NameValueCollection 索引器在键缺失时返回 null，必须用 Get 判空
+            var tokenString = ctx.Request.Headers.Get("X-Proxy-Token") ?? "";
+            lock (RequestTokens)
+            {
+                RequestTokens.Add(tokenString.Length == 0 ? null : tokenString);
+            }
             BlockRequests?.Wait();
 
             // 上游真实行为：pageNo 从 0 开始请求会返回 404（nginx）

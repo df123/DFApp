@@ -101,8 +101,15 @@ public class LotteryDataFetchService : AppServiceBase
 
             _logger.LogInformation("发送代理HTTP请求...");
 
-            // 发送请求到代理服务器
-            var httpResponse = await client.GetAsync(requestUrl);
+            // 发送请求到代理服务器（公网部署的代理要求携带共享密钥）
+            using var proxyRequest = new HttpRequestMessage(HttpMethod.Get, requestUrl);
+            string? proxyToken = LotteryConst.GetLotteryProxyToken(_configuration);
+            if (!string.IsNullOrEmpty(proxyToken))
+            {
+                proxyRequest.Headers.Add("X-Proxy-Token", proxyToken);
+            }
+
+            var httpResponse = await client.SendAsync(proxyRequest);
             response.StatusCode = (int)httpResponse.StatusCode;
 
             _logger.LogInformation("HTTP响应状态码: {StatusCode}", response.StatusCode);

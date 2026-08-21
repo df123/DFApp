@@ -11,6 +11,12 @@ public class ProxySettings
     public List<string> AllowedIPs { get; set; } = new();
 
     /// <summary>
+    /// 共享密钥：非空时所有请求（/api/health 除外）必须携带匹配的 X-Proxy-Token 请求头。
+    /// 服务暴露公网时必配，为空则不校验（仅 IP 白名单）。
+    /// </summary>
+    public string ProxyToken { get; set; } = string.Empty;
+
+    /// <summary>
     /// 目标基础URL
     /// </summary>
     public string TargetBaseUrl { get; set; } = "https://www.cwl.gov.cn";

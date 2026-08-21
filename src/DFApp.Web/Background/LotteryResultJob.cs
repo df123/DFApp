@@ -386,7 +386,14 @@ public class LotteryResultJob : IJob
 
                 _logger.LogInformation("发送代理HTTP请求 (尝试 {Attempt}/{MaxRetries})...", attempt, maxRetries);
 
-                using HttpResponseMessage message = await client.GetAsync(requestUrl);
+                using var request = new HttpRequestMessage(HttpMethod.Get, requestUrl);
+                string? proxyToken = LotteryConst.GetLotteryProxyToken(_configuration);
+                if (!string.IsNullOrEmpty(proxyToken))
+                {
+                    request.Headers.Add("X-Proxy-Token", proxyToken);
+                }
+
+                using HttpResponseMessage message = await client.SendAsync(request);
 
                 _logger.LogInformation("代理HTTP响应状态码: {StatusCode} ({Status})", (int)message.StatusCode, message.StatusCode);
 

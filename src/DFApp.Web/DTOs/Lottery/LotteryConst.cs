@@ -43,6 +43,11 @@ namespace DFApp.Web.DTOs.Lottery
         public const string LOTTERY_PROXY_URL_KEY = "LotteryProxy:Url";
 
         /// <summary>
+        /// 代理共享密钥配置键（与代理端 ProxySettings:ProxyToken 配成对）
+        /// </summary>
+        public const string LOTTERY_PROXY_TOKEN_KEY = "LotteryProxy:Token";
+
+        /// <summary>
         /// 获取彩票代理服务器URL
         /// </summary>
         /// <param name="configuration">配置对象</param>
@@ -50,6 +55,16 @@ namespace DFApp.Web.DTOs.Lottery
         public static string GetLotteryProxyUrl(IConfiguration configuration)
         {
             return configuration[LOTTERY_PROXY_URL_KEY] ?? "http://localhost:5000";
+        }
+
+        /// <summary>
+        /// 获取彩票代理共享密钥，空表示代理未启用令牌校验
+        /// </summary>
+        /// <param name="configuration">配置对象</param>
+        /// <returns>共享密钥</returns>
+        public static string? GetLotteryProxyToken(IConfiguration configuration)
+        {
+            return configuration[LOTTERY_PROXY_TOKEN_KEY];
         }
     }
 }

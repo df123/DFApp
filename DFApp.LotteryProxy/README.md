@@ -196,6 +196,27 @@ export ProxySettings__RetryCount=5
 - 文件大小限制：单个日志文件最大100MB，超过自动创建新文件
 - 格式：`[{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} {Level:u3}] {Message:lj}{NewLine}{Exception}`
 
+### X-Proxy-Token 访问令牌（公网部署必配）
+
+服务暴露公网时，IP 白名单之外必须再配共享密钥：`ProxySettings:ProxyToken` 非空时，
+所有请求（`/api/health` 容器探活除外）必须携带匹配的 `X-Proxy-Token` 请求头，否则返回 401。
+令牌比较使用固定时间算法，避免时序侧信道。
+
+```bash
+# 生成强随机令牌
+openssl rand -hex 32
+
+# 代理端（docker-compose 环境变量）
+ProxySettings__ProxyToken=<生成的令牌>
+
+# DFApp.Web 端（appsettings 或环境变量，两边配成对）
+"LotteryProxy": { "Url": "http://<代理地址>:45000", "Token": "<生成的令牌>" }
+# 或环境变量： LotteryProxy__Token=<生成的令牌>
+```
+
+注意：令牌与 IP 白名单同时生效（两道门都要过），公网来源 IP 还需加入 `AllowedIPs`。
+令牌留空则不校验，仅 IP 白名单生效（本地开发默认）。
+
 #### Docker Compose 日志查看
 
 ```bash

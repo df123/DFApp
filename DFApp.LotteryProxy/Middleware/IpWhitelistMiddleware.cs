@@ -27,6 +27,23 @@ public class IpWhitelistMiddleware
     {
         var clientIp = GetClientIpAddress(context);
 
+        // 令牌校验（第二道门）：公网部署时必须配置，与 IP 白名单同时生效
+        if (!string.IsNullOrEmpty(_proxySettings.ProxyToken)
+            && !context.Request.Path.StartsWithSegments("/api/health"))
+        {
+            var token = context.Request.Headers["X-Proxy-Token"].ToString();
+            // 固定时间比较，避免逐字节短路造成的时序侧信道
+            var tokenBytes = System.Text.Encoding.UTF8.GetBytes(token ?? string.Empty);
+            var expectedBytes = System.Text.Encoding.UTF8.GetBytes(_proxySettings.ProxyToken);
+            if (!System.Security.Cryptography.CryptographicOperations.FixedTimeEquals(tokenBytes, expectedBytes))
+            {
+                _logger.LogWarning("令牌校验失败: {ClientIP} {Method} {Path}", clientIp, context.Request.Method, context.Request.Path);
+                context.Response.StatusCode = (int)HttpStatusCode.Unauthorized;
+                await context.Response.WriteAsync("401 Unauthorized: 无效的 X-Proxy-Token");
+                return;
+            }
+        }
+
         _logger.LogDebug("客户端IP: {ClientIP}，允许列表: [{AllowedIPs}]", clientIp, string.Join(", ", _proxySettings.AllowedIPs));
 
         if (!IsIpAllowed(clientIp))

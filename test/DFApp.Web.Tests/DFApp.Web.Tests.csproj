@@ -18,6 +18,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\DFApp.Web\DFApp.Web.csproj" />
+    <ProjectReference Include="..\..\DFApp.LotteryProxy\DFApp.LotteryProxy.csproj" />
   </ItemGroup>
 
   <ItemGroup>

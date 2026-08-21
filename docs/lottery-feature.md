@@ -93,6 +93,7 @@
 ## 配置说明
 
 - `LotteryProxy:Url` - 中转代理地址，默认 `http://localhost:5000`
+- `LotteryProxy:Token` - 中转代理共享密钥（`X-Proxy-Token` 请求头）；代理暴露公网时必配，与代理端 `ProxySettings:ProxyToken` 配成对，留空表示代理未启用令牌
 - 中转代理需独立部署启动（见 `DFApp.LotteryProxy`）
 
 ## 故障排查
