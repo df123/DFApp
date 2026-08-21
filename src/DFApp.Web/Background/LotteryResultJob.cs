@@ -1,5 +1,6 @@
 using DFApp.Lottery;
 using DFApp.Web.Data;
+using DFApp.Web.Data.Configuration;
 using DFApp.Web.DTOs.Lottery;
 using DFApp.Web.Mapping;
 using Microsoft.Extensions.Configuration;
@@ -25,6 +26,7 @@ public class LotteryResultJob : IJob
     private readonly ISqlSugarReadOnlyRepository<LotteryResult, long> _resultReadOnly;
     private readonly ISqlSugarRepository<LotteryPrizegrades, long> _lotteryPrizegradesRepository;
     private readonly ISqlSugarReadOnlyRepository<LotteryPrizegrades, long> _prizegradesReadOnly;
+    private readonly IConfigurationInfoRepository _configurationInfoRepository;
     private readonly LotteryMapper _mapper;
     private readonly IHttpClientFactory _httpClientFactory;
     private readonly IConfiguration _configuration;
@@ -39,6 +41,7 @@ public class LotteryResultJob : IJob
         ISqlSugarReadOnlyRepository<LotteryResult, long> resultReadOnly,
         ISqlSugarRepository<LotteryPrizegrades, long> lotteryPrizegradesRepository,
         ISqlSugarReadOnlyRepository<LotteryPrizegrades, long> prizegradesReadOnly,
+        IConfigurationInfoRepository configurationInfoRepository,
         LotteryMapper mapper,
         IHttpClientFactory httpClientFactory,
         IConfiguration configuration,
@@ -49,6 +52,7 @@ public class LotteryResultJob : IJob
         _resultReadOnly = resultReadOnly;
         _lotteryPrizegradesRepository = lotteryPrizegradesRepository;
         _prizegradesReadOnly = prizegradesReadOnly;
+        _configurationInfoRepository = configurationInfoRepository;
         _mapper = mapper;
         _httpClientFactory = httpClientFactory;
         _configuration = configuration;
@@ -387,7 +391,7 @@ public class LotteryResultJob : IJob
                 _logger.LogInformation("发送代理HTTP请求 (尝试 {Attempt}/{MaxRetries})...", attempt, maxRetries);
 
                 using var request = new HttpRequestMessage(HttpMethod.Get, requestUrl);
-                string? proxyToken = LotteryConst.GetLotteryProxyToken(_configuration);
+                string? proxyToken = await LotteryConst.GetLotteryProxyTokenAsync(_configurationInfoRepository, _configuration);
                 if (!string.IsNullOrEmpty(proxyToken))
                 {
                     request.Headers.Add("X-Proxy-Token", proxyToken);

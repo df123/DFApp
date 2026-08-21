@@ -87,13 +87,18 @@
 | 断档起点_应取当前彩种自己的最新期号 | 最新期号选取未按彩种过滤 |
 | 手动触发_应在后台执行完整补数并立即返回 | 手动触发接口（后台执行 + 立即返回） |
 | 任务执行中重复触发_应直接跳过不产生重复数据 | 并发防护（假代理阻塞门构造慢上游场景） |
+| 配置令牌后_补数任务所有代理请求都应携带XProxyToken | 令牌透传（appsettings 回退路径） |
+| 配置令牌后_手动抓取代理请求也应携带XProxyToken | 令牌透传（appsettings 回退路径） |
+| 数据库配置令牌后_补数任务请求应携带该令牌 | 令牌改读数据库（AppConfigurationInfo） |
+| 数据库配置令牌后_手动抓取请求也应携带该令牌 | 令牌改读数据库（AppConfigurationInfo） |
+| 数据库与配置文件同时配置令牌_数据库优先 | 数据库优先级 |
 
 运行：`dotnet test test/DFApp.Web.Tests --filter "FullyQualifiedName~LotteryResultJobTests"`
 
 ## 配置说明
 
 - `LotteryProxy:Url` - 中转代理地址，默认 `http://localhost:5000`
-- `LotteryProxy:Token` - 中转代理共享密钥（`X-Proxy-Token` 请求头）；代理暴露公网时必配，与代理端 `ProxySettings:ProxyToken` 配成对，留空表示代理未启用令牌
+- 代理共享密钥（`X-Proxy-Token` 请求头）优先读**数据库配置**：`AppConfigurationInfo` 表中模块 `DFApp.Web.Lottery`、名称 `LotteryProxyToken`（可通过界面的配置管理修改，SQL 见 `sql/24`）；数据库未配置或为空时回退 appsettings 的 `LotteryProxy:Token`。值与代理端 `ProxySettings:ProxyToken` 配成对，两边都留空表示代理未启用令牌
 - 中转代理需独立部署启动（见 `DFApp.LotteryProxy`）
 
 ## 故障排查

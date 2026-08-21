@@ -11,6 +11,7 @@ using System.Threading.Tasks;
 using DFApp.Lottery;
 using DFApp.Web.Background;
 using DFApp.Web.Data;
+using DFApp.Web.Data.Configuration;
 using DFApp.Web.DTOs.Lottery;
 using DFApp.Web.Infrastructure;
 using DFApp.Web.Mapping;
@@ -178,6 +179,7 @@ public class LotteryResultJobTests : IDisposable
             new Mock<IPermissionChecker>().Object,
             new SqlSugarRepository<LotteryResult, long>(db),
             new SqlSugarRepository<LotteryPrizegrades, long>(db),
+            new ConfigurationInfoRepository(db),
             job,
             new SimpleHttpClientFactory(),
             BuildConfiguration(server),
@@ -289,6 +291,7 @@ public class LotteryResultJobTests : IDisposable
             new SqlSugarReadOnlyRepository<LotteryResult, long>(db),
             new SqlSugarRepository<LotteryPrizegrades, long>(db),
             new SqlSugarReadOnlyRepository<LotteryPrizegrades, long>(db),
+            new ConfigurationInfoRepository(db),
             new LotteryMapper(),
             new SimpleHttpClientFactory(),
             BuildConfiguration(server, token: "job-test-token"),
@@ -320,6 +323,7 @@ public class LotteryResultJobTests : IDisposable
             new Mock<IPermissionChecker>().Object,
             new SqlSugarRepository<LotteryResult, long>(db),
             new SqlSugarRepository<LotteryPrizegrades, long>(db),
+            new ConfigurationInfoRepository(db),
             CreateJob(db, server),
             new SimpleHttpClientFactory(),
             BuildConfiguration(server, token: "fetch-test-token"),
@@ -338,6 +342,125 @@ public class LotteryResultJobTests : IDisposable
         lock (server.RequestTokens)
         {
             server.RequestTokens.Should().ContainSingle().Which.Should().Be("fetch-test-token");
+        }
+    }
+
+    [Fact]
+    public async Task 数据库配置令牌后_补数任务请求应携带该令牌()
+    {
+        var db = CreateTestDb(out var path);
+        _tempDbPaths.Add(path);
+        SeedResult(db, "双色球", "2013001", "2013-01-01(二)", "二");
+        SeedResult(db, "双色球", "2026005", "2026-01-13(二)", "二");
+        SeedPrizegrades(db, 1);
+        SeedPrizegrades(db, 2);
+        SeedProxyToken(db, "db-job-token");
+
+        var draws = new List<FakeDraw>();
+        foreach (var (code, date, week) in new[]
+        {
+            ("2026006", "2026-01-15(四)", "四"), ("2026007", "2026-01-18(日)", "日"),
+            ("2026008", "2026-01-20(二)", "二"), ("2026009", "2026-01-22(四)", "四"),
+        })
+        {
+            draws.Add(new("双色球", code, date, "01,02,03,04,05,06", "07"));
+        }
+
+        using var server = new FakeLotteryProxyServer(draws);
+        var job = new LotteryResultJob(
+            new SqlSugarRepository<LotteryResult, long>(db),
+            new SqlSugarReadOnlyRepository<LotteryResult, long>(db),
+            new SqlSugarRepository<LotteryPrizegrades, long>(db),
+            new SqlSugarReadOnlyRepository<LotteryPrizegrades, long>(db),
+            new ConfigurationInfoRepository(db),
+            new LotteryMapper(),
+            new SimpleHttpClientFactory(),
+            BuildConfiguration(server),
+            new TestOutputLogger<LotteryResultJob>(_output),
+            new FixedLocalTimeProvider(FakeToday));
+        await job.Execute(null!);
+
+        lock (server.RequestTokens)
+        {
+            server.RequestTokens.Should().NotBeEmpty("补数任务应已发出代理请求");
+            server.RequestTokens.Should().OnlyContain(t => t == "db-job-token",
+                "令牌已迁移到数据库（AppConfigurationInfo），appsettings 未配置时应改用数据库的值");
+        }
+    }
+
+    [Fact]
+    public async Task 数据库与配置文件同时配置令牌_数据库优先()
+    {
+        var db = CreateTestDb(out var path);
+        _tempDbPaths.Add(path);
+        SeedResult(db, "双色球", "2013001", "2013-01-01(二)", "二");
+        SeedResult(db, "双色球", "2026005", "2026-01-13(二)", "二");
+        SeedPrizegrades(db, 1);
+        SeedPrizegrades(db, 2);
+        SeedProxyToken(db, "db-token");
+
+        var draws = new List<FakeDraw>
+        {
+            new("双色球", "2026006", "2026-01-15(四)", "01,02,03,04,05,06", "07"),
+        };
+        using var server = new FakeLotteryProxyServer(draws);
+        var job = new LotteryResultJob(
+            new SqlSugarRepository<LotteryResult, long>(db),
+            new SqlSugarReadOnlyRepository<LotteryResult, long>(db),
+            new SqlSugarRepository<LotteryPrizegrades, long>(db),
+            new SqlSugarReadOnlyRepository<LotteryPrizegrades, long>(db),
+            new ConfigurationInfoRepository(db),
+            new LotteryMapper(),
+            new SimpleHttpClientFactory(),
+            BuildConfiguration(server, token: "file-token"),
+            new TestOutputLogger<LotteryResultJob>(_output),
+            new FixedLocalTimeProvider(FakeToday));
+        await job.Execute(null!);
+
+        lock (server.RequestTokens)
+        {
+            server.RequestTokens.Should().NotBeEmpty();
+            server.RequestTokens.Should().OnlyContain(t => t == "db-token",
+                "两处同时配置时数据库优先，避免配置漂移时行为摇摆");
+        }
+    }
+
+    [Fact]
+    public async Task 数据库配置令牌后_手动抓取请求也应携带该令牌()
+    {
+        var db = CreateTestDb(out var path);
+        _tempDbPaths.Add(path);
+        SeedProxyToken(db, "db-fetch-token");
+
+        var draws = new List<FakeDraw>
+        {
+            new("双色球", "2026009", "2026-01-22(四)", "01,02,03,04,05,06", "07"),
+        };
+        using var server = new FakeLotteryProxyServer(draws);
+        var service = new LotteryDataFetchService(
+            new Mock<ICurrentUser>().Object,
+            new Mock<IPermissionChecker>().Object,
+            new SqlSugarRepository<LotteryResult, long>(db),
+            new SqlSugarRepository<LotteryPrizegrades, long>(db),
+            new ConfigurationInfoRepository(db),
+            CreateJob(db, server),
+            new SimpleHttpClientFactory(),
+            BuildConfiguration(server),
+            new TestOutputLogger<LotteryDataFetchService>(_output));
+
+        var response = await service.FetchLotteryData(new LotteryDataFetchRequestDto
+        {
+            LotteryType = "ssq",
+            DayStart = "2026-01-15",
+            DayEnd = "2026-01-22",
+            PageNo = 1,
+            SaveToDatabase = false,
+        });
+
+        response.Success.Should().BeTrue();
+        lock (server.RequestTokens)
+        {
+            server.RequestTokens.Should().ContainSingle().Which.Should().Be("db-fetch-token");
         }
     }
 
@@ -371,6 +494,7 @@ public class LotteryResultJobTests : IDisposable
             new SqlSugarReadOnlyRepository<LotteryResult, long>(db),
             new SqlSugarRepository<LotteryPrizegrades, long>(db),
             new SqlSugarReadOnlyRepository<LotteryPrizegrades, long>(db),
+            new ConfigurationInfoRepository(db),
             new LotteryMapper(),
             new SimpleHttpClientFactory(),
             BuildConfiguration(server),
@@ -436,6 +560,12 @@ CREATE TABLE ""AppLotteryPrizegrades"" (
     ""ExtraProperties"" TEXT NOT NULL, ""IsDeleted"" INTEGER NOT NULL DEFAULT 0,
     ""LastModificationTime"" TEXT NULL, ""LastModifierId"" TEXT NULL,
     ""LotteryResultId"" INTEGER NOT NULL, ""Type"" TEXT NULL, ""TypeMoney"" TEXT NULL, ""TypeNum"" TEXT NULL
+);
+CREATE TABLE ""AppConfigurationInfo"" (
+    ""Id"" INTEGER NOT NULL CONSTRAINT ""PK_AppConfigurationInfo"" PRIMARY KEY AUTOINCREMENT,
+    ""ConcurrencyStamp"" TEXT NULL, ""CreationTime"" TEXT NOT NULL, ""CreatorId"" TEXT NULL,
+    ""LastModificationTime"" TEXT NULL, ""LastModifierId"" TEXT NULL,
+    ""ModuleName"" TEXT NULL, ""ConfigurationName"" TEXT NULL, ""ConfigurationValue"" TEXT NULL, ""Remark"" TEXT NULL
 );");
 
         // 复刻生产 AOP：插入时空并发标记自动填充
@@ -469,6 +599,15 @@ CREATE TABLE ""AppLotteryPrizegrades"" (
             "VALUES (@resultId, '1', '5', '10000000', 0, '{}', 'seed', '2026-01-01 00:00:00')," +
             "       (@resultId, '2', '100', '5000', 0, '{}', 'seed', '2026-01-01 00:00:00');",
             new { resultId });
+    }
+
+    /// <summary>向 AppConfigurationInfo 写入代理共享令牌（模拟数据库配置）</summary>
+    private static void SeedProxyToken(SqlSugarClient db, string token)
+    {
+        db.Ado.ExecuteCommand(
+            "INSERT INTO AppConfigurationInfo (ModuleName, ConfigurationName, ConfigurationValue, Remark, CreationTime) " +
+            "VALUES ('DFApp.Web.Lottery', 'LotteryProxyToken', @token, '测试种子', '2026-01-01 00:00:00');",
+            new { token });
     }
 
     private sealed record FakeDraw(string Name, string Code, string Date, string Red, string Blue);

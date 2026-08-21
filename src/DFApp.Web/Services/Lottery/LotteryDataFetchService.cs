@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using DFApp.Lottery;
 using DFApp.Web.Background;
 using DFApp.Web.Data;
+using DFApp.Web.Data.Configuration;
 using DFApp.Web.DTOs.Lottery;
 using DFApp.Web.Infrastructure;
 using DFApp.Web.Mapping;
@@ -25,6 +26,7 @@ public class LotteryDataFetchService : AppServiceBase
     private readonly LotteryMapper _mapper = new();
     private readonly ISqlSugarRepository<LotteryResult, long> _lotteryResultRepository;
     private readonly ISqlSugarRepository<LotteryPrizegrades, long> _lotteryPrizegradesRepository;
+    private readonly IConfigurationInfoRepository _configurationInfoRepository;
     private readonly LotteryResultJob _resultJob;
     private readonly IHttpClientFactory _httpClientFactory;
     private readonly IConfiguration _configuration;
@@ -35,6 +37,7 @@ public class LotteryDataFetchService : AppServiceBase
         IPermissionChecker permissionChecker,
         ISqlSugarRepository<LotteryResult, long> lotteryResultRepository,
         ISqlSugarRepository<LotteryPrizegrades, long> lotteryPrizegradesRepository,
+        IConfigurationInfoRepository configurationInfoRepository,
         LotteryResultJob resultJob,
         IHttpClientFactory httpClientFactory,
         IConfiguration configuration,
@@ -43,6 +46,7 @@ public class LotteryDataFetchService : AppServiceBase
     {
         _lotteryResultRepository = lotteryResultRepository;
         _lotteryPrizegradesRepository = lotteryPrizegradesRepository;
+        _configurationInfoRepository = configurationInfoRepository;
         _resultJob = resultJob;
         _httpClientFactory = httpClientFactory;
         _configuration = configuration;
@@ -103,7 +107,7 @@ public class LotteryDataFetchService : AppServiceBase
 
             // 发送请求到代理服务器（公网部署的代理要求携带共享密钥）
             using var proxyRequest = new HttpRequestMessage(HttpMethod.Get, requestUrl);
-            string? proxyToken = LotteryConst.GetLotteryProxyToken(_configuration);
+            string? proxyToken = await LotteryConst.GetLotteryProxyTokenAsync(_configurationInfoRepository, _configuration);
             if (!string.IsNullOrEmpty(proxyToken))
             {
                 proxyRequest.Headers.Add("X-Proxy-Token", proxyToken);
