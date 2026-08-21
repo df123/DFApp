@@ -73,6 +73,20 @@ const handleCancel = async (id: number) => {
   }
 }
 
+const handleDeleteFailed = async () => {
+  try {
+    await ElMessageBox.confirm('确定要删除全部失败任务及其本地临时文件吗？', '确认批量删除', { type: 'warning' })
+    const { data } = await downloadApi.deleteFailed()
+    ElMessage.success(`已删除 ${data.deletedCount} 个失败任务`)
+    if (downloads.value.length === data.deletedCount && page.value > 1) {
+      page.value--
+    }
+    fetchDownloads()
+  } catch {
+    // 用户取消
+  }
+}
+
 const formatBytes = (bytes: number) => {
   if (bytes === 0) return '0 B'
   const k = 1024
@@ -115,14 +129,17 @@ onUnmounted(() => {
   <div>
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px">
       <h2>下载队列</h2>
-      <el-select v-model="statusFilter" placeholder="状态筛选" clearable style="width: 150px" @change="fetchDownloads">
-        <el-option label="全部" value="" />
-        <el-option label="等待中" value="Pending" />
-        <el-option label="下载中" value="Downloading" />
-        <el-option label="已暂停" value="Paused" />
-        <el-option label="已完成" value="Completed" />
-        <el-option label="失败" value="Failed" />
-      </el-select>
+      <div style="display: flex; gap: 12px">
+        <el-button type="danger" plain @click="handleDeleteFailed">批量删除失败任务</el-button>
+        <el-select v-model="statusFilter" placeholder="状态筛选" clearable style="width: 150px" @change="fetchDownloads">
+          <el-option label="全部" value="" />
+          <el-option label="等待中" value="Pending" />
+          <el-option label="下载中" value="Downloading" />
+          <el-option label="已暂停" value="Paused" />
+          <el-option label="已完成" value="Completed" />
+          <el-option label="失败" value="Failed" />
+        </el-select>
+      </div>
     </div>
 
     <el-table

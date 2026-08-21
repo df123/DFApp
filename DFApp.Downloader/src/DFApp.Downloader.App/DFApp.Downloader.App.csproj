@@ -16,6 +16,13 @@
     <PackageReference Include="Serilog.Sinks.Console" Version="6.1.1" />
   </ItemGroup>
 
+  <ItemGroup Condition="'$(RuntimeIdentifier)' == 'linux-x64'">
+    <Content Include="$(NuGetPackageRoot)microsoft.aspnetcore.app.runtime.linux-x64/10.0.10/runtimes/linux-x64/lib/net10.0/Microsoft.AspNetCore.WebUtilities.dll">
+      <Link>Microsoft.AspNetCore.WebUtilities.dll</Link>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+    </Content>
+  </ItemGroup>
+
   <!-- wwwroot 随 build 复制到输出目录，避免 dotnet xxx.dll 运行时找不到 Web 管理界面静态文件 -->
   <ItemGroup>
     <Content Update="wwwroot\**">
