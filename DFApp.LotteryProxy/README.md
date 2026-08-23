@@ -206,8 +206,9 @@ export ProxySettings__RetryCount=5
 # 生成强随机令牌
 openssl rand -hex 32
 
-# 代理端：令牌写在 compose 同目录 .env（git 忽略，代码更新不会覆盖；模板见 .env.example）
-echo "LOTTERY_PROXY_TOKEN=<生成的令牌>" > .env
+# 代理端：令牌与 IP 白名单都写在 compose 同目录 .env（git 忽略，代码更新不会覆盖；模板见 .env.example）
+echo "LOTTERY_PROXY_TOKEN=<生成的令牌>" >> .env
+echo "LOTTERY_ALLOWED_IP=<DFApp.Web 服务器的公网IP>" >> .env
 
 # DFApp.Web 端（两边配成对）：数据库 AppConfigurationInfo 表
 # 模块 DFApp.Web.Lottery，名称 LotteryProxyToken（可通过配置管理界面修改，SQL 见 sql/24）

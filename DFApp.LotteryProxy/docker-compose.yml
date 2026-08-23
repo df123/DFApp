@@ -6,7 +6,8 @@ services:
       - "45000:8080"
     environment:
       - ASPNETCORE_ENVIRONMENT=Production
-      - ProxySettings__AllowedIPs__0=
+      # IP 白名单与令牌都写在同目录 .env（git 忽略，改配置不动本文件）
+      - ProxySettings__AllowedIPs__0=${LOTTERY_ALLOWED_IP:-}
       # 公网部署必填：令牌写在同目录 .env 文件的 LOTTERY_PROXY_TOKEN（git 忽略，改配置不动本文件），
       # 与 DFApp.Web 数据库配置（AppConfigurationInfo 的 LotteryProxyToken）配成对，建议 openssl rand -hex 32
       - ProxySettings__ProxyToken=${LOTTERY_PROXY_TOKEN:-}
