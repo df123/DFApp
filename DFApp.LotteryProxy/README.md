@@ -206,8 +206,8 @@ export ProxySettings__RetryCount=5
 # 生成强随机令牌
 openssl rand -hex 32
 
-# 代理端（docker-compose 环境变量）
-ProxySettings__ProxyToken=<生成的令牌>
+# 代理端：令牌写在 compose 同目录 .env（git 忽略，代码更新不会覆盖；模板见 .env.example）
+echo "LOTTERY_PROXY_TOKEN=<生成的令牌>" > .env
 
 # DFApp.Web 端（两边配成对）：数据库 AppConfigurationInfo 表
 # 模块 DFApp.Web.Lottery，名称 LotteryProxyToken（可通过配置管理界面修改，SQL 见 sql/24）

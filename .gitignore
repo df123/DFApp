@@ -348,3 +348,6 @@ DFApp.Downloader/src/DFApp.Downloader.App/logs/
 
 # 日志
 DFApp.Downloader/logs/
+
+# 彩票中转令牌（部署机各自填写，勿提交）
+DFApp.LotteryProxy/.env
