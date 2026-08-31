@@ -53,17 +53,6 @@ public class Program
             builder.Services.AddSingleton<DownloadNotificationClient>();
             builder.Services.AddSingleton<DownloadManager>();
 
-            // 配置 CORS
-            builder.Services.AddCors(options =>
-            {
-                options.AddDefaultPolicy(policy =>
-                {
-                    policy.AllowAnyOrigin()
-                          .AllowAnyMethod()
-                          .AllowAnyHeader();
-                });
-            });
-
             // 配置控制器
             builder.Services.AddControllers()
                 .AddJsonOptions(options =>
@@ -73,7 +62,34 @@ public class Program
 
             var app = builder.Build();
 
-            app.UseCors();
+            // 管理令牌认证：回环来源零配置放行；非回环必须携带匹配的 X-Management-Token，
+            // 未配置令牌时非回环一律拒绝（fail-closed），防止管理接口/凭据在局域网裸奔
+            app.Use(async (context, next) =>
+            {
+                var remote = context.Connection.RemoteIpAddress;
+                if (remote is not null && System.Net.IPAddress.IsLoopback(remote))
+                {
+                    await next();
+                    return;
+                }
+
+                var expected = settings.ManagementToken ?? string.Empty;
+                var provided = context.Request.Headers["X-Management-Token"].ToString();
+                var allowed = expected.Length > 0 &&
+                    System.Security.Cryptography.CryptographicOperations.FixedTimeEquals(
+                        System.Text.Encoding.UTF8.GetBytes(provided),
+                        System.Text.Encoding.UTF8.GetBytes(expected));
+                if (!allowed)
+                {
+                    Log.Warning("拒绝未授权的管理请求: {Remote} {Method} {Path}",
+                        remote, context.Request.Method, context.Request.Path);
+                    context.Response.StatusCode = StatusCodes.Status401Unauthorized;
+                    await context.Response.WriteAsync("401 Unauthorized: 需要 X-Management-Token");
+                    return;
+                }
+
+                await next();
+            });
 
             // 静态文件（Web 管理界面）
             app.UseDefaultFiles();
@@ -113,8 +129,10 @@ public class Program
                 catch { }
             }
 
-            Log.Information("DFApp.Downloader 已启动，端口: {Port}", settings.WebServerPort);
-            await app.RunAsync($"http://0.0.0.0:{settings.WebServerPort}");
+            Log.Information("DFApp.Downloader 已启动，监听: {Bind}:{Port}（管理令牌: {TokenState}）",
+                settings.WebServerBind, settings.WebServerPort,
+                string.IsNullOrEmpty(settings.ManagementToken) ? "未配置，仅允许本机访问" : "已配置");
+            await app.RunAsync($"http://{settings.WebServerBind}:{settings.WebServerPort}");
         }
         catch (Exception ex)
         {

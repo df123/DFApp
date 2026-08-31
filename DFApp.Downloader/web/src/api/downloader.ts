@@ -1,10 +1,5 @@
 import axios from 'axios'
 
-const api = axios.create({
-  baseURL: '/api',
-  timeout: 10000,
-})
-
 export interface DownloadItem {
   id: number
   sourceType: string
@@ -36,8 +31,63 @@ export interface DownloaderSettings {
   maxSegmentsPerFile: number
   segmentSize: number
   webServerPort: number
+  webServerBind: string
+  managementToken: string
   autoStart: boolean
 }
+
+/** 管理令牌的本地存储键（非回环访问时需携带 X-Management-Token） */
+const MANAGEMENT_TOKEN_KEY = 'downloaderManagementToken'
+
+/** 密码回显掩码：提交该值表示保留原密码 */
+export const PASSWORD_MASK = '********'
+
+export function getManagementToken(): string {
+  return localStorage.getItem(MANAGEMENT_TOKEN_KEY) ?? ''
+}
+
+export function setManagementToken(token: string) {
+  localStorage.setItem(MANAGEMENT_TOKEN_KEY, token)
+}
+
+const api = axios.create({
+  baseURL: '/api',
+  timeout: 10000,
+})
+
+// 所有请求携带管理令牌（本机访问可留空）
+api.interceptors.request.use(config => {
+  const token = getManagementToken()
+  if (token) {
+    config.headers['X-Management-Token'] = token
+  }
+  return config
+})
+
+// 401 时提示输入令牌，保存后引导手动重试（避免自动重试造成循环）
+api.interceptors.response.use(
+  response => response,
+  async error => {
+    if (error?.response?.status === 401 && !error.config?.__tokenPrompted) {
+      error.config.__tokenPrompted = true
+      const { ElMessageBox } = await import('element-plus')
+      try {
+        const { value } = await ElMessageBox.prompt(
+          '访问被拒绝：本界面来自非本机地址，需要管理令牌（settings.json 中的 ManagementToken）',
+          '管理令牌',
+          { confirmButtonText: '保存并刷新', cancelButtonText: '取消', inputType: 'password' }
+        )
+        if (value) {
+          setManagementToken(value.trim())
+          window.location.reload()
+        }
+      } catch {
+        /* 用户取消 */
+      }
+    }
+    return Promise.reject(error)
+  }
+)
 
 export interface GlobalStatus {
   isConnected: boolean

@@ -7,6 +7,8 @@ const settings = ref<DownloaderSettings>({
   dfAppUrl: '',
   dfAppUsername: '',
   dfAppPassword: '',
+  webServerBind: '127.0.0.1',
+  managementToken: '',
   apacheUsername: '',
   apachePassword: '',
   downloadPath: '',
@@ -75,7 +77,8 @@ onMounted(fetchSettings)
       </el-form-item>
 
       <el-form-item label="密码">
-        <el-input v-model="settings.dfAppPassword" type="password" show-password placeholder="登录密码" />
+        <el-input v-model="settings.dfAppPassword" type="password" show-password
+          placeholder="登录密码；显示 ******** 表示已保存，无需修改" />
       </el-form-item>
 
       <el-form-item label="遗漏同步">
@@ -92,7 +95,19 @@ onMounted(fetchSettings)
       </el-form-item>
 
       <el-form-item label="密码">
-        <el-input v-model="settings.apachePassword" type="password" show-password placeholder="Apache Basic Auth 密码" />
+        <el-input v-model="settings.apachePassword" type="password" show-password
+          placeholder="Apache Basic Auth 密码；显示 ******** 表示已保存，无需修改" />
+      </el-form-item>
+
+      <el-divider content-position="left">管理访问</el-divider>
+
+      <el-form-item label="监听地址">
+        <el-input v-model="settings.webServerBind" placeholder="127.0.0.1（默认仅本机）；改为 0.0.0.0 需配置管理令牌" />
+      </el-form-item>
+
+      <el-form-item label="管理令牌">
+        <el-input v-model="settings.managementToken" type="password" show-password
+          placeholder="非本机访问必须携带；显示 ******** 表示已保存，清空并保存可移除" />
       </el-form-item>
 
       <el-divider content-position="left">下载配置</el-divider>

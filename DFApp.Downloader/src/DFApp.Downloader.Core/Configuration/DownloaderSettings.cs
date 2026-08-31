@@ -35,6 +35,18 @@ public class DownloaderSettings
     /// <summary>Web 管理界面端口</summary>
     public int WebServerPort { get; set; } = 9550;
 
+    /// <summary>
+    /// Web 管理界面绑定地址，默认仅回环（127.0.0.1）。
+    /// 需要局域网访问时显式配置为 0.0.0.0，并务必同时配置管理令牌
+    /// </summary>
+    public string WebServerBind { get; set; } = "127.0.0.1";
+
+    /// <summary>
+    /// 管理令牌：非回环来源的请求必须携带匹配的 X-Management-Token 请求头；
+    /// 为空时非回环请求一律拒绝（fail-closed），仅本机可访问
+    /// </summary>
+    public string ManagementToken { get; set; } = string.Empty;
+
     /// <summary>是否开机自启</summary>
     public bool AutoStart { get; set; } = false;
 }

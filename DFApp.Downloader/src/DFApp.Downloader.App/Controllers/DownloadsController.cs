@@ -130,23 +130,35 @@ public class DownloadsController : ControllerBase
         return Ok(new { deletedCount });
     }
 
-    /// <summary>获取设置</summary>
+    /// <summary>密码回显掩码；更新时提交该哨兵值表示保留原密码</summary>
+    public const string PasswordMask = "********";
+
+    /// <summary>获取设置（凭据脱敏回显，不再向任何调用方回传明文密码）</summary>
     [HttpGet("settings")]
     public IActionResult GetSettings()
     {
-        return Ok(_settings);
+        var masked = System.Text.Json.JsonSerializer.Deserialize<DownloaderSettings>(
+            System.Text.Json.JsonSerializer.Serialize(_settings))!;
+        if (!string.IsNullOrEmpty(masked.DfAppPassword)) masked.DfAppPassword = PasswordMask;
+        if (!string.IsNullOrEmpty(masked.ApachePassword)) masked.ApachePassword = PasswordMask;
+        if (!string.IsNullOrEmpty(masked.ManagementToken)) masked.ManagementToken = PasswordMask;
+        return Ok(masked);
     }
 
-    /// <summary>更新设置</summary>
+    /// <summary>更新设置（密码/令牌提交掩码哨兵值时保留原值）</summary>
     [HttpPut("settings")]
     public IActionResult UpdateSettings([FromBody] DownloaderSettings newSettings)
     {
-        // 更新内存中的设置
+        // 更新内存中的设置；掩码哨兵表示"未修改"，避免回显值原样写回覆盖真实密码
         _settings.DfAppUrl = newSettings.DfAppUrl;
         _settings.DfAppUsername = newSettings.DfAppUsername;
-        _settings.DfAppPassword = newSettings.DfAppPassword;
+        _settings.DfAppPassword = newSettings.DfAppPassword == PasswordMask
+            ? _settings.DfAppPassword : newSettings.DfAppPassword;
         _settings.ApacheUsername = newSettings.ApacheUsername;
-        _settings.ApachePassword = newSettings.ApachePassword;
+        _settings.ApachePassword = newSettings.ApachePassword == PasswordMask
+            ? _settings.ApachePassword : newSettings.ApachePassword;
+        _settings.ManagementToken = newSettings.ManagementToken == PasswordMask
+            ? _settings.ManagementToken : newSettings.ManagementToken;
         _settings.DownloadPath = newSettings.DownloadPath;
         _settings.MaxConcurrentDownloads = newSettings.MaxConcurrentDownloads;
         _settings.MaxSegmentsPerFile = newSettings.MaxSegmentsPerFile;
@@ -158,7 +170,7 @@ public class DownloadsController : ControllerBase
         var json = System.Text.Json.JsonSerializer.Serialize(_settings, new System.Text.Json.JsonSerializerOptions { WriteIndented = true });
         System.IO.File.WriteAllText(settingsPath, json);
 
-        return Ok(_settings);
+        return GetSettings();
     }
 
     /// <summary>全局状态</summary>
