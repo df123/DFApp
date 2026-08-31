@@ -1,6 +1,9 @@
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using DFApp.Web.Permissions;
+using DFApp.Web.Domain;
 using DFApp.Web.Infrastructure;
 
 namespace DFApp.Web.Services;
@@ -46,6 +49,14 @@ public abstract class AppServiceBase
     /// </summary>
     /// <param name="permissionName">权限名称</param>
     /// <returns>如果拥有权限返回 true，否则返回 false</returns>
+    /// <summary>
+    /// 当前用户是否为管理员（持有用户管理权限）
+    /// </summary>
+    protected Task<bool> IsPrivilegedUserAsync()
+    {
+        return PermissionChecker.IsGrantedAsync(DFAppPermissions.UserManagement.Default);
+    }
+
     protected Task<bool> IsGrantedAsync(string permissionName)
     {
         return PermissionChecker.IsGrantedAsync(permissionName);
@@ -106,4 +117,21 @@ public abstract class AppServiceBase
             throw new NotFoundException(message ?? $"{typeof(TEntity).Name} 不存在");
         }
     }
+    /// <summary>
+    /// 按创建者过滤内存列表：管理员不过滤，其余用户仅保留自己创建的记录
+    /// （供服务内跨仓储查询其他实体时复用属主隔离语义）
+    /// </summary>
+    protected async Task<List<T>> FilterOwnedListAsync<T>(List<T> items) where T : class, ICreatorId
+    {
+        if (await IsPrivilegedUserAsync())
+        {
+            return items;
+        }
+
+        var userId = CurrentUser.Id;
+        return userId is null
+            ? new List<T>()
+            : items.Where(x => x.CreatorId == userId).ToList();
+    }
+
 }

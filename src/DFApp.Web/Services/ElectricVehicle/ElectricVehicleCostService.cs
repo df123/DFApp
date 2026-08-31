@@ -29,6 +29,11 @@ public class ElectricVehicleCostService : CrudServiceBase<
     CreateUpdateElectricVehicleCostDto,
     CreateUpdateElectricVehicleCostDto>
 {
+    /// <summary>
+    /// 该模块记录按创建者隔离：非管理员只能访问自己创建的记录
+    /// </summary>
+    protected override bool RequireOwnerCheck => true;
+
     private readonly ISqlSugarRepository<ElectricVehicleEntity, Guid> _vehicleRepository;
     private readonly ISqlSugarRepository<GasolinePrice, Guid> _gasolinePriceRepository;
     private readonly IConfigurationInfoRepository _configurationInfoRepository;
@@ -72,7 +77,7 @@ public class ElectricVehicleCostService : CrudServiceBase<
     public async Task<(List<ElectricVehicleCostDto> Items, int TotalCount)> GetFilteredListAsync(
         string? filter, int pageIndex, int pageSize)
     {
-        var query = Repository.GetQueryable();
+        var query = await ApplyOwnerFilterAsync(Repository.GetQueryable());
 
         // 应用过滤条件
         if (!string.IsNullOrWhiteSpace(filter))
@@ -186,7 +191,7 @@ public class ElectricVehicleCostService : CrudServiceBase<
             expression = Expression.Lambda<Func<ElectricVehicleCost, bool>>(combinedBody, parameter);
         }
 
-        var electricCosts = await Repository.GetListAsync(expression);
+        var electricCosts = await FilterOwnedAsync(await Repository.GetListAsync(expression));
 
         // 计算电车数据
         var electricChargingCost = electricCosts
@@ -233,10 +238,11 @@ public class ElectricVehicleCostService : CrudServiceBase<
             {
                 mileageQuery = mileageQuery.Where(x => x.VehicleId == input.VehicleId.Value);
             }
-            var chargingRecordsInPeriod = mileageQuery
+            // 跨仓储读取充电记录，同样按属主隔离
+            var chargingRecordsInPeriod = await FilterOwnedListAsync(mileageQuery
                 .Where(x => x.ChargingDate >= input.StartDate && x.ChargingDate <= input.EndDate && x.CurrentMileage.HasValue)
                 .OrderBy(x => x.ChargingDate)
-                .ToList();
+                .ToList());
 
             if (chargingRecordsInPeriod.Count >= 2)
             {
@@ -273,10 +279,10 @@ public class ElectricVehicleCostService : CrudServiceBase<
 
         // 获取充电记录，用于计算对应时间段的油价
         var chargingQuery = _chargingRecordRepository.GetQueryable();
-        var chargingRecords = chargingQuery
+        var chargingRecords = await FilterOwnedListAsync(chargingQuery
             .Where(x => x.ChargingDate >= input.StartDate && x.ChargingDate <= input.EndDate)
             .OrderBy(x => x.ChargingDate)
-            .ToList();
+            .ToList());
 
         decimal oilVehicleTotalCost = 0;
         decimal oilVehicleFuelCost = 0;

@@ -25,6 +25,11 @@ public class ElectricVehicleChargingRecordService : CrudServiceBase<
     CreateUpdateElectricVehicleChargingRecordDto,
     CreateUpdateElectricVehicleChargingRecordDto>
 {
+    /// <summary>
+    /// 该模块记录按创建者隔离：非管理员只能访问自己创建的记录
+    /// </summary>
+    protected override bool RequireOwnerCheck => true;
+
     private readonly ISqlSugarRepository<ElectricVehicleCost, Guid> _costRepository;
     private readonly ISqlSugarRepository<ElectricVehicleEntity, Guid> _vehicleRepository;
     private readonly ElectricVehicleMapper _mapper = new();
@@ -59,7 +64,7 @@ public class ElectricVehicleChargingRecordService : CrudServiceBase<
     public async Task<(List<ElectricVehicleChargingRecordDto> Items, int TotalCount)> GetFilteredListAsync(
         string? filter, int pageIndex, int pageSize)
     {
-        var query = Repository.GetQueryable();
+        var query = await ApplyOwnerFilterAsync(Repository.GetQueryable());
 
         // 获取总数
         var totalCount = await query.CountAsync();

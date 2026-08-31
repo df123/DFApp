@@ -28,6 +28,11 @@ public class BookkeepingExpenditureService : CrudServiceBase<
     CreateUpdateBookkeepingExpenditureDto,
     CreateUpdateBookkeepingExpenditureDto>
 {
+    /// <summary>
+    /// 支出记录按创建者隔离：非管理员只能访问自己创建的记录
+    /// </summary>
+    protected override bool RequireOwnerCheck => true;
+
     private readonly ISqlSugarRepository<BookkeepingCategory, long> _categoryRepository;
     private readonly BookkeepingMapper _mapper = new();
 
@@ -61,7 +66,8 @@ public class BookkeepingExpenditureService : CrudServiceBase<
     public async Task<(List<BookkeepingExpenditureDto> Items, int TotalCount)> GetFilteredListAsync(
         string? filter, long? categoryId, bool? isBelongToSelf, int pageIndex, int pageSize)
     {
-        var query = Repository.GetQueryable();
+        // 绕过基类的自定义查询，须显式附加所有权过滤
+        var query = await ApplyOwnerFilterAsync(Repository.GetQueryable());
 
         // 应用过滤条件
         if (!string.IsNullOrWhiteSpace(filter))
@@ -144,7 +150,7 @@ public class BookkeepingExpenditureService : CrudServiceBase<
     /// <returns>支出 DTO 列表</returns>
     public override async Task<List<BookkeepingExpenditureDto>> GetListAsync()
     {
-        var entities = await Repository.GetListAsync();
+        var entities = await FilterOwnedAsync(await Repository.GetListAsync());
         return await FillCategoryForDtosAsync(entities);
     }
 
@@ -156,7 +162,7 @@ public class BookkeepingExpenditureService : CrudServiceBase<
     public override async Task<List<BookkeepingExpenditureDto>> GetListAsync(
         System.Linq.Expressions.Expression<Func<BookkeepingExpenditure, bool>> expression)
     {
-        var entities = await Repository.GetListAsync(expression);
+        var entities = await FilterOwnedAsync(await Repository.GetListAsync(expression));
         return await FillCategoryForDtosAsync(entities);
     }
 
@@ -169,9 +175,10 @@ public class BookkeepingExpenditureService : CrudServiceBase<
     public override async Task<(List<BookkeepingExpenditureDto> Items, int TotalCount)> GetPagedListAsync(
         int pageIndex, int pageSize)
     {
-        var (items, totalCount) = await Repository.GetPagedListAsync(pageIndex, pageSize);
-        var dtos = await FillCategoryForDtosAsync(items);
-        return (dtos, totalCount);
+        var owned = await FilterOwnedAsync(await Repository.GetListAsync());
+        var page = owned.Skip((pageIndex - 1) * pageSize).Take(pageSize).ToList();
+        var dtos = await FillCategoryForDtosAsync(page);
+        return (dtos, owned.Count);
     }
 
     /// <summary>
@@ -185,9 +192,10 @@ public class BookkeepingExpenditureService : CrudServiceBase<
         System.Linq.Expressions.Expression<Func<BookkeepingExpenditure, bool>> expression,
         int pageIndex, int pageSize)
     {
-        var (items, totalCount) = await Repository.GetPagedListAsync(expression, pageIndex, pageSize);
-        var dtos = await FillCategoryForDtosAsync(items);
-        return (dtos, totalCount);
+        var owned = await FilterOwnedAsync(await Repository.GetListAsync(expression));
+        var page = owned.Skip((pageIndex - 1) * pageSize).Take(pageSize).ToList();
+        var dtos = await FillCategoryForDtosAsync(page);
+        return (dtos, owned.Count);
     }
 
     /// <summary>
@@ -283,7 +291,7 @@ public class BookkeepingExpenditureService : CrudServiceBase<
     /// <returns>支出总额</returns>
     public async Task<decimal> GetTotalExpenditureAsync(string? filter = null, long? categoryId = null, bool? isBelongToSelf = null)
     {
-        var query = Repository.GetQueryable();
+        var query = await ApplyOwnerFilterAsync(Repository.GetQueryable());
 
         if (!string.IsNullOrWhiteSpace(filter))
         {

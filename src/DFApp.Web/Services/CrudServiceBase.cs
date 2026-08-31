@@ -82,18 +82,10 @@ public abstract class CrudServiceBase<TEntity, TKey, TGetOutputDto, TCreateInput
     }
 
     /// <summary>
-    /// 当前用户是否为管理员（持有用户管理权限）
-    /// </summary>
-    protected Task<bool> IsPrivilegedUserAsync()
-    {
-        return PermissionChecker.IsGrantedAsync(DFAppPermissions.UserManagement.Default);
-    }
-
-    /// <summary>
     /// 当启用所有权校验且用户非管理员时，返回按创建者过滤的查询条件；否则返回 null。
     /// 过滤条件直接引用实体接口属性，保证可被查询提供器翻译。
     /// </summary>
-    private async Task<Expression<Func<TEntity, bool>>?> BuildOwnerFilterAsync()
+    protected async Task<Expression<Func<TEntity, bool>>?> BuildOwnerFilterAsync()
     {
         if (!RequireOwnerCheck || !typeof(ICreatorId).IsAssignableFrom(typeof(TEntity)))
         {
@@ -105,6 +97,38 @@ public abstract class CrudServiceBase<TEntity, TKey, TGetOutputDto, TCreateInput
             return null;
         }
 
+        return BuildOwnerFilterForCurrentUserId();
+    }
+
+    /// <summary>
+    /// 为自定义查询附加所有权过滤（供绕过基类方法的派生类查询使用）
+    /// </summary>
+    protected async Task<ISugarQueryable<TEntity>> ApplyOwnerFilterAsync(ISugarQueryable<TEntity> query)
+    {
+        var filter = await BuildOwnerFilterAsync();
+        return filter is null ? query : query.Where(filter);
+    }
+
+    /// <summary>
+    /// 为已加载到内存的实体列表过滤所有权（供全量加载后内存处理的派生类使用）
+    /// </summary>
+    protected async Task<List<TEntity>> FilterOwnedAsync(List<TEntity> entities)
+    {
+        var filter = await BuildOwnerFilterAsync();
+        if (filter is null)
+        {
+            return entities;
+        }
+
+        var predicate = filter.Compile();
+        return entities.Where(predicate).ToList();
+    }
+
+    /// <summary>
+    /// 构造"仅当前用户创建"的过滤条件（未登录时恒为 false）
+    /// </summary>
+    private Expression<Func<TEntity, bool>>? BuildOwnerFilterForCurrentUserId()
+    {
         var userId = CurrentUser.Id;
         var parameter = Expression.Parameter(typeof(TEntity), "x");
         var property = Expression.Property(

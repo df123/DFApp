@@ -21,6 +21,11 @@ namespace DFApp.Web.Services.Lottery.Simulation;
 /// </summary>
 public class LotterySSQSimulationService : CrudServiceBase<LotterySimulation, Guid, LotterySimulationDto, CreateUpdateLotterySimulationDto, CreateUpdateLotterySimulationDto>
 {
+    /// <summary>
+    /// 该模块记录按创建者隔离：非管理员只能访问自己创建的记录
+    /// </summary>
+    protected override bool RequireOwnerCheck => true;
+
     private readonly LotteryMapper _mapper = new();
     private readonly ISqlSugarRepository<LotteryResult, long> _lotteryResultRepository;
     private readonly ISqlSugarRepository<LotteryPrizegrades, long> _lotteryPrizegradesRepository;
@@ -45,8 +50,8 @@ public class LotterySSQSimulationService : CrudServiceBase<LotterySimulation, Gu
         var random = new Random();
         var result = new List<LotterySimulation>();
 
-        // 获取当前期号下最大的 groupId
-        var queryable = Repository.GetQueryable();
+        // 获取当前期号下最大的 groupId（按属主隔离，避免组号跨用户递增）
+        var queryable = await ApplyOwnerFilterAsync(Repository.GetQueryable());
         var existingGroups = queryable
             .Where(x => x.TermNumber == input.TermNumber)
             .ToList();
@@ -201,7 +206,7 @@ public class LotterySSQSimulationService : CrudServiceBase<LotterySimulation, Gu
     public async Task<StatisticsDto> GetStatisticsAsync()
     {
         var statistics = new StatisticsDto();
-        var simulations = await Repository.GetListAsync();
+        var simulations = await FilterOwnedAsync(await Repository.GetListAsync());
 
         var groupedByTerm = simulations
             .GroupBy(x => x.TermNumber)
@@ -235,7 +240,7 @@ public class LotterySSQSimulationService : CrudServiceBase<LotterySimulation, Gu
     /// </summary>
     public async Task<PagedResultDto<LotterySimulationDto>> GetPagedListAsync(int skipCount, int maxResultCount)
     {
-        var queryable = Repository.GetQueryable()
+        var queryable = (await ApplyOwnerFilterAsync(Repository.GetQueryable()))
             .Where(x => x.GameType == LotteryGameType.双色球);
 
         // 在数据库层面获取分组总数

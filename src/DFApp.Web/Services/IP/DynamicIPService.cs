@@ -15,6 +15,11 @@ namespace DFApp.Web.Services.IP;
 /// </summary>
 public class DynamicIPService : CrudServiceBase<DynamicIP, Guid, DynamicIPDto, CreateUpdateDynamicIPDto, CreateUpdateDynamicIPDto>
 {
+    /// <summary>
+    /// 该模块记录按创建者隔离：非管理员只能访问自己创建的记录
+    /// </summary>
+    protected override bool RequireOwnerCheck => true;
+
     private readonly IPMapper _mapper = new();
 
     /// <summary>
