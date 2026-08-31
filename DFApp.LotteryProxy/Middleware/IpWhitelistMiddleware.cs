@@ -27,10 +27,20 @@ public class IpWhitelistMiddleware
     {
         var clientIp = GetClientIpAddress(context);
 
-        // 令牌校验（第二道门）：公网部署时必须配置，与 IP 白名单同时生效
-        if (!string.IsNullOrEmpty(_proxySettings.ProxyToken)
-            && !context.Request.Path.StartsWithSegments("/api/health"))
+        // 令牌校验（第二道门）：与 IP 白名单同时生效；默认 fail-closed——
+        // 未显式豁免时，ProxyToken 为空同样拒绝，避免部署机漏配密钥导致代理裸奔
+        var tokenCheckEnabled = !_proxySettings.AllowAnonymous || !string.IsNullOrEmpty(_proxySettings.ProxyToken);
+        if (tokenCheckEnabled && !context.Request.Path.StartsWithSegments("/api/health"))
         {
+            if (string.IsNullOrEmpty(_proxySettings.ProxyToken))
+            {
+                _logger.LogError("ProxyToken 未配置且未显式豁免，拒绝请求: {ClientIP} {Method} {Path}",
+                    clientIp, context.Request.Method, context.Request.Path);
+                context.Response.StatusCode = (int)HttpStatusCode.ServiceUnavailable;
+                await context.Response.WriteAsync("503 Service Unavailable: 代理令牌未配置");
+                return;
+            }
+
             var token = context.Request.Headers["X-Proxy-Token"].ToString();
             // 固定时间比较，避免逐字节短路造成的时序侧信道
             var tokenBytes = System.Text.Encoding.UTF8.GetBytes(token ?? string.Empty);
