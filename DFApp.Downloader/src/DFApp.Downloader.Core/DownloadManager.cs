@@ -191,12 +191,21 @@ public class DownloadManager : IAsyncDisposable
             var downloadPath = Environment.ExpandEnvironmentVariables(_settings.DownloadPath);
             Directory.CreateDirectory(downloadPath);
 
+            // 通知来源不可信，文件名强制扁平化为纯文件名，防止路径穿越
+            var safeFileName = Path.GetFileName(notification.FileName.Replace('\\', '/'));
+            if (string.IsNullOrWhiteSpace(safeFileName) ||
+                safeFileName == "." || safeFileName == "..")
+            {
+                _logger.LogWarning("下载通知携带非法文件名，已拒绝: {FileName}", notification.FileName);
+                return;
+            }
+
             // 生成本地路径，处理同名文件
-            var localPath = Path.Combine(downloadPath, notification.FileName);
+            var localPath = Path.Combine(downloadPath, safeFileName);
             if (File.Exists(localPath))
             {
-                var name = Path.GetFileNameWithoutExtension(notification.FileName);
-                var ext = Path.GetExtension(notification.FileName);
+                var name = Path.GetFileNameWithoutExtension(safeFileName);
+                var ext = Path.GetExtension(safeFileName);
                 var counter = 1;
                 while (File.Exists(localPath))
                 {
@@ -205,12 +214,22 @@ public class DownloadManager : IAsyncDisposable
                 }
             }
 
+            // 最终路径必须位于下载根目录内
+            var downloadRoot = Path.GetFullPath(downloadPath);
+            var resolvedPath = Path.GetFullPath(localPath);
+            if (!resolvedPath.StartsWith(downloadRoot + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase) &&
+                !string.Equals(resolvedPath, downloadRoot, StringComparison.OrdinalIgnoreCase))
+            {
+                _logger.LogWarning("下载通知解析出的路径越出下载目录，已拒绝: {FileName}", notification.FileName);
+                return;
+            }
+
             // 创建下载项
             var item = new DownloadItem
             {
                 SourceType = notification.SourceType,
                 SourceId = notification.SourceId,
-                FileName = notification.FileName,
+                FileName = safeFileName,
                 FileSize = notification.FileSize,
                 DownloadUrl = notification.DownloadUrl,
                 LocalPath = localPath,
