@@ -8,6 +8,6 @@
 --       也可通过界面"配置管理"（ConfigurationInfo）直接新增/修改本条配置。
 
 INSERT INTO AppConfigurationInfo (ModuleName, ConfigurationName, ConfigurationValue, Remark, ConcurrencyStamp, CreationTime)
-VALUES ('DFApp.Web.Lottery', 'LotteryProxyToken', '6cd8722b04086497f457a6ef95aecc124f41b5e37b8822b621a69968bb2cb31d',
+VALUES ('DFApp.Web.Lottery', 'LotteryProxyToken', '',
         '公网彩票代理 X-Proxy-Token 共享密钥，与 LotteryProxy 容器 ProxySettings__ProxyToken 一致，openssl rand -hex 32 生成',
         lower(hex(randomblob(16))), datetime('now'));

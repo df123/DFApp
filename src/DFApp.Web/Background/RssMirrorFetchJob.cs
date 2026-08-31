@@ -1,5 +1,6 @@
 using DFApp.Rss;
 using DFApp.Web.Data;
+using DFApp.Web.Infrastructure;
 using DFApp.Web.Services.Rss;
 using Microsoft.Extensions.Logging;
 using Quartz;
@@ -91,20 +92,21 @@ namespace DFApp.Web.Background
 
             try
             {
-                // 创建HttpClient并配置代理
-                using var handler = new HttpClientHandler();
+                // 配置代理并创建 SSRF 防护处理器
+                WebProxy? proxy = null;
                 if (!string.IsNullOrWhiteSpace(source.ProxyUrl))
                 {
-                    handler.Proxy = new WebProxy(source.ProxyUrl);
+                    proxy = new WebProxy(source.ProxyUrl);
                     if (!string.IsNullOrWhiteSpace(source.ProxyUsername) &&
                         !string.IsNullOrWhiteSpace(source.ProxyPassword))
                     {
-                        handler.Proxy.Credentials = new NetworkCredential(
+                        proxy.Credentials = new NetworkCredential(
                             source.ProxyUsername,
                             source.ProxyPassword);
                     }
-                    handler.UseProxy = true;
                 }
+
+                using var handler = SsrfGuard.CreateGuardedHandler(proxy);
 
                 using var client = new HttpClient(handler);
                 client.Timeout = TimeSpan.FromSeconds(60);
@@ -125,8 +127,9 @@ namespace DFApp.Web.Background
 
                 _logger.LogInformation("请求URL: {RequestUrl}", requestUrl);
 
-                // 发送HTTP请求获取RSS内容
-                var response = await client.GetAsync(requestUrl);
+                // 发送HTTP请求获取RSS内容（目标地址经 SSRF 校验，重定向逐跳校验）
+                var requestUri = SsrfGuard.EnsureAllowed(requestUrl);
+                var response = await SsrfGuard.SafeGetAsync(client, requestUri);
                 response.EnsureSuccessStatusCode();
 
                 var content = await response.Content.ReadAsStringAsync();

@@ -10,7 +10,8 @@ namespace DFApp.Web.Tests.LotteryProxy;
 /// IpWhitelistMiddleware 令牌校验测试：
 /// 服务暴露公网时，X-Proxy-Token 共享密钥是 IP 白名单之外的第二道门。
 /// 语义：令牌已配置时所有请求（/api/health 除外）必须携带匹配的 X-Proxy-Token；
-/// 令牌未配置时不做令牌校验，行为与旧版一致。
+/// 令牌未配置且未显式豁免（AllowAnonymous=false）时直接拒绝非 health 请求（fail-closed），
+/// 避免部署机漏配密钥导致代理裸奔。
 /// </summary>
 public class IpWhitelistMiddlewareTests
 {
@@ -29,12 +30,14 @@ public class IpWhitelistMiddlewareTests
         string proxyToken,
         string? requestToken,
         string path = "/",
-        string clientIp = "127.0.0.1")
+        string clientIp = "127.0.0.1",
+        bool allowAnonymous = false)
     {
         var settings = new ProxySettings
         {
             ProxyToken = proxyToken,
             AllowedIPs = new List<string>(),
+            AllowAnonymous = allowAnonymous,
         };
 
         var context = new DefaultHttpContext();
@@ -78,11 +81,20 @@ public class IpWhitelistMiddlewareTests
     }
 
     [Fact]
-    public async Task 未配置令牌_不做令牌校验保持旧行为()
+    public async Task 未配置令牌_未显式豁免_应拒绝非健康检查请求()
     {
         var (middleware, context, recorder) = Create("", null);
         await middleware.InvokeAsync(context);
-        recorder.Called.Should().BeTrue("令牌未配置时本机请求仍按白名单逻辑放行");
+        context.Response.StatusCode.Should().Be(503, "令牌未配置且未豁免时必须 fail-closed");
+        recorder.Called.Should().BeFalse("漏配密钥的部署不允许静默放行");
+    }
+
+    [Fact]
+    public async Task 未配置令牌_显式豁免_本机请求仍按白名单放行()
+    {
+        var (middleware, context, recorder) = Create("", null, "/", "127.0.0.1", allowAnonymous: true);
+        await middleware.InvokeAsync(context);
+        recorder.Called.Should().BeTrue("本地调试显式豁免令牌时本机请求放行");
     }
 
     [Fact]

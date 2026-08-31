@@ -19,4 +19,9 @@ public class PagedAndSortedResultRequestDto
     /// 排序字段
     /// </summary>
     public string? Sorting { get; set; }
+
+    /// <summary>
+    /// 关键字过滤条件
+    /// </summary>
+    public string? Filter { get; set; }
 }

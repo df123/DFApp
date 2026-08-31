@@ -37,11 +37,29 @@
 | 12 | `set-default-password.sql` | 为无密码用户设置默认密码 "123456" |
 | 13 | `reset-passwords.sql` | 重置所有用户密码 |
 
+### 阶段 E：后续业务与安全迁移
+
+| 顺序 | 文件 | 说明 |
+|------|------|------|
+| 14 | `fix-default-password.sql` | 修正默认密码数据 |
+| 15 | `grant-admin-new-permissions.sql` | 为 admin 角色补齐新增权限 |
+| 16 | `add-missing-concurrency-stamp.sql` | 补充并发戳字段 |
+| 17 | `drop-media-external-link-extra-properties.sql` | 清理媒体外链遗留字段 |
+| 18 | `migrate-electric-vehicle-cost-type.sql` | 迁移电动车成本类型 |
+| 19 | `add-downloader-config.sql` | 新增下载器配置 |
+| 20 | `add-retrieval-protection-config.sql` | 新增取回保护配置 |
+| 21 | `remove-downloader-enabled-config.sql` | 移除 DownloaderEnabled 配置 |
+| 22 | `add-downloader-speed-samples.sql` | 新增下载速度采样表 |
+| 23 | `split-rss-mirror-to-standalone-db.sql` | 拆分 RSS 镜像独立数据库 |
+| 24 | `add-lottery-proxy-token-config.sql` | 新增彩票代理令牌配置项 |
+| 25 | `add-telegram-management-permission.sql` | 新增 Telegram 管理权限并授予 admin |
+| 26 | `invalidate-lottery-proxy-token.sql` | 使已泄露的彩票代理令牌失效 |
+
 ## 使用说明
 
 ### 新环境部署
 
-按照 01-13 的顺序依次执行 SQL 脚本。其中 12 和 13 为运维工具，仅在需要时使用。
+全新环境按照编号顺序执行脚本；已部署环境只执行尚未执行的编号。12、13、26 为安全或运维脚本，执行前必须确认影响。
 
 ### 执行方式
 

@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;
 using System.Threading.Tasks;
 
@@ -6,6 +7,7 @@ namespace DFApp.Web.Hubs
     /// <summary>
     /// Aria2 实时状态推送 Hub
     /// </summary>
+    [Authorize]
     public class Aria2Hub : Hub
     {
         public const string HubUrl = "/hubs/aria2";

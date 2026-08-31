@@ -90,3 +90,8 @@
 - 路径：`/api/permission-management/permissions`（需改为 `/api/app/permission-grant-management`）
 - 参数：`providerName` "R"/"U"（需改为 `providerType` "Role"/"User"）
 - 字段：`name`（需改为 `permissionName`）
+
+## 2026-08-25 权限收紧
+
+- Telegram 登录状态、配置和聊天列表接口新增 `DFApp.TelegramManagement` 权限，不再允许任意已登录用户访问。
+- `sql/25-add-telegram-management-permission.sql` 将该权限授予 `admin` 角色。

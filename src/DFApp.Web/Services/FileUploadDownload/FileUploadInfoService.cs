@@ -24,6 +24,11 @@ public class FileUploadInfoService : CrudServiceBase<FileUploadInfo, long, FileU
     private readonly FileUploadDownloadMapper _mapper = new();
 
     /// <summary>
+    /// 文件记录按创建者隔离：非管理员只能读取/下载/删除自己上传的文件
+    /// </summary>
+    protected override bool RequireOwnerCheck => true;
+
+    /// <summary>
     /// 构造函数
     /// </summary>
     /// <param name="currentUser">当前用户</param>
@@ -64,15 +69,21 @@ public class FileUploadInfoService : CrudServiceBase<FileUploadInfo, long, FileU
     }
 
     /// <summary>
-    /// 删除文件上传信息，同时删除物理文件
+    /// 删除文件上传信息，同时删除物理文件；
+    /// 先完成所有权校验再删除物理文件，避免越权删库失败却已删盘
     /// </summary>
     /// <param name="id">主键 ID</param>
     public override async Task DeleteAsync(long id)
     {
         var info = await Repository.GetByIdAsync(id);
-        if (info != null && !string.IsNullOrWhiteSpace(info.Path) && File.Exists(info.Path))
+        if (info != null)
         {
-            File.Delete(info.Path);
+            await EnsureOwnerAsync(info);
+
+            if (!string.IsNullOrWhiteSpace(info.Path) && File.Exists(info.Path))
+            {
+                File.Delete(info.Path);
+            }
         }
 
         await base.DeleteAsync(id);

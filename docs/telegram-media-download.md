@@ -69,3 +69,8 @@
 - 删除 `ListenTelegramService.NotifyDownloaderAsync` 与 `Aria2Manager.NotifyDownloaderAsync` 中的 `DownloaderEnabled` 检查，**改为无条件推送**——下载器是本项目配套组件，通知推送为必需功能，无需开关（避免"忘配置 → 静默不推送"的坑）；
 - 保留 `ReturnDownloadUrlPrefix`/`ReplaceUrlPrefix`（Telegram）与 `Aria2ApachePathPrefix`（Aria2）的前缀配置检查，并改为 WARN 日志（不再静默）；
 - `sql/19-add-downloader-config.sql` 移除该配置种子；新增 `sql/21-remove-downloader-enabled-config.sql` 供远程清理存量配置。
+
+## 八、2026-08-25 变更：Telegram 登录接口权限收紧
+
+- `/api/app/tg-login/status`、`/config`、`/chats` 均要求 `DFApp.TelegramManagement` 权限。
+- 新增 `sql/25-add-telegram-management-permission.sql`，为 `admin` 角色授予该权限。

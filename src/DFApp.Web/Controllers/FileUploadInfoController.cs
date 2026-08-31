@@ -146,19 +146,40 @@ public class FileUploadInfoController : DFAppControllerBase
         }
 
         string savePath = await _fileUploadInfoService.GetConfigurationValue("SaveUplouadFilePath");
-
-        dto.FileSize = memoryStream.Length;
-        dto.FileName = file.FileName;
-        dto.Path = Path.Combine(savePath, file.FileName);
-
-        // 确保保存目录存在
-        var directory = Path.GetDirectoryName(dto.Path);
-        if (!string.IsNullOrEmpty(directory) && !Directory.Exists(directory))
+        if (string.IsNullOrWhiteSpace(savePath))
         {
-            Directory.CreateDirectory(directory);
+            return Fail("上传失败：上传目录未配置");
         }
 
-        await System.IO.File.WriteAllBytesAsync(dto.Path, memoryStream.ToArray());
+        var safeFileName = Path.GetFileName(file.FileName);
+        if (string.IsNullOrWhiteSpace(safeFileName) ||
+            safeFileName.Length != file.FileName.Length ||
+            file.FileName.Contains('/') ||
+            file.FileName.Contains('\\'))
+        {
+            return Fail("上传失败：文件名不能包含路径分隔符");
+        }
+
+        // 拒绝可执行与可被服务端/浏览器直接执行的扩展名（下载已强制 attachment，此处为纵深防御）
+        var extension = Path.GetExtension(safeFileName);
+        if (BlockedUploadExtensions.Contains(extension))
+        {
+            return Fail($"上传失败：不允许上传 {extension} 类型的文件");
+        }
+
+        var uploadRoot = Path.GetFullPath(savePath);
+        var destination = Path.GetFullPath(Path.Combine(uploadRoot, safeFileName));
+        if (!IsPathInRoot(uploadRoot, destination))
+        {
+            return Fail("上传失败：目标路径超出上传目录");
+        }
+
+        Directory.CreateDirectory(uploadRoot);
+        dto.FileSize = memoryStream.Length;
+        dto.FileName = safeFileName;
+        dto.Path = destination;
+
+        await System.IO.File.WriteAllBytesAsync(destination, memoryStream.ToArray());
         await _fileUploadInfoService.CreateAsync(dto);
 
         return Success($"{file.FileName}上传成功");
@@ -219,5 +240,25 @@ public class FileUploadInfoController : DFAppControllerBase
                 _typeProvider.Mappings[dto.ConfigurationName] = dto.ConfigurationValue;
             }
         }
+    }
+
+    /// <summary>
+    /// 禁止上传的扩展名（可执行文件、脚本、Web Shell 载体），不区分大小写
+    /// </summary>
+    private static readonly HashSet<string> BlockedUploadExtensions = new(StringComparer.OrdinalIgnoreCase)
+    {
+        ".exe", ".dll", ".bat", ".cmd", ".sh", ".ps1", ".msi", ".com", ".scr", ".vbs", ".js", ".jscript",
+        ".jar", ".html", ".htm", ".svg", ".xhtml", ".php", ".jsp", ".jspx", ".asp", ".aspx", ".asax",
+        ".ascx", ".cshtml", ".vbhtml", ".config"
+    };
+
+    /// <summary>
+    /// 判断目标路径是否仍位于上传根目录内，防止路径穿越
+    /// </summary>
+    private static bool IsPathInRoot(string root, string path)
+    {
+        var relativePath = Path.GetRelativePath(root, path);
+        return !relativePath.StartsWith("..", StringComparison.Ordinal) &&
+               !Path.IsPathRooted(relativePath);
     }
 }

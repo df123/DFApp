@@ -353,9 +353,9 @@ public class Aria2Service : CrudServiceBase<
                 // 构建 select-file 字符串，例如"1,3,5"
                 string selectFile = string.Join(",", filteredIndices);
 
-                // 下载 torrent 文件内容并转为 Base64
-                using var httpClient = new HttpClient();
-                var torrentBytes = await httpClient.GetByteArrayAsync(torrentUrl);
+                // 下载 torrent 文件内容并转为 Base64（目标地址经 SSRF 校验）
+                using var httpClient = new HttpClient(SsrfGuard.CreateGuardedHandler());
+                var torrentBytes = await SsrfGuard.SafeGetByteArrayAsync(httpClient, torrentUrl);
                 string torrentBase64 = Convert.ToBase64String(torrentBytes);
 
                 // 构建选项
@@ -447,9 +447,9 @@ public class Aria2Service : CrudServiceBase<
     {
         try
         {
-            // 下载 torrent 文件
-            using var httpClient = new HttpClient();
-            var torrentBytes = await httpClient.GetByteArrayAsync(torrentUrl);
+            // 下载 torrent 文件（目标地址经 SSRF 校验）
+            using var httpClient = new HttpClient(SsrfGuard.CreateGuardedHandler());
+            var torrentBytes = await SsrfGuard.SafeGetByteArrayAsync(httpClient, torrentUrl);
 
             // 解析 torrent 文件
             using var stream = new MemoryStream(torrentBytes);

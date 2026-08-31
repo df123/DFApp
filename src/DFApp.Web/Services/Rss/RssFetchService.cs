@@ -51,8 +51,8 @@ public class RssFetchService : AppServiceBase
         var response = new RssFetchResponseDto();
         var stopwatch = Stopwatch.StartNew();
 
-        // 创建HttpClientHandler以配置代理
-        var handler = new HttpClientHandler();
+        // 出站请求统一走 SSRF 防护处理器（内网地址拒绝、重定向逐跳校验）
+        WebProxy? proxy = null;
 
         // 配置代理
         if (!string.IsNullOrWhiteSpace(input.ProxyUrl))
@@ -61,9 +61,14 @@ public class RssFetchService : AppServiceBase
             {
                 _logger.LogInformation("使用代理: {ProxyUrl}", input.ProxyUrl);
 
-                // 解析代理URL
+                // 解析代理URL（仅允许 http/https）
                 var proxyUri = new Uri(input.ProxyUrl);
-                var proxy = new WebProxy
+                if (proxyUri.Scheme != "http" && proxyUri.Scheme != "https")
+                {
+                    throw new InvalidOperationException("代理地址仅支持 http/https");
+                }
+
+                proxy = new WebProxy
                 {
                     Address = proxyUri,
                     BypassProxyOnLocal = false
@@ -79,9 +84,6 @@ public class RssFetchService : AppServiceBase
                     );
                     _logger.LogInformation("使用代理认证: {ProxyUsername}", input.ProxyUsername);
                 }
-
-                handler.Proxy = proxy;
-                handler.UseProxy = true;
             }
             catch (Exception ex)
             {
@@ -91,6 +93,8 @@ public class RssFetchService : AppServiceBase
                 return response;
             }
         }
+
+        using var handler = SsrfGuard.CreateGuardedHandler(proxy);
 
         try
         {
@@ -132,8 +136,9 @@ public class RssFetchService : AppServiceBase
 
             _logger.LogInformation("发送HTTP请求...");
 
-            // 发送请求
-            var httpResponse = await client.GetAsync(requestUrl);
+            // 发送请求（目标地址经 SSRF 校验，重定向逐跳校验）
+            var requestUri = SsrfGuard.EnsureAllowed(requestUrl);
+            var httpResponse = await SsrfGuard.SafeGetAsync(client, requestUri);
             response.StatusCode = (int)httpResponse.StatusCode;
 
             _logger.LogInformation("HTTP响应状态码: {StatusCode}", response.StatusCode);

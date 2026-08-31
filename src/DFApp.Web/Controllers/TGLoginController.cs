@@ -37,6 +37,7 @@ public class TGLoginController : DFAppControllerBase
     /// 获取 TG 登录状态
     /// </summary>
     [HttpGet("status")]
+    [Permission(DFAppPermissions.TelegramManagement.Default)]
     public IActionResult Status()
     {
         var result = _tgLoginService.Status();
@@ -48,6 +49,7 @@ public class TGLoginController : DFAppControllerBase
     /// </summary>
     /// <param name="value">配置值</param>
     [HttpPost("config")]
+    [Permission(DFAppPermissions.TelegramManagement.Default)]
     public async Task<IActionResult> Config([FromBody] string value)
     {
         var result = await _tgLoginService.Config(value);
@@ -58,6 +60,7 @@ public class TGLoginController : DFAppControllerBase
     /// 获取 TG 聊天列表
     /// </summary>
     [HttpGet("chats")]
+    [Permission(DFAppPermissions.TelegramManagement.Default)]
     public async Task<IActionResult> Chats()
     {
         var result = await _tgLoginService.Chats();

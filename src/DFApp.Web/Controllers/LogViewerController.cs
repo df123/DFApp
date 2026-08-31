@@ -83,8 +83,12 @@ public class LogViewerController : DFAppControllerBase
             return Fail("文件名不能为空");
         }
 
-        var logPath = Path.Combine(_webHostEnvironment.ContentRootPath, LogFolder);
-        var filePath = Path.Combine(logPath, fileName);
+        var filePath = ResolveLogFilePath(fileName, out var isInvalidPath);
+        if (isInvalidPath)
+        {
+            ThrowBusinessException("日志文件名无效");
+            return Fail("日志文件名无效");
+        }
 
         if (!System.IO.File.Exists(filePath))
         {
@@ -119,8 +123,12 @@ public class LogViewerController : DFAppControllerBase
             return Fail("文件名不能为空");
         }
 
-        var logPath = Path.Combine(_webHostEnvironment.ContentRootPath, LogFolder);
-        var filePath = Path.Combine(logPath, fileName);
+        var filePath = ResolveLogFilePath(fileName, out var isInvalidPath);
+        if (isInvalidPath)
+        {
+            ThrowBusinessException("日志文件名无效");
+            return Fail("日志文件名无效");
+        }
 
         if (!System.IO.File.Exists(filePath))
         {
@@ -135,6 +143,32 @@ public class LogViewerController : DFAppControllerBase
         {
             FileDownloadName = fileName
         };
+    }
+
+    /// <summary>
+    /// 解析受限在 Logs 目录内的日志文件路径
+    /// </summary>
+    private string ResolveLogFilePath(string fileName, out bool isInvalidPath)
+    {
+        isInvalidPath = true;
+
+        var safeFileName = Path.GetFileName(fileName);
+        if (string.IsNullOrWhiteSpace(safeFileName) ||
+            safeFileName.Length != fileName.Length ||
+            fileName.Contains('/') ||
+            fileName.Contains('\\'))
+        {
+            return string.Empty;
+        }
+
+        var logRoot = Path.GetFullPath(Path.Combine(_webHostEnvironment.ContentRootPath, LogFolder));
+        var filePath = Path.GetFullPath(Path.Combine(logRoot, safeFileName));
+        var relativePath = Path.GetRelativePath(logRoot, filePath);
+
+        isInvalidPath = relativePath.StartsWith("..", StringComparison.Ordinal) ||
+                        Path.IsPathRooted(relativePath) ||
+                        !string.Equals(Path.GetExtension(filePath), ".txt", StringComparison.OrdinalIgnoreCase);
+        return filePath;
     }
 
     /// <summary>

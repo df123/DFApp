@@ -1815,3 +1815,8 @@ public async Task CleanupOldItemsAsync(TimeSpan retentionPeriod)
 ## 许可证
 
 本功能是DFApp项目的一部分，遵循项目整体许可证。
+
+## 2026-08-25 查询契约修正
+
+- RSS 源列表支持 `Filter`，按名称、URL、备注过滤。
+- 前端 API 将 `pageIndex/pageSize` 转换为后端 `skipCount/maxResultCount`。

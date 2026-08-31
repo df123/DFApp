@@ -84,15 +84,9 @@ public class RssWordSegmentAppService : AppServiceBase
             queryable = queryable.Where(x => x.Word.ToLower() == input.Word.ToLower());
         }
 
-        // 排序
-        if (!string.IsNullOrWhiteSpace(input.Sorting))
-        {
-            queryable = queryable.OrderBy(input.Sorting);
-        }
-        else
-        {
-            queryable = queryable.OrderByDescending(x => x.CreationTime);
-        }
+        // 排序（字段经实体属性白名单净化，防止排序参数注入 SQL）
+        queryable = queryable.OrderBy(
+            SortingSanitizer.Sanitize<RssWordSegment>(input.Sorting, "CreationTime desc"));
 
         // 分页
         var totalCount = await queryable.CountAsync();
@@ -170,15 +164,9 @@ public class RssWordSegmentAppService : AppServiceBase
             })
             .AsQueryable();
 
-        // 排序
-        if (!string.IsNullOrWhiteSpace(input.Sorting))
-        {
-            statisticsQuery = statisticsQuery.OrderBy(input.Sorting);
-        }
-        else
-        {
-            statisticsQuery = statisticsQuery.OrderByDescending(x => x.TotalCount);
-        }
+        // 排序（字段经 DTO 属性白名单净化，避免任意动态表达式求值）
+        statisticsQuery = statisticsQuery.OrderBy(
+            SortingSanitizer.Sanitize<WordSegmentStatisticsDto>(input.Sorting, "TotalCount desc"));
 
         // 获取总数
         var totalCount = statisticsQuery.Count();

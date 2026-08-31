@@ -52,6 +52,12 @@ public static class DFAppPermissions
         public const string SignalRSink = Default + ".SignalRSink";
     }
 
+    /// <summary>Telegram 登录管理权限</summary>
+    public static class TelegramManagement
+    {
+        public const string Default = GroupName + ".TelegramManagement";
+    }
+
     /// <summary>记账管理权限</summary>
     public static class Bookkeeping
     {

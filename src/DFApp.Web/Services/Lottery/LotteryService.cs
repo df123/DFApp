@@ -553,15 +553,10 @@ public class LotteryService : CrudServiceBase<LotteryInfo, long, LotteryDto, Cre
     {
         var query = await Repository.GetListAsync();
 
-        // 根据 Sorting 字段动态排序
-        if (!string.IsNullOrWhiteSpace(input.Sorting))
-        {
-            query = query.AsQueryable().OrderBy(input.Sorting).ToList();
-        }
-        else
-        {
-            query = query.OrderBy(x => x.Id).ToList();
-        }
+        // 根据 Sorting 字段动态排序（字段经实体属性白名单净化）
+        query = query.AsQueryable()
+            .OrderBy(SortingSanitizer.Sanitize<LotteryInfo>(input.Sorting, "Id asc"))
+            .ToList();
 
         var groupedLotteries = query.GroupBy(x => new { x.IndexNo, x.GroupId, x.LotteryType });
 

@@ -100,15 +100,9 @@ public class RssMirrorItemAppService : AppServiceBase
             queryable = queryable.Where(x => filterItemIds.Contains(x.Id));
         }
 
-        // 排序
-        if (!string.IsNullOrWhiteSpace(input.Sorting))
-        {
-            queryable = queryable.OrderBy(input.Sorting);
-        }
-        else
-        {
-            queryable = queryable.OrderByDescending(x => x.CreationTime);
-        }
+        // 排序（字段经实体属性白名单净化，防止排序参数注入 SQL）
+        queryable = queryable.OrderBy(
+            SortingSanitizer.Sanitize<RssMirrorItem>(input.Sorting, "CreationTime desc"));
 
         // 分页
         var totalCount = await queryable.CountAsync();

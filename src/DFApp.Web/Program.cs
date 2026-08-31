@@ -176,9 +176,9 @@ public class Program
 
             // 配置 JWT 认证
             var secretKey = builder.Configuration["Jwt:SecretKey"];
-            if (string.IsNullOrEmpty(secretKey))
+            if (string.IsNullOrWhiteSpace(secretKey) || Encoding.UTF8.GetByteCount(secretKey) < 32)
             {
-                throw new InvalidOperationException("JWT Secret Key 未配置，请设置环境变量 JWT_SECRET_KEY");
+                throw new InvalidOperationException("JWT Secret Key 未配置或长度不足 32 字节，请设置环境变量 Jwt__SecretKey");
             }
 
             builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
@@ -291,6 +291,21 @@ public class Program
             {
                 // 非开发环境统一异常处理，避免泄露 traceId、堆栈及 System.Text.Json 等框架细节
                 app.UseExceptionHandler(errorApp => errorApp.Run(ApiErrorResponseFactory.WriteExceptionResponse));
+            }
+
+            // 安全响应头：nosniff 防 MIME 嗅探，SAMEORIGIN 防点击劫持，no-referrer 防来源泄露；
+            // HSTS 仅在非开发环境启用（本地常走 http）
+            app.Use(async (context, next) =>
+            {
+                context.Response.Headers["X-Content-Type-Options"] = "nosniff";
+                context.Response.Headers["X-Frame-Options"] = "SAMEORIGIN";
+                context.Response.Headers["Referrer-Policy"] = "no-referrer";
+                await next();
+            });
+
+            if (!env.IsDevelopment())
+            {
+                app.UseHsts();
             }
 
             app.UseRouting();

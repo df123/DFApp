@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using DFApp.Account;
 using DFApp.Identity;
 using DFApp.Web.Data;
+using Microsoft.AspNetCore.Http;
 using DFApp.Web.Domain;
 using DFApp.Web.Infrastructure;
 using DFApp.Web.Permissions;
@@ -40,6 +41,22 @@ public class AccountAppService
     private readonly IMemoryCache _cache;
     private readonly IPasswordHasher _passwordHasher;
     private readonly ILogger<AccountAppService> _logger;
+    private readonly IHttpContextAccessor _httpContextAccessor;
+
+    /// <summary>
+    /// 同一来源（用户名+IP）连续失败次数上限
+    /// </summary>
+    private const int PerSourceLoginFailureLimit = 5;
+
+    /// <summary>
+    /// 同一用户名跨来源失败次数上限（防多源暴力破解的兜底）
+    /// </summary>
+    private const int PerUsernameLoginFailureLimit = 50;
+
+    /// <summary>
+    /// 登录失败计数窗口
+    /// </summary>
+    private static readonly TimeSpan LoginFailureWindow = TimeSpan.FromMinutes(15);
 
     public AccountAppService(
         ISqlSugarRepository<User, Guid> userRepository,
@@ -49,7 +66,8 @@ public class AccountAppService
         IConfiguration configuration,
         IMemoryCache cache,
         IPasswordHasher passwordHasher,
-        ILogger<AccountAppService> logger)
+        ILogger<AccountAppService> logger,
+        IHttpContextAccessor httpContextAccessor)
     {
         _userRepository = userRepository;
         _roleRepository = roleRepository;
@@ -59,6 +77,7 @@ public class AccountAppService
         _cache = cache;
         _passwordHasher = passwordHasher;
         _logger = logger;
+        _httpContextAccessor = httpContextAccessor;
     }
 
     /// <summary>
@@ -69,17 +88,20 @@ public class AccountAppService
     {
         try
         {
-            // 检查登录尝试次数
-            var cacheKey = $"LoginAttempts_{input.Username}";
-            var attempts = _cache.GetOrCreate(cacheKey, entry =>
-            {
-                entry.AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(15);
-                return 0;
-            });
+            // 检查登录尝试次数：按"用户名+来源IP"计数，避免匿名者仅凭用户名锁定任意账户；
+            // 另按用户名设跨来源上限作为暴力破解兜底。
+            // 计数器在窗口创建时固定过期时间，后续失败只递增不续期，
+            // 攻击者无法通过持续失败把受害者的锁定窗口无限延长。
+            var clientIp = GetClientIpAddress();
+            var attemptKey = $"LoginAttempts_{input.Username}_{clientIp}";
+            var wideKey = $"LoginWideAttempts_{input.Username}";
+            var attempts = GetOrCreateFailureCounter(attemptKey);
+            var wideAttempts = GetOrCreateFailureCounter(wideKey);
 
-            if (attempts >= 5)
+            if (attempts.Count >= PerSourceLoginFailureLimit ||
+                wideAttempts.Count >= PerUsernameLoginFailureLimit)
             {
-                _logger.LogWarning("登录失败：用户尝试次数过多");
+                _logger.LogWarning("登录失败：用户尝试次数过多（用户名: {UserName}, 来源: {Ip}）", input.Username, clientIp);
                 throw new BusinessException("登录尝试次数过多，请15分钟后再试");
             }
 
@@ -92,18 +114,26 @@ public class AccountAppService
                 throw new BusinessException("用户名或密码错误");
             }
 
+            if (!user.IsActive)
+            {
+                _logger.LogWarning("登录失败：用户 {UserName} 已停用", user.UserName);
+                throw new BusinessException("用户名或密码错误");
+            }
+
             // 验证密码
             var result = _passwordHasher.VerifyPassword(user.PasswordHash ?? "", input.Password);
             if (!result)
             {
                 _logger.LogWarning("登录失败：密码错误");
-                // 递增登录失败次数
-                _cache.Set(cacheKey, attempts + 1, TimeSpan.FromMinutes(15));
+                // 递增登录失败次数（仅递增已缓存的计数器，不重设过期时间）
+                attempts.Count++;
+                wideAttempts.Count++;
                 throw new BusinessException("用户名或密码错误");
             }
 
             // 登录成功，清除尝试次数
-            _cache.Remove(cacheKey);
+            _cache.Remove(attemptKey);
+            _cache.Remove(wideKey);
 
             var (token, roles, permissions) = await GenerateJwtTokenAsync(user);
 
@@ -131,6 +161,49 @@ public class AccountAppService
     }
 
     /// <summary>
+    /// 获取或创建登录失败计数器；过期时间在首次创建时固定，之后只递增不续期
+    /// </summary>
+    private LoginFailureCounter GetOrCreateFailureCounter(string key)
+    {
+        return _cache.GetOrCreate(key, entry =>
+        {
+            entry.AbsoluteExpirationRelativeToNow = LoginFailureWindow;
+            return new LoginFailureCounter();
+        }) ?? new LoginFailureCounter();
+    }
+
+    /// <summary>
+    /// 获取客户端 IP（经反向代理转发时取 X-Forwarded-For 首个地址）
+    /// </summary>
+    private string GetClientIpAddress()
+    {
+        var context = _httpContextAccessor.HttpContext;
+        if (context?.Connection.RemoteIpAddress is null)
+        {
+            return "unknown";
+        }
+
+        if (context.Request.Headers.TryGetValue("X-Forwarded-For", out var values))
+        {
+            var first = values.ToString().Split(',', StringSplitOptions.TrimEntries).FirstOrDefault();
+            if (!string.IsNullOrEmpty(first))
+            {
+                return first;
+            }
+        }
+
+        return context.Connection.RemoteIpAddress.ToString();
+    }
+
+    /// <summary>
+    /// 可变登录失败计数器（利用引用类型原地递增，避免重新 Set 刷新过期时间）
+    /// </summary>
+    private sealed class LoginFailureCounter
+    {
+        public int Count { get; set; }
+    }
+
+    /// <summary>
     /// 生成 JWT 令牌
     /// </summary>
     /// <remarks>
@@ -141,9 +214,9 @@ public class AccountAppService
     private async Task<(string token, List<string> roles, List<string> permissions)> GenerateJwtTokenAsync(User user)
     {
         var secretKey = _configuration["Jwt:SecretKey"];
-        if (string.IsNullOrEmpty(secretKey))
+        if (string.IsNullOrWhiteSpace(secretKey) || Encoding.UTF8.GetByteCount(secretKey) < 32)
         {
-            throw new InvalidOperationException("JWT Secret Key 未配置，请设置环境变量 JWT_SECRET_KEY");
+            throw new InvalidOperationException("JWT Secret Key 未配置或长度不足 32 字节，请设置环境变量 Jwt__SecretKey");
         }
 
         var claims = new List<Claim>
@@ -239,22 +312,27 @@ public class AccountAppService
     /// <summary>
     /// 发送密码重置码
     /// </summary>
+    /// <remarks>
+    /// 响应对账号是否存在保持一致，防止用户名枚举；限速按来源 IP 计数，
+    /// 避免攻击者变换提交串绕过按字符串的限速。
+    /// </remarks>
     [AllowAnonymous]
     public async Task SendPasswordResetCodeAsync(SendPasswordResetCodeDto input)
     {
         try
         {
-            // 检查密码重置请求次数
-            var resetAttemptsCacheKey = $"PasswordResetAttempts_{input.UserNameOrEmail}";
+            // 按来源 IP 检查密码重置请求次数
+            var clientIp = GetClientIpAddress();
+            var resetAttemptsCacheKey = $"PasswordResetAttempts_{clientIp}";
             var resetAttempts = _cache.GetOrCreate(resetAttemptsCacheKey, entry =>
             {
                 entry.AbsoluteExpirationRelativeToNow = TimeSpan.FromHours(1);
                 return 0;
             });
 
-            if (resetAttempts >= 3)
+            if (resetAttempts >= 5)
             {
-                _logger.LogWarning("发送密码重置码失败：用户 {UserNameOrEmail} 尝试次数过多", input.UserNameOrEmail);
+                _logger.LogWarning("发送密码重置码失败：来源 {Ip} 请求次数过多", clientIp);
                 throw new BusinessException("密码重置请求次数过多，请1小时后再试");
             }
 
@@ -267,8 +345,15 @@ public class AccountAppService
 
             if (user == null)
             {
-                _logger.LogWarning("发送密码重置码失败：用户 {UserNameOrEmail} 不存在", input.UserNameOrEmail);
-                throw new BusinessException("用户名或邮箱不存在");
+                // 不向调用方透露账号是否存在
+                _logger.LogWarning("发送密码重置码：账号不存在（不对外区分响应）");
+                return;
+            }
+
+            if (!user.IsActive)
+            {
+                _logger.LogWarning("发送密码重置码：账号 {UserName} 已停用（不对外区分响应）", user.UserName);
+                return;
             }
 
             // TODO: 实现实际的邮件或短信发送功能
@@ -311,6 +396,12 @@ public class AccountAppService
                 return false;
             }
 
+            if (!user.IsActive)
+            {
+                _logger.LogWarning("验证密码重置令牌失败：用户 {UserNameOrEmail} 已停用", input.UserNameOrEmail);
+                return false;
+            }
+
             // 验证令牌
             var cacheKey = $"PasswordResetToken_{user.Id}";
             var cachedToken = _cache.Get<string>(cacheKey);
@@ -320,9 +411,6 @@ public class AccountAppService
                 _logger.LogWarning("验证密码重置令牌失败：令牌无效或已过期");
                 return false;
             }
-
-            // 验证成功后清除令牌，防止重复使用
-            _cache.Remove(cacheKey);
 
             _logger.LogInformation("密码重置令牌验证成功：{UserName}", user.UserName ?? user.Email);
             return true;
@@ -349,6 +437,12 @@ public class AccountAppService
             if (user == null)
             {
                 _logger.LogWarning("重置密码失败：用户 {UserNameOrEmail} 不存在", input.UserNameOrEmail);
+                throw new BusinessException("用户名或邮箱不存在");
+            }
+
+            if (!user.IsActive)
+            {
+                _logger.LogWarning("重置密码失败：用户 {UserNameOrEmail} 已停用", input.UserNameOrEmail);
                 throw new BusinessException("用户名或邮箱不存在");
             }
 

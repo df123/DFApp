@@ -48,15 +48,18 @@ public class RssSourceAppService : AppServiceBase
     {
         var queryable = _rssSourceRepository.GetQueryable();
 
-        // 排序
-        if (!string.IsNullOrWhiteSpace(input.Sorting))
+        if (!string.IsNullOrWhiteSpace(input.Filter))
         {
-            queryable = queryable.OrderBy(input.Sorting);
+            var filter = input.Filter.Trim();
+            queryable = queryable.Where(x =>
+                x.Name.Contains(filter) ||
+                x.Url.Contains(filter) ||
+                x.Remark.Contains(filter));
         }
-        else
-        {
-            queryable = queryable.OrderByDescending(x => x.CreationTime);
-        }
+
+        // 排序（字段经实体属性白名单净化，防止排序参数注入 SQL）
+        queryable = queryable.OrderBy(
+            SortingSanitizer.Sanitize<RssSource>(input.Sorting, "CreationTime desc"));
 
         // 分页
         var totalCount = await queryable.CountAsync();

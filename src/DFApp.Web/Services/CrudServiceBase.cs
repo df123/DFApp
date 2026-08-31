@@ -28,6 +28,13 @@ public abstract class CrudServiceBase<TEntity, TKey, TGetOutputDto, TCreateInput
     protected ISqlSugarRepository<TEntity, TKey> Repository { get; }
 
     /// <summary>
+    /// 是否对单条/列表操作强制对象级所有权校验（防止越权访问他人记录）。
+    /// 默认关闭；需要按创建者隔离数据的模块（如文件上传）应重写为 true。
+    /// 拥有用户管理权限的账号视为管理员，可访问全部记录（含缺失创建者的历史记录）。
+    /// </summary>
+    protected virtual bool RequireOwnerCheck => false;
+
+    /// <summary>
     /// 构造函数
     /// </summary>
     /// <param name="currentUser">当前用户</param>
@@ -43,6 +50,75 @@ public abstract class CrudServiceBase<TEntity, TKey, TGetOutputDto, TCreateInput
     }
 
     /// <summary>
+    /// 校验当前用户对指定记录的访问权：创建者本人或管理员，否则抛出业务异常
+    /// </summary>
+    /// <param name="entity">目标实体</param>
+    protected async Task EnsureOwnerAsync(TEntity entity)
+    {
+        if (!RequireOwnerCheck)
+        {
+            return;
+        }
+
+        if (entity is not ICreatorId creatorEntity)
+        {
+            throw new InvalidOperationException(
+                $"{typeof(TEntity).Name} 未实现 {nameof(ICreatorId)}，无法启用所有权校验");
+        }
+
+        if (await IsPrivilegedUserAsync())
+        {
+            return;
+        }
+
+        if (creatorEntity.CreatorId is not null &&
+            CurrentUser.Id is not null &&
+            creatorEntity.CreatorId == CurrentUser.Id)
+        {
+            return;
+        }
+
+        throw new BusinessException("无权访问该记录");
+    }
+
+    /// <summary>
+    /// 当前用户是否为管理员（持有用户管理权限）
+    /// </summary>
+    protected Task<bool> IsPrivilegedUserAsync()
+    {
+        return PermissionChecker.IsGrantedAsync(DFAppPermissions.UserManagement.Default);
+    }
+
+    /// <summary>
+    /// 当启用所有权校验且用户非管理员时，返回按创建者过滤的查询条件；否则返回 null。
+    /// 过滤条件直接引用实体接口属性，保证可被查询提供器翻译。
+    /// </summary>
+    private async Task<Expression<Func<TEntity, bool>>?> BuildOwnerFilterAsync()
+    {
+        if (!RequireOwnerCheck || !typeof(ICreatorId).IsAssignableFrom(typeof(TEntity)))
+        {
+            return null;
+        }
+
+        if (await IsPrivilegedUserAsync())
+        {
+            return null;
+        }
+
+        var userId = CurrentUser.Id;
+        var parameter = Expression.Parameter(typeof(TEntity), "x");
+        var property = Expression.Property(
+            Expression.Convert(parameter, typeof(ICreatorId)),
+            nameof(ICreatorId.CreatorId));
+
+        Expression body = userId is null
+            ? Expression.Constant(false)
+            : Expression.Equal(property, Expression.Constant(userId, typeof(Guid?)));
+
+        return Expression.Lambda<Func<TEntity, bool>>(body, parameter);
+    }
+
+    /// <summary>
     /// 根据 ID 获取实体
     /// </summary>
     /// <param name="id">主键 ID</param>
@@ -51,6 +127,7 @@ public abstract class CrudServiceBase<TEntity, TKey, TGetOutputDto, TCreateInput
     {
         var entity = await Repository.GetByIdAsync(id);
         EnsureEntityExists(entity, id);
+        await EnsureOwnerAsync(entity);
         return await MapToGetOutputDtoAsync(entity);
     }
 
@@ -60,7 +137,10 @@ public abstract class CrudServiceBase<TEntity, TKey, TGetOutputDto, TCreateInput
     /// <returns>输出 DTO 列表</returns>
     public virtual async Task<List<TGetOutputDto>> GetListAsync()
     {
-        var entities = await Repository.GetListAsync();
+        var ownerFilter = await BuildOwnerFilterAsync();
+        var entities = ownerFilter is null
+            ? await Repository.GetListAsync()
+            : await Repository.GetListAsync(ownerFilter);
         return await MapToGetOutputDtoAsync(entities);
     }
 
@@ -71,7 +151,9 @@ public abstract class CrudServiceBase<TEntity, TKey, TGetOutputDto, TCreateInput
     /// <returns>输出 DTO 列表</returns>
     public virtual async Task<List<TGetOutputDto>> GetListAsync(Expression<Func<TEntity, bool>> expression)
     {
-        var entities = await Repository.GetListAsync(expression);
+        var ownerFilter = await BuildOwnerFilterAsync();
+        var combined = ownerFilter is null ? expression : CombineExpressions(expression, ownerFilter);
+        var entities = await Repository.GetListAsync(combined);
         return await MapToGetOutputDtoAsync(entities);
     }
 
@@ -83,6 +165,12 @@ public abstract class CrudServiceBase<TEntity, TKey, TGetOutputDto, TCreateInput
     /// <returns>分页结果</returns>
     public virtual async Task<(List<TGetOutputDto> Items, int TotalCount)> GetPagedListAsync(int pageIndex, int pageSize)
     {
+        var ownerFilter = await BuildOwnerFilterAsync();
+        if (ownerFilter is not null)
+        {
+            return await GetPagedListAsync(ownerFilter, pageIndex, pageSize);
+        }
+
         if (HasCreationTimeProperty())
         {
             var (items, totalCount) = await Repository.GetPagedListAsync(
@@ -110,6 +198,12 @@ public abstract class CrudServiceBase<TEntity, TKey, TGetOutputDto, TCreateInput
         int pageIndex,
         int pageSize)
     {
+        var ownerFilter = await BuildOwnerFilterAsync();
+        if (ownerFilter is not null)
+        {
+            expression = CombineExpressions(expression, ownerFilter);
+        }
+
         if (HasCreationTimeProperty())
         {
             var (items, totalCount) = await Repository.GetPagedListAsync(
@@ -123,6 +217,39 @@ public abstract class CrudServiceBase<TEntity, TKey, TGetOutputDto, TCreateInput
         var (defaultItems, defaultTotalCount) = await Repository.GetPagedListAsync(expression, pageIndex, pageSize);
         var defaultDtos = await MapToGetOutputDtoAsync(defaultItems);
         return (defaultDtos, defaultTotalCount);
+    }
+
+    /// <summary>
+    /// 合并两个查询条件（统一参数表达式，保证可翻译）
+    /// </summary>
+    private static Expression<Func<TEntity, bool>> CombineExpressions(
+        Expression<Func<TEntity, bool>> first,
+        Expression<Func<TEntity, bool>> second)
+    {
+        var parameter = first.Parameters[0];
+        var replacedBody = new ReplaceParameterVisitor(second.Parameters[0], parameter).Visit(second.Body);
+        var body = Expression.AndAlso(first.Body, replacedBody!);
+        return Expression.Lambda<Func<TEntity, bool>>(body, parameter);
+    }
+
+    /// <summary>
+    /// 表达式参数替换访问器
+    /// </summary>
+    private sealed class ReplaceParameterVisitor : ExpressionVisitor
+    {
+        private readonly ParameterExpression _from;
+        private readonly ParameterExpression _to;
+
+        public ReplaceParameterVisitor(ParameterExpression from, ParameterExpression to)
+        {
+            _from = from;
+            _to = to;
+        }
+
+        protected override Expression VisitParameter(ParameterExpression node)
+        {
+            return node == _from ? _to : node;
+        }
     }
 
     /// <summary>
@@ -184,6 +311,7 @@ public abstract class CrudServiceBase<TEntity, TKey, TGetOutputDto, TCreateInput
     {
         var entity = await Repository.GetByIdAsync(id);
         EnsureEntityExists(entity, id);
+        await EnsureOwnerAsync(entity);
 
         await MapToEntityAsync(input, entity);
         await Repository.UpdateAsync(entity);
@@ -199,6 +327,7 @@ public abstract class CrudServiceBase<TEntity, TKey, TGetOutputDto, TCreateInput
     {
         var entity = await Repository.GetByIdAsync(id);
         EnsureEntityExists(entity, id);
+        await EnsureOwnerAsync(entity);
         await Repository.DeleteAsync(id);
     }
 
@@ -210,6 +339,9 @@ public abstract class CrudServiceBase<TEntity, TKey, TGetOutputDto, TCreateInput
     {
         foreach (var id in ids)
         {
+            var entity = await Repository.GetByIdAsync(id);
+            EnsureEntityExists(entity, id);
+            await EnsureOwnerAsync(entity);
             await Repository.DeleteAsync(id);
         }
     }
