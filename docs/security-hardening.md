@@ -117,3 +117,55 @@ export Jwt__SecretKey='至少32字节的随机密钥'
 1. 执行 `sql/25`、`sql/26`（Telegram 管理权限授权、旧代理令牌失效）。
 2. 按上文"已泄露凭据处置"完成代理令牌轮换与 `LotteryProxy` 环境变量同步。
 3. Downloader 需重新 `publish` 后由负责人重启（勿直接改动运行中的 9550 实例）。
+
+## 2026-08-31 复审修复（第二轮渗透测试）
+
+针对 Strix 复审报告（7/12 已修复确认、5 项部分修复、6 项新发现）的代码修复。
+
+### SSRF 收尾
+
+- `SsrfGuard` 拦截 IPv4 回环**整段** `127.0.0.0/8`（此前仅拦精确的 127.0.0.1，127.0.0.2 等可绕过）。
+- RSS 抓取的**代理功能整体下线**：请求/源 DTO、抓取服务、镜像任务与前端表单的 ProxyUrl/ProxyUsername/ProxyPassword 全部移除。
+  走代理时目标解析发生在代理侧、服务端校验失效（DNS 重绑定绕过），且实际部署 0 个源使用代理。
+  将来确需代理时改为服务端配置（管理员权限）并经同一校验。
+- 代理模式特殊分支已从 Guard 移除，所有出站连接一律按内网黑名单严格判定。
+
+### 媒体任意文件读（新发现）
+
+- `MediaInfoService` 客户端提交的 `savePath` 强制净化为纯文件名，落库路径由服务端按 `SaveDrive` 配置拼接。
+- 下载端点纵深防御：存储记录中的路径必须解析在媒体根目录内，被污染历史记录也无法越界读取。
+
+### 账号枚举与锁定
+
+- 登录失败计数在**所有失败分支**（用户不存在/停用/密码错误）递增，消除"尝试次数过多"响应构成的账号存在性 oracle。
+- `reset-password` 对不存在账号与无效令牌返回同一错误，不再区分响应。
+- `GetClientIpAddress` 只信传输层 `RemoteIpAddress`，不再解析可伪造的原始 `X-Forwarded-For`；
+  反代场景由 ForwardedHeaders 中间件按 `KnownProxies` 归一化，新增 `ForwardedHeaders:KnownProxies` 配置（支持单 IP 与 CIDR，逗号分隔；默认仅信任回环）。
+
+### 对象级授权（IDOR）逐模块启用
+
+- 记账支出、电动车费用/充电记录、动态 IP、彩票模拟（KL8/SSQ）、媒体、媒体外链全部启用 `RequireOwnerCheck`：
+  非管理员只能访问自己创建的记录；管理员（持有用户管理权限）不受限。
+- 各服务绕过基类的自定义查询（过滤列表、统计、图表、跨仓储读取）均已补属主过滤。
+- 维持共享（未启用）：彩票主数据、记账分类、车辆登记、油价、RSS 源、关键词过滤、系统配置——家庭共享/字典型数据。
+
+### Downloader 管理接口加固（复审 Critical）
+
+- **认证**：非回环来源的请求必须携带匹配的 `X-Management-Token`（固定时间比较）；令牌未配置时非回环一律 401（fail-closed）。
+- **默认仅本机**：监听地址默认 `127.0.0.1`，`WebServerBind` 可显式改为 `0.0.0.0`（须配令牌）。
+- **凭据脱敏**：`GET /api/settings` 密码/令牌回显 `********`；更新提交掩码值即保留原值，不再明文回传。
+- **CORS**：移除 `AllowAnyOrigin`（管理界面同源部署，无需跨域）。
+- Web 管理界面适配：请求自动携带令牌，401 时提示输入并保存。
+
+### 依赖升级
+
+- axios：client 1.12.2 → 1.20.0；Downloader web 1.16 → 1.20.0（修复两个 HIGH）。
+- js-cookie 3.0.8、qs 6.16.0、echarts 5.6.0 → **6.1.0**（Lines 系列 tooltip XSS）。
+- pnpm override 强制 lodash ≥4.18.0（element-plus 传递依赖现解析为 4.18.1）。
+- 删除 ABP 时代遗留的 `src/DFApp.Web/package.json` + `yarn.lock`（fast-xml-parser CRITICAL 仅被该锁文件钉住，无任何构建引用）。
+- 删除 `sql/12`、`sql/14`（已知弱口令 123456/qwe123# 的 PBKDF2 种子哈希；密码已轮换，脚本废弃）。
+
+### 待运维
+
+- git 历史仍含旧代理令牌（commit d5e4ff9）与弱口令哈希：建议择机 `git filter-repo`/BFG 重写并通知克隆者；在此之前令牌继续视为已泄露（已轮换即可控）。
+- 正式服 Apache 侧建议补 HSTS/CSP/版本 banner 隐藏。
