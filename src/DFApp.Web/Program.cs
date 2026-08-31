@@ -1,4 +1,5 @@
 using System;
+using System.Net;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using System.Text;
@@ -312,10 +313,36 @@ public class Program
 
             if (!env.IsDevelopment())
             {
-                app.UseForwardedHeaders(new ForwardedHeadersOptions
+                // 反向代理场景归一化 RemoteIpAddress：仅当请求确实来自受信代理时才采信
+                // X-Forwarded-For/X-Forwarded-Proto。默认仅信任本机回环（如 Apache 同机部署）；
+                // 远端代理需在配置 ForwardedHeaders:KnownProxies（逗号分隔 IP 段）中显式声明
+                var forwardedOptions = new ForwardedHeadersOptions
                 {
                     ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto
-                });
+                };
+
+                var knownProxies = builder.Configuration["ForwardedHeaders:KnownProxies"];
+                if (!string.IsNullOrWhiteSpace(knownProxies))
+                {
+                    forwardedOptions.KnownNetworks.Clear();
+                    forwardedOptions.KnownProxies.Clear();
+                    foreach (var entry in knownProxies.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+                    {
+                        var parts = entry.Split('/');
+                        if (parts.Length == 2 &&
+                            IPAddress.TryParse(parts[0], out var network) &&
+                            int.TryParse(parts[1], out var prefixLength))
+                        {
+                            forwardedOptions.KnownNetworks.Add(new Microsoft.AspNetCore.HttpOverrides.IPNetwork(network, prefixLength));
+                        }
+                        else if (IPAddress.TryParse(entry, out var singleProxy))
+                        {
+                            forwardedOptions.KnownProxies.Add(singleProxy);
+                        }
+                    }
+                }
+
+                app.UseForwardedHeaders(forwardedOptions);
             }
 
             app.UseCors();

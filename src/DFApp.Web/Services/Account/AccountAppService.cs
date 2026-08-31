@@ -108,15 +108,21 @@ public class AccountAppService
             // 查找用户
             var user = await _userRepository.GetFirstOrDefaultAsync(u => u.UserName == input.Username);
 
+            // 所有失败分支一律递增计数：若只有"账号存在"才计数，锁定行为本身会成为
+            // 账号存在性枚举的 oracle（不存在的账号永不触发"尝试次数过多"）
             if (user == null)
             {
                 _logger.LogWarning("登录失败：用户名不存在");
+                attempts.Count++;
+                wideAttempts.Count++;
                 throw new BusinessException("用户名或密码错误");
             }
 
             if (!user.IsActive)
             {
                 _logger.LogWarning("登录失败：用户 {UserName} 已停用", user.UserName);
+                attempts.Count++;
+                wideAttempts.Count++;
                 throw new BusinessException("用户名或密码错误");
             }
 
@@ -173,26 +179,13 @@ public class AccountAppService
     }
 
     /// <summary>
-    /// 获取客户端 IP（经反向代理转发时取 X-Forwarded-For 首个地址）
+    /// 获取客户端 IP：只使用传输层 RemoteIpAddress，不解析原始 X-Forwarded-For——
+    /// 该头可被任意客户端伪造，直接采信会绕过"用户名+IP"锁定与按 IP 限速。
+    /// 反向代理场景下由 ForwardedHeaders 中间件按 KnownProxies 归一化 RemoteIpAddress。
     /// </summary>
     private string GetClientIpAddress()
     {
-        var context = _httpContextAccessor.HttpContext;
-        if (context?.Connection.RemoteIpAddress is null)
-        {
-            return "unknown";
-        }
-
-        if (context.Request.Headers.TryGetValue("X-Forwarded-For", out var values))
-        {
-            var first = values.ToString().Split(',', StringSplitOptions.TrimEntries).FirstOrDefault();
-            if (!string.IsNullOrEmpty(first))
-            {
-                return first;
-            }
-        }
-
-        return context.Connection.RemoteIpAddress.ToString();
+        return _httpContextAccessor.HttpContext?.Connection.RemoteIpAddress?.ToString() ?? "unknown";
     }
 
     /// <summary>
@@ -430,20 +423,20 @@ public class AccountAppService
     {
         try
         {
-            // 查找用户（通过用户名或邮箱）
+            // 查找用户（通过用户名或邮箱）；不存在与令牌无效返回同一错误，避免借响应差异枚举账号
             var user = await _userRepository.GetFirstOrDefaultAsync(
                 u => u.UserName == input.UserNameOrEmail || u.Email == input.UserNameOrEmail);
 
             if (user == null)
             {
-                _logger.LogWarning("重置密码失败：用户 {UserNameOrEmail} 不存在", input.UserNameOrEmail);
-                throw new BusinessException("用户名或邮箱不存在");
+                _logger.LogWarning("重置密码失败：账号不存在（不对外区分响应）");
+                throw new BusinessException("令牌无效或已过期");
             }
 
             if (!user.IsActive)
             {
-                _logger.LogWarning("重置密码失败：用户 {UserNameOrEmail} 已停用", input.UserNameOrEmail);
-                throw new BusinessException("用户名或邮箱不存在");
+                _logger.LogWarning("重置密码失败：账号 {UserName} 已停用（不对外区分响应）", user.UserName);
+                throw new BusinessException("令牌无效或已过期");
             }
 
             // 验证令牌
