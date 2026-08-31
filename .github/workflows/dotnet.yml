@@ -1,62 +1,88 @@
-# This workflow will build a .NET project
-# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-net
-
 name: .NET
 
 on:
   push:
-    branches: [ "master" ]
+    branches: [master]
+  pull_request:
 
-# 添加权限配置
 permissions:
-  contents: write
+  contents: read
 
 jobs:
-  build:
-
+  backend:
     runs-on: ubuntu-latest
-
-    env:
-      release: true
-
     steps:
-    - uses: actions/checkout@v4
-    - name: Setup .NET
-      uses: actions/setup-dotnet@v4
-      with:
-        dotnet-version: 10.0.x
+      - uses: actions/checkout@v4
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+      - name: Restore
+        run: dotnet restore
+      - name: Build
+        run: dotnet build --no-restore --configuration Release
+      - name: Test
+        run: dotnet test --no-build --configuration Release
+      - name: Check vulnerable packages
+        run: dotnet list src/DFApp.Web/DFApp.Web.csproj package --vulnerable --include-transitive
 
-    - name: Add repository directory to Git safe directory
-      run: |
-        git config --global --add safe.directory ./publish
-      shell: bash
+  frontend:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: client
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: client/pnpm-lock.yaml
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Typecheck
+        run: pnpm typecheck
+      - name: Lint
+        run: pnpm lint:check
+      - name: Build
+        run: pnpm build
 
-    - name: Create publish directory
-      run: mkdir -p ./publish
-      
-    - name: Publish project
-      run: |
-        cd ./src/DFApp.Web/
-        dotnet publish --configuration Release \
-          --framework net10.0 \
-          --runtime linux-x64 \
-          --no-self-contained \
-          --output ../../publish
-
-    - name: Zip publish files
-      run: |
-        cd publish
-        zip -r ../DFApp-linux-x64.zip .
-      shell: bash
-
-    - name: Create Release
-      uses: softprops/action-gh-release@v1
-      with:
-        tag_name: preview-${{ github.run_number }}
-        name: Preview Release ${{ github.run_number }}
-        draft: false
-        prerelease: true
-        files: DFApp-linux-x64.zip
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-  
+  release:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+    needs: [backend, frontend]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+      - name: Publish project
+        run: |
+          dotnet publish src/DFApp.Web/DFApp.Web.csproj \
+            --configuration Release \
+            --framework net10.0 \
+            --runtime linux-x64 \
+            --no-self-contained \
+            --output publish
+      - name: Zip publish files
+        run: |
+          cd publish
+          zip -r ../DFApp-linux-x64.zip .
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: preview-${{ github.run_number }}
+          name: Preview Release ${{ github.run_number }}
+          draft: false
+          prerelease: true
+          files: DFApp-linux-x64.zip
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
