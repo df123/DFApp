@@ -57,6 +57,9 @@ public class DownloadManager : IAsyncDisposable
     private readonly ConcurrentDictionary<int, double> _activeSpeeds = new();
     // 上次清理过期速度样本的时间（清理低频执行，避免每次采样都删）
     private DateTime _lastSpeedCleanupUtc = DateTime.MinValue;
+    // 队列饥饿检测：待处理任务存在但无任何"下载中"状态持续的起始时间与上次告警时间
+    private DateTime? _queueStarvationSinceUtc;
+    private DateTime? _queueStarvationLastLogUtc;
     // 卡死看门狗：下载中任务超过该时长无任何进度即判定卡死，自动暂停并重新入队
     private static readonly TimeSpan StallTimeout = TimeSpan.FromMinutes(5);
 
@@ -657,6 +660,32 @@ public class DownloadManager : IAsyncDisposable
                     _pendingQueue.Enqueue(item.Id);
                     _queueSignal.Release();
                 }
+
+                // 队列饥饿检测：存在待处理任务却无任何"下载中"状态，说明消费链路停摆——
+                // 历史案例为空 URL 任务把下载库挂死并耗尽并发槽位，全部任务冻结在 Pending。
+                // 持续两个检查周期以上每 30 分钟告警一次，提示人工介入。
+                var pendingCount = db.Queryable<DownloadItem>()
+                    .Where(x => x.Status == DownloadStatus.Pending)
+                    .Count();
+                if (pendingCount > 0 && downloading.Count == 0)
+                {
+                    _queueStarvationSinceUtc ??= now;
+                    var starvedMinutes = (now - _queueStarvationSinceUtc.Value).TotalMinutes;
+                    if (starvedMinutes >= 2 &&
+                        (_queueStarvationLastLogUtc is null ||
+                         (now - _queueStarvationLastLogUtc.Value).TotalMinutes >= 30))
+                    {
+                        _queueStarvationLastLogUtc = now;
+                        _logger.LogError(
+                            "队列饥饿：{PendingCount} 个任务待处理、0 个下载中（已持续 {Minutes:F0} 分钟，引擎活跃提交 {ActiveCount} 个）——消费链路疑似停摆，请检查日志并重启服务",
+                            pendingCount, starvedMinutes, _downloadEngine.ActiveDownloadCount);
+                    }
+                }
+                else
+                {
+                    _queueStarvationSinceUtc = null;
+                    _queueStarvationLastLogUtc = null;
+                }
             }
             catch (OperationCanceledException)
             {
@@ -696,8 +725,11 @@ public class DownloadManager : IAsyncDisposable
                 if ((DateTime.UtcNow - _lastSpeedCleanupUtc).TotalHours >= 1)
                 {
                     _lastSpeedCleanupUtc = DateTime.UtcNow;
+                    // 截止时间先求值为局部变量：表达式树内直接引用私有静态字段会被
+                    // SqlSugar 拒绝翻译（"Field can't be private"），导致清理每小时失败
+                    var retentionCutoff = DateTime.UtcNow - SpeedSampleRetention;
                     db.Deleteable<DownloadSpeedSample>()
-                        .Where(x => x.RecordedAt < DateTime.UtcNow - SpeedSampleRetention)
+                        .Where(x => x.RecordedAt < retentionCutoff)
                         .ExecuteCommand();
                 }
             }

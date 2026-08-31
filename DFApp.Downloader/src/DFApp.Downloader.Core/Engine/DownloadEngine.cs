@@ -22,6 +22,11 @@ public class DownloadEngine
     private readonly ConcurrentDictionary<int, CancellationTokenSource> _activeDownloads = new();
     private readonly SemaphoreSlim _concurrencySemaphore;
 
+    /// <summary>
+    /// 取消后的宽限期：令牌触发后超过该时长仍未返回即判定下载库挂起，强制放弃任务
+    /// </summary>
+    private static readonly TimeSpan CancelGracePeriod = TimeSpan.FromMinutes(2);
+
     /// <summary>下载进度事件</summary>
     public event Action<DownloadProgress>? OnProgress;
 
@@ -67,10 +72,49 @@ public class DownloadEngine
         {
             var outcome = DownloadOutcome.Canceled;
             string? failureMessage = null;
+            var slotAcquired = false;
             try
             {
                 await _concurrencySemaphore.WaitAsync(cts.Token);
-                (outcome, failureMessage) = await ExecuteDownloadAsync(item, cts.Token);
+                slotAcquired = true;
+
+                var executeTask = ExecuteDownloadAsync(item, cts.Token);
+                var abandoned = false;
+                DateTime? cancelObservedAt = null;
+                while (!executeTask.IsCompleted)
+                {
+                    await Task.WhenAny(executeTask, Task.Delay(TimeSpan.FromSeconds(10)));
+                    if (executeTask.IsCompleted)
+                    {
+                        break;
+                    }
+
+                    // 取消宽限：下载库个别挂起路径不响应取消令牌；令牌触发后超过宽限期
+                    // 仍未返回即判定挂死，强制放弃并回收并发槽位，防止一个任务拖死整个引擎。
+                    // 被放弃的后台任务不再持有槽位与登记，其残留句柄由下次重试的临时文件清理兜底。
+                    if (cts.IsCancellationRequested)
+                    {
+                        cancelObservedAt ??= DateTime.UtcNow;
+                        if (DateTime.UtcNow - cancelObservedAt.Value > CancelGracePeriod)
+                        {
+                            _logger.LogError(
+                                "下载取消后 {Seconds:F0} 秒仍未返回（下载库挂起），强制放弃并回收并发槽位: {FileName}（ID {Id}）",
+                                CancelGracePeriod.TotalSeconds, item.FileName, item.Id);
+                            abandoned = true;
+                            break;
+                        }
+                    }
+                }
+
+                if (abandoned)
+                {
+                    outcome = DownloadOutcome.Failed;
+                    failureMessage = "下载挂起未响应取消，已强制放弃";
+                }
+                else
+                {
+                    (outcome, failureMessage) = await executeTask;
+                }
             }
             catch (OperationCanceledException)
             {
@@ -85,9 +129,13 @@ public class DownloadEngine
             finally
             {
                 // 先清理活动下载登记并释放并发槽位，再触发完成/失败回调：
-                // 失败回调会立即重新入队，若回调先于清理执行，重试任务会覆盖/被误删同一活动条目
+                // 失败回调会立即重新入队，若回调先于清理执行，重试任务会覆盖/被误删同一活动条目。
+                // 仅在实际获得过槽位时才释放，等待槽位期间被取消的提交不得误增计数。
                 _activeDownloads.TryRemove(item.Id, out _);
-                _concurrencySemaphore.Release();
+                if (slotAcquired)
+                {
+                    _concurrencySemaphore.Release();
+                }
 
                 if (outcome == DownloadOutcome.Success)
                 {
