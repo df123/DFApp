@@ -74,7 +74,10 @@ class Aria2Api {
   async addDownload(
     request: AddDownloadRequestDto
   ): Promise<AddDownloadResponseDto> {
-    return http.post(`${this.baseUrl}/add-download`, { data: request, timeout: 30000 });
+    return http.post(`${this.baseUrl}/add-download`, {
+      data: request,
+      timeout: 30000
+    });
   }
 
   // ============ Aria2 管理相关 API (直接连接 aria2 RPC) ============
@@ -130,28 +133,40 @@ class Aria2Api {
    * 添加 URI 下载任务
    */
   async addUri(request: AddDownloadRequestDto): Promise<string> {
-    return http.post(`${this.manageUrl}/add-uri`, { data: request, timeout: 30000 });
+    return http.post(`${this.manageUrl}/add-uri`, {
+      data: request,
+      timeout: 30000
+    });
   }
 
   /**
    * 批量添加 URI 下载任务（每条链接创建独立任务）
    */
   async batchAddUri(request: BatchAddUriRequestDto): Promise<string[]> {
-    return http.post(`${this.manageUrl}/batch-add-uri`, { data: request, timeout: 30000 });
+    return http.post(`${this.manageUrl}/batch-add-uri`, {
+      data: request,
+      timeout: 30000
+    });
   }
 
   /**
    * 添加种子文件下载任务
    */
   async addTorrent(request: AddTorrentRequestDto): Promise<string> {
-    return http.post(`${this.manageUrl}/add-torrent`, { data: request, timeout: 30000 });
+    return http.post(`${this.manageUrl}/add-torrent`, {
+      data: request,
+      timeout: 30000
+    });
   }
 
   /**
    * 批量添加种子文件下载任务
    */
   async batchAddTorrent(request: BatchAddTorrentRequestDto): Promise<string[]> {
-    return http.post(`${this.manageUrl}/batch-add-torrent`, { data: request, timeout: 30000 });
+    return http.post(`${this.manageUrl}/batch-add-torrent`, {
+      data: request,
+      timeout: 30000
+    });
   }
 
   /**

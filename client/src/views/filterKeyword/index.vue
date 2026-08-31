@@ -376,14 +376,16 @@ const getMatchModeText = (mode: number): string => {
   return modes[mode] || "未知";
 };
 
+type TagType = "primary" | "success" | "warning" | "danger" | "info";
+
 // 获取匹配模式标签类型
-const getMatchModeTagType = (mode: number): string => {
-  const types = ["", "success", "warning", "info", "danger"];
-  return types[mode] || "";
+const getMatchModeTagType = (mode: number): TagType => {
+  const types: TagType[] = ["primary", "success", "warning", "info", "danger"];
+  return types[mode] || "primary";
 };
 
 // 获取优先级标签类型
-const getPriorityTagType = (priority: number): string => {
+const getPriorityTagType = (priority: number): TagType => {
   if (priority <= 10) return "danger";
   if (priority <= 50) return "warning";
   if (priority <= 100) return "primary";

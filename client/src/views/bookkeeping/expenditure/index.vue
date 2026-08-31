@@ -773,9 +773,7 @@ const openCarCostDialog = async (
     isBelongToSelf: expenditureData.isBelongToSelf,
     costType: 3, // 默认"其他"
     vehicleId:
-      carCostVehicles.value.length === 1
-        ? carCostVehicles.value[0].id
-        : "",
+      carCostVehicles.value.length === 1 ? carCostVehicles.value[0].id : "",
     remark: expenditureData.remark || ""
   });
 
@@ -833,7 +831,7 @@ const handleSubmit = async () => {
 
     // 检查分类是否为"车"，提示是否导入到车成本记录
     const selectedCategory = categories.value.find(
-      (c) => c.id === formData.value.categoryId
+      c => c.id === formData.value.categoryId
     );
     if (selectedCategory && selectedCategory.category === "车") {
       try {

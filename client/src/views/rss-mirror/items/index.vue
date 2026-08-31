@@ -212,7 +212,7 @@ const searchForm = reactive({
   endTime: ""
 });
 
-const dateRange = ref<[string, string]>([]);
+const dateRange = ref<[string, string]>(["", ""]);
 
 // 分页
 const pagination = reactive({
@@ -291,7 +291,7 @@ const handleReset = () => {
   searchForm.isDownloaded = undefined;
   searchForm.startTime = "";
   searchForm.endTime = "";
-  dateRange.value = [];
+  dateRange.value = ["", ""];
   handleSearch();
 };
 

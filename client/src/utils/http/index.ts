@@ -110,7 +110,12 @@ class PureHttp {
         }
         // 解包后端统一响应格式 { success, message, code, data }
         const res = response.data;
-        if (res && typeof res === "object" && "success" in res && "data" in res) {
+        if (
+          res &&
+          typeof res === "object" &&
+          "success" in res &&
+          "data" in res
+        ) {
           return res.data;
         }
         return res;

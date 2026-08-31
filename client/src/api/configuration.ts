@@ -19,6 +19,15 @@ class ConfigurationApi {
   }
 
   /**
+   * 获取指定模块配置
+   */
+  async getModuleConfigurations(
+    moduleName: string
+  ): Promise<ConfigurationInfoDto[]> {
+    return http.get(`${this.baseUrl}/module/${encodeURIComponent(moduleName)}`);
+  }
+
+  /**
    * 创建配置
    */
   async createConfiguration(

@@ -85,11 +85,10 @@ const refreshing = ref(false);
 
 const loadConfig = async () => {
   try {
-    const result = await configurationApi.getConfigurations({
-      moduleName: "DFApp.ElectricVehicle",
-      pageSize: 100
-    });
-    result.items.forEach((config: any) => {
+    const result = await configurationApi.getModuleConfigurations(
+      "DFApp.ElectricVehicle"
+    );
+    result.forEach(config => {
       if (config.configurationName === "OilProvince") {
         configForm.value.province = config.configurationValue;
       } else if (config.configurationName === "OilGasolineGrade") {
@@ -135,12 +134,11 @@ const handleSave = async () => {
       }
     ];
 
-    const existingConfigs = await configurationApi.getConfigurations({
-      moduleName: "DFApp.ElectricVehicle",
-      pageSize: 100
-    });
+    const existingConfigs = await configurationApi.getModuleConfigurations(
+      "DFApp.ElectricVehicle"
+    );
     const existingMap = new Map(
-      existingConfigs.items.map((c: any) => [c.configurationName, c])
+      existingConfigs.map(c => [c.configurationName, c])
     );
 
     for (const config of configs) {

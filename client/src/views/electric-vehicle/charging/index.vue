@@ -183,17 +183,11 @@ const pagination = reactive({
 });
 
 const formData = ref<CreateUpdateElectricVehicleChargingRecordDto>({
-  chargingDate: null as string | null,
-  stationName: "",
-  chargingDuration: undefined,
+  chargingDate: "",
   energy: undefined,
   amount: 0,
   currentMileage: undefined,
-  startSOC: undefined,
-  endSOC: undefined,
-  isBelongToSelf: true,
-  vehicleId: "",
-  remark: ""
+  vehicleId: ""
 });
 
 const currentEditId = ref<string | null>(null);
@@ -269,16 +263,10 @@ const handleCreate = () => {
   currentEditId.value = null;
   Object.assign(formData.value, {
     chargingDate: new Date().toISOString().split("T")[0],
-    stationName: "",
-    chargingDuration: undefined,
     energy: undefined,
     amount: 0,
     currentMileage: undefined,
-    startSOC: undefined,
-    endSOC: undefined,
-    isBelongToSelf: true,
-    vehicleId: vehicles.value.length === 1 ? vehicles.value[0].id : undefined,
-    remark: ""
+    vehicleId: vehicles.value.length === 1 ? vehicles.value[0].id : ""
   });
   dialogTitle.value = "新增充电记录";
   dialogVisible.value = true;
@@ -288,16 +276,10 @@ const handleEdit = (row: ElectricVehicleChargingRecordDto) => {
   currentEditId.value = row.id;
   Object.assign(formData.value, {
     chargingDate: row.chargingDate,
-    stationName: row.stationName || "",
-    chargingDuration: row.chargingDuration,
     energy: row.energy,
     amount: row.amount,
     currentMileage: row.currentMileage,
-    startSOC: row.startSOC,
-    endSOC: row.endSOC,
-    isBelongToSelf: row.isBelongToSelf,
-    vehicleId: row.vehicleId,
-    remark: row.remark || ""
+    vehicleId: row.vehicleId
   });
   dialogTitle.value = "编辑充电记录";
   dialogVisible.value = true;

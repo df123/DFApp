@@ -288,7 +288,7 @@ const handleCreate = () => {
     costDate: new Date().toISOString().split("T")[0],
     amount: 0,
     isBelongToSelf: true,
-  costType: 1,
+    costType: 1,
     vehicleId: vehicles.value.length === 1 ? vehicles.value[0].id : undefined,
     remark: ""
   });

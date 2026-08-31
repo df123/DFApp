@@ -3,7 +3,7 @@
     <el-card>
       <template #header>
         <div class="card-header">
-          <span>{{ $t("lottery.data.title") }}</span>
+          <span>彩票数据</span>
           <el-button
             v-if="hasPermission('DFApp.Lottery.Create')"
             v-permission="'DFApp.Lottery.Create'"
@@ -11,7 +11,7 @@
             icon="plus"
             @click="handleCreate"
           >
-            {{ $t("lottery.data.addButton") }}
+            新增
           </el-button>
         </div>
       </template>
@@ -22,18 +22,8 @@
         stripe
         style="width: 100%"
       >
-        <el-table-column :label="$t('lottery.data.actions')" width="150">
+        <el-table-column label="操作" width="100">
           <template #default="scope">
-            <el-button
-              v-if="hasPermission('DFApp.Lottery.Edit')"
-              v-permission="'DFApp.Lottery.Edit'"
-              type="primary"
-              link
-              size="small"
-              @click="handleEdit(scope.row)"
-            >
-              {{ $t("lottery.data.edit") }}
-            </el-button>
             <el-button
               v-if="hasPermission('DFApp.Lottery.Delete')"
               v-permission="'DFApp.Lottery.Delete'"
@@ -42,28 +32,16 @@
               size="small"
               @click="handleDelete(scope.row)"
             >
-              {{ $t("lottery.data.delete") }}
+              删除
             </el-button>
           </template>
         </el-table-column>
-        <el-table-column prop="indexNo" :label="$t('lottery.data.indexNo')" />
-        <el-table-column
-          prop="lotteryType"
-          :label="$t('lottery.data.lotteryType')"
-        />
-        <el-table-column
-          prop="redNumbers"
-          :label="$t('lottery.data.redNumbers')"
-        />
-        <el-table-column
-          prop="blueNumber"
-          :label="$t('lottery.data.blueNumber')"
-        />
-        <el-table-column prop="groupId" :label="$t('lottery.data.groupId')" />
-        <el-table-column
-          prop="creationTime"
-          :label="$t('lottery.data.creationTime')"
-        >
+        <el-table-column prop="indexNo" label="期号" />
+        <el-table-column prop="lotteryType" label="彩票类型" />
+        <el-table-column prop="redNumbers" label="红球" />
+        <el-table-column prop="blueNumber" label="蓝球" />
+        <el-table-column prop="groupId" label="组号" />
+        <el-table-column prop="creationTime" label="创建时间">
           <template #default="scope">
             {{ formatDateTime(scope.row.creationTime) }}
           </template>
@@ -81,72 +59,35 @@
       />
     </el-card>
 
-    <!-- 编辑模态框 -->
-    <el-dialog
-      v-model="editDialogVisible"
-      :title="$t('lottery.data.editTitle')"
-    >
-      <el-form ref="editFormRef" :model="editForm" :rules="editRules">
-        <el-form-item prop="indexNo" :label="$t('lottery.data.indexNo')">
-          <el-input v-model="editForm.indexNo" />
-        </el-form-item>
-        <el-form-item
-          prop="lotteryType"
-          :label="$t('lottery.data.lotteryType')"
-        >
-          <el-input v-model="editForm.lotteryType" />
-        </el-form-item>
-        <el-form-item prop="redNumbers" :label="$t('lottery.data.redNumbers')">
-          <el-input v-model="editForm.redNumbers" />
-        </el-form-item>
-        <el-form-item prop="blueNumber" :label="$t('lottery.data.blueNumber')">
-          <el-input v-model="editForm.blueNumber" />
-        </el-form-item>
-        <el-form-item prop="groupId" :label="$t('lottery.data.groupId')">
-          <el-input v-model="editForm.groupId" />
-        </el-form-item>
-      </el-form>
-      <template #footer>
-        <el-button @click="editDialogVisible = false">
-          {{ $t("lottery.data.cancel") }}
-        </el-button>
-        <el-button type="primary" @click="handleEditSubmit">
-          {{ $t("lottery.data.save") }}
-        </el-button>
-      </template>
-    </el-dialog>
-
-    <!-- 创建模态框 -->
-    <el-dialog
-      v-model="createDialogVisible"
-      :title="$t('lottery.data.createTitle')"
-    >
+    <el-dialog v-model="createDialogVisible" title="新增彩票数据">
       <el-form ref="createFormRef" :model="createForm" :rules="createRules">
-        <el-form-item prop="indexNo" :label="$t('lottery.data.indexNo')">
-          <el-input v-model="createForm.indexNo" />
+        <el-form-item prop="indexNo" label="期号">
+          <el-input-number v-model="createForm.indexNo" :min="1" />
         </el-form-item>
-        <el-form-item
-          prop="lotteryType"
-          :label="$t('lottery.data.lotteryType')"
-        >
-          <el-input v-model="createForm.lotteryType" />
+        <el-form-item prop="lotteryType" label="彩票类型">
+          <el-input v-model="createForm.lotteryType" placeholder="如：双色球" />
         </el-form-item>
-        <el-form-item prop="redNumbers" :label="$t('lottery.data.redNumbers')">
-          <el-input v-model="createForm.redNumbers" />
+        <el-form-item prop="redNumbers" label="红球">
+          <el-input
+            v-model="createForm.redNumbers"
+            placeholder="多个号码用逗号分隔"
+          />
         </el-form-item>
-        <el-form-item prop="blueNumber" :label="$t('lottery.data.blueNumber')">
-          <el-input v-model="createForm.blueNumber" />
-        </el-form-item>
-        <el-form-item prop="groupId" :label="$t('lottery.data.groupId')">
-          <el-input v-model="createForm.groupId" />
+        <el-form-item prop="blueNumber" label="蓝球">
+          <el-input
+            v-model="createForm.blueNumber"
+            placeholder="快乐8可留空；双色球填写一个号码"
+          />
         </el-form-item>
       </el-form>
       <template #footer>
-        <el-button @click="createDialogVisible = false">
-          {{ $t("lottery.data.cancel") }}
-        </el-button>
-        <el-button type="primary" @click="handleCreateSubmit">
-          {{ $t("lottery.data.create") }}
+        <el-button @click="createDialogVisible = false">取消</el-button>
+        <el-button
+          type="primary"
+          :loading="submitting"
+          @click="handleCreateSubmit"
+        >
+          创建
         </el-button>
       </template>
     </el-dialog>
@@ -154,56 +95,49 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted } from "vue";
-import { ElMessage, ElMessageBox } from "element-plus";
+import { reactive, ref, onMounted } from "vue";
+import {
+  ElMessage,
+  ElMessageBox,
+  type FormInstance,
+  type FormRules
+} from "element-plus";
 import { lotteryApi } from "@/api/lottery";
-import type { LotteryGroupDto, CreateUpdateLotteryDto } from "@/types/business";
+import type { CreateUpdateLotteryDto, LotteryGroupDto } from "@/types/business";
 
-// 数据状态
+interface LotteryGroupForm {
+  indexNo: number;
+  lotteryType: string;
+  redNumbers: string;
+  blueNumber: string;
+}
+
 const loading = ref(false);
+const submitting = ref(false);
 const tableData = ref<LotteryGroupDto[]>([]);
 const total = ref(0);
 const currentPage = ref(1);
 const pageSize = ref(10);
 
-// 编辑相关状态
-const editDialogVisible = ref(false);
-const editFormRef = ref();
-const editForm = reactive<CreateUpdateLotteryDto>({
-  indexNo: 0,
-  number: "",
-  colorType: "",
-  lotteryType: "",
-  groupId: 0
-});
-
-// 创建相关状态
 const createDialogVisible = ref(false);
-const createFormRef = ref();
-const createForm = reactive<CreateUpdateLotteryDto>({
-  indexNo: 0,
-  number: "",
-  colorType: "",
-  lotteryType: "",
-  groupId: 0
+const createFormRef = ref<FormInstance>();
+const createForm = reactive<LotteryGroupForm>({
+  indexNo: 1,
+  lotteryType: "双色球",
+  redNumbers: "",
+  blueNumber: ""
 });
 
-// 表单验证规则
-const editRules = {
-  indexNo: [{ required: true, message: "请输入期号", trigger: "blur" }]
+const createRules: FormRules = {
+  indexNo: [{ required: true, message: "请输入期号", trigger: "blur" }],
+  lotteryType: [{ required: true, message: "请输入彩票类型", trigger: "blur" }],
+  redNumbers: [{ required: true, message: "请输入红球", trigger: "blur" }]
 };
 
-const createRules = {
-  indexNo: [{ required: true, message: "请输入期号", trigger: "blur" }]
-};
-
-// 权限检查
 const hasPermission = (permission: string) => {
-  // 这里需要根据实际的权限系统实现
   return true;
 };
 
-// 获取彩票数据
 const getLotteryData = async () => {
   loading.value = true;
   try {
@@ -220,22 +154,14 @@ const getLotteryData = async () => {
   }
 };
 
-// 处理创建
 const handleCreate = () => {
   createDialogVisible.value = true;
 };
 
-// 处理编辑
-const handleEdit = (row: LotteryGroupDto) => {
-  Object.assign(editForm, row);
-  editDialogVisible.value = true;
-};
-
-// 处理删除
 const handleDelete = async (row: LotteryGroupDto) => {
   try {
     await ElMessageBox.confirm(
-      `确定要删除第 ${row.indexNo} 期数据吗？`,
+      `确定要删除第 ${row.indexNo} 期第 ${row.groupId} 组数据吗？`,
       "删除确认",
       {
         confirmButtonText: "确定",
@@ -243,41 +169,61 @@ const handleDelete = async (row: LotteryGroupDto) => {
         type: "warning"
       }
     );
-    await lotteryApi.deleteLottery(row.id);
+    await lotteryApi.deleteLotteryGroupByIndexNoAndGroupId(
+      row.indexNo,
+      row.groupId
+    );
     ElMessage.success("删除成功");
     getLotteryData();
   } catch {
-    // 用户取消删除
+    ElMessage.info("已取消删除");
   }
 };
 
-// 处理编辑提交
-const handleEditSubmit = async () => {
-  try {
-    await editFormRef.value.validate();
-    await lotteryApi.updateLottery(editForm.id, editForm);
-    ElMessage.success("更新成功");
-    editDialogVisible.value = false;
-    getLotteryData();
-  } catch (error) {
-    // 验证失败
-  }
-};
+const parseNumbers = (value: string) =>
+  value
+    .split(/[,，\s]+/)
+    .map(number => number.trim())
+    .filter(Boolean);
 
-// 处理创建提交
 const handleCreateSubmit = async () => {
   try {
-    await createFormRef.value.validate();
-    await lotteryApi.createLottery(createForm);
+    await createFormRef.value?.validate();
+
+    const records: CreateUpdateLotteryDto[] = parseNumbers(
+      createForm.redNumbers
+    ).map(number => ({
+      indexNo: createForm.indexNo,
+      number,
+      colorType: "0",
+      lotteryType: createForm.lotteryType,
+      groupId: 0
+    }));
+
+    for (const number of parseNumbers(createForm.blueNumber)) {
+      records.push({
+        indexNo: createForm.indexNo,
+        number,
+        colorType: "1",
+        lotteryType: createForm.lotteryType,
+        groupId: 0
+      });
+    }
+
+    submitting.value = true;
+    await lotteryApi.createLotteryGroup(records);
     ElMessage.success("创建成功");
     createDialogVisible.value = false;
     getLotteryData();
   } catch (error) {
-    // 验证失败
+    if (error !== false) {
+      ElMessage.error("创建失败");
+    }
+  } finally {
+    submitting.value = false;
   }
 };
 
-// 分页处理
 const handleSizeChange = (val: number) => {
   pageSize.value = val;
   currentPage.value = 1;
@@ -289,7 +235,6 @@ const handleCurrentChange = (val: number) => {
   getLotteryData();
 };
 
-// 格式化日期时间
 const formatDateTime = (dateTime: string) => {
   return new Date(dateTime).toLocaleString();
 };

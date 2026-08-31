@@ -70,13 +70,13 @@
 import { ref, onMounted, nextTick, onUnmounted } from "vue";
 import { ElMessage } from "element-plus";
 import Chart from "chart.js/auto";
-import type { ConstsDto, StatisticsWinItemDto } from "@/types/business";
+import type { ConstsDto, StatisticsWinDto } from "@/types/business";
 import { lotteryApi } from "@/api/lottery";
 
 // 响应式数据
 const loading = ref(false);
 const lotteryTypes = ref<ConstsDto[]>([]);
-const statisticsData = ref<StatisticsWinItemDto[]>([]);
+const statisticsData = ref<StatisticsWinDto[]>([]);
 const chartCanvas = ref<HTMLCanvasElement>();
 let chart: Chart | null = null;
 

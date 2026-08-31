@@ -1,5 +1,7 @@
 import type { PagedRequestDto } from "./api";
 
+export type { PagedRequestDto };
+
 // Aria2 模块类型
 
 // Aria2 状态响应 (基于实际 Schema)
@@ -493,6 +495,12 @@ export interface StatisticsWinItemDto {
   winAmount: number;
 }
 
+export interface StatisticsWinDto {
+  code: string;
+  buyAmount: number;
+  winAmount: number;
+}
+
 // 彩票统计项查询参数
 export interface StatisticsWinItemRequestDto extends PagedRequestDto {
   purchasedPeriod?: string;
@@ -791,4 +799,3 @@ export interface GetRssWordSegmentsRequestDto extends PagedRequestDto {
   languageType?: number;
   word?: string;
 }
-

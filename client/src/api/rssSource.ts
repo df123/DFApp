@@ -1,17 +1,25 @@
 import { http } from "@/utils/http";
-import type { PagedRequestDto, PagedResultDto } from "@/types/api";
+import type { PagedResultDto } from "@/types/api";
 import type { RssSourceDto, CreateUpdateRssSourceDto } from "@/types/business";
 
 class RssSourceApi {
   private baseUrl = "/api/app/rss-source";
 
-  /**
-   * 获取RSS源列表
-   */
-  async getList(
-    params?: PagedRequestDto
-  ): Promise<PagedResultDto<RssSourceDto>> {
-    return http.get(this.baseUrl, { params });
+  async getList(params?: {
+    pageIndex?: number;
+    pageSize?: number;
+    filter?: string;
+    sorting?: string;
+  }): Promise<PagedResultDto<RssSourceDto>> {
+    const pageIndex = params?.pageIndex ?? 1;
+    const pageSize = params?.pageSize ?? 10;
+    return http.get(this.baseUrl, {
+      params: {
+        ...params,
+        skipCount: (pageIndex - 1) * pageSize,
+        maxResultCount: pageSize
+      }
+    });
   }
 
   /**

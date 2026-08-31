@@ -2,7 +2,6 @@ import { http } from "@/utils/http";
 import type {
   SendPasswordResetCodeDto,
   VerifyPasswordResetTokenDto,
-  VerifyPasswordResetTokenResultDto,
   ResetPasswordDto
 } from "@/types/api";
 
@@ -63,7 +62,7 @@ export const sendPasswordResetCode = (data: SendPasswordResetCodeDto) => {
 
 /** 验证重置密码令牌 */
 export const verifyPasswordResetToken = (data: VerifyPasswordResetTokenDto) => {
-  return http.request<VerifyPasswordResetTokenResultDto>(
+  return http.request<boolean>(
     "post",
     "/api/app/account/verify-password-reset-token",
     { data }

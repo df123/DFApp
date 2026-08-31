@@ -830,7 +830,10 @@ const getStatusType = (status: string) => {
 const startSignalRConnection = async () => {
   try {
     hubConnection = new signalR.HubConnectionBuilder()
-      .withUrl("/hubs/aria2")
+      .withUrl("/hubs/aria2", {
+        // Hub 已要求认证，negotiate 时携带与 HTTP 层同源的 JWT
+        accessTokenFactory: () => sessionStorage.getItem("access_token") ?? ""
+      })
       .withAutomaticReconnect()
       .build();
 

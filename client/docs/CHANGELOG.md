@@ -194,7 +194,7 @@ pnpm test:report
 
 1. **测试用户必须存在**
    - 用户名: `test`
-   - 密码: `1q2w3E*`
+   - 密码: 由本地环境变量 `PLAYWRIGHT_TEST_PASSWORD` 提供
    - 角色: `Admin`
 
 2. **后端服务必须运行**
@@ -238,3 +238,9 @@ pnpm test:report
 - [ABP Framework 文档](https://docs.abp.io/)
 - [Vue 3 文档](https://vuejs.org/)
 - [Element Plus 文档](https://element-plus.org/)
+
+## 2026-08-25
+
+- 修复安全评审发现的 API 契约偏差与前端类型错误。
+- 移除仓库中的 OAuth 客户端密钥和测试账号明文密码，Playwright 改用环境变量。
+- 新增非修复式 lint 检查脚本，并完成现有代码格式化。

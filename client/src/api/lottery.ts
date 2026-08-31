@@ -12,6 +12,7 @@ import type {
   StatisticsDto,
   StatisticsWinRequestDto,
   StatisticsWinItemDto,
+  StatisticsWinDto,
   StatisticsWinItemRequestDto,
   LotteryCombinationDto,
   DeleteByTermNumberDto,
@@ -58,8 +59,8 @@ export class LotteryApi {
 
   // POST /api/app/lottery/batch
   async createLotteryGroup(
-    request: CreateUpdateLotteryDto
-  ): Promise<LotteryGroupDto> {
+    request: CreateUpdateLotteryDto[]
+  ): Promise<LotteryDto> {
     return http.post(`${this.baseUrl}/batch`, { data: request });
   }
 
@@ -96,7 +97,7 @@ export class LotteryApi {
     purchasedPeriod?: string,
     winningPeriod?: string,
     lotteryType?: string
-  ): Promise<StatisticsWinItemDto[]> {
+  ): Promise<StatisticsWinDto[]> {
     return http.get(`${this.baseUrl}/statistics-win`, {
       params: { purchasedPeriod, winningPeriod, lotteryType }
     });
@@ -113,10 +114,7 @@ export class LotteryApi {
   async calculateCompoundCombination(
     request: CompoundLotteryInputDto
   ): Promise<CompoundLotteryResultDto> {
-    return http.post(
-      "/api/app/compound-lottery/calculate",
-      { data: request }
-    );
+    return http.post("/api/app/compound-lottery/calculate", { data: request });
   }
 }
 

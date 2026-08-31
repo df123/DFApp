@@ -46,8 +46,7 @@ const handleLogin = async () => {
 
     const loginData = result.Data || result.data || result;
     const roles = loginData.Roles || loginData.roles || [];
-    const permissions =
-      loginData.Permissions || loginData.permissions || [];
+    const permissions = loginData.Permissions || loginData.permissions || [];
     const token = loginData.AccessToken || loginData.accessToken;
     const usernameVal = loginData.Username || loginData.username;
     const nickname = loginData.Nickname || loginData.nickname || "";
@@ -155,16 +154,6 @@ const handleLogin = async () => {
             >
               {{ loading ? "登录中..." : "登录" }}
             </el-button>
-          </Motion>
-          <Motion :delay="400">
-            <div class="forgot-password-link">
-              <el-link
-                type="primary"
-                @click="router.push('/login/reset-password')"
-              >
-                忘记密码
-              </el-link>
-            </div>
           </Motion>
         </div>
       </div>

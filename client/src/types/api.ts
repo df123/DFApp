@@ -220,6 +220,7 @@ export interface CreateUpdateElectricVehicleChargingRecordDto {
   chargingDate: string;
   energy?: number;
   amount: number;
+  currentMileage?: number;
 }
 
 export interface GasolinePriceDto {
@@ -257,10 +258,10 @@ export interface OilCostComparisonDto {
 }
 
 export interface OilCostComparisonRequestDto {
-  vehicleId: string;
-  oilVehicleMileage: number;
-  oilVehicleFuelConsumption: number;
-  oilVehicleGasolineGrade: number;
+  startDate: string;
+  endDate: string;
+  vehicleId?: string;
+  isBelongToSelf?: boolean;
 }
 
 export enum CostType {
@@ -281,21 +282,19 @@ export enum GasolineGrade {
 
 // 发送重置密码验证码请求
 export interface SendPasswordResetCodeDto {
-  email: string;
+  userNameOrEmail: string;
 }
 
 // 验证重置密码令牌请求
 export interface VerifyPasswordResetTokenDto {
+  userNameOrEmail: string;
   token: string;
-}
-
-// 验证重置密码令牌响应
-export interface VerifyPasswordResetTokenResultDto {
-  isValid: boolean;
 }
 
 // 重置密码请求
 export interface ResetPasswordDto {
+  userNameOrEmail: string;
   token: string;
   newPassword: string;
+  confirmNewPassword: string;
 }

@@ -43,12 +43,9 @@ export class FileUploadApi {
   async getCustomFileTypeConfig(
     configurationName?: string
   ): Promise<CustomFileTypeDto> {
-    return http.get(
-      `${this.baseUrl}/app/file-upload-info/configuration`,
-      {
-        params: { configurationName }
-      }
-    );
+    return http.get(`${this.baseUrl}/app/file-upload-info/configuration`, {
+      params: { configurationName }
+    });
   }
 
   // 文件上传辅助方法 (使用 FormData)

@@ -2222,3 +2222,8 @@ onMounted(() => {
 ## 许可证
 
 本功能是DFApp项目的一部分，遵循项目整体许可证。
+
+## 2026-08-25 契约修正
+
+- `rssSourceApi.getList` 将页面分页参数转换为后端的 `skipCount/maxResultCount`。
+- 后端支持 `filter` 后，页面搜索条件会随列表请求传递。
