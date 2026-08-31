@@ -23,6 +23,11 @@ namespace DFApp.Web.Services.Media;
 /// </summary>
 public class MediaInfoService : CrudServiceBase<MediaInfo, long, MediaInfoDto, CreateUpdateMediaInfoDto, CreateUpdateMediaInfoDto>
 {
+    /// <summary>
+    /// 该模块记录按创建者隔离：非管理员只能访问自己创建的记录
+    /// </summary>
+    protected override bool RequireOwnerCheck => true;
+
     private readonly MediaMapper _mapper = new();
     private readonly IConfigurationInfoRepository _configRepository;
     private readonly MediaRetrievalTracker _retrievalTracker;
@@ -238,12 +243,80 @@ public class MediaInfoService : CrudServiceBase<MediaInfo, long, MediaInfoDto, C
     }
 
     /// <summary>
+    /// 将客户端提交的保存路径净化后落库：仅接受纯文件名（与 Telegram 采集管线一致，
+    /// 完整路径由服务端按 SaveDrive 配置拼接），防止绝对路径/目录穿越借下载接口读取任意文件
+    /// </summary>
+    protected override async Task<MediaInfo> MapToEntityAsync(CreateUpdateMediaInfoDto input)
+    {
+        var entity = await base.MapToEntityAsync(input);
+        entity.SavePath = await BuildSafeSavePathAsync(input.SavePath);
+        return entity;
+    }
+
+    /// <summary>
+    /// 更新路径同样走净化（幂等：已净化过的"根目录+文件名"再次落入得到相同结果）
+    /// </summary>
+    protected override async Task MapToEntityAsync(CreateUpdateMediaInfoDto input, MediaInfo entity)
+    {
+        await base.MapToEntityAsync(input, entity);
+        entity.SavePath = await BuildSafeSavePathAsync(input.SavePath);
+    }
+
+    /// <summary>
+    /// 客户端提交的 SavePath 扁平化为纯文件名，再与配置的媒体根目录拼接
+    /// </summary>
+    private async Task<string> BuildSafeSavePathAsync(string? savePath)
+    {
+        var fileName = Path.GetFileName((savePath ?? string.Empty).Replace('\\', '/'));
+        if (string.IsNullOrWhiteSpace(fileName) || fileName == "." || fileName == "..")
+        {
+            throw new BusinessException("媒体保存路径非法");
+        }
+
+        var root = await GetMediaRootPathAsync();
+        return Path.Combine(root, fileName);
+    }
+
+    /// <summary>
+    /// 解析下载用的绝对路径：相对路径按媒体根目录补全，最终路径必须位于根目录内
+    /// （纵深防御：即使历史记录中的路径被污染，也无法越出媒体根目录读取任意文件）
+    /// </summary>
+    public async Task<string> ResolveMediaFilePathAsync(string savePath)
+    {
+        var root = await GetMediaRootPathAsync();
+        var fullPath = Path.GetFullPath(
+            Path.IsPathRooted(savePath) ? savePath : Path.Combine(root, savePath));
+
+        if (!fullPath.StartsWith(root + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase) &&
+            !string.Equals(fullPath, root, StringComparison.OrdinalIgnoreCase))
+        {
+            throw new BusinessException("媒体文件路径越出存储根目录");
+        }
+
+        return fullPath;
+    }
+
+    /// <summary>
+    /// 读取媒体存储根目录（SaveDrive 配置）
+    /// </summary>
+    private async Task<string> GetMediaRootPathAsync()
+    {
+        var root = await GetConfigurationValueAsync("SaveDrive");
+        if (string.IsNullOrWhiteSpace(root))
+        {
+            throw new BusinessException("媒体存储根目录（SaveDrive）未配置");
+        }
+
+        return Path.GetFullPath(root.Trim());
+    }
+
+    /// <summary>
     /// 获取图表数据（按聊天标题分组统计）
     /// </summary>
     /// <returns>图表数据 DTO</returns>
     public async Task<ChartDataDto> GetChartDataAsync()
     {
-        var list = await Repository.GetListAsync();
+        var list = await FilterOwnedAsync(await Repository.GetListAsync());
         var temp = list.GroupBy(item => item.ChatTitle)
             .Select(item => new
             {

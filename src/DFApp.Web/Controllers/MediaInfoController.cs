@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
@@ -8,6 +9,7 @@ using DFApp.Web.Permissions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.StaticFiles;
+using Microsoft.Extensions.Logging;
 using MediaInfoService = DFApp.Web.Services.Media.MediaInfoService;
 using DFApp.Web.Infrastructure;
 
@@ -23,20 +25,24 @@ public class MediaInfoController : DFAppControllerBase
 {
     private readonly MediaInfoService _mediaInfoService;
     private readonly FileExtensionContentTypeProvider _typeProvider;
+    private readonly ILogger<MediaInfoController> _logger;
 
     /// <summary>
     /// 构造函数
     /// </summary>
     /// <param name="mediaInfoService">媒体信息服务</param>
+    /// <param name="logger">日志</param>
     /// <param name="currentUser">当前用户</param>
     /// <param name="permissionChecker">权限检查器</param>
     public MediaInfoController(
         MediaInfoService mediaInfoService,
+        ILogger<MediaInfoController> logger,
         ICurrentUser currentUser,
         IPermissionChecker permissionChecker)
         : base(currentUser, permissionChecker)
     {
         _mediaInfoService = mediaInfoService;
+        _logger = logger;
         _typeProvider = new FileExtensionContentTypeProvider();
         _typeProvider.Mappings[".iso"] = "application/octet-stream";
     }
@@ -208,6 +214,24 @@ public class MediaInfoController : DFAppControllerBase
             return Fail("媒体文件路径为空");
         }
 
+        // 纵深防御：存储记录中的路径必须解析在媒体根目录（SaveDrive 配置）内，
+        // 防止被污染的记录借下载接口读取服务器任意文件
+        string filePath;
+        try
+        {
+            filePath = await _mediaInfoService.ResolveMediaFilePathAsync(dto.SavePath);
+        }
+        catch (BusinessException)
+        {
+            throw;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "解析媒体文件路径失败: {SavePath}", dto.SavePath);
+            ThrowBusinessException("媒体文件路径非法");
+            return Fail("媒体文件路径非法");
+        }
+
         if (!_typeProvider.TryGetContentType(dto.SavePath, out var contentType) || string.IsNullOrWhiteSpace(contentType))
         {
             contentType = "application/octet-stream";
@@ -215,7 +239,7 @@ public class MediaInfoController : DFAppControllerBase
 
         var fileDownloadName = Path.GetFileName(dto.SavePath);
 
-        var fs = new FileStream(dto.SavePath, FileMode.Open, FileAccess.Read, FileShare.Read, 4096, true);
+        var fs = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.Read, 4096, true);
         var fileStreamResult = new FileStreamResult(fs, contentType)
         {
             FileDownloadName = fileDownloadName,

@@ -31,6 +31,11 @@ public class ExternalLinkService : CrudServiceBase<
     CreateUpdateExternalLinkDto,
     CreateUpdateExternalLinkDto>
 {
+    /// <summary>
+    /// 外链记录与被打包的媒体均按创建者隔离：非管理员只能操作自己的媒体外链
+    /// </summary>
+    protected override bool RequireOwnerCheck => true;
+
     private readonly IBackgroundTaskQueue _backgroundTaskQueue;
     private readonly IConfigurationInfoRepository _configurationInfoRepository;
     private readonly MediaMapper _mapper = new();
@@ -124,8 +129,8 @@ public class ExternalLinkService : CrudServiceBase<
 
             string zipType = await configurationInfoRepository.GetConfigurationInfoValue("ZipType", MediaBackgroudConst.ModuleName);
 
-            List<MediaInfo> temp = await mediaInfoRepository.GetListAsync(x => !x.IsExternalLinkGenerated
-                && x.IsDownloadCompleted);
+            var temp = await FilterOwnedListAsync(await mediaInfoRepository.GetListAsync(x => !x.IsExternalLinkGenerated
+                && x.IsDownloadCompleted));
 
             if (temp == null || temp.Count <= 0)
             {
@@ -257,7 +262,7 @@ public class ExternalLinkService : CrudServiceBase<
                 var mediaExternalLinkMediaIds = await mediaExternalLinkMediaIdRepository.GetListAsync(x => x.MediaExternalLinkId == mediaExternalLink.Id);
 
                 List<long> ids = mediaExternalLinkMediaIds.Select(x => x.MediaId).ToList();
-                List<MediaInfo> medias = await mediaInfoRepository.GetListAsync(x => ids.Contains(x.Id));
+                var medias = await FilterOwnedListAsync(await mediaInfoRepository.GetListAsync(x => ids.Contains(x.Id)));
 
                 foreach (var item in medias)
                 {
