@@ -156,7 +156,7 @@ pnpm test:report
 ## 📋 注意事项
 
 1. **后端服务必须运行** - `https://localhost:44369`
-2. **测试用户必须存在** - `test` / `1q2w3E*`
+2. **测试用户必须存在** - 凭据由 `PLAYWRIGHT_TEST_USERNAME` 与 `PLAYWRIGHT_TEST_PASSWORD` 环境变量提供
 3. **自签名证书已忽略** - `ignoreHTTPSErrors: true`
 4. **认证状态自动管理** - 无需手动登录
 

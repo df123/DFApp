@@ -7,7 +7,7 @@
 1. ✅ Node.js 已安装 (>= 20.19.0)
 2. ✅ pnpm 已安装 (>= 9)
 3. ✅ 后端服务正在运行 (`https://localhost:44369`)
-4. ✅ 测试用户已创建 (`test` / `1q2w3E*`)
+4. ✅ 测试用户已创建，并通过 `PLAYWRIGHT_TEST_USERNAME`、`PLAYWRIGHT_TEST_PASSWORD` 提供凭据
 
 ## 🚀 快速开始
 
@@ -156,12 +156,14 @@ POST https://localhost:44369/connect/token
 参数:
 - grant_type: password
 - client_id: DFApp_Web
-- client_secret: X!*l}4Ab[K~um%I*#2
+- client_secret: `<PLAYWRIGHT_OAUTH_CLIENT_SECRET>`（由环境变量提供）
 - username: test
-- password: 1q2w3E*
+- password: `<PLAYWRIGHT_TEST_PASSWORD>`（由环境变量提供）
 ```
 
 认证状态保存在 `playwright/.auth/user.json`，所有测试自动使用。
+
+运行测试前请先设置 `PLAYWRIGHT_OAUTH_CLIENT_SECRET`，不要将客户端密钥写入仓库或测试脚本。
 
 ## 🐛 调试技巧
 

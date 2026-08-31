@@ -9,7 +9,7 @@
 确保满足以下条件：
 
 - 后端服务运行在 `https://localhost:44369`
-- 测试用户 `test` 已创建（密码：`1q2w3E*`）
+- 测试用户已创建，凭据通过 `PLAYWRIGHT_TEST_USERNAME` 与 `PLAYWRIGHT_TEST_PASSWORD` 环境变量提供
 - 自签名证书已被信任（测试时自动处理）
 
 ## 安装 Playwright
@@ -48,9 +48,9 @@ pnpm test:report
    - 使用以下参数：
      - `grant_type=password`
      - `client_id=DFApp_Web`
-     - `client_secret=X!*l}4Ab[K~um%I*#2`
+     - `client_secret=$PLAYWRIGHT_OAUTH_CLIENT_SECRET`
      - `username=test`
-     - `password=1q2w3E*`
+     - `password=$PLAYWRIGHT_TEST_PASSWORD`
    - 将 token 保存到 `playwright/.auth/user.json`
 
 2. **其他测试** 自动使用保存的认证状态
@@ -141,7 +141,7 @@ dotnet run
 
 ### 测试用户不存在
 
-确保在数据库中创建测试用户，用户名：`test`，密码：`1q2w3E*`
+确保在数据库中创建测试用户，并通过 `PLAYWRIGHT_TEST_USERNAME` 与 `PLAYWRIGHT_TEST_PASSWORD` 环境变量提供凭据。
 
 ### 证书错误
 

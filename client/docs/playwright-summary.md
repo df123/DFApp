@@ -177,9 +177,9 @@ pnpm test:report
    参数:
    - grant_type=password
    - client_id=DFApp_Web
-   - client_secret=X!*l}4Ab[K~um%I*#2
+   - client_secret=$PLAYWRIGHT_OAUTH_CLIENT_SECRET
    - username=test
-   - password=1q2w3E*
+   - password=$PLAYWRIGHT_TEST_PASSWORD
    ↓
 3. 获取 access_token 和 refresh_token
    ↓
@@ -278,7 +278,7 @@ pnpm test:report
 
 1. **测试用户必须存在**
    - 用户名: `test`
-   - 密码: `1q2w3E*`
+   - 密码: 由本地环境变量 `PLAYWRIGHT_TEST_PASSWORD` 提供
    - 角色: `Admin`
 
 2. **后端服务必须运行**

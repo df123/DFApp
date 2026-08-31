@@ -21,6 +21,8 @@
 **/.git
 **/.gitignore
 **/.github
+**/.env
+**/.env.*
 **/README.md
 **/LICENSE
 **/CODE_OF_CONDUCT.md

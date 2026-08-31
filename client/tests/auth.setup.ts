@@ -6,15 +6,24 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const authFile = path.join(__dirname, "../playwright/.auth/user.json");
+const username = process.env.PLAYWRIGHT_TEST_USERNAME;
+const password = process.env.PLAYWRIGHT_TEST_PASSWORD;
+const clientSecret = process.env.PLAYWRIGHT_OAUTH_CLIENT_SECRET;
+
+if (!username || !password || !clientSecret) {
+  throw new Error(
+    "请设置 PLAYWRIGHT_TEST_USERNAME、PLAYWRIGHT_TEST_PASSWORD 和 PLAYWRIGHT_OAUTH_CLIENT_SECRET 环境变量"
+  );
+}
 
 setup("authenticate", async ({ page, request, context }) => {
   const response = await request.post("https://localhost:44369/connect/token", {
     form: {
       grant_type: "password",
       client_id: "DFApp_Web",
-      client_secret: "X!*l}4Ab[K~um%I*#2",
-      username: "test",
-      password: "1q2w3E*"
+      client_secret: clientSecret,
+      username,
+      password
     },
     headers: {
       "Content-Type": "application/x-www-form-urlencoded"

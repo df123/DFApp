@@ -274,6 +274,9 @@ src/DF.Telegram.Blazor.Server.Tiered/Logs/*
 /DFApp.db-shm
 /DFApp.db-wal
 /DFApp-old.db
+/src/DFApp.Web/Transient.db
+/src/DFApp.Web/Transient.db-shm
+/src/DFApp.Web/Transient.db-wal
 /src/DF.Telegram.Web/host/default
 /src/DF.Telegram.Web/.config
 /src/DF.Telegram.Web/publish.ps1
@@ -305,8 +308,11 @@ client/node_modules/
 client/dist/
 
 # 环境变量（含敏感信息）
+client/.env
 client/.env.development
 client/.env.staging
+client/.env.test
+client/.env*.local
 
 # 编辑器缓存
 .eslintcache
