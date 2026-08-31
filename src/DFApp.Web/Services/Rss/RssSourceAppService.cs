@@ -108,9 +108,6 @@ public class RssSourceAppService : AppServiceBase
         {
             Name = input.Name,
             Url = input.Url,
-            ProxyUrl = input.ProxyUrl,
-            ProxyUsername = input.ProxyUsername,
-            ProxyPassword = input.ProxyPassword,
             IsEnabled = input.IsEnabled,
             FetchIntervalMinutes = input.FetchIntervalMinutes,
             MaxItems = input.MaxItems,
@@ -150,9 +147,6 @@ public class RssSourceAppService : AppServiceBase
         // TODO: 使用 Mapperly 映射（命名空间冲突，暂保留手动映射）
         source.Name = input.Name;
         source.Url = input.Url;
-        source.ProxyUrl = input.ProxyUrl;
-        source.ProxyUsername = input.ProxyUsername;
-        source.ProxyPassword = input.ProxyPassword;
         source.IsEnabled = input.IsEnabled;
         source.FetchIntervalMinutes = input.FetchIntervalMinutes;
         source.MaxItems = input.MaxItems;
@@ -214,8 +208,6 @@ public class RssSourceAppService : AppServiceBase
             Id = entity.Id,
             Name = entity.Name,
             Url = entity.Url,
-            ProxyUrl = entity.ProxyUrl,
-            ProxyUsername = entity.ProxyUsername,
             IsEnabled = entity.IsEnabled,
             FetchIntervalMinutes = entity.FetchIntervalMinutes,
             MaxItems = entity.MaxItems,

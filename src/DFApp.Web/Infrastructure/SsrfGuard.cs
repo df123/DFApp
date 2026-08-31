@@ -62,17 +62,13 @@ public static class SsrfGuard
     /// <summary>
     /// 创建受防护的 HTTP 处理器：关闭自动重定向（由 SafeGetAsync 逐跳校验后跟随），
     /// 连接建立时对实际 IP 做最终判定。
-    /// 未配置代理时内网地址一律拒绝；配置代理时连接对象是代理本身（内网代理属合法场景），
-    /// 仅拒绝云元数据段。
     /// </summary>
-    public static SocketsHttpHandler CreateGuardedHandler(WebProxy? proxy = null)
+    public static SocketsHttpHandler CreateGuardedHandler()
     {
         return new SocketsHttpHandler
         {
-            UseProxy = proxy is not null,
-            Proxy = proxy,
             AllowAutoRedirect = false,
-            ConnectCallback = (context, ct) => ConnectValidatedAsync(context, proxy is not null, ct)
+            ConnectCallback = (context, ct) => ConnectValidatedAsync(context, ct)
         };
     }
 
@@ -117,7 +113,7 @@ public static class SsrfGuard
     /// 建立连接前对解析出的地址做最终判定；DNS 结果短暂缓存，避免双重解析开销
     /// </summary>
     private static async ValueTask<Stream> ConnectValidatedAsync(
-        SocketsHttpConnectionContext context, bool viaProxy, CancellationToken cancellationToken)
+        SocketsHttpConnectionContext context, CancellationToken cancellationToken)
     {
         var endpoint = context.DnsEndPoint;
         IPAddress[] addresses;
@@ -131,7 +127,7 @@ public static class SsrfGuard
         }
 
         var candidates = addresses
-            .Where(a => viaProxy ? !IsMetadataAddress(a) : !IsBlockedAddress(a))
+            .Where(a => !IsBlockedAddress(a))
             .Distinct()
             .ToArray();
 
@@ -183,15 +179,10 @@ public static class SsrfGuard
     }
 
     /// <summary>
-    /// 内网/保留地址判定（回环、私网、链路本地、唯一本地、CGNAT、未指定）
+    /// 内网/保留地址判定（回环整段、私网、链路本地、唯一本地、CGNAT、未指定）
     /// </summary>
     public static bool IsBlockedAddress(IPAddress address)
     {
-        if (IsMetadataAddress(address))
-        {
-            return true;
-        }
-
         var ip = address.IsIPv4MappedToIPv6 ? address.MapToIPv4() : address;
 
         if (ip.AddressFamily == AddressFamily.InterNetworkV6)
@@ -212,25 +203,10 @@ public static class SsrfGuard
         var bytes = ip.GetAddressBytes();
         return bytes[0] == 0 ||                      // 0.0.0.0/8
                bytes[0] == 10 ||                     // 10.0.0.0/8
+               bytes[0] == 127 ||                    // 127.0.0.0/8 回环整段（Linux 上全部路由到本机）
                (bytes[0] == 172 && bytes[1] >= 16 && bytes[1] <= 31) || // 172.16.0.0/12
                (bytes[0] == 192 && bytes[1] == 168) || // 192.168.0.0/16
-               (bytes[0] == 100 && bytes[1] >= 64 && bytes[1] <= 127) || // 100.64.0.0/10 CGNAT
-               ip.Equals(IPAddress.Loopback);
-    }
-
-    /// <summary>
-    /// 云元数据链路本地段（169.254.0.0/16 与 IPv6 链路本地），任何场景（含代理）都拒绝
-    /// </summary>
-    private static bool IsMetadataAddress(IPAddress address)
-    {
-        var ip = address.IsIPv4MappedToIPv6 ? address.MapToIPv4() : address;
-
-        if (ip.AddressFamily == AddressFamily.InterNetwork)
-        {
-            var bytes = ip.GetAddressBytes();
-            return bytes[0] == 169 && bytes[1] == 254;
-        }
-
-        return ip.IsIPv6LinkLocal;
+               (bytes[0] == 169 && bytes[1] == 254) || // 169.254.0.0/16 链路本地（含云元数据）
+               (bytes[0] == 100 && bytes[1] >= 64 && bytes[1] <= 127); // 100.64.0.0/10 CGNAT
     }
 }

@@ -92,21 +92,8 @@ namespace DFApp.Web.Background
 
             try
             {
-                // 配置代理并创建 SSRF 防护处理器
-                WebProxy? proxy = null;
-                if (!string.IsNullOrWhiteSpace(source.ProxyUrl))
-                {
-                    proxy = new WebProxy(source.ProxyUrl);
-                    if (!string.IsNullOrWhiteSpace(source.ProxyUsername) &&
-                        !string.IsNullOrWhiteSpace(source.ProxyPassword))
-                    {
-                        proxy.Credentials = new NetworkCredential(
-                            source.ProxyUsername,
-                            source.ProxyPassword);
-                    }
-                }
-
-                using var handler = SsrfGuard.CreateGuardedHandler(proxy);
+                // 创建 SSRF 防护处理器（内网地址拒绝、重定向逐跳校验）
+                using var handler = SsrfGuard.CreateGuardedHandler();
 
                 using var client = new HttpClient(handler);
                 client.Timeout = TimeSpan.FromSeconds(60);

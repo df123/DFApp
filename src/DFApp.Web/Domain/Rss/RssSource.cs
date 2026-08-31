@@ -23,24 +23,6 @@ namespace DFApp.Rss
         public string Url { get; set; } = string.Empty;
 
         /// <summary>
-        /// 代理URL
-        /// </summary>
-        [SugarColumn(ColumnName = "ProxyUrl")]
-        public string? ProxyUrl { get; set; }
-
-        /// <summary>
-        /// 代理用户名
-        /// </summary>
-        [SugarColumn(ColumnName = "ProxyUsername")]
-        public string? ProxyUsername { get; set; }
-
-        /// <summary>
-        /// 代理密码
-        /// </summary>
-        [SugarColumn(ColumnName = "ProxyPassword")]
-        public string? ProxyPassword { get; set; }
-
-        /// <summary>
         /// 是否启用
         /// </summary>
         [SugarColumn(ColumnName = "IsEnabled")]

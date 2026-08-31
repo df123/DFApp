@@ -5,9 +5,6 @@ export interface RssFetchRequestDto {
   url?: string;
   maxItems?: number;
   query?: string;
-  proxyUrl?: string;
-  proxyUsername?: string;
-  proxyPassword?: string;
 }
 
 // RSS条目DTO

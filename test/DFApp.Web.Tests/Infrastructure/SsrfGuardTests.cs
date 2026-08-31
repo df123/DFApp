@@ -12,6 +12,9 @@ public class SsrfGuardTests
 {
     [Theory]
     [InlineData("127.0.0.1")]
+    [InlineData("127.0.0.2")]
+    [InlineData("127.1.1.1")]
+    [InlineData("127.255.255.254")]
     [InlineData("10.0.0.5")]
     [InlineData("172.16.0.1")]
     [InlineData("172.31.255.255")]
@@ -23,6 +26,7 @@ public class SsrfGuardTests
     [InlineData("fe80::1")]
     [InlineData("fc00::1")]
     [InlineData("::ffff:127.0.0.1")]
+    [InlineData("::ffff:127.0.0.2")]
     public void IsBlockedAddress_PrivateOrReserved_ShouldBeBlocked(string address)
     {
         SsrfGuard.IsBlockedAddress(IPAddress.Parse(address)).Should().BeTrue(
@@ -61,6 +65,8 @@ public class SsrfGuardTests
 
     [Theory]
     [InlineData("http://127.0.0.1/api")]
+    [InlineData("http://127.0.0.2/api")]
+    [InlineData("http://127.10.20.30:8080/")]
     [InlineData("http://169.254.169.254/latest/meta-data/")]
     [InlineData("http://10.0.0.5:8080/")]
     [InlineData("http://[::1]/")]

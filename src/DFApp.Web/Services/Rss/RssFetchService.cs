@@ -52,49 +52,7 @@ public class RssFetchService : AppServiceBase
         var stopwatch = Stopwatch.StartNew();
 
         // 出站请求统一走 SSRF 防护处理器（内网地址拒绝、重定向逐跳校验）
-        WebProxy? proxy = null;
-
-        // 配置代理
-        if (!string.IsNullOrWhiteSpace(input.ProxyUrl))
-        {
-            try
-            {
-                _logger.LogInformation("使用代理: {ProxyUrl}", input.ProxyUrl);
-
-                // 解析代理URL（仅允许 http/https）
-                var proxyUri = new Uri(input.ProxyUrl);
-                if (proxyUri.Scheme != "http" && proxyUri.Scheme != "https")
-                {
-                    throw new InvalidOperationException("代理地址仅支持 http/https");
-                }
-
-                proxy = new WebProxy
-                {
-                    Address = proxyUri,
-                    BypassProxyOnLocal = false
-                };
-
-                // 设置代理认证
-                if (!string.IsNullOrWhiteSpace(input.ProxyUsername) &&
-                    !string.IsNullOrWhiteSpace(input.ProxyPassword))
-                {
-                    proxy.Credentials = new NetworkCredential(
-                        input.ProxyUsername,
-                        input.ProxyPassword
-                    );
-                    _logger.LogInformation("使用代理认证: {ProxyUsername}", input.ProxyUsername);
-                }
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "配置代理失败: {Message}", ex.Message);
-                response.Success = false;
-                response.Message = $"配置代理失败: {ex.Message}";
-                return response;
-            }
-        }
-
-        using var handler = SsrfGuard.CreateGuardedHandler(proxy);
+        using var handler = SsrfGuard.CreateGuardedHandler();
 
         try
         {

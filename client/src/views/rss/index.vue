@@ -39,19 +39,6 @@
             </el-tooltip>
           </el-col>
         </el-row>
-        <el-row :gutter="20" style="margin-top: 10px">
-          <el-col :span="24">
-            <el-checkbox v-model="enableProxy"> 启用代理 </el-checkbox>
-            <el-tooltip
-              content="启用后，通过代理服务器访问RSS Feed"
-              placement="top"
-            >
-              <el-icon style="margin-left: 8px">
-                <QuestionFilled />
-              </el-icon>
-            </el-tooltip>
-          </el-col>
-        </el-row>
       </div>
 
       <!-- 自定义查询表单 -->
@@ -99,41 +86,6 @@
             </el-form-item>
           </el-col>
         </el-row>
-        <template v-if="enableProxy">
-          <el-row :gutter="20">
-            <el-col :span="24">
-              <el-form-item label="代理地址">
-                <el-input
-                  v-model="formData.proxyUrl"
-                  placeholder="例如：http://127.0.0.1:7890 或 socks5://127.0.0.1:1080"
-                  clearable
-                />
-              </el-form-item>
-            </el-col>
-          </el-row>
-          <el-row :gutter="20">
-            <el-col :span="12">
-              <el-form-item label="代理用户名">
-                <el-input
-                  v-model="formData.proxyUsername"
-                  placeholder="可选"
-                  clearable
-                />
-              </el-form-item>
-            </el-col>
-            <el-col :span="12">
-              <el-form-item label="代理密码">
-                <el-input
-                  v-model="formData.proxyPassword"
-                  type="password"
-                  placeholder="可选"
-                  clearable
-                  show-password
-                />
-              </el-form-item>
-            </el-col>
-          </el-row>
-        </template>
         <el-row :gutter="20">
           <el-col :span="24" style="text-align: center">
             <el-button
@@ -344,10 +296,7 @@ const formRef = ref<FormInstance>();
 const formData = reactive<RssFetchRequestDto>({
   url: "https://sukebei.nyaa.si/?page=rss",
   maxItems: 50,
-  query: "",
-  proxyUrl: "",
-  proxyUsername: "",
-  proxyPassword: ""
+  query: ""
 });
 
 const formRules: FormRules = {
@@ -356,9 +305,6 @@ const formRules: FormRules = {
     { type: "url", message: "请输入有效的URL", trigger: "blur" }
   ]
 };
-
-// 代理相关
-const enableProxy = ref(false);
 
 // 加载状态
 const customLoading = ref(false);

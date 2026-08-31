@@ -19,20 +19,5 @@ namespace DFApp.Web.DTOs.Rss
         /// 搜索关键词（可选）
         /// </summary>
         public string? Query { get; set; }
-
-        /// <summary>
-        /// 代理服务器地址（例如：http://proxy.example.com:8080 或 socks5://proxy.example.com:1080）
-        /// </summary>
-        public string? ProxyUrl { get; set; }
-
-        /// <summary>
-        /// 代理用户名（可选）
-        /// </summary>
-        public string? ProxyUsername { get; set; }
-
-        /// <summary>
-        /// 代理密码（可选）
-        /// </summary>
-        public string? ProxyPassword { get; set; }
     }
 }

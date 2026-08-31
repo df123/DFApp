@@ -19,16 +19,6 @@ namespace DFApp.Web.DTOs.Rss
         public string Url { get; set; } = string.Empty;
 
         /// <summary>
-        /// 代理URL
-        /// </summary>
-        public string? ProxyUrl { get; set; }
-
-        /// <summary>
-        /// 代理用户名
-        /// </summary>
-        public string? ProxyUsername { get; set; }
-
-        /// <summary>
         /// 是否启用
         /// </summary>
         public bool IsEnabled { get; set; }
