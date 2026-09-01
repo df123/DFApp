@@ -287,7 +287,13 @@ public class MediaInfoService : CrudServiceBase<MediaInfo, long, MediaInfoDto, C
         var fullPath = Path.GetFullPath(
             Path.IsPathRooted(savePath) ? savePath : Path.Combine(root, savePath));
 
-        if (!fullPath.StartsWith(root + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase) &&
+        // 兼容以分隔符结尾的根（如 Linux 的 "/" 或 "D:\"）：直接用根作前缀，避免拼出 "//" 误杀全部路径
+        var rootPrefix = root.EndsWith(Path.DirectorySeparatorChar) ||
+                         root.EndsWith(Path.AltDirectorySeparatorChar)
+            ? root
+            : root + Path.DirectorySeparatorChar;
+
+        if (!fullPath.StartsWith(rootPrefix, StringComparison.OrdinalIgnoreCase) &&
             !string.Equals(fullPath, root, StringComparison.OrdinalIgnoreCase))
         {
             throw new BusinessException("媒体文件路径越出存储根目录");
