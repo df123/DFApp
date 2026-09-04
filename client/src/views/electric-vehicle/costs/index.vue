@@ -12,27 +12,27 @@
       </template>
 
       <el-table :data="tableData" :loading="loading" stripe border>
-        <el-table-column prop="costDate" label="日期" width="120">
+        <el-table-column prop="costDate" label="日期" min-width="120">
           <template #default="{ row }">
             {{ row.costDate ? row.costDate.split("T")[0] : "-" }}
           </template>
         </el-table-column>
-        <el-table-column prop="amount" label="金额" width="120">
+        <el-table-column prop="amount" label="金额" min-width="120">
           <template #default="{ row }">
             ￥{{ row.amount.toFixed(2) }}
           </template>
         </el-table-column>
-        <el-table-column prop="isBelongToSelf" label="归属" width="100">
+        <el-table-column prop="isBelongToSelf" label="归属" min-width="100">
           <template #default="{ row }">
             {{ row.isBelongToSelf ? "个人" : "家庭" }}
           </template>
         </el-table-column>
-        <el-table-column prop="costType" label="类型" width="100">
+        <el-table-column prop="costType" label="类型" min-width="100">
           <template #default="{ row }">
             {{ getCostTypeName(row.costType) }}
           </template>
         </el-table-column>
-        <el-table-column prop="vehicle.name" label="车辆" width="120" />
+        <el-table-column prop="vehicle.name" label="车辆" min-width="120" />
         <el-table-column prop="remark" label="备注" show-overflow-tooltip>
           <template #default="{ row }">
             {{ formatRemark(row.remark) }}

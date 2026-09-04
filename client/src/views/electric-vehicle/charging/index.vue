@@ -12,31 +12,19 @@
       </template>
 
       <el-table :data="tableData" :loading="loading" stripe border>
-        <el-table-column prop="chargingDate" label="日期" width="120">
+        <el-table-column prop="chargingDate" label="日期" min-width="120">
           <template #default="{ row }">
             {{ row.chargingDate ? row.chargingDate.split("T")[0] : "-" }}
           </template>
         </el-table-column>
-        <el-table-column prop="amount" label="金额" width="140">
+        <el-table-column prop="amount" label="金额" min-width="140">
           <template #default="{ row }">
             ￥{{ row.amount.toFixed(2) }}
           </template>
         </el-table-column>
-        <el-table-column prop="energy" label="电量" width="140">
+        <el-table-column prop="energy" label="电量" min-width="140">
           <template #default="{ row }">
             {{ row.energy ? row.energy.toFixed(4) + " kWh" : "-" }}
-          </template>
-        </el-table-column>
-        <el-table-column prop="currentMileage" label="当前里程" width="160">
-          <template #default="{ row }">
-            {{
-              row.currentMileage ? row.currentMileage.toFixed(1) + " km" : "-"
-            }}
-          </template>
-        </el-table-column>
-        <el-table-column prop="mileageDiff" label="里程差值" width="140">
-          <template #default="{ row }">
-            {{ row.mileageDiff ? row.mileageDiff.toFixed(1) + " km" : "-" }}
           </template>
         </el-table-column>
         <el-table-column prop="vehicle.name" label="车辆" min-width="120" />
@@ -114,16 +102,6 @@
             style="width: 100%"
           />
         </el-form-item>
-        <el-form-item label="当前总里程" prop="currentMileage">
-          <el-input-number
-            v-model="formData.currentMileage"
-            :min="0"
-            :precision="1"
-            placeholder="请输入当前总里程"
-            style="width: 100%"
-          />
-          <span style="margin-left: 10px">km</span>
-        </el-form-item>
         <el-form-item label="车辆" prop="vehicleId">
           <el-select
             v-model="formData.vehicleId"
@@ -186,7 +164,6 @@ const formData = ref<CreateUpdateElectricVehicleChargingRecordDto>({
   chargingDate: "",
   energy: undefined,
   amount: 0,
-  currentMileage: undefined,
   vehicleId: ""
 });
 
@@ -230,16 +207,6 @@ const loadTableData = async () => {
         new Date(b.chargingDate).getTime() - new Date(a.chargingDate).getTime()
     );
 
-    tableData.value.forEach((item, index) => {
-      if (index < tableData.value.length - 1) {
-        const nextItem = tableData.value[index + 1];
-        if (item.currentMileage && nextItem.currentMileage) {
-          item.mileageDiff = item.currentMileage - nextItem.currentMileage;
-        }
-      } else {
-        item.mileageDiff = undefined;
-      }
-    });
   } catch (error) {
     console.error("加载充电数据失败:", error);
     ElMessage.error("加载充电数据失败");
@@ -265,7 +232,6 @@ const handleCreate = () => {
     chargingDate: new Date().toISOString().split("T")[0],
     energy: undefined,
     amount: 0,
-    currentMileage: undefined,
     vehicleId: vehicles.value.length === 1 ? vehicles.value[0].id : ""
   });
   dialogTitle.value = "新增充电记录";
@@ -278,7 +244,6 @@ const handleEdit = (row: ElectricVehicleChargingRecordDto) => {
     chargingDate: row.chargingDate,
     energy: row.energy,
     amount: row.amount,
-    currentMileage: row.currentMileage,
     vehicleId: row.vehicleId
   });
   dialogTitle.value = "编辑充电记录";

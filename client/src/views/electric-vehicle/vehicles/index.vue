@@ -12,23 +12,42 @@
       </template>
 
       <el-table :data="tableData" :loading="loading" stripe border>
-        <el-table-column prop="name" label="车辆名称" width="150" />
-        <el-table-column prop="brand" label="品牌" width="120" />
-        <el-table-column prop="model" label="型号" width="120" />
-        <el-table-column prop="licensePlate" label="车牌号" width="120" />
-        <el-table-column prop="batteryCapacity" label="电池容量" width="100">
+        <el-table-column prop="name" label="车辆名称" min-width="150" />
+        <el-table-column prop="brand" label="品牌" min-width="120" />
+        <el-table-column prop="model" label="型号" min-width="120" />
+        <el-table-column prop="licensePlate" label="车牌号" min-width="120" />
+        <el-table-column prop="batteryCapacity" label="电池容量" min-width="100">
           <template #default="{ row }">
             {{ row.batteryCapacity ? row.batteryCapacity + " kWh" : "-" }}
           </template>
         </el-table-column>
-        <el-table-column prop="totalMileage" label="总里程" width="120">
+        <el-table-column prop="totalMileage" label="总里程" min-width="150">
           <template #default="{ row }">
-            {{ row.totalMileage.toFixed(0) }} km
+            <div>{{ row.totalMileage.toFixed(0) }} km</div>
+            <div v-if="row.mileageLastUpdatedTime" class="mileage-updated-at">
+              更新于 {{ formatMileageDate(row.mileageLastUpdatedTime) }}
+            </div>
           </template>
         </el-table-column>
         <el-table-column prop="remark" label="备注" show-overflow-tooltip />
-        <el-table-column label="操作" width="150" fixed="right">
+        <el-table-column label="操作" width="260" fixed="right">
           <template #default="{ row }">
+            <el-button
+              size="small"
+              type="primary"
+              link
+              @click="handleUpdateMileage(row)"
+            >
+              里程
+            </el-button>
+            <el-button
+              size="small"
+              type="primary"
+              link
+              @click="handleShowMileageRecords(row)"
+            >
+              记录
+            </el-button>
             <el-button
               size="small"
               type="primary"
@@ -132,6 +151,56 @@
         </el-button>
       </template>
     </el-dialog>
+
+    <el-dialog
+      v-model="mileageDialogVisible"
+      :title="`里程记录 - ${currentMileageVehicle?.name ?? ''}`"
+      width="700px"
+    >
+      <el-table
+        v-loading="mileageLoading"
+        :data="mileageRecords"
+        stripe
+        border
+        max-height="480"
+      >
+        <el-table-column label="记录时间" min-width="150">
+          <template #default="{ row }">
+            {{ formatRecordTime(row.recordedTime) }}
+          </template>
+        </el-table-column>
+        <el-table-column label="里程 (km)" min-width="100">
+          <template #default="{ row }">
+            {{ row.mileage.toFixed(0) }}
+          </template>
+        </el-table-column>
+        <el-table-column label="较上次" min-width="100">
+          <template #default="{ row }">
+            <span v-if="row.diff !== null" :class="row.diff >= 0 ? 'mileage-diff' : 'mileage-diff-negative'">
+              {{ (row.diff >= 0 ? "+" : "") + row.diff.toFixed(0) }} km
+            </span>
+            <span v-else>-</span>
+          </template>
+        </el-table-column>
+        <el-table-column label="备注" min-width="120" show-overflow-tooltip>
+          <template #default="{ row }">
+            {{ row.remark || "-" }}
+          </template>
+        </el-table-column>
+        <el-table-column label="操作" width="80" fixed="right">
+          <template #default="{ row }">
+            <el-button
+              size="small"
+              type="danger"
+              link
+              @click="handleDeleteMileageRecord(row)"
+            >
+              删除
+            </el-button>
+          </template>
+        </el-table-column>
+      </el-table>
+    </el-dialog>
   </div>
 </template>
 
@@ -148,6 +217,7 @@ import { electricVehicleApi } from "@/api/electric-vehicle";
 import type {
   ElectricVehicleDto,
   CreateUpdateElectricVehicleDto,
+  ElectricVehicleMileageRecordDto,
   PagedResultDto
 } from "@/types/api";
 
@@ -261,6 +331,110 @@ const handleDelete = async (row: ElectricVehicleDto) => {
   }
 };
 
+// 独立更新当前总里程：不依赖充电记录，随时记录表显里程
+const handleUpdateMileage = async (row: ElectricVehicleDto) => {
+  try {
+    const { value } = await ElMessageBox.prompt(
+      `请输入「${row.name}」的当前总里程（km）`,
+      "更新里程",
+      {
+        confirmButtonText: "确定",
+        cancelButtonText: "取消",
+        inputValue: String(row.totalMileage ?? 0),
+        inputPattern: /^\d+(\.\d+)?$/,
+        inputErrorMessage: "请输入有效的里程数值"
+      }
+    );
+
+    await electricVehicleApi.updateVehicleMileage(row.id, Number(value));
+    ElMessage.success("里程已更新");
+    loadTableData();
+  } catch (error) {
+    if (error !== "cancel") {
+      console.error("更新里程失败:", error);
+      ElMessage.error("更新里程失败");
+    }
+  }
+};
+
+const mileageDialogVisible = ref(false);
+const mileageLoading = ref(false);
+const currentMileageVehicle = ref<ElectricVehicleDto | null>(null);
+type MileageRecordRow = ElectricVehicleMileageRecordDto & {
+  diff: number | null;
+};
+const mileageRecords = ref<MileageRecordRow[]>([]);
+
+const loadMileageRecords = async (vehicleId: string) => {
+  mileageLoading.value = true;
+  try {
+    const records = await electricVehicleApi.getMileageRecords(vehicleId);
+    mileageRecords.value = records.map((record, index) => ({
+      ...record,
+      diff:
+        index < records.length - 1
+          ? record.mileage - records[index + 1].mileage
+          : null
+    }));
+  } catch (error) {
+    console.error("加载里程记录失败:", error);
+    ElMessage.error("加载里程记录失败");
+  } finally {
+    mileageLoading.value = false;
+  }
+};
+
+const handleShowMileageRecords = async (row: ElectricVehicleDto) => {
+  currentMileageVehicle.value = row;
+  mileageDialogVisible.value = true;
+  await loadMileageRecords(row.id);
+};
+
+const handleDeleteMileageRecord = async (row: MileageRecordRow) => {
+  try {
+    await ElMessageBox.confirm(
+      `确定要删除该条里程记录（${formatRecordTime(row.recordedTime)} / ${row.mileage.toFixed(0)} km）吗？删除后油电对比将不再使用该快照。`,
+      "删除确认",
+      {
+        confirmButtonText: "确定",
+        cancelButtonText: "取消",
+        type: "warning"
+      }
+    );
+
+    await electricVehicleApi.deleteMileageRecord(row.id);
+    ElMessage.success("删除成功");
+    if (currentMileageVehicle.value) {
+      await loadMileageRecords(currentMileageVehicle.value.id);
+    }
+  } catch (error) {
+    if (error !== "cancel") {
+      console.error("删除里程记录失败:", error);
+      ElMessage.error("删除里程记录失败");
+    }
+  }
+};
+
+const formatRecordTime = (value: string) => {
+  const date = new Date(value);
+  return Number.isNaN(date.getTime())
+    ? value
+    : date.toLocaleString("zh-CN", {
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit"
+      });
+};
+
+const formatMileageDate = (value: string) => {
+  const date = new Date(value);
+  return Number.isNaN(date.getTime())
+    ? value
+    : date.toLocaleDateString("zh-CN");
+};
+
 const handleClose = () => {
   dialogVisible.value = false;
   formRef.value?.clearValidate();
@@ -305,6 +479,12 @@ onMounted(() => {
   padding: 20px;
 }
 
+.mileage-updated-at {
+  font-size: 12px;
+  color: var(--el-text-color-secondary);
+  line-height: 1.4;
+}
+
 .card-header {
   display: flex;
   align-items: center;
@@ -314,5 +494,17 @@ onMounted(() => {
 .card-title {
   font-size: 16px;
   font-weight: 600;
+}
+
+.mileage-diff {
+  color: var(--el-color-success);
+}
+
+.mileage-diff-negative {
+  color: var(--el-color-danger);
+}
+
+:deep(.el-dialog) {
+  max-width: 94%;
 }
 </style>

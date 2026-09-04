@@ -53,6 +53,11 @@ namespace DFApp.ElectricVehicle
         public decimal TotalMileage { get; set; }
 
         /// <summary>
+        /// 总里程最后更新时间（独立更新里程或充电记录联动更新时刷新）
+        /// </summary>
+        public DateTime? MileageLastUpdatedTime { get; set; }
+
+        /// <summary>
         /// 备注
         /// </summary>
         public string? Remark { get; set; }

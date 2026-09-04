@@ -8,6 +8,7 @@ import type {
   CreateUpdateElectricVehicleCostDto,
   ElectricVehicleChargingRecordDto,
   CreateUpdateElectricVehicleChargingRecordDto,
+  ElectricVehicleMileageRecordDto,
   GasolinePriceDto,
   OilCostComparisonDto,
   OilCostComparisonRequestDto
@@ -39,8 +40,30 @@ class ElectricVehicleApi {
     return http.request("put", `${this.baseUrl}/${id}`, { data: request });
   }
 
+  async updateVehicleMileage(
+    id: string,
+    mileage: number
+  ): Promise<ElectricVehicleDto> {
+    return http.request("put", `${this.baseUrl}/${id}/mileage`, {
+      data: { mileage }
+    });
+  }
+
   async deleteVehicle(id: string): Promise<void> {
     return http.request("delete", `${this.baseUrl}/${id}`);
+  }
+
+  async getMileageRecords(
+    id: string
+  ): Promise<ElectricVehicleMileageRecordDto[]> {
+    return http.get(`${this.baseUrl}/${id}/mileage-records`);
+  }
+
+  async deleteMileageRecord(recordId: string): Promise<void> {
+    return http.request(
+      "delete",
+      `${this.baseUrl}/mileage-records/${recordId}`
+    );
   }
 }
 
@@ -50,7 +73,8 @@ class ElectricVehicleCostApi {
   async getCosts(
     params?: any
   ): Promise<PagedResultDto<ElectricVehicleCostDto>> {
-    return http.get(`${this.baseUrl}/paged`, { params });
+    // filtered 接口会回填车辆名称（paged 不回填）
+    return http.get(`${this.baseUrl}/filtered`, { params });
   }
 
   async getCost(id: string): Promise<ElectricVehicleCostDto> {
@@ -87,7 +111,7 @@ class ElectricVehicleChargingRecordApi {
   async getChargingRecords(
     params?: any
   ): Promise<PagedResultDto<ElectricVehicleChargingRecordDto>> {
-    return http.get(`${this.baseUrl}/paged`, { params });
+    return http.get(`${this.baseUrl}/filtered`, { params });
   }
 
   async getChargingRecord(

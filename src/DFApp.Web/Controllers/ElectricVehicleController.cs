@@ -93,6 +93,39 @@ public class ElectricVehicleController : DFAppControllerBase
     }
 
     /// <summary>
+    /// 独立更新车辆当前总里程（不依赖充电记录，随时记录表显里程）
+    /// </summary>
+    [HttpPut("{id:guid}/mileage")]
+    [Permission(DFAppPermissions.ElectricVehicle.Edit)]
+    public async Task<IActionResult> UpdateMileageAsync([FromRoute] Guid id, [FromBody] UpdateElectricVehicleMileageDto input)
+    {
+        var result = await _electricVehicleService.UpdateMileageAsync(id, input);
+        return Success(result);
+    }
+
+    /// <summary>
+    /// 获取车辆里程记录（按记录时间倒序）
+    /// </summary>
+    [HttpGet("{id:guid}/mileage-records")]
+    [Permission(DFAppPermissions.ElectricVehicle.Default)]
+    public async Task<IActionResult> GetMileageRecordsAsync([FromRoute] Guid id)
+    {
+        var result = await _electricVehicleService.GetMileageRecordsAsync(id);
+        return Success(result);
+    }
+
+    /// <summary>
+    /// 删除里程记录（清理误录快照，不影响车辆当前总里程）
+    /// </summary>
+    [HttpDelete("mileage-records/{recordId:guid}")]
+    [Permission(DFAppPermissions.ElectricVehicle.Delete)]
+    public async Task<IActionResult> DeleteMileageRecordAsync([FromRoute] Guid recordId)
+    {
+        await _electricVehicleService.DeleteMileageRecordAsync(recordId);
+        return Success();
+    }
+
+    /// <summary>
     /// 删除电动车
     /// </summary>
     [HttpDelete("{id:guid}")]

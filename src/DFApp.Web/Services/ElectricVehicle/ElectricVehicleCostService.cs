@@ -37,7 +37,7 @@ public class ElectricVehicleCostService : CrudServiceBase<
     private readonly ISqlSugarRepository<ElectricVehicleEntity, Guid> _vehicleRepository;
     private readonly ISqlSugarRepository<GasolinePrice, Guid> _gasolinePriceRepository;
     private readonly IConfigurationInfoRepository _configurationInfoRepository;
-    private readonly ISqlSugarRepository<ElectricVehicleChargingRecord, Guid> _chargingRecordRepository;
+    private readonly ISqlSugarRepository<ElectricVehicleMileageRecord, Guid> _mileageRecordRepository;
     private readonly ElectricVehicleMapper _mapper = new();
 
     /// <summary>
@@ -49,7 +49,6 @@ public class ElectricVehicleCostService : CrudServiceBase<
     /// <param name="vehicleRepository">车辆仓储接口</param>
     /// <param name="gasolinePriceRepository">油价仓储接口</param>
     /// <param name="configurationInfoRepository">配置信息仓储接口</param>
-    /// <param name="chargingRecordRepository">充电记录仓储接口</param>
     public ElectricVehicleCostService(
         ICurrentUser currentUser,
         IPermissionChecker permissionChecker,
@@ -57,13 +56,13 @@ public class ElectricVehicleCostService : CrudServiceBase<
         ISqlSugarRepository<ElectricVehicleEntity, Guid> vehicleRepository,
         ISqlSugarRepository<GasolinePrice, Guid> gasolinePriceRepository,
         IConfigurationInfoRepository configurationInfoRepository,
-        ISqlSugarRepository<ElectricVehicleChargingRecord, Guid> chargingRecordRepository)
+        ISqlSugarRepository<ElectricVehicleMileageRecord, Guid> mileageRecordRepository)
         : base(currentUser, permissionChecker, repository)
     {
         _vehicleRepository = vehicleRepository;
         _gasolinePriceRepository = gasolinePriceRepository;
         _configurationInfoRepository = configurationInfoRepository;
-        _chargingRecordRepository = chargingRecordRepository;
+        _mileageRecordRepository = mileageRecordRepository;
     }
 
     /// <summary>
@@ -207,12 +206,26 @@ public class ElectricVehicleCostService : CrudServiceBase<
         // 判断是否是"全部时间"（开始日期很早）
         var isAllTime = input.StartDate.Year <= 2000;
 
+        // 里程快照：时间段锚点与油费分段共用。
+        // 来源：车辆管理页"里程"按钮独立更新、充电记录联动更新（sql/28 已回填历史充电里程）。
+        var mileageRecordQuery = _mileageRecordRepository.GetQueryable();
+        if (input.VehicleId.HasValue)
+        {
+            var vehicleId = input.VehicleId.Value;
+            mileageRecordQuery = mileageRecordQuery.Where(x => x.VehicleId == vehicleId);
+        }
+        var mileageRecords = mileageRecordQuery
+            .OrderBy(x => x.RecordedTime)
+            .ToList();
+        // 油费分段使用的快照窗口
+        List<ElectricVehicleMileageRecord> segmentSnapshots = new();
+
         // 获取选定日期范围内的行驶里程
         decimal electricVehicleMileage = 0;
 
         if (isAllTime)
         {
-            // 全部时间：直接使用车辆总里程
+            // 全部时间：直接使用车辆总里程，油费从最早快照开始分段
             if (input.VehicleId.HasValue)
             {
                 var vehicle = await _vehicleRepository.GetByIdAsync(input.VehicleId.Value);
@@ -229,31 +242,30 @@ public class ElectricVehicleCostService : CrudServiceBase<
                     electricVehicleMileage = vehicle.TotalMileage;
                 }
             }
+            segmentSnapshots = mileageRecords;
         }
         else
         {
-            // 特定时间范围：计算该范围内的里程差
-            var mileageQuery = _chargingRecordRepository.GetQueryable();
-            if (input.VehicleId.HasValue)
+            // 特定时间范围：起点=开始日期当天或之前最近一条快照（无则取范围内最早一条），
+            // 终点=结束日期当天或之前最近一条，区间里程=终点−起点。
+            if (mileageRecords.Any())
             {
-                mileageQuery = mileageQuery.Where(x => x.VehicleId == input.VehicleId.Value);
-            }
-            // 跨仓储读取充电记录，同样按属主隔离
-            var chargingRecordsInPeriod = await FilterOwnedListAsync(mileageQuery
-                .Where(x => x.ChargingDate >= input.StartDate && x.ChargingDate <= input.EndDate && x.CurrentMileage.HasValue)
-                .OrderBy(x => x.ChargingDate)
-                .ToList());
-
-            if (chargingRecordsInPeriod.Count >= 2)
-            {
-                electricVehicleMileage = chargingRecordsInPeriod.Last().CurrentMileage!.Value - chargingRecordsInPeriod.First().CurrentMileage!.Value;
-            }
-            else if (chargingRecordsInPeriod.Count == 1)
-            {
-                electricVehicleMileage = chargingRecordsInPeriod[0].CurrentMileage!.Value;
+                var firstAnchor = mileageRecords.LastOrDefault(x => x.RecordedTime <= input.StartDate)
+                    ?? mileageRecords.First();
+                var lastAnchor = mileageRecords.LastOrDefault(x => x.RecordedTime <= input.EndDate);
+                if (lastAnchor != null && lastAnchor.Mileage > firstAnchor.Mileage)
+                {
+                    electricVehicleMileage = lastAnchor.Mileage - firstAnchor.Mileage;
+                }
+                var firstIdx = mileageRecords.IndexOf(firstAnchor);
+                var lastIdx = lastAnchor == null ? -1 : mileageRecords.IndexOf(lastAnchor);
+                if (lastIdx >= firstIdx)
+                {
+                    segmentSnapshots = mileageRecords.GetRange(firstIdx, lastIdx - firstIdx + 1);
+                }
             }
 
-            // 如果没有充电记录，使用车辆总里程
+            // 没有可用里程快照时，使用车辆总里程
             if (electricVehicleMileage == 0)
             {
                 if (input.VehicleId.HasValue)
@@ -277,17 +289,10 @@ public class ElectricVehicleCostService : CrudServiceBase<
 
         var electricVehicleCostPerKm = electricVehicleMileage > 0 ? electricVehicleTotalCost / electricVehicleMileage : 0;
 
-        // 获取充电记录，用于计算对应时间段的油价
-        var chargingQuery = _chargingRecordRepository.GetQueryable();
-        var chargingRecords = await FilterOwnedListAsync(chargingQuery
-            .Where(x => x.ChargingDate >= input.StartDate && x.ChargingDate <= input.EndDate)
-            .OrderBy(x => x.ChargingDate)
-            .ToList());
-
         decimal oilVehicleTotalCost = 0;
         decimal oilVehicleFuelCost = 0;
 
-        if (electricVehicleMileage > 0 && chargingRecords.Any())
+        if (electricVehicleMileage > 0 && segmentSnapshots.Count >= 2)
         {
             // 获取所有油价数据
             var allPrices = _gasolinePriceRepository.GetQueryable()
@@ -299,27 +304,28 @@ public class ElectricVehicleCostService : CrudServiceBase<
             var latestPrice = allPrices.FirstOrDefault();
             var defaultGasolinePrice = latestPrice != null ? GetGasolinePriceByGrade(latestPrice, gasolineGrade) : 0;
 
-            // 计算油车在相同里程下的油费
-            decimal previousMileage = 0;
+            // 相邻里程快照分段：段里程 × 段结束时点油价（快照节奏为按月，即"按月油价"对比）
             decimal totalCalculatedMileage = 0;
 
-            for (int i = 0; i < chargingRecords.Count; i++)
+            for (int i = 0; i < segmentSnapshots.Count - 1; i++)
             {
-                var record = chargingRecords[i];
-                var currentMileage = record.CurrentMileage ?? 0;
-
-                if (currentMileage <= previousMileage)
+                var segment = segmentSnapshots[i + 1].Mileage - segmentSnapshots[i].Mileage;
+                if (segment <= 0)
                 {
                     continue;
                 }
 
-                var mileage = currentMileage - previousMileage;
-                totalCalculatedMileage += mileage;
+                // 时间段查询时，开始日期之前完成的段不计入本期
+                if (!isAllTime && segmentSnapshots[i + 1].RecordedTime <= input.StartDate)
+                {
+                    continue;
+                }
 
-                // 查找充电日期对应的油价（最接近的历史油价）
-                var chargingDate = record.ChargingDate;
+                totalCalculatedMileage += segment;
+
+                var segmentEndTime = segmentSnapshots[i + 1].RecordedTime;
                 var price = allPrices
-                    .Where(x => x.Date <= chargingDate)
+                    .Where(x => x.Date <= segmentEndTime)
                     .OrderByDescending(x => x.Date)
                     .FirstOrDefault();
 
@@ -331,19 +337,15 @@ public class ElectricVehicleCostService : CrudServiceBase<
 
                 if (gasolinePrice > 0)
                 {
-                    var oilCost = mileage / 100 * fuelConsumption * gasolinePrice;
-                    oilVehicleTotalCost += oilCost;
+                    oilVehicleTotalCost += segment / 100 * fuelConsumption * gasolinePrice;
                 }
-
-                previousMileage = currentMileage;
             }
 
-            // 如果有剩余里程没有充电记录覆盖，使用最新油价计算
+            // 跳过的异常段（里程回退等）按最新油价兜底
             var remainingMileage = electricVehicleMileage - totalCalculatedMileage;
             if (remainingMileage > 0 && defaultGasolinePrice > 0)
             {
-                var oilCost = remainingMileage / 100 * fuelConsumption * defaultGasolinePrice;
-                oilVehicleTotalCost += oilCost;
+                oilVehicleTotalCost += remainingMileage / 100 * fuelConsumption * defaultGasolinePrice;
             }
 
             oilVehicleFuelCost = oilVehicleTotalCost;

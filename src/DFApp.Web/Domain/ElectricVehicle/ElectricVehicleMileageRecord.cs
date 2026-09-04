@@ -5,10 +5,12 @@ using DFApp.Web.Domain;
 namespace DFApp.ElectricVehicle
 {
     /// <summary>
-    /// 电动车充电记录实体
+    /// 电动车里程记录实体：某时点的表显里程快照。
+    /// 独立更新里程（车辆管理页"里程"按钮）与充电记录联动更新时各留一条，
+    /// 供统计计算任意时间段的区间行驶里程（油电对比等）。
     /// </summary>
-    [SugarTable("AppElectricVehicleChargingRecord")]
-    public class ElectricVehicleChargingRecord : AuditedEntity<Guid>
+    [SugarTable("AppElectricVehicleMileageRecord")]
+    public class ElectricVehicleMileageRecord : AuditedEntity<Guid>
     {
         /// <summary>
         /// Guid 类型主键不支持数据库自增，覆盖基类属性移除 IsIdentity
@@ -22,24 +24,18 @@ namespace DFApp.ElectricVehicle
         public Guid VehicleId { get; set; }
 
         /// <summary>
-        /// 充电日期
+        /// 记录时点的总里程（km）
         /// </summary>
-        public DateTime ChargingDate { get; set; }
+        public decimal Mileage { get; set; }
 
         /// <summary>
-        /// 充电量（kWh）
+        /// 里程对应的时点
         /// </summary>
-        public decimal? Energy { get; set; }
+        public DateTime RecordedTime { get; set; }
 
         /// <summary>
-        /// 充电金额
+        /// 备注
         /// </summary>
-        public decimal Amount { get; set; }
-
-        /// <summary>
-        /// 车辆（导航属性）
-        /// </summary>
-        [SugarColumn(IsIgnore = true)]
-        public ElectricVehicle Vehicle { get; set; }
+        public string? Remark { get; set; }
     }
 }

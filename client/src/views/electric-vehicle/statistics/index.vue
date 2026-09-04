@@ -8,7 +8,7 @@
       </template>
 
       <el-row :gutter="20" style="margin-bottom: 20px">
-        <el-col :span="12">
+        <el-col :xs="24" :md="12">
           <el-radio-group v-model="timeRange" @change="handleTimeRangeChange">
             <el-radio-button label="all">全部时间</el-radio-button>
             <el-radio-button label="30">最近30天</el-radio-button>
@@ -17,7 +17,7 @@
             <el-radio-button label="custom">自定义</el-radio-button>
           </el-radio-group>
         </el-col>
-        <el-col :span="12">
+        <el-col :xs="24" :md="12">
           <el-date-picker
             v-if="timeRange === 'custom'"
             v-model="customDateRange"
@@ -33,7 +33,7 @@
       </el-row>
 
       <el-row :gutter="20">
-        <el-col :span="6">
+        <el-col :xs="24" :sm="12" :md="6">
           <el-card class="stat-card">
             <el-statistic
               title="电车总花费"
@@ -42,7 +42,7 @@
             />
           </el-card>
         </el-col>
-        <el-col :span="6">
+        <el-col :xs="24" :sm="12" :md="6">
           <el-card class="stat-card">
             <el-statistic
               title="电车行驶里程"
@@ -51,7 +51,7 @@
             />
           </el-card>
         </el-col>
-        <el-col :span="6">
+        <el-col :xs="24" :sm="12" :md="6">
           <el-card class="stat-card">
             <el-statistic
               title="电车每公里成本"
@@ -60,7 +60,7 @@
             />
           </el-card>
         </el-col>
-        <el-col :span="6">
+        <el-col :xs="24" :sm="12" :md="6">
           <el-card class="stat-card">
             <el-statistic
               title="节省金额"
@@ -75,7 +75,7 @@
       <el-divider>成本对比图表</el-divider>
 
       <el-row :gutter="20">
-        <el-col :span="12">
+        <el-col :xs="24" :md="12">
           <el-card>
             <template #header>
               <span class="card-title">油电成本对比</span>
@@ -83,7 +83,7 @@
             <div ref="comparisonChartRef" style="width: 100%; height: 400px" />
           </el-card>
         </el-col>
-        <el-col :span="12">
+        <el-col :xs="24" :md="12">
           <el-card>
             <template #header>
               <span class="card-title">成本构成分析</span>
@@ -115,7 +115,7 @@
       <el-divider>油电对比分析</el-divider>
 
       <el-row :gutter="20">
-        <el-col :span="12">
+        <el-col :xs="24" :md="12">
           <el-card>
             <template #header>
               <span class="card-title">电车成本明细</span>
@@ -133,7 +133,7 @@
             </el-descriptions>
           </el-card>
         </el-col>
-        <el-col :span="12">
+        <el-col :xs="24" :md="12">
           <el-card>
             <template #header>
               <span class="card-title">油车成本（相同里程）</span>
@@ -284,11 +284,14 @@ const updateCharts = () => {
       }
     },
     legend: {
+      type: "scroll",
+      top: 0,
       data: ["电车总成本", "油车总成本", "电车每公里成本", "油车每公里成本"]
     },
     grid: {
       left: "3%",
-      right: "4%",
+      right: 110,
+      top: 60,
       bottom: "3%",
       containLabel: true
     },
@@ -360,6 +363,7 @@ const updateCharts = () => {
       formatter: "{a} <br/>{b}: {c} 元"
     },
     legend: {
+      type: "scroll",
       orient: "vertical",
       left: "left"
     },
@@ -405,6 +409,7 @@ const updateCharts = () => {
       }
     },
     legend: {
+      type: "scroll",
       data: ["电费总费用", "油费总费用", "电费每公里成本", "油费每公里成本"]
     },
     grid: {

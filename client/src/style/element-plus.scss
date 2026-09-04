@@ -187,3 +187,9 @@
     background: rgb(199 201 203); /* 滑块hover颜色 */
   }
 }
+
+/* 窄屏下分页器允许换行，避免右侧控件被裁切 */
+.el-pagination {
+  flex-wrap: wrap;
+  row-gap: 4px;
+}

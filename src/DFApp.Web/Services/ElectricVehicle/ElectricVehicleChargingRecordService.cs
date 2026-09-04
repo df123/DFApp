@@ -130,12 +130,6 @@ public class ElectricVehicleChargingRecordService : CrudServiceBase<
         // 创建或更新关联的成本记录
         await CreateOrUpdateCostRecordAsync(entity.Id, input.ChargingDate, input.Amount, input.VehicleId, input.Energy);
 
-        // 更新车辆总里程
-        if (input.CurrentMileage.HasValue)
-        {
-            await UpdateVehicleTotalMileageAsync(input.VehicleId, input.CurrentMileage.Value);
-        }
-
         // 返回包含车辆信息的 DTO
         var dto = MapToGetOutputDto(entity);
         if (dto.VehicleId != Guid.Empty)
@@ -166,12 +160,6 @@ public class ElectricVehicleChargingRecordService : CrudServiceBase<
 
         // 创建或更新关联的成本记录
         await CreateOrUpdateCostRecordAsync(id, input.ChargingDate, input.Amount, input.VehicleId, input.Energy);
-
-        // 更新车辆总里程
-        if (input.CurrentMileage.HasValue)
-        {
-            await UpdateVehicleTotalMileageAsync(input.VehicleId, input.CurrentMileage.Value);
-        }
 
         // 返回包含车辆信息的 DTO
         var dto = MapToGetOutputDto(entity!);
@@ -271,32 +259,6 @@ public class ElectricVehicleChargingRecordService : CrudServiceBase<
         }
     }
 
-    /// <summary>
-    /// 更新车辆总里程
-    /// </summary>
-    /// <param name="vehicleId">车辆 ID</param>
-    /// <param name="mileage">当前里程</param>
-    private async Task UpdateVehicleTotalMileageAsync(Guid vehicleId, decimal mileage)
-    {
-        // 使用独立事务确保里程更新操作的原子性
-        _vehicleRepository.BeginTran();
-        try
-        {
-            var vehicle = await _vehicleRepository.GetByIdAsync(vehicleId);
-            if (vehicle != null)
-            {
-                vehicle.TotalMileage = mileage;
-                await _vehicleRepository.UpdateAsync(vehicle);
-            }
-
-            _vehicleRepository.CommitTran();
-        }
-        catch (Exception)
-        {
-            _vehicleRepository.RollbackTran();
-            throw;
-        }
-    }
 
     /// <summary>
     /// 将实体映射为输出 DTO
@@ -330,7 +292,6 @@ public class ElectricVehicleChargingRecordService : CrudServiceBase<
         entity.ChargingDate = mapped.ChargingDate;
         entity.Energy = mapped.Energy;
         entity.Amount = mapped.Amount;
-        entity.CurrentMileage = mapped.CurrentMileage;
     }
 
     /// <summary>

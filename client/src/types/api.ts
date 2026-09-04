@@ -164,6 +164,7 @@ export interface ElectricVehicleDto {
   purchaseDate?: string;
   batteryCapacity?: number;
   totalMileage: number;
+  mileageLastUpdatedTime?: string;
   remark?: string;
   creationTime: string;
   lastModificationTime?: string;
@@ -178,6 +179,15 @@ export interface CreateUpdateElectricVehicleDto {
   batteryCapacity?: number;
   totalMileage: number;
   remark?: string;
+}
+
+export interface ElectricVehicleMileageRecordDto {
+  id: string;
+  vehicleId: string;
+  mileage: number;
+  recordedTime: string;
+  remark?: string;
+  creationTime: string;
 }
 
 export interface ElectricVehicleCostDto {
@@ -211,8 +221,6 @@ export interface ElectricVehicleChargingRecordDto {
   vehicle?: ElectricVehicleDto;
   creationTime: string;
   lastModificationTime?: string;
-  currentMileage?: number;
-  mileageDiff?: number;
 }
 
 export interface CreateUpdateElectricVehicleChargingRecordDto {
@@ -220,7 +228,6 @@ export interface CreateUpdateElectricVehicleChargingRecordDto {
   chargingDate: string;
   energy?: number;
   amount: number;
-  currentMileage?: number;
 }
 
 export interface GasolinePriceDto {

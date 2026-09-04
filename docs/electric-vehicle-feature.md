@@ -439,3 +439,82 @@ export default {
 - 充电记录创建/更新类型补充 `currentMileage`，页面仅保留后端实际支持的字段。
 - 油车配置通过模块配置接口读取，不再向分页接口传递不支持的 `moduleName`。
 - 油电对比请求使用 `startDate`、`endDate` 与可选 `vehicleId`、`isBelongToSelf` 字段。
+
+## 2026-09-04 当前总里程独立更新
+
+### 背景
+总里程原先只能随充电记录新增/编辑联动更新（且必须记得填写），家用充电按月结算、
+外部充电穿插，里程与充电记录天然不同步，导致车辆当前里程长期停留在旧值。
+
+### 改动
+- 数据库：`AppElectricVehicle` 新增 `MileageLastUpdatedTime` 列（`sql/27-add-ev-mileage-updated-time.sql`）。
+- 后端：`PUT /api/app/electric-vehicle/{id}/mileage`（权限 `ElectricVehicle.Edit`）——
+  只更新总里程与更新时间，负数/车辆不存在返回业务错误；
+  充电记录联动更新里程时同样刷新 `MileageLastUpdatedTime`。
+- 前端：车辆管理页总里程列下方显示"更新于 X 日期"（小字灰色），
+  操作列新增"里程"按钮弹出输入框单独记录当前表显里程（预填当前值）。
+
+### 验证（本地）
+- 独立更新 6234.5 → 成功且返回更新时间；负数/不存在车辆/未授权分别返回 400/400/401。
+- 充电记录带 currentMileage=6300 → 车辆里程与更新时间同步刷新。
+- 前端 typecheck 通过。
+
+### 2026-09-04 充电记录页移除"当前里程/里程差值"
+使用模式为按月统一登记（家充月度结算），不逐次充电登记，充电记录的当前里程
+长期缺失导致"里程差值"列常为空。处理：
+- 删除充电记录页"里程差值"列与前端差值计算、"当前里程"列与"当前总里程"表单项。
+- 后端字段与充电→车辆里程联动保留（API 兼容；历史已填数据继续参与时间段统计的
+  里程差计算，无数据时统计回退用车辆总里程）。
+- 里程统一由车辆管理页"里程"按钮独立维护（按月更新即可）。
+
+### 2026-09-04 里程快照记录：油电对比的里程数据源替代
+充电记录页移除"当前里程"后，时间段统计的区间行驶里程改由**里程快照**提供：
+- 新表 `AppElectricVehicleMileageRecord`（`sql/28-create-ev-mileage-record.sql`，含历史充电里程回填）。
+- 快照来源：车辆管理页"里程"按钮每次更新、充电记录联动更新（API 兼容路径）。
+- 统计锚点算法：起点=开始日期前最近一条快照（无则取范围内最早），终点=结束日期前最近一条，
+  区间里程=终点−起点；无快照时回退车辆总里程。
+- 验证：2-4月区间对比返回 417 km（04-12:5000 − 02-23:4583），与预期一致。
+使用节奏：每月结算时点一次"里程"更新表显读数即可，统计自动取相邻快照差值。
+
+### 2026-09-04 充电记录 CurrentMileage 列彻底移除
+迁移完成后的收尾清理（部署顺序：27 → 28 → 29 → 新后端）：
+- `sql/29-drop-charging-record-current-mileage.sql` 删除 `AppElectricVehicleChargingRecord.CurrentMileage` 列。
+- 实体/DTO/前端类型同步移除该字段；充电记录创建/更新不再联动车辆里程，
+  `UpdateVehicleTotalMileageAsync` 及其调用一并删除。
+- 油电对比的油费分段算法从"按充电记录里程分段"改为"按里程快照分段"：
+  相邻快照段里程 × 段结束时点油价（快照按月更新即"按月油价"对比），
+  段和与区间锚点里程一致；无快照时回退车辆总里程 + 最新油价兜底。
+- 验证：删列后 2-4 月对比区间里程仍为 417 km（快照数据源），油费分段正常。
+
+### 2026-09-04 双屏幕尺寸适配（4K@200% 桌面 + iPhone 17）
+Playwright 视口测试（桌面 1920×1080=4K@200% 有效视口；移动 402×874=iPhone 17 CSS 视口）+ 识图子代理验收。修复：
+- 表格列 `width` 改 `min-width`（车辆/充电/成本三页）——窄屏横向滚动替代挤压裁切，操作列保持固定。
+- 统计页响应式栅格：统计卡 `:xs=24 :sm=12 :md=6`、图表卡 `:xs=24 :md=12`——窄屏单列堆叠。
+- 分页器全局允许换行（element-plus.scss），窄屏不再右侧裁切。
+- 成本/充电列表接口前端从 `/paged` 切换到 `/filtered`（后者回填车辆名），修复"车辆"列空白。
+- 油电对比柱状图：图例固定顶部 + grid 上边距 60/右边距 110，修复图例压图与右轴名裁切。
+验收：桌面 5 项全过；移动端表格可滚动、统计卡单列堆叠、里程弹窗适配优秀；控制台 0 错误。
+
+
+## 里程记录查看与删除（2026-09-04）
+
+新的里程快照表 `AppElectricVehicleMileageRecord` 提供查看入口：车辆管理页操作列新增「记录」按钮，打开该车辆的里程记录对话框。
+
+### 后端
+
+- `ElectricVehicleMileageRecordDto`（DTOs/ElectricVehicle/ElectricVehicleDto.cs）：Id/VehicleId/Mileage/RecordedTime/Remark/CreationTime
+- `ElectricVehicleService.GetMileageRecordsAsync(vehicleId)`：按 RecordedTime 倒序返回全部快照
+- `ElectricVehicleService.DeleteMileageRecordAsync(recordId)`：删除单条快照（用于清理误录），不存在时抛 `BusinessException("里程记录不存在")`；不影响车辆当前总里程字段
+- `ElectricVehicleController`：
+  - `GET /api/app/electric-vehicle/{id}/mileage-records`（ElectricVehicle.Default 权限）
+  - `DELETE /api/app/electric-vehicle/mileage-records/{recordId}`（ElectricVehicle.Delete 权限）
+
+### 前端（client/src/views/electric-vehicle/vehicles/index.vue）
+
+- 操作列「里程 / 记录 / 编辑 / 删除」，记录对话框列：记录时间、里程(km)、较上次（与更早一条快照的差值，正数绿色/负数红色/最早一条显示 -）、备注、删除
+- 删除前确认框提示"删除后油电对比将不再使用该快照"
+- 对话框 `max-width: 94%` 适配窄屏；表格列 min-width，移动端横向滚动 + 操作列固定右侧
+
+### 注意
+
+删除快照会改变油电对比的区间里程锚点计算（统计页），属预期行为——快照即统计依据。

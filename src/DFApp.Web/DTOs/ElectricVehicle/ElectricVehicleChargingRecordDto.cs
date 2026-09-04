@@ -12,7 +12,6 @@ public class ElectricVehicleChargingRecordDto
     public DateTime ChargingDate { get; set; }
     public decimal? Energy { get; set; }
     public decimal Amount { get; set; }
-    public decimal? CurrentMileage { get; set; }
     public ElectricVehicleDto? Vehicle { get; set; }
     public DateTime CreationTime { get; set; }
     public DateTime? LastModificationTime { get; set; }
@@ -27,5 +26,4 @@ public class CreateUpdateElectricVehicleChargingRecordDto
     public DateTime ChargingDate { get; set; }
     public decimal? Energy { get; set; }
     public decimal Amount { get; set; }
-    public decimal? CurrentMileage { get; set; }
 }
