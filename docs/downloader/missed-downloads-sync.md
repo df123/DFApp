@@ -191,4 +191,25 @@ downloadUrl = Path.Combine(ReturnDownloadUrlPrefix, SavePath.Replace(ReplaceUrlP
 ### ⚠️ 远程部署要求
 `DELETE /api/app/media-info/{id}/file` 必须**部署到远程后端**（`cc.bdbfbp.top`）才能生效。部署前，下载器下载完成时删除调用会收到 `404`，物理文件不会被删除（但回写标记正常）。
 
+## 十、开机自动补漏同步（2026-09-04）
+
+### 背景
+电脑重启后下载器随系统自启，此前补漏同步只能手动在设置页点按钮触发——忘记点就漏掉离线期间的媒体。
+
+### 实现
+- `DownloaderSettings` 新增 `SyncMissedOnStartup`（默认 `true`），设置页"其他"区新增"开机补漏同步"开关。
+- `DownloadManager.StartAsync` 启动后台任务 `RunStartupSyncAsync`：
+  - 每 10 秒轮询登录状态（Token），上限等待 15 分钟——电脑重启时后端可能尚未就绪，SignalR 重连循环会持续重试登录，登录成功即触发；
+  - 调用 `SyncMissedDownloadsAsync` 执行一次同步并记录结果日志（"开机补漏同步完成：扫描 X 项，新增 Y 项，修复回写 Z 项"）；
+  - 任何异常仅告警不阻断启动，可稍后手动同步。
+- `SyncMissedDownloadsAsync` 加 `SemaphoreSlim` 互斥：开机自动同步与设置页手动同步不会并发执行。
+- 修复存量缺陷：补漏拉到的历史媒体 `message` 为空时，入队触发 `DownloadItems.Message` 非空约束崩溃——`OnNotificationReceived` 入库前对 `ChatTitle`/`Message` 空值兜底。
+
+### 验证（隔离实例，端口 9560）
+| 场景 | 结果 |
+|------|------|
+| 后端无未取回媒体 | 开机同步执行，扫描 0 新增 0，日志正常 |
+| 一条"未取回"媒体（含空 message） | 扫描 1 新增 1，成功入队，下载失败自动重试（本地 Apache 未运行属预期） |
+| `SyncMissedOnStartup=false` | 登录连接正常，不执行任何补漏 |
+
 

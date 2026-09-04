@@ -49,4 +49,7 @@ public class DownloaderSettings
 
     /// <summary>是否开机自启</summary>
     public bool AutoStart { get; set; } = false;
+
+    /// <summary>启动并登录成功后自动补漏同步：拉取服务器已下载完成但本地缺失的媒体</summary>
+    public bool SyncMissedOnStartup { get; set; } = true;
 }

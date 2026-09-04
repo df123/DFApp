@@ -49,6 +49,9 @@ public class DownloadManager : IAsyncDisposable
     private Task? _processTask;
     private Task? _watchdogTask;
     private Task? _speedSamplerTask;
+    private Task? _startupSyncTask;
+    // 补漏同步互斥：防止开机自动同步与设置页手动同步并发执行
+    private readonly SemaphoreSlim _syncGate = new(1, 1);
     // 进度持久化节流：记录每个下载项上次写回 DB 的时间，避免高频写库
     private readonly ConcurrentDictionary<int, DateTime> _lastProgressSave = new();
     // 每个下载项最后一次收到进度事件的时间，供卡死看门狗判定（每次事件都更新，不节流）
@@ -118,6 +121,9 @@ public class DownloadManager : IAsyncDisposable
         // 恢复未完成的任务
         await ResumePendingDownloadsAsync();
 
+        // 开机补漏：登录成功后自动同步服务器已下载完成但本地缺失的媒体
+        _startupSyncTask = RunStartupSyncAsync(_processCts.Token);
+
         // 补齐历史视频的缩略图（后台执行）
         _ = BackfillThumbnailsAsync();
 
@@ -165,6 +171,10 @@ public class DownloadManager : IAsyncDisposable
         if (_speedSamplerTask != null)
         {
             await _speedSamplerTask;
+        }
+        if (_startupSyncTask != null)
+        {
+            await _startupSyncTask;
         }
         await _notificationClient.StopAsync();
         _logger.LogInformation("下载管理器已停止");
@@ -244,8 +254,9 @@ public class DownloadManager : IAsyncDisposable
 
             if (notification is MediaDownloadNotification media)
             {
-                item.ChatTitle = media.ChatTitle;
-                item.Message = media.Message;
+                item.ChatTitle = media.ChatTitle ?? string.Empty;
+                // Message 列非空约束：补漏同步拉到的历史媒体可能无消息文本
+                item.Message = media.Message ?? string.Empty;
             }
 
             item.Id = db.Insertable(item).ExecuteReturnIdentity();
@@ -778,6 +789,19 @@ public class DownloadManager : IAsyncDisposable
     /// </summary>
     public async Task<(int Scanned, int Added, int Reconciled)> SyncMissedDownloadsAsync()
     {
+        await _syncGate.WaitAsync();
+        try
+        {
+            return await SyncMissedDownloadsCoreAsync();
+        }
+        finally
+        {
+            _syncGate.Release();
+        }
+    }
+
+    private async Task<(int Scanned, int Added, int Reconciled)> SyncMissedDownloadsCoreAsync()
+    {
         var token = _notificationClient.AccessToken;
         if (string.IsNullOrEmpty(token))
         {
@@ -877,6 +901,42 @@ public class DownloadManager : IAsyncDisposable
 
         _logger.LogInformation("补漏同步完成：扫描 {Scanned} 项，新增 {Added} 项，修复回写 {Reconciled} 项", scanned, added, reconciled);
         return (scanned, added, reconciled);
+    }
+
+    /// <summary>
+    /// 开机补漏：等待登录成功后自动执行一次补漏同步。
+    /// 电脑重启时后端可能尚未就绪，此处轮询等待登录（SignalR 重连循环会持续重试登录），上限 15 分钟。
+    /// </summary>
+    private async Task RunStartupSyncAsync(CancellationToken ct)
+    {
+        if (!_settings.SyncMissedOnStartup)
+        {
+            return;
+        }
+
+        try
+        {
+            var deadline = DateTime.UtcNow + TimeSpan.FromMinutes(15);
+            while (string.IsNullOrEmpty(_notificationClient.AccessToken))
+            {
+                if (ct.IsCancellationRequested || DateTime.UtcNow > deadline)
+                {
+                    _logger.LogWarning("开机补漏同步跳过：等待登录超时或服务已停止（后端 {Url}）", _settings.DfAppUrl);
+                    return;
+                }
+                await Task.Delay(TimeSpan.FromSeconds(10), ct);
+            }
+
+            var (scanned, added, reconciled) = await SyncMissedDownloadsAsync();
+            _logger.LogInformation("开机补漏同步完成：扫描 {Scanned} 项，新增 {Added} 项，修复回写 {Reconciled} 项", scanned, added, reconciled);
+        }
+        catch (OperationCanceledException)
+        {
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "开机补漏同步失败，可稍后在设置页手动触发");
+        }
     }
 
     /// <summary>

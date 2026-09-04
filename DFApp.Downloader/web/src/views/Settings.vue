@@ -17,6 +17,7 @@ const settings = ref<DownloaderSettings>({
   segmentSize: 4194304,
   webServerPort: 9550,
   autoStart: false,
+  syncMissedOnStartup: true,
 })
 const loading = ref(false)
 const syncing = ref(false)
@@ -136,6 +137,10 @@ onMounted(fetchSettings)
 
       <el-form-item label="开机自启">
         <el-switch v-model="settings.autoStart" />
+      </el-form-item>
+
+      <el-form-item label="开机补漏同步">
+        <el-switch v-model="settings.syncMissedOnStartup" />
       </el-form-item>
 
       <el-form-item>

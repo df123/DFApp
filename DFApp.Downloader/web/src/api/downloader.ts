@@ -34,6 +34,7 @@ export interface DownloaderSettings {
   webServerBind: string
   managementToken: string
   autoStart: boolean
+  syncMissedOnStartup: boolean
 }
 
 /** 管理令牌的本地存储键（非回环访问时需携带 X-Management-Token） */

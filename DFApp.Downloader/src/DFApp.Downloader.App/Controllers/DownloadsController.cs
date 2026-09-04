@@ -164,6 +164,7 @@ public class DownloadsController : ControllerBase
         _settings.MaxSegmentsPerFile = newSettings.MaxSegmentsPerFile;
         _settings.SegmentSize = newSettings.SegmentSize;
         _settings.AutoStart = newSettings.AutoStart;
+        _settings.SyncMissedOnStartup = newSettings.SyncMissedOnStartup;
 
         // 保存到文件
         var settingsPath = Path.Combine(AppContext.BaseDirectory, "settings.json");
