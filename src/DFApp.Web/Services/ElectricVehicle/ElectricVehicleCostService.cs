@@ -460,6 +460,32 @@ public class ElectricVehicleCostService : CrudServiceBase<
     /// </summary>
     /// <param name="input">创建输入 DTO</param>
     /// <returns>成本记录实体</returns>
+    /// <summary>
+    /// 充电类型的成本记录由充电记录自动维护，禁止直接修改
+    /// </summary>
+    public override async Task<ElectricVehicleCostDto> UpdateAsync(Guid id, CreateUpdateElectricVehicleCostDto input)
+    {
+        var existing = await Repository.GetByIdAsync(id);
+        if (existing?.CostType == CostType.Charging)
+        {
+            throw new BusinessException("充电类型的成本记录由充电记录自动维护，不能直接修改");
+        }
+        return await base.UpdateAsync(id, input);
+    }
+
+    /// <summary>
+    /// 充电类型的成本记录由充电记录自动维护，禁止直接删除
+    /// </summary>
+    public override async Task DeleteAsync(Guid id)
+    {
+        var existing = await Repository.GetByIdAsync(id);
+        if (existing?.CostType == CostType.Charging)
+        {
+            throw new BusinessException("充电类型的成本记录由充电记录自动维护，不能直接删除");
+        }
+        await base.DeleteAsync(id);
+    }
+
     protected override ElectricVehicleCost MapToEntity(CreateUpdateElectricVehicleCostDto input)
     {
         return _mapper.MapToEntity(input);

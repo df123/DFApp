@@ -41,7 +41,7 @@
         <el-table-column label="操作" width="150" fixed="right">
           <template #default="{ row }">
             <el-button
-              v-if="row.costType !== 1"
+              v-if="row.costType !== CostType.Charging"
               size="small"
               type="primary"
               link
@@ -50,7 +50,7 @@
               编辑
             </el-button>
             <el-button
-              v-if="row.costType !== 1"
+              v-if="row.costType !== CostType.Charging"
               size="small"
               type="danger"
               link
@@ -58,7 +58,11 @@
             >
               删除
             </el-button>
-            <el-text v-if="row.costType === 1" type="info" size="small">
+            <el-text
+              v-if="row.costType === CostType.Charging"
+              type="info"
+              size="small"
+            >
               自动同步
             </el-text>
           </template>
@@ -172,6 +176,7 @@ import {
   electricVehicleApi,
   electricVehicleCostApi
 } from "@/api/electric-vehicle";
+import { CostType } from "@/types/api";
 import type {
   ElectricVehicleDto,
   ElectricVehicleCostDto,
@@ -297,7 +302,7 @@ const handleCreate = () => {
 };
 
 const handleEdit = (row: ElectricVehicleCostDto) => {
-  if (row.costType === 1) {
+  if (row.costType === CostType.Charging) {
     ElMessage.warning("充电类型的成本记录不能直接编辑，请通过充电记录进行管理");
     return;
   }
@@ -317,7 +322,7 @@ const handleEdit = (row: ElectricVehicleCostDto) => {
 
 const handleDelete = async (row: ElectricVehicleCostDto) => {
   try {
-    if (row.costType === 1) {
+    if (row.costType === CostType.Charging) {
       ElMessage.warning(
         "充电类型的成本记录不能直接删除，请通过充电记录进行管理"
       );

@@ -525,3 +525,11 @@ sql/28 初版用 `lower(hex(randomblob(16)))` 生成的主键是 32 位**无连�
 
 - sql/28 已修正为生成带连字符 UUID（新环境不再复现）
 - sql/30 幂等修复存量数据：把 32 位无连字符 Id 规范化为带连字符小写
+
+## 充电类型成本记录恢复不可修改（2026-09-04）
+
+成本记录页原有保护逻辑把判断值写错：`CostType.Charging = 0`（充电），代码却比较 `costType === 1`（保养）——导致充电记录可编辑/删除、保养记录反被禁。修复：
+
+- 前端 costs/index.vue：5 处判断改用 `CostType.Charging`（操作列按钮 v-if、handleEdit/handleDelete 拦截），充电行显示灰色"自动同步"
+- 后端 ElectricVehicleCostService：重写 `UpdateAsync`/`DeleteAsync`，CostType 为 Charging 时抛 BusinessException（防止绕过前端直调 API）；充电成本由充电记录服务自动维护（Remark 含 `ChargingRecord:{id}` 标记），增删充电记录会联动
+- 已验证：API 层充电改/删返回 400、保养改 200；桌面 1920×1080 与移动 402×874（表格横向滚动 + 操作列固定）均正常
