@@ -16,7 +16,11 @@
         <el-table-column prop="brand" label="品牌" min-width="120" />
         <el-table-column prop="model" label="型号" min-width="120" />
         <el-table-column prop="licensePlate" label="车牌号" min-width="120" />
-        <el-table-column prop="batteryCapacity" label="电池容量" min-width="100">
+        <el-table-column
+          prop="batteryCapacity"
+          label="电池容量"
+          min-width="100"
+        >
           <template #default="{ row }">
             {{ row.batteryCapacity ? row.batteryCapacity + " kWh" : "-" }}
           </template>
@@ -176,7 +180,10 @@
         </el-table-column>
         <el-table-column label="较上次" min-width="100">
           <template #default="{ row }">
-            <span v-if="row.diff !== null" :class="row.diff >= 0 ? 'mileage-diff' : 'mileage-diff-negative'">
+            <span
+              v-if="row.diff !== null"
+              :class="row.diff >= 0 ? 'mileage-diff' : 'mileage-diff-negative'"
+            >
               {{ (row.diff >= 0 ? "+" : "") + row.diff.toFixed(0) }} km
             </span>
             <span v-else>-</span>
@@ -481,8 +488,8 @@ onMounted(() => {
 
 .mileage-updated-at {
   font-size: 12px;
-  color: var(--el-text-color-secondary);
   line-height: 1.4;
+  color: var(--el-text-color-secondary);
 }
 
 .card-header {

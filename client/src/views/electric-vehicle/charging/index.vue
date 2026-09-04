@@ -206,7 +206,6 @@ const loadTableData = async () => {
       (a, b) =>
         new Date(b.chargingDate).getTime() - new Date(a.chargingDate).getTime()
     );
-
   } catch (error) {
     console.error("加载充电数据失败:", error);
     ElMessage.error("加载充电数据失败");
