@@ -27,13 +27,15 @@ CREATE INDEX IF NOT EXISTS "IX_AppElectricVehicleMileageRecord_RecordedTime"
     ON "AppElectricVehicleMileageRecord" ("RecordedTime");
 
 -- 回填充电记录中的历史里程快照（同车同日取最大里程）
+-- 注意：Id/ConcurrencyStamp 必须生成带连字符的 UUID 格式，
+--       与 SqlSugar 按 Guid 主键查询的参数格式一致（无连字符会导致删除接口 400）
 INSERT INTO AppElectricVehicleMileageRecord
     (Id, VehicleId, Mileage, RecordedTime, ConcurrencyStamp, CreationTime)
-SELECT lower(hex(randomblob(16))),
+SELECT lower(substr(hex(randomblob(16)), 1, 8) || '-' || substr(hex(randomblob(16)), 9, 4) || '-' || substr(hex(randomblob(16)), 13, 4) || '-' || substr(hex(randomblob(16)), 17, 4) || '-' || substr(hex(randomblob(16)), 21, 12)),
        VehicleId,
        MAX(CurrentMileage),
        date(ChargingDate) || ' 12:00:00',
-       lower(hex(randomblob(16))),
+       lower(substr(hex(randomblob(16)), 1, 8) || '-' || substr(hex(randomblob(16)), 9, 4) || '-' || substr(hex(randomblob(16)), 13, 4) || '-' || substr(hex(randomblob(16)), 17, 4) || '-' || substr(hex(randomblob(16)), 21, 12)),
        datetime('now')
 FROM AppElectricVehicleChargingRecord
 WHERE CurrentMileage IS NOT NULL
@@ -42,11 +44,11 @@ GROUP BY VehicleId, date(ChargingDate);
 -- 车辆当前总里程作为最新快照（同日同值已存在则跳过）
 INSERT INTO AppElectricVehicleMileageRecord
     (Id, VehicleId, Mileage, RecordedTime, ConcurrencyStamp, CreationTime)
-SELECT lower(hex(randomblob(16))),
+SELECT lower(substr(hex(randomblob(16)), 1, 8) || '-' || substr(hex(randomblob(16)), 9, 4) || '-' || substr(hex(randomblob(16)), 13, 4) || '-' || substr(hex(randomblob(16)), 17, 4) || '-' || substr(hex(randomblob(16)), 21, 12)),
        v.Id,
        v.TotalMileage,
        COALESCE(v.MileageLastUpdatedTime, datetime('now')),
-       lower(hex(randomblob(16))),
+       lower(substr(hex(randomblob(16)), 1, 8) || '-' || substr(hex(randomblob(16)), 9, 4) || '-' || substr(hex(randomblob(16)), 13, 4) || '-' || substr(hex(randomblob(16)), 17, 4) || '-' || substr(hex(randomblob(16)), 21, 12)),
        datetime('now')
 FROM AppElectricVehicle v
 WHERE v.TotalMileage > 0
