@@ -168,29 +168,6 @@
             clearable
           />
         </el-form-item>
-        <el-form-item label="代理地址">
-          <el-input
-            v-model="formData.proxyUrl"
-            placeholder="可选，例如：http://127.0.0.1:7890"
-            clearable
-          />
-        </el-form-item>
-        <el-form-item label="代理用户名">
-          <el-input
-            v-model="formData.proxyUsername"
-            placeholder="可选"
-            clearable
-          />
-        </el-form-item>
-        <el-form-item label="代理密码">
-          <el-input
-            v-model="formData.proxyPassword"
-            type="password"
-            placeholder="可选"
-            clearable
-            show-password
-          />
-        </el-form-item>
         <el-form-item label="备注">
           <el-input
             v-model="formData.remark"
@@ -250,9 +227,6 @@ const formRef = ref<FormInstance>();
 const formData = reactive<CreateUpdateRssSourceDto>({
   name: "",
   url: "",
-  proxyUrl: "",
-  proxyUsername: "",
-  proxyPassword: "",
   isEnabled: true,
   fetchIntervalMinutes: 5,
   maxItems: 50,
@@ -314,9 +288,6 @@ const handleAdd = () => {
   Object.assign(formData, {
     name: "",
     url: "",
-    proxyUrl: "",
-    proxyUsername: "",
-    proxyPassword: "",
     isEnabled: true,
     fetchIntervalMinutes: 5,
     maxItems: 50,
@@ -333,9 +304,6 @@ const handleEdit = (row: RssSourceDto) => {
   Object.assign(formData, {
     name: row.name,
     url: row.url,
-    proxyUrl: row.proxyUrl || "",
-    proxyUsername: row.proxyUsername || "",
-    proxyPassword: row.proxyPassword || "",
     isEnabled: row.isEnabled,
     fetchIntervalMinutes: row.fetchIntervalMinutes,
     maxItems: row.maxItems,

@@ -419,9 +419,6 @@ export interface RssSourceDto {
   id: number; // RSS源ID
   name: string; // RSS源名称
   url: string; // RSS Feed URL
-  proxyUrl?: string; // 代理地址
-  proxyUsername?: string; // 代理用户名
-  proxyPassword?: string; // 代理密码
   isEnabled: boolean; // 是否启用
   fetchIntervalMinutes: number; // 抓取间隔（分钟）
   maxItems: number; // 最大条目数
@@ -440,9 +437,6 @@ export interface RssSourceDto {
 export interface CreateUpdateRssSourceDto {
   name: string; // RSS源名称（必填）
   url: string; // RSS Feed URL（必填）
-  proxyUrl?: string; // 代理地址（可选）
-  proxyUsername?: string; // 代理用户名（可选）
-  proxyPassword?: string; // 代理密码（可选）
   isEnabled: boolean; // 是否启用（必填）
   fetchIntervalMinutes: number; // 抓取间隔（必填）
   maxItems: number; // 最大条目数（必填）
@@ -682,9 +676,6 @@ const formData = reactive<CreateUpdateRssSourceDto>({
   isEnabled: true,
   fetchIntervalMinutes: 5,
   maxItems: 50,
-  proxyUrl: "",
-  proxyUsername: "",
-  proxyPassword: "",
   query: "",
   remark: ""
 });
@@ -749,9 +740,6 @@ const handleAdd = () => {
     isEnabled: true,
     fetchIntervalMinutes: 5,
     maxItems: 50,
-    proxyUrl: "",
-    proxyUsername: "",
-    proxyPassword: "",
     query: "",
     remark: ""
   });
@@ -768,9 +756,6 @@ const handleEdit = (row: RssSourceDto) => {
     isEnabled: row.isEnabled,
     fetchIntervalMinutes: row.fetchIntervalMinutes,
     maxItems: row.maxItems,
-    proxyUrl: row.proxyUrl || "",
-    proxyUsername: row.proxyUsername || "",
-    proxyPassword: row.proxyPassword || "",
     query: row.query || "",
     remark: row.remark || ""
   });
@@ -1652,8 +1637,7 @@ const rssSources = inject<RssSourceDto[]>("rssSources", []);
    - **抓取间隔**: 填写分钟数，默认5分钟
    - **最大条目数**: 默认50
    - **搜索关键词**: 可选，用于过滤Feed内容
-   - **代理配置**: 如需要代理访问，填写代理信息
-   - **备注**: 可选
+   - **备注**: 可选（代理字段已于安全整改移除，表单不再提供代理配置）
 4. 点击"确定"保存
 
 #### 编辑RSS源

@@ -20,7 +20,7 @@
 RSS镜像站点是一个自动抓取、解析、存储和管理RSS Feed内容的完整系统。主要功能包括：
 
 ### 核心功能
-1. **RSS源管理** - 管理多个RSS源配置，支持代理、关键词过滤
+1. **RSS源管理** - 管理多个RSS源配置，支持关键词过滤（代理功能已于安全整改移除：客户端可控代理构成 SSRF 绕过面）
 2. **自动抓取** - 基于Quartz.NET的后台定时任务，自动抓取RSS源
 3. **智能分词** - 支持中文、英文、日文三种语言的自动分词
 4. **镜像存储** - 将RSS条目镜像到数据库，支持查询和统计
@@ -90,9 +90,9 @@ CREATE TABLE "AppRssSources" (
     "Id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
     "Name" TEXT NOT NULL,                          -- RSS源名称
     "Url" TEXT NOT NULL,                           -- RSS Feed URL
-    "ProxyUrl" TEXT,                               -- 代理地址
-    "ProxyUsername" TEXT,                          -- 代理用户名
-    "ProxyPassword" TEXT,                          -- 代理密码
+    "ProxyUrl" TEXT,                               -- 代理地址（已废弃，历史列保留但不再读写）
+    "ProxyUsername" TEXT,                          -- 代理用户名（已废弃）
+    "ProxyPassword" TEXT,                          -- 代理密码（已废弃）
     "IsEnabled" INTEGER NOT NULL DEFAULT 1,        -- 是否启用
     "FetchIntervalMinutes" INTEGER NOT NULL,        -- 抓取间隔（分钟）
     "MaxItems" INTEGER NOT NULL,                    -- 最大抓取条目数
@@ -206,9 +206,6 @@ public class RssSource : Entity<long>, IHasCreationTime, IHasConcurrencyStamp
 {
     public string Name { get; set; }                    // RSS源名称
     public string Url { get; set; }                     // RSS Feed URL
-    public string? ProxyUrl { get; set; }               // 代理地址
-    public string? ProxyUsername { get; set; }          // 代理用户名
-    public string? ProxyPassword { get; set; }          // 代理密码
     public bool IsEnabled { get; set; }                 // 是否启用
     public int FetchIntervalMinutes { get; set; }       // 抓取间隔（分钟）
     public int MaxItems { get; set; }                   // 最大条目数
@@ -484,9 +481,6 @@ POST /api/app/rss-source
   "fetchIntervalMinutes": 5,
   "maxItems": 50,
   "query": "optional keyword filter",
-  "proxyUrl": "http://127.0.0.1:7890",
-  "proxyUsername": "",
-  "proxyPassword": "",
   "remark": "Optional remark"
 }
 ```
@@ -845,7 +839,7 @@ private async Task FetchRssSource(RssSource source)
     {
         try
         {
-            // 1. 创建HttpClient并配置代理
+            // 1. 创建受 SSRF 防护的 HttpClient（SsrfGuard 校验目标地址）
             var httpClient = CreateHttpClient(source);
 
             // 2. 下载RSS Feed
@@ -922,32 +916,12 @@ private async Task FetchRssSource(RssSource source)
 }
 ```
 
-#### 代理支持
-```csharp
-private HttpClient CreateHttpClient(RssSource source)
-{
-    var client = new HttpClient();
+#### 代理支持（已移除）
 
-    if (!string.IsNullOrEmpty(source.ProxyUrl))
-    {
-        var proxy = new WebProxy
-        {
-            Address = new Uri(source.ProxyUrl)
-        };
-
-        if (!string.IsNullOrEmpty(source.ProxyUsername))
-        {
-            proxy.Credentials = new NetworkCredential(
-                source.ProxyUsername,
-                source.ProxyPassword
-            );
-        }
-
-        // 注意：实际使用时需要通过HttpClientHandler设置代理
-    }
-
-    return client;
-}
+客户端自定义代理（ProxyUrl/ProxyUsername/ProxyPassword）已随 SSRF 整改整体移除：
+用户可控代理会让服务端向任意内网地址发起请求，绕过 SsrfGuard 的内网地址拦截。
+出站 HttpClient 统一由 `SsrfGuard.CreateGuardedHandler()` 构造（连接层校验目标 IP、
+重定向逐跳校验）。如确需代理，应在服务端配置并纳入同一校验。
 ```
 
 ### 3. Aria2集成

@@ -700,9 +700,6 @@ export interface RssSourceDto {
   id: number;
   name: string;
   url: string;
-  proxyUrl?: string;
-  proxyUsername?: string;
-  proxyPassword?: string;
   isEnabled: boolean;
   fetchIntervalMinutes: number;
   maxItems: number;
@@ -718,9 +715,6 @@ export interface RssSourceDto {
 export interface CreateUpdateRssSourceDto {
   name: string;
   url: string;
-  proxyUrl?: string;
-  proxyUsername?: string;
-  proxyPassword?: string;
   isEnabled: boolean;
   fetchIntervalMinutes: number;
   maxItems: number;
