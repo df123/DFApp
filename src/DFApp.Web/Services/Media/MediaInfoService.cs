@@ -93,12 +93,16 @@ public class MediaInfoService : CrudServiceBase<MediaInfo, long, MediaInfoDto, C
     /// </summary>
     public async Task<(List<MediaDownloadNotificationDto> Items, int TotalCount)> GetDownloadCompletedAsync(int pageIndex, int pageSize)
     {
-        var (entities, totalCount) = await Repository.GetPagedListAsync(
-            x => x.IsDownloadCompleted && !x.IsExternalLinkGenerated, pageIndex, pageSize, x => x.Id, OrderByType.Asc);
+        var query = await ApplyOwnerFilterAsync(Repository.GetQueryable());
+        query = query.Where(x => x.IsDownloadCompleted && !x.IsExternalLinkGenerated);
+        RefAsync<int> totalCount = 0;
+        var entities = await query
+            .OrderBy(x => x.Id)
+            .ToPageListAsync(pageIndex, pageSize, totalCount);
 
         if (entities.Count == 0)
         {
-            return (new List<MediaDownloadNotificationDto>(), totalCount);
+            return (new List<MediaDownloadNotificationDto>(), totalCount.Value);
         }
 
         // 按配置名读取前缀（忽略 ModuleName，兼容历史遗留的模块名不一致）
@@ -125,7 +129,7 @@ public class MediaInfoService : CrudServiceBase<MediaInfo, long, MediaInfoDto, C
             _retrievalTracker.MarkPending(entity.Id);
         }
 
-        return (items, totalCount);
+        return (items, totalCount.Value);
     }
 
     /// <summary>
@@ -140,6 +144,7 @@ public class MediaInfoService : CrudServiceBase<MediaInfo, long, MediaInfoDto, C
         {
             return false;
         }
+        await EnsureOwnerAsync(entity);
 
         entity.IsExternalLinkGenerated = true;
         await Repository.UpdateAsync(entity);
@@ -162,10 +167,12 @@ public class MediaInfoService : CrudServiceBase<MediaInfo, long, MediaInfoDto, C
         {
             return false;
         }
+        await EnsureOwnerAsync(entity);
 
         if (!string.IsNullOrWhiteSpace(entity.SavePath))
         {
-            SpaceHelper.DeleteFile(entity.SavePath);
+            // 经围栏解析后删除，防止被篡改的历史路径越出媒体根目录
+            SpaceHelper.DeleteFile(await ResolveMediaFilePathAsync(entity.SavePath));
         }
 
         return true;
@@ -178,7 +185,9 @@ public class MediaInfoService : CrudServiceBase<MediaInfo, long, MediaInfoDto, C
     /// <returns>删除数、跳过数（被有效外链引用）、无需处理数（路径为空或文件不存在）</returns>
     public async Task<(int Deleted, int Skipped, int NoFile)> CleanupRetrievedFilesAsync()
     {
-        var retrieved = await Repository.GetListAsync(x => x.IsExternalLinkGenerated);
+        var retrieved = await (await ApplyOwnerFilterAsync(Repository.GetQueryable()))
+            .Where(x => x.IsExternalLinkGenerated)
+            .ToListAsync();
 
         // 仍被有效（未移除）外链引用的媒体不删除
         var activeLinks = await _externalLinkRepository.GetListAsync(x => !x.IsRemove);
@@ -199,13 +208,31 @@ public class MediaInfoService : CrudServiceBase<MediaInfo, long, MediaInfoDto, C
                 continue;
             }
 
-            if (string.IsNullOrWhiteSpace(media.SavePath) || !File.Exists(media.SavePath))
+            if (string.IsNullOrWhiteSpace(media.SavePath))
             {
                 noFile++;
                 continue;
             }
 
-            SpaceHelper.DeleteFile(media.SavePath);
+            // 经围栏解析后删除，路径越出媒体根目录的记录不处理
+            string fullPath;
+            try
+            {
+                fullPath = await ResolveMediaFilePathAsync(media.SavePath);
+            }
+            catch (BusinessException)
+            {
+                noFile++;
+                continue;
+            }
+
+            if (!File.Exists(fullPath))
+            {
+                noFile++;
+                continue;
+            }
+
+            SpaceHelper.DeleteFile(fullPath);
             deleted++;
         }
 
@@ -283,23 +310,7 @@ public class MediaInfoService : CrudServiceBase<MediaInfo, long, MediaInfoDto, C
     /// </summary>
     public async Task<string> ResolveMediaFilePathAsync(string savePath)
     {
-        var root = await GetMediaRootPathAsync();
-        var fullPath = Path.GetFullPath(
-            Path.IsPathRooted(savePath) ? savePath : Path.Combine(root, savePath));
-
-        // 兼容以分隔符结尾的根（如 Linux 的 "/" 或 "D:\"）：直接用根作前缀，避免拼出 "//" 误杀全部路径
-        var rootPrefix = root.EndsWith(Path.DirectorySeparatorChar) ||
-                         root.EndsWith(Path.AltDirectorySeparatorChar)
-            ? root
-            : root + Path.DirectorySeparatorChar;
-
-        if (!fullPath.StartsWith(rootPrefix, StringComparison.OrdinalIgnoreCase) &&
-            !string.Equals(fullPath, root, StringComparison.OrdinalIgnoreCase))
-        {
-            throw new BusinessException("媒体文件路径越出存储根目录");
-        }
-
-        return fullPath;
+        return MediaPathGuard.ResolveContainedPath(await GetMediaRootPathAsync(), savePath);
     }
 
     /// <summary>
@@ -346,13 +357,19 @@ public class MediaInfoService : CrudServiceBase<MediaInfo, long, MediaInfoDto, C
     }
 
     /// <summary>
-    /// 删除无效的媒体项（未下载完成且创建时间超过 1 分钟）
+    /// 删除无效的媒体项（未下载完成且创建时间超过 1 分钟，仅当前用户可见的记录）
     /// </summary>
     public async Task DeleteInvalidItemsAsync()
     {
-        await Repository.DeleteAsync(x =>
-            !x.IsDownloadCompleted
-            && x.CreationTime <= DateTime.Now.AddMinutes(-1));
+        var invalid = await (await ApplyOwnerFilterAsync(Repository.GetQueryable()))
+            .Where(x =>
+                !x.IsDownloadCompleted
+                && x.CreationTime <= DateTime.Now.AddMinutes(-1))
+            .ToListAsync();
+        if (invalid.Count > 0)
+        {
+            await Repository.DeleteAsync(invalid);
+        }
     }
 
     /// <summary>

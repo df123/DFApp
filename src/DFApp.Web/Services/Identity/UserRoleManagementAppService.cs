@@ -130,11 +130,42 @@ public class UserRoleManagementAppService : AppServiceBase
     }
 
     /// <summary>
+    /// 校验角色分配/移除目标：拒绝非管理员修改自己的角色、分配或移除静态角色（如 admin）
+    /// </summary>
+    private async Task EnsureRoleOperationAllowedAsync(Guid userId, IEnumerable<Guid> roleIds)
+    {
+        if (await IsAdminUserAsync())
+        {
+            return;
+        }
+
+        if (CurrentUserId.HasValue
+            && string.Equals(userId.ToString(), CurrentUserId.Value.ToString(), StringComparison.OrdinalIgnoreCase))
+        {
+            throw new BusinessException("不能修改自己的角色：该操作仅限 admin 角色用户");
+        }
+
+        var roleIdStrings = roleIds.Select(r => r.ToString()).ToHashSet();
+        var allRoles = await _roleReadOnlyRepository.GetQueryable()
+            .Select(r => new { r.Id, r.Name, r.IsStatic })
+            .ToListAsync();
+        var staticRoleNames = allRoles
+            .Where(r => r.IsStatic && roleIdStrings.Contains(r.Id.ToString().ToLowerInvariant()))
+            .Select(r => r.Name)
+            .ToList();
+        if (staticRoleNames.Count > 0)
+        {
+            throw new BusinessException($"不能分配或移除静态角色：{string.Join(", ", staticRoleNames)}");
+        }
+    }
+
+    /// <summary>
     /// 批量分配角色，跳过已存在的
     /// </summary>
     public async Task AssignAsync(AssignUserRolesDto input)
     {
         await CheckPermissionAsync(DFAppPermissions.UserRoleManagement.Assign);
+        await EnsureRoleOperationAllowedAsync(input.UserId, input.RoleIds);
 
         var userIdUpper = input.UserId.ToString().ToUpperInvariant();
 
@@ -172,6 +203,7 @@ public class UserRoleManagementAppService : AppServiceBase
     public async Task RemoveAsync(RemoveUserRolesDto input)
     {
         await CheckPermissionAsync(DFAppPermissions.UserRoleManagement.Remove);
+        await EnsureRoleOperationAllowedAsync(input.UserId, input.RoleIds);
 
         var userIdUpper = input.UserId.ToString().ToUpperInvariant();
 

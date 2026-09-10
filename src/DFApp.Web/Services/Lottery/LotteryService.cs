@@ -25,8 +25,14 @@ namespace DFApp.Web.Services.Lottery;
 /// <summary>
 /// 彩票信息服务
 /// </summary>
+[OwnerCheckDisabledForSharedData]
 public class LotteryService : CrudServiceBase<LotteryInfo, long, LotteryDto, CreateUpdateLotteryDto, CreateUpdateLotteryDto>
 {
+    /// <summary>
+    /// 彩票基础信息为全局共享数据（由后台抓取写入），不做按创建者隔离
+    /// </summary>
+    protected override bool RequireOwnerCheck => false;
+
     private readonly LotteryMapper _mapper = new();
     private readonly ISqlSugarRepository<LotteryResult, long> _lotteryResultRepository;
     private readonly ISqlSugarRepository<LotteryPrizegrades, long> _lotteryPrizegradesRepository;

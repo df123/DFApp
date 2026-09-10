@@ -15,6 +15,11 @@ public class ChangePasswordDto
     public Guid UserId { get; set; }
 
     /// <summary>
+    /// 原密码（修改本人密码时必填，由服务端校验）
+    /// </summary>
+    public string? CurrentPassword { get; set; }
+
+    /// <summary>
     /// 新密码
     /// </summary>
     [Required(ErrorMessage = "新密码不能为空")]

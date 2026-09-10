@@ -112,8 +112,10 @@ public class LotterySSQSimulationService : CrudServiceBase<LotterySimulation, Gu
             return new WinningStatisticsDto { TotalAmount = 0 };
         }
 
-        // 获取当期投注记录，按组分类
-        var simulations = await Repository.GetListAsync(x => x.TermNumber == termNumber && x.GameType == LotteryGameType.双色球);
+        // 获取当期投注记录，按组分类（按归属过滤）
+        var simulations = await (await ApplyOwnerFilterAsync(Repository.GetQueryable()))
+            .Where(x => x.TermNumber == termNumber && x.GameType == LotteryGameType.双色球)
+            .ToListAsync();
         var simulationGroups = simulations.GroupBy(x => x.GroupId);
 
         var statistics = new WinningStatisticsDto
@@ -227,11 +229,17 @@ public class LotterySSQSimulationService : CrudServiceBase<LotterySimulation, Gu
     }
 
     /// <summary>
-    /// 删除指定期号的所有模拟数据
+    /// 删除指定期号的所有模拟数据（仅删除当前用户可见的记录）
     /// </summary>
     public async Task DeleteByTermNumberAsync(int termNumber)
     {
-        await Repository.DeleteAsync(x => x.TermNumber == termNumber);
+        var owned = await (await ApplyOwnerFilterAsync(Repository.GetQueryable()))
+            .Where(x => x.TermNumber == termNumber)
+            .ToListAsync();
+        if (owned.Count > 0)
+        {
+            await Repository.DeleteAsync(owned);
+        }
     }
 
     /// <summary>
@@ -267,10 +275,12 @@ public class LotterySSQSimulationService : CrudServiceBase<LotterySimulation, Gu
         var termNumbers = pagedKeys.Select(k => k.TermNumber).Distinct().ToList();
         var groupIds = pagedKeys.Select(k => k.GroupId).ToList();
 
-        var details = await Repository.GetListAsync(x =>
-            termNumbers.Contains(x.TermNumber) &&
-            groupIds.Contains(x.GroupId) &&
-            x.GameType == LotteryGameType.双色球);
+        var details = await (await ApplyOwnerFilterAsync(Repository.GetQueryable()))
+            .Where(x =>
+                termNumbers.Contains(x.TermNumber) &&
+                groupIds.Contains(x.GroupId) &&
+                x.GameType == LotteryGameType.双色球)
+            .ToListAsync();
 
         // 在内存中组装 DTO（仅处理分页后的少量数据）
         var items = pagedKeys.Select(key =>

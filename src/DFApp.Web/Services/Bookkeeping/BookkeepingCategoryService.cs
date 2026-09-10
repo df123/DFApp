@@ -41,8 +41,9 @@ public class BookkeepingCategoryService : CrudServiceBase<BookkeepingCategory, l
     /// <returns>记账分类 DTO</returns>
     public override async Task<BookkeepingCategoryDto> CreateAsync(CreateUpdateBookkeepingCategoryDto input)
     {
-        // 检查是否已存在相同分类
-        var exists = await Repository.AnyAsync(x => x.Category == input.Category);
+        // 检查可见范围内是否已存在相同分类（按归属过滤）
+        var duplicateQuery = await ApplyOwnerFilterAsync(Repository.GetQueryable());
+        var exists = await duplicateQuery.AnyAsync(x => x.Category == input.Category);
         if (exists)
         {
             throw new BusinessException("类型已经存在无需添加");

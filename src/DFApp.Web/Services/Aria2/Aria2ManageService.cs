@@ -147,25 +147,14 @@ public class Aria2ManageService : AppServiceBase
                 throw new BusinessException("URL 列表不能为空");
             }
 
-            // 构建选项
-            var options = new Dictionary<string, object>();
+            // 出站 URL 需通过 SSRF 防护校验（磁力链接除外）
+            Aria2OptionGuard.EnsureUrlsAllowed(input.Urls);
 
-            if (!string.IsNullOrWhiteSpace(input.SavePath))
-            {
-                options["dir"] = input.SavePath;
-            }
-
-            // 合并用户自定义选项
-            if (input.Options != null)
-            {
-                foreach (var kvp in input.Options)
-                {
-                    options[kvp.Key] = kvp.Value;
-                }
-            }
+            // 构建选项（dir 限制为相对子目录，自定义选项仅放行白名单）
+            var options = Aria2OptionGuard.BuildSafeOptions(input.SavePath, input.Options);
 
             // 调用 RPC 客户端
-            return await _aria2Client.AddUriAsync(input.Urls, options.Count > 0 ? options : null);
+            return await _aria2Client.AddUriAsync(input.Urls, options);
         }
         catch (Exception ex)
         {
@@ -188,30 +177,19 @@ public class Aria2ManageService : AppServiceBase
 
             var gids = new List<string>();
 
+            // 出站 URL 需通过 SSRF 防护校验（磁力链接除外）
+            Aria2OptionGuard.EnsureUrlsAllowed(input.Urls);
+
             // 为每个 URL 创建独立的下载任务
             foreach (var url in input.Urls)
             {
                 try
                 {
-                    // 构建选项
-                    var options = new Dictionary<string, object>();
-
-                    if (!string.IsNullOrWhiteSpace(input.SavePath))
-                    {
-                        options["dir"] = input.SavePath;
-                    }
-
-                    // 合并用户自定义选项
-                    if (input.Options != null)
-                    {
-                        foreach (var kvp in input.Options)
-                        {
-                            options[kvp.Key] = kvp.Value;
-                        }
-                    }
+                    // 构建选项（dir 限制为相对子目录，自定义选项仅放行白名单）
+                    var options = Aria2OptionGuard.BuildSafeOptions(input.SavePath, input.Options);
 
                     // 为单个 URL 调用 RPC 客户端
-                    var gid = await _aria2Client.AddUriAsync(new List<string> { url }, options.Count > 0 ? options : null);
+                    var gid = await _aria2Client.AddUriAsync(new List<string> { url }, options);
                     gids.Add(gid);
                 }
                 catch (Exception ex)
@@ -242,25 +220,11 @@ public class Aria2ManageService : AppServiceBase
                 throw new BusinessException("种子文件数据不能为空");
             }
 
-            // 构建选项
-            var options = new Dictionary<string, object>();
-
-            if (!string.IsNullOrWhiteSpace(input.SavePath))
-            {
-                options["dir"] = input.SavePath;
-            }
-
-            // 合并用户自定义选项
-            if (input.Options != null)
-            {
-                foreach (var kvp in input.Options)
-                {
-                    options[kvp.Key] = kvp.Value;
-                }
-            }
+            // 构建选项（dir 限制为相对子目录，自定义选项仅放行白名单）
+            var options = Aria2OptionGuard.BuildSafeOptions(input.SavePath, input.Options);
 
             // 调用 RPC 客户端
-            return await _aria2Client.AddTorrentAsync(input.TorrentData, options.Count > 0 ? options : null);
+            return await _aria2Client.AddTorrentAsync(input.TorrentData, options);
         }
         catch (Exception ex)
         {
@@ -283,20 +247,18 @@ public class Aria2ManageService : AppServiceBase
 
             var gids = new List<string>();
 
+            // 保存路径限制为下载目录内的相对子目录
+            Aria2OptionGuard.EnsureSavePathAllowed(input.SavePath);
+
             foreach (var torrent in input.Torrents)
             {
                 try
                 {
-                    // 构建选项
-                    var options = new Dictionary<string, object>();
-
-                    if (!string.IsNullOrWhiteSpace(input.SavePath))
-                    {
-                        options["dir"] = input.SavePath;
-                    }
+                    // 构建选项（dir 限制为相对子目录）
+                    var options = Aria2OptionGuard.BuildSafeOptions(input.SavePath, null);
 
                     // 调用 RPC 客户端添加单个种子
-                    var gid = await _aria2Client.AddTorrentAsync(torrent.TorrentData, options.Count > 0 ? options : null);
+                    var gid = await _aria2Client.AddTorrentAsync(torrent.TorrentData, options);
                     gids.Add(gid);
                 }
                 catch (Exception ex)

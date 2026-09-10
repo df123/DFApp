@@ -19,11 +19,13 @@ namespace DFApp.Web.Services.Identity;
 public class PermissionGrantManagementAppService : AppServiceBase
 {
     private readonly ISqlSugarRepository<AppPermissionGrant, long> _appPermissionGrantRepository;
+    private readonly ISqlSugarReadOnlyRepository<DFApp.Identity.Role, Guid> _roleReadOnlyRepository;
     private readonly ISqlSugarClient _db;
     private readonly ILogger<PermissionGrantManagementAppService> _logger;
 
     public PermissionGrantManagementAppService(
         ISqlSugarRepository<AppPermissionGrant, long> appPermissionGrantRepository,
+        ISqlSugarReadOnlyRepository<DFApp.Identity.Role, Guid> roleReadOnlyRepository,
         ISqlSugarClient db,
         ICurrentUser currentUser,
         IPermissionChecker permissionChecker,
@@ -31,8 +33,58 @@ public class PermissionGrantManagementAppService : AppServiceBase
         : base(currentUser, permissionChecker)
     {
         _appPermissionGrantRepository = appPermissionGrantRepository;
+        _roleReadOnlyRepository = roleReadOnlyRepository;
         _db = db;
         _logger = logger;
+    }
+
+    /// <summary>
+    /// 管理员级权限前缀：这些权限本身可以铸造或等价于管理员能力，
+    /// 授予/撤销仅限持有 admin 角色的调用者
+    /// </summary>
+    private static readonly string[] AdminTierPermissionPrefixes =
+    {
+        DFAppPermissions.UserManagement.Default,
+        DFAppPermissions.RoleManagement.Default,
+        DFAppPermissions.PermissionGrantManagement.Default,
+        DFAppPermissions.UserRoleManagement.Default,
+    };
+
+    /// <summary>
+    /// 校验授权操作目标：拒绝非管理员操作自己的权限、授予管理员级权限、修改静态角色的权限
+    /// </summary>
+    private async Task EnsureGrantOperationAllowedAsync(string providerType, string providerKey, IEnumerable<string> permissionNames)
+    {
+        if (await IsAdminUserAsync())
+        {
+            return;
+        }
+
+        if (providerType == "User" && CurrentUserId.HasValue
+            && Guid.TryParse(providerKey, out var targetUserId)
+            && string.Equals(targetUserId.ToString(), CurrentUserId.Value.ToString(), StringComparison.OrdinalIgnoreCase))
+        {
+            throw new BusinessException("不能修改自己的权限：该操作仅限 admin 角色用户");
+        }
+
+        var adminTierNames = permissionNames
+            .Where(p => AdminTierPermissionPrefixes.Any(prefix => p == prefix || p.StartsWith(prefix + ".", StringComparison.Ordinal)))
+            .ToList();
+        if (adminTierNames.Count > 0)
+        {
+            throw new BusinessException($"以下权限为管理员级权限，仅限 admin 角色授予：{string.Join(", ", adminTierNames)}");
+        }
+
+        if (providerType == "Role")
+        {
+            var role = await _roleReadOnlyRepository.GetQueryable()
+                .Where(r => r.Name == providerKey)
+                .FirstAsync();
+            if (role != null && role.IsStatic)
+            {
+                throw new BusinessException($"不能修改静态角色 {providerKey} 的权限：该操作仅限 admin 角色用户");
+            }
+        }
     }
 
     /// <summary>
@@ -243,6 +295,7 @@ public class PermissionGrantManagementAppService : AppServiceBase
     public async Task UpdateAsync(UpdatePermissionsDto input)
     {
         await CheckPermissionAsync(DFAppPermissions.PermissionGrantManagement.Grant);
+        await EnsureGrantOperationAllowedAsync(input.ProviderType, input.ProviderKey, input.PermissionNames);
 
         try
         {
@@ -287,6 +340,7 @@ public class PermissionGrantManagementAppService : AppServiceBase
     public async Task GrantAsync(GrantPermissionsDto input)
     {
         await CheckPermissionAsync(DFAppPermissions.PermissionGrantManagement.Grant);
+        await EnsureGrantOperationAllowedAsync(input.ProviderType, input.ProviderKey, input.PermissionNames);
 
         // 查询已存在的权限
         var existingGrants = await _appPermissionGrantRepository.GetQueryable()
@@ -323,6 +377,7 @@ public class PermissionGrantManagementAppService : AppServiceBase
     public async Task RevokeAsync(RevokePermissionsDto input)
     {
         await CheckPermissionAsync(DFAppPermissions.PermissionGrantManagement.Revoke);
+        await EnsureGrantOperationAllowedAsync(input.ProviderType, input.ProviderKey, input.PermissionNames);
 
         var existingGrants = await _appPermissionGrantRepository.GetQueryable()
             .Where(pg => pg.ProviderType == input.ProviderType && pg.ProviderKey == input.ProviderKey)

@@ -40,6 +40,26 @@ public class RssSourceAppService : AppServiceBase
     }
 
     /// <summary>
+    /// 校验当前用户对 RSS 源的归属权：创建者本人或特权用户，否则拒绝
+    /// </summary>
+    private async Task EnsureOwnerAsync(RssSource source)
+    {
+        if (await IsPrivilegedUserAsync())
+        {
+            return;
+        }
+
+        if (source.CreatorId is not null
+            && CurrentUser.Id is not null
+            && source.CreatorId == CurrentUser.Id)
+        {
+            return;
+        }
+
+        throw new BusinessException("无权访问该RSS源");
+    }
+
+    /// <summary>
     /// 获取RSS源分页列表
     /// </summary>
     /// <param name="input">分页排序请求</param>
@@ -47,6 +67,13 @@ public class RssSourceAppService : AppServiceBase
     public async Task<PagedResultDto<RssSourceDto>> GetListAsync(PagedAndSortedResultRequestDto input)
     {
         var queryable = _rssSourceRepository.GetQueryable();
+
+        // 非特权用户仅能看到自己创建的RSS源
+        if (!await IsPrivilegedUserAsync())
+        {
+            var userId = CurrentUser.Id;
+            queryable = queryable.Where(x => x.CreatorId == userId);
+        }
 
         if (!string.IsNullOrWhiteSpace(input.Filter))
         {
@@ -84,6 +111,7 @@ public class RssSourceAppService : AppServiceBase
     {
         var source = await _rssSourceRepository.GetByIdAsync(id);
         EnsureEntityExists(source, id);
+        await EnsureOwnerAsync(source);
 
         // TODO: 使用 Mapperly 映射（命名空间冲突，暂保留手动映射）
         return MapToDto(source);
@@ -136,6 +164,7 @@ public class RssSourceAppService : AppServiceBase
     {
         var source = await _rssSourceRepository.GetByIdAsync(id);
         EnsureEntityExists(source, id);
+        await EnsureOwnerAsync(source);
 
         // 检查URL是否与其他源重复
         var existing = await _rssSourceRepository.GetFirstOrDefaultAsync(x => x.Url == input.Url && x.Id != id);
@@ -167,6 +196,10 @@ public class RssSourceAppService : AppServiceBase
     /// <param name="id">RSS源ID</param>
     public async Task DeleteAsync(long id)
     {
+        var source = await _rssSourceRepository.GetByIdAsync(id);
+        EnsureEntityExists(source, id);
+        await EnsureOwnerAsync(source);
+
         await _rssSourceRepository.DeleteAsync(id);
         _logger.LogInformation("删除RSS源: {Id}", id);
     }
@@ -179,6 +212,7 @@ public class RssSourceAppService : AppServiceBase
     {
         var source = await _rssSourceRepository.GetByIdAsync(id);
         EnsureEntityExists(source, id);
+        await EnsureOwnerAsync(source);
 
         if (!source.IsEnabled)
         {

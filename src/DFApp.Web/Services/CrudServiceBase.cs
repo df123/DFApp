@@ -29,10 +29,10 @@ public abstract class CrudServiceBase<TEntity, TKey, TGetOutputDto, TCreateInput
 
     /// <summary>
     /// 是否对单条/列表操作强制对象级所有权校验（防止越权访问他人记录）。
-    /// 默认关闭；需要按创建者隔离数据的模块（如文件上传）应重写为 true。
+    /// 默认开启（fail-closed）；全局共享数据的模块（如彩票开奖、系统配置）应显式重写为 false 并注明原因。
     /// 拥有用户管理权限的账号视为管理员，可访问全部记录（含缺失创建者的历史记录）。
     /// </summary>
-    protected virtual bool RequireOwnerCheck => false;
+    protected virtual bool RequireOwnerCheck => true;
 
     /// <summary>
     /// 构造函数

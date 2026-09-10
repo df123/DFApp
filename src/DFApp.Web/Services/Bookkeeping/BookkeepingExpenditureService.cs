@@ -131,6 +131,7 @@ public class BookkeepingExpenditureService : CrudServiceBase<
     {
         var entity = await Repository.GetByIdAsync(id);
         EnsureEntityExists(entity, id);
+        await EnsureOwnerAsync(entity);
 
         var dto = MapToGetOutputDto(entity);
 
@@ -256,6 +257,7 @@ public class BookkeepingExpenditureService : CrudServiceBase<
     {
         var entity = await Repository.GetByIdAsync(id);
         EnsureEntityExists(entity, id);
+        await EnsureOwnerAsync(entity);
 
         await MapToEntityAsync(input, entity);
         await Repository.UpdateAsync(entity);
@@ -278,7 +280,7 @@ public class BookkeepingExpenditureService : CrudServiceBase<
     /// <returns>分类查找 DTO 列表</returns>
     public async Task<List<BookkeepingCategoryLookupDto>> GetCategoryLookupDto()
     {
-        var categories = await _categoryRepository.GetListAsync();
+        var categories = await FilterOwnedListAsync(await _categoryRepository.GetListAsync());
         return categories.Select(c => _mapper.MapToLookupDto(c)).ToList();
     }
 
@@ -333,7 +335,7 @@ public class BookkeepingExpenditureService : CrudServiceBase<
         CompareType compareType, NumberType numberType, bool? isBelongToSelf)
     {
         var expression = BuildExpression(start, end, isBelongToSelf);
-        var expenditures = await Repository.GetListAsync(expression);
+        var expenditures = await FilterOwnedAsync(await Repository.GetListAsync(expression));
 
         var chartJSDto = new ChartJSDto
         {
@@ -351,7 +353,7 @@ public class BookkeepingExpenditureService : CrudServiceBase<
         {
             var (startCompare, endCompare) = ManipulateDateRange(start, end, compareType);
             var expression2 = BuildExpression(startCompare, endCompare, isBelongToSelf);
-            var expendituresCompare = await Repository.GetListAsync(expression2);
+            var expendituresCompare = await FilterOwnedAsync(await Repository.GetListAsync(expression2));
             chartJSDto.CompareTotal = expendituresCompare.Sum(x => x.Expenditure);
             var chartJSDatasetsItemCompareDto = new ChartJSDatasetsItemDto();
             chartJSDto.datasets.Add(chartJSDatasetsItemCompareDto);
@@ -373,9 +375,9 @@ public class BookkeepingExpenditureService : CrudServiceBase<
         var startDate = new DateTime(year, 1, 1);
         var endDate = new DateTime(year, 12, 31);
 
-        var expenditures = await Repository.GetListAsync(
+        var expenditures = await FilterOwnedAsync(await Repository.GetListAsync(
             x => x.ExpenditureDate >= startDate && x.ExpenditureDate <= endDate
-        );
+        ));
 
         var result = new MonthlyExpenditureDto();
 

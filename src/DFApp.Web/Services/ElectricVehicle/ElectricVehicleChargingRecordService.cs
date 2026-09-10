@@ -103,6 +103,7 @@ public class ElectricVehicleChargingRecordService : CrudServiceBase<
     {
         var entity = await Repository.GetByIdAsync(id);
         EnsureEntityExists(entity, id);
+        await EnsureOwnerAsync(entity!);
 
         var dto = MapToGetOutputDto(entity!);
         if (dto.VehicleId != Guid.Empty)
@@ -154,6 +155,7 @@ public class ElectricVehicleChargingRecordService : CrudServiceBase<
     {
         var entity = await Repository.GetByIdAsync(id);
         EnsureEntityExists(entity, id);
+        await EnsureOwnerAsync(entity!);
 
         MapToEntity(input, entity!);
         await Repository.UpdateAsync(entity!);
@@ -181,8 +183,14 @@ public class ElectricVehicleChargingRecordService : CrudServiceBase<
     /// <param name="id">主键 ID</param>
     public override async Task DeleteAsync(Guid id)
     {
+        // 先完成归属校验（base.DeleteAsync 内含校验），再删除关联成本记录，
+        // 避免越权请求在校验前就销毁了成本数据
+        var entity = await Repository.GetByIdAsync(id);
+        EnsureEntityExists(entity, id);
+        await EnsureOwnerAsync(entity!);
+
         await DeleteRelatedCostRecordAsync(id);
-        await base.DeleteAsync(id);
+        await Repository.DeleteAsync(id);
     }
 
     /// <summary>

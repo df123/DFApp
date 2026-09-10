@@ -125,6 +125,15 @@
         <el-form-item label="用户名">
           <el-input v-model="passwordFormData.userName" disabled />
         </el-form-item>
+        <el-form-item v-if="isSelfPasswordChange" label="原密码" prop="currentPassword">
+          <el-input
+            v-model="passwordFormData.currentPassword"
+            type="password"
+            placeholder="请输入当前登录用户的原密码"
+            maxlength="100"
+            show-password
+          />
+        </el-form-item>
         <el-form-item label="新密码" prop="newPassword">
           <el-input
             v-model="passwordFormData.newPassword"
@@ -168,6 +177,7 @@ import {
 } from "element-plus";
 import { Plus } from "@element-plus/icons-vue";
 import { http } from "@/utils/http";
+import { useUserStoreHook } from "@/store/modules/user";
 
 // 响应式数据
 const loading = ref(false);
@@ -201,9 +211,17 @@ const formData = reactive({
 const passwordFormData = reactive({
   userId: "",
   userName: "",
+  currentPassword: "",
   newPassword: "",
   confirmPassword: ""
 });
+
+// 修改的是否为当前登录用户本人的密码（本人改密需要校验原密码）
+const isSelfPasswordChange = computed(
+  () =>
+    passwordFormData.userName !== "" &&
+    passwordFormData.userName === useUserStoreHook().username
+);
 
 // 当前编辑的ID
 const currentEditId = ref<string | null>(null);
@@ -236,6 +254,18 @@ const formRules: FormRules = {
 
 // 修改密码表单验证规则
 const passwordFormRules: FormRules = {
+  currentPassword: [
+    {
+      validator: (rule, value, callback) => {
+        if (isSelfPasswordChange.value && !value) {
+          callback(new Error("修改本人密码必须输入原密码"));
+        } else {
+          callback();
+        }
+      },
+      trigger: "blur"
+    }
+  ],
   newPassword: [
     { required: true, message: "请输入新密码", trigger: "blur" },
     {
@@ -371,6 +401,7 @@ const handleChangePassword = (row: any) => {
   Object.assign(passwordFormData, {
     userId: row.id,
     userName: row.userName,
+    currentPassword: "",
     newPassword: "",
     confirmPassword: ""
   });
@@ -460,6 +491,7 @@ const handlePasswordSubmit = async () => {
     await http.post("/api/app/user-management/change-password", {
       data: {
         userId: passwordFormData.userId,
+        currentPassword: passwordFormData.currentPassword || undefined,
         newPassword: passwordFormData.newPassword
       }
     });

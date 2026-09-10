@@ -94,6 +94,7 @@ public class ElectricVehicleService : CrudServiceBase<DFApp.ElectricVehicle.Elec
         {
             throw new BusinessException("车辆不存在");
         }
+        await EnsureOwnerAsync(entity);
 
         entity.TotalMileage = input.Mileage;
         entity.MileageLastUpdatedTime = DateTime.Now;
@@ -117,6 +118,13 @@ public class ElectricVehicleService : CrudServiceBase<DFApp.ElectricVehicle.Elec
     /// <param name="vehicleId">车辆 ID</param>
     public async Task<List<ElectricVehicleMileageRecordDto>> GetMileageRecordsAsync(Guid vehicleId)
     {
+        var vehicle = await Repository.GetByIdAsync(vehicleId);
+        if (vehicle == null)
+        {
+            throw new BusinessException("车辆不存在");
+        }
+        await EnsureOwnerAsync(vehicle);
+
         var records = await _mileageRecordRepository.GetListAsync(x => x.VehicleId == vehicleId);
         return records
             .OrderByDescending(x => x.RecordedTime)
@@ -143,6 +151,15 @@ public class ElectricVehicleService : CrudServiceBase<DFApp.ElectricVehicle.Elec
         {
             throw new BusinessException("里程记录不存在");
         }
+
+        // 里程记录归属跟随所属车辆
+        var vehicle = await Repository.GetByIdAsync(record.VehicleId);
+        if (vehicle == null)
+        {
+            throw new BusinessException("车辆不存在");
+        }
+        await EnsureOwnerAsync(vehicle);
+
         await _mileageRecordRepository.DeleteAsync(recordId);
     }
 }

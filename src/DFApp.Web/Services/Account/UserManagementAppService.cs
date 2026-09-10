@@ -17,6 +17,8 @@ namespace DFApp.Web.Services.Account;
 public class UserManagementAppService : AppServiceBase
 {
     private readonly ISqlSugarRepository<User, Guid> _userRepository;
+    private readonly ISqlSugarReadOnlyRepository<DFApp.Identity.UserRole, Guid> _userRoleReadOnlyRepository;
+    private readonly ISqlSugarReadOnlyRepository<DFApp.Identity.Role, Guid> _roleReadOnlyRepository;
     private readonly IPasswordHasher _passwordHasher;
     private readonly ILogger<UserManagementAppService> _logger;
 
@@ -24,13 +26,60 @@ public class UserManagementAppService : AppServiceBase
         ICurrentUser currentUser,
         IPermissionChecker permissionChecker,
         ISqlSugarRepository<User, Guid> userRepository,
+        ISqlSugarReadOnlyRepository<DFApp.Identity.UserRole, Guid> userRoleReadOnlyRepository,
+        ISqlSugarReadOnlyRepository<DFApp.Identity.Role, Guid> roleReadOnlyRepository,
         IPasswordHasher passwordHasher,
         ILogger<UserManagementAppService> logger)
         : base(currentUser, permissionChecker)
     {
         _userRepository = userRepository;
+        _userRoleReadOnlyRepository = userRoleReadOnlyRepository;
+        _roleReadOnlyRepository = roleReadOnlyRepository;
         _passwordHasher = passwordHasher;
         _logger = logger;
+    }
+
+    /// <summary>
+    /// 判断目标用户是否持有 admin 角色（用于保护管理员账户不被非管理员修改/删除/重置密码）
+    /// </summary>
+    private async Task<bool> UserHasAdminRoleAsync(Guid userId)
+    {
+        var userIdUpper = userId.ToString().ToUpperInvariant();
+        var userRoles = await _userRoleReadOnlyRepository.GetQueryable()
+            .Where("UPPER(UserId) = @UserId", new { UserId = userIdUpper })
+            .ToListAsync();
+        if (userRoles.Count == 0)
+        {
+            return false;
+        }
+
+        var adminRole = await _roleReadOnlyRepository.GetQueryable()
+            .Where(r => r.Name == AdminRoleName)
+            .FirstAsync();
+        if (adminRole == null)
+        {
+            return false;
+        }
+
+        var adminRoleId = adminRole.Id.ToString();
+        return userRoles.Any(ur => string.Equals(ur.RoleId.ToString(), adminRoleId, StringComparison.OrdinalIgnoreCase));
+    }
+
+    /// <summary>
+    /// 校验对目标用户执行敏感操作（改密/更新/删除）的权限：
+    /// 目标为 admin 角色用户时，调用者必须持有 admin 角色
+    /// </summary>
+    private async Task EnsureTargetUserModifiableAsync(Guid targetUserId)
+    {
+        if (await IsAdminUserAsync())
+        {
+            return;
+        }
+
+        if (await UserHasAdminRoleAsync(targetUserId))
+        {
+            throw new BusinessException("不能对管理员账户执行该操作：仅限 admin 角色");
+        }
     }
 
     /// <summary>
@@ -129,6 +178,7 @@ public class UserManagementAppService : AppServiceBase
     {
         var user = await _userRepository.GetByIdAsync(id);
         EnsureEntityExists(user, id);
+        await EnsureTargetUserModifiableAsync(id);
 
         // 检查用户名是否已被其他用户使用
         var existingUser = await _userRepository.GetFirstOrDefaultAsync(u => u.UserName == input.UserName && u.Id != id);
@@ -173,6 +223,7 @@ public class UserManagementAppService : AppServiceBase
             throw new BusinessException("不能删除当前登录用户");
         }
 
+        await EnsureTargetUserModifiableAsync(id);
         await _userRepository.DeleteAsync(id);
     }
 
@@ -184,8 +235,28 @@ public class UserManagementAppService : AppServiceBase
         var user = await _userRepository.GetByIdAsync(input.UserId);
         EnsureEntityExists(user, input.UserId);
 
+        var isSelf = CurrentUserId.HasValue
+            && string.Equals(input.UserId.ToString(), CurrentUserId.Value.ToString(), StringComparison.OrdinalIgnoreCase);
+
+        if (isSelf)
+        {
+            // 修改本人密码必须校验原密码
+            if (string.IsNullOrWhiteSpace(input.CurrentPassword)
+                || !_passwordHasher.VerifyPassword(user.PasswordHash, input.CurrentPassword))
+            {
+                throw new BusinessException("原密码不正确");
+            }
+        }
+        else
+        {
+            // 重置他人密码：目标为管理员账户时仅限 admin 角色
+            await EnsureTargetUserModifiableAsync(input.UserId);
+        }
+
         user.PasswordHash = _passwordHasher.HashPassword(input.NewPassword);
         await _userRepository.UpdateAsync(user);
+        _logger.LogInformation("修改用户密码：UserId={UserId}, Operator={Operator}, IsSelf={IsSelf}",
+            input.UserId, CurrentUserName ?? "unknown", isSelf);
     }
 }
 

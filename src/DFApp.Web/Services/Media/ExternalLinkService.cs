@@ -71,13 +71,15 @@ public class ExternalLinkService : CrudServiceBase<
     /// <summary>
     /// 更新操作不允许使用
     /// </summary>
+    [OwnerCheckSuppressed("接口已禁用，不产生任何数据访问")]
     public override Task<ExternalLinkDto> UpdateAsync(long id, CreateUpdateExternalLinkDto input)
     {
         throw new BusinessException("此接口不允许使用");
     }
 
     /// <summary>
-    /// 删除外链记录，如果文件未移除则先移除文件
+    /// 删除外链记录，如果文件未移除则先移除文件。
+    /// 归属校验先于文件移除执行，避免越权请求在校验前销毁物理文件
     /// </summary>
     /// <param name="id">外链 ID</param>
     public override async Task DeleteAsync(long id)
@@ -88,7 +90,13 @@ public class ExternalLinkService : CrudServiceBase<
         }
 
         var mediaExternalLink = await Repository.GetFirstOrDefaultAsync(x => x.Id == id);
-        if (mediaExternalLink != null && !mediaExternalLink.IsRemove)
+        if (mediaExternalLink == null)
+        {
+            throw new BusinessException("外链记录不存在");
+        }
+        await EnsureOwnerAsync(mediaExternalLink);
+
+        if (!mediaExternalLink.IsRemove)
         {
             await RemoveFileAsync(id);
         }
@@ -264,11 +272,20 @@ public class ExternalLinkService : CrudServiceBase<
                 List<long> ids = mediaExternalLinkMediaIds.Select(x => x.MediaId).ToList();
                 var medias = await FilterOwnedListAsync(await mediaInfoRepository.GetListAsync(x => ids.Contains(x.Id)));
 
+                // 经围栏解析后删除，防止被篡改的历史路径越出媒体根目录
+                var mediaRoot = await configurationInfoRepository.GetConfigurationInfoValue("SaveDrive", string.Empty);
                 foreach (var item in medias)
                 {
                     if (item != null && !string.IsNullOrWhiteSpace(item.SavePath))
                     {
-                        SpaceHelper.DeleteFile(item.SavePath!);
+                        try
+                        {
+                            SpaceHelper.DeleteFile(MediaPathGuard.ResolveContainedPath(mediaRoot, item.SavePath!));
+                        }
+                        catch (BusinessException)
+                        {
+                            // 路径越界的记录跳过物理删除，仅清理数据库状态
+                        }
                     }
                 }
 

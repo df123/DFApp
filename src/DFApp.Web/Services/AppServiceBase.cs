@@ -57,6 +57,20 @@ public abstract class AppServiceBase
         return PermissionChecker.IsGrantedAsync(DFAppPermissions.UserManagement.Default);
     }
 
+    /// <summary>
+    /// 当前用户是否持有静态 admin 角色。
+    /// 权限可被委托，admin 角色不可，敏感操作（提权、改密、静态角色分配）以此为准
+    /// </summary>
+    protected Task<bool> IsAdminUserAsync()
+    {
+        return PermissionChecker.IsInRoleAsync(AdminRoleName);
+    }
+
+    /// <summary>
+    /// 静态管理员角色名
+    /// </summary>
+    protected const string AdminRoleName = "admin";
+
     protected Task<bool> IsGrantedAsync(string permissionName)
     {
         return PermissionChecker.IsGrantedAsync(permissionName);

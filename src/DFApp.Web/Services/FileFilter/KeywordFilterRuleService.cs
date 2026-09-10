@@ -20,8 +20,14 @@ namespace DFApp.Web.Services.FileFilter;
 /// <summary>
 /// 关键词过滤规则服务
 /// </summary>
+[OwnerCheckDisabledForSharedData]
 public class KeywordFilterRuleService : CrudServiceBase<KeywordFilterRule, long, KeywordFilterRuleDto, CreateUpdateKeywordFilterRuleDto, CreateUpdateKeywordFilterRuleDto>
 {
+    /// <summary>
+    /// 关键词过滤规则为全局共享数据（后台任务与下载流程共用），不做按创建者隔离
+    /// </summary>
+    protected override bool RequireOwnerCheck => false;
+
     private readonly IKeywordFilterRuleRepository _keywordFilterRuleRepository;
     private readonly ILogger<KeywordFilterRuleService> _logger;
     private readonly FileFilterMapper _mapper = new();

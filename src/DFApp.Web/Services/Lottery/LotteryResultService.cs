@@ -13,8 +13,14 @@ namespace DFApp.Web.Services.Lottery;
 /// <summary>
 /// 彩票结果服务
 /// </summary>
+[OwnerCheckDisabledForSharedData]
 public class LotteryResultService : CrudServiceBase<LotteryResult, long, LotteryResultDto, CreateUpdateLotteryResultDto, CreateUpdateLotteryResultDto>
 {
+    /// <summary>
+    /// 开奖结果为全局共享数据（由后台抓取写入），不做按创建者隔离
+    /// </summary>
+    protected override bool RequireOwnerCheck => false;
+
     private readonly LotteryMapper _mapper = new();
 
     /// <summary>

@@ -13,4 +13,11 @@ public interface IPermissionChecker
     /// <param name="permissionName">权限名称</param>
     /// <returns>如果拥有权限返回 true，否则返回 false</returns>
     Task<bool> IsGrantedAsync(string permissionName);
+
+    /// <summary>
+    /// 检查当前用户是否拥有指定角色
+    /// </summary>
+    /// <param name="roleName">角色名称</param>
+    /// <returns>如果拥有角色返回 true，否则返回 false</returns>
+    Task<bool> IsInRoleAsync(string roleName);
 }

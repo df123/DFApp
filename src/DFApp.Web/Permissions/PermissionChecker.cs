@@ -64,4 +64,25 @@ public class PermissionChecker : IPermissionChecker
 
         return Task.FromResult(hasPermission);
     }
+
+    /// <summary>
+    /// 检查当前用户是否拥有指定角色
+    /// </summary>
+    /// <param name="roleName">角色名称</param>
+    /// <returns>如果拥有角色返回 true，否则返回 false</returns>
+    public Task<bool> IsInRoleAsync(string roleName)
+    {
+        if (string.IsNullOrEmpty(roleName))
+        {
+            return Task.FromResult(false);
+        }
+
+        var httpContext = _httpContextAccessor.HttpContext;
+        var user = httpContext?.User;
+
+        var hasRole = user?.FindAll(DFAppClaimTypes.Role).Any(c =>
+            string.Equals(c.Value, roleName, StringComparison.OrdinalIgnoreCase)) == true;
+
+        return Task.FromResult(hasRole);
+    }
 }

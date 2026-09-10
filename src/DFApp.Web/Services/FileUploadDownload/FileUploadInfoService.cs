@@ -48,14 +48,16 @@ public class FileUploadInfoService : CrudServiceBase<FileUploadInfo, long, FileU
 
     /// <summary>
     /// 创建文件上传信息
-    /// 如果已存在相同 SHA1 的文件，则恢复并更新文件信息
+    /// 如果当前用户名下已存在相同 SHA1 的文件，则恢复并更新文件信息；
+    /// 去重范围限定为本人可见记录，避免抢注他人文件记录
     /// </summary>
     /// <param name="input">创建输入 DTO</param>
     /// <returns>文件上传信息 DTO</returns>
     public override async Task<FileUploadInfoDto> CreateAsync(CreateUpdateFileUploadInfoDto input)
     {
-        // 检查是否已存在相同 SHA1 的文件
-        var existing = await Repository.GetFirstOrDefaultAsync(x => x.Sha1 == input.Sha1);
+        // 检查当前用户可见范围内是否已存在相同 SHA1 的文件
+        var duplicateQuery = await ApplyOwnerFilterAsync(Repository.GetQueryable());
+        var existing = await duplicateQuery.Where(x => x.Sha1 == input.Sha1).FirstAsync();
         if (existing != null)
         {
             // 已存在则更新文件信息

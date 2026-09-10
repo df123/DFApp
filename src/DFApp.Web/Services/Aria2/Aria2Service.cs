@@ -22,6 +22,7 @@ namespace DFApp.Web.Services.Aria2;
 /// <summary>
 /// Aria2 下载管理服务
 /// </summary>
+[OwnerCheckDisabledForSharedData]
 public class Aria2Service : CrudServiceBase<
     TellStatusResult,
     long,
@@ -29,6 +30,11 @@ public class Aria2Service : CrudServiceBase<
     TellStatusResultDto,
     TellStatusResultDto>
 {
+    /// <summary>
+    /// Aria2 任务为全局共享的下载队列视图（由后台同步写入），不做按创建者隔离
+    /// </summary>
+    protected override bool RequireOwnerCheck => false;
+
     private readonly ISqlSugarRepository<FilesItem, int> _filesItemRepository;
     private readonly IConfigurationInfoRepository _configurationInfoRepository;
     private readonly IServiceScopeFactory _scopeFactory;
@@ -328,6 +334,10 @@ public class Aria2Service : CrudServiceBase<
             throw new BusinessException("URL列表不能为空");
         }
 
+        // 出站 URL 统一通过 SSRF 防护校验（磁力链接除外），
+        // 同时封堵过滤分支解析失败回退到未校验 AddUriAsync 的路径
+        Aria2OptionGuard.EnsureUrlsAllowed(input.Urls);
+
         // 通过 scope 获取 Aria2RpcClient（因为它是通过 AddHttpClient 注册的）
         using var scope = _scopeFactory.CreateScope();
         var rpcClient = scope.ServiceProvider.GetRequiredService<Aria2RpcClient>();
@@ -358,22 +368,9 @@ public class Aria2Service : CrudServiceBase<
                 var torrentBytes = await SsrfGuard.SafeGetByteArrayAsync(httpClient, torrentUrl);
                 string torrentBase64 = Convert.ToBase64String(torrentBytes);
 
-                // 构建选项
-                var options = new Dictionary<string, object>();
-                if (!string.IsNullOrWhiteSpace(input.SavePath))
-                {
-                    options["dir"] = input.SavePath;
-                }
+                // 构建选项（dir 限制为相对子目录，自定义选项仅放行白名单）
+                var options = Aria2OptionGuard.BuildSafeOptions(input.SavePath, input.Options) ?? new Dictionary<string, object>();
                 options["select-file"] = selectFile;
-
-                // 合并用户自定义选项
-                if (input.Options != null)
-                {
-                    foreach (var kvp in input.Options)
-                    {
-                        options[kvp.Key] = kvp.Value;
-                    }
-                }
 
                 string filterDescription = GetFilterDescription(input.VideoOnly, input.EnableKeywordFilter);
                 _logger.LogInformation("{FilterDescription}过滤已应用，选择文件索引: {SelectFile}", filterDescription, selectFile);
@@ -628,29 +625,14 @@ public class Aria2Service : CrudServiceBase<
     }
 
     /// <summary>
-    /// 构建 Aria2 下载选项
+    /// 构建 Aria2 下载选项（dir 限制为相对子目录，自定义选项仅放行白名单）
     /// </summary>
     /// <param name="savePath">保存路径</param>
     /// <param name="customOptions">自定义选项</param>
     /// <returns>选项字典（无选项时返回 null）</returns>
     private Dictionary<string, object>? BuildOptions(string? savePath, Dictionary<string, object>? customOptions)
     {
-        var options = new Dictionary<string, object>();
-
-        if (!string.IsNullOrWhiteSpace(savePath))
-        {
-            options["dir"] = savePath;
-        }
-
-        if (customOptions != null)
-        {
-            foreach (var kvp in customOptions)
-            {
-                options[kvp.Key] = kvp.Value;
-            }
-        }
-
-        return options.Count > 0 ? options : null;
+        return Aria2OptionGuard.BuildSafeOptions(savePath, customOptions);
     }
 
     /// <summary>
