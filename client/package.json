@@ -92,6 +92,7 @@
     "@faker-js/faker": "^9.9.0",
     "@iconify/json": "^2.2.364",
     "@iconify/vue": "4.2.0",
+    "@playwright/test": "1.58.2",
     "@tailwindcss/vite": "^4.1.11",
     "@types/crypto-js": "4.2.0",
     "@types/js-cookie": "^3.0.6",

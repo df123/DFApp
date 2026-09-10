@@ -32,12 +32,12 @@ public static class SsrfGuard
             !Uri.TryCreate(url.Trim(), UriKind.Absolute, out var uri) ||
             (uri.Scheme != "http" && uri.Scheme != "https"))
         {
-            throw new InvalidOperationException("仅允许 http/https 地址");
+            throw new BusinessException("仅允许 http/https 地址");
         }
 
         if (!string.IsNullOrEmpty(uri.UserInfo))
         {
-            throw new InvalidOperationException("地址中不允许携带用户凭据");
+            throw new BusinessException("地址中不允许携带用户凭据");
         }
 
         if (!string.IsNullOrEmpty(uri.Host))
@@ -47,12 +47,12 @@ public static class SsrfGuard
             {
                 if (IPAddress.TryParse(uri.Host, out var literal) && IsBlockedAddress(literal))
                 {
-                    throw new InvalidOperationException($"禁止访问内网地址: {uri.Host}");
+                    throw new BusinessException($"禁止访问内网地址: {uri.Host}");
                 }
             }
             else if (ResolveBlocked(uri.Host))
             {
-                throw new InvalidOperationException($"目标主机解析到内网地址，已拒绝: {uri.Host}");
+                throw new BusinessException($"目标主机解析到内网地址，已拒绝: {uri.Host}");
             }
         }
 

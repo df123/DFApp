@@ -256,3 +256,16 @@ export Jwt__SecretKey='至少32字节的随机密钥'
 - PBKDF2 迭代次数 10000 低于 OWASP 建议（600k）：直接提高会使全部现存密码哈希失效（哈希格式未内嵌迭代数），
   需要哈希格式迁移方案（如迭代数前缀 + 登录时透明重哈希），建议单独排期。
 - Apache 边缘 HSTS/CSP：部署侧配置，不在仓库内。
+
+### 2026-09-10 Playwright 验证（第三轮修复闭环）
+
+- 新增 `client/playwright.security.config.ts` 与 `client/tests/security-round3.spec.ts`：
+  24 项用例覆盖提权封堵、改密加固、IDOR、SaveDrive、aria2 防护与 UI 改密对话框流程，
+  在 api / desktop-4k（3840×2160@200%，即 CSS 1920×1080+DPR2）/ iphone-17（2622×1206，CSS 874×402+DPR3）三档全部通过。
+- 运行方式：`python3 /tmp/pw_prepare.py`（或按 spec 头部注释重建测试用户）后
+  `cd client && pnpm exec playwright test -c playwright.security.config.ts`。
+  注意套件是有状态的（密码在用例间流转 v2→v3），重复运行前需重建测试用户。
+- 环境备注：`@playwright/test@1.58.2` 对应的 1208 号 Chromium 构建在官方源与 npmmirror 均无法下载，
+  配置中以 `launchOptions.executablePath` 显式复用本机缓存的 Chrome for Testing
+  （`~/.cache/ms-playwright/chromium-1243`）；另需 `ASPNETCORE_ENVIRONMENT=Development`
+  与项目 content root 才能读到 `appsettings.secrets.json` 的 JWT 密钥。
