@@ -248,7 +248,7 @@ public class DownloadEngine
         // Apache Basic Auth（与原 SegmentDownloader.SetBasicAuth 等价）
         if (!string.IsNullOrEmpty(_settings.ApacheUsername))
         {
-            var credentials = Convert.ToBase64String(Encoding.UTF8.GetBytes($"{_settings.ApacheUsername}:{_settings.ApachePassword}"));
+            var credentials = Convert.ToBase64String(Encoding.UTF8.GetBytes($"{_settings.ApacheUsername}:{SettingsSecrets.ApachePassword(_settings)}"));
             config.RequestConfiguration.Authorization = new AuthenticationHeaderValue("Basic", credentials);
         }
 

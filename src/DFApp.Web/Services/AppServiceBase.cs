@@ -50,11 +50,13 @@ public abstract class AppServiceBase
     /// <param name="permissionName">权限名称</param>
     /// <returns>如果拥有权限返回 true，否则返回 false</returns>
     /// <summary>
-    /// 当前用户是否为管理员（持有用户管理权限）
+    /// 当前用户是否为特权用户（可跨用户访问数据）。
+    /// 以静态 admin 角色为准：UserManagement 权限可被委托给普通用户，
+    /// 若以此判定会让被委托者绕过所有对象级归属校验
     /// </summary>
     protected Task<bool> IsPrivilegedUserAsync()
     {
-        return PermissionChecker.IsGrantedAsync(DFAppPermissions.UserManagement.Default);
+        return IsAdminUserAsync();
     }
 
     /// <summary>

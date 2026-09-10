@@ -58,6 +58,20 @@ public class AccountAppService
     /// </summary>
     private static readonly TimeSpan LoginFailureWindow = TimeSpan.FromMinutes(15);
 
+    /// <summary>
+    /// 哑哈希：与真实密码哈希同格式（16 字节盐 + 32 字节哈希的 Base64，共 64 字符），
+    /// 用于账号不存在/停用分支的等价 PBKDF2 计算，消除响应时序差异
+    /// </summary>
+    private const string DummyPasswordHash = "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA";
+
+    /// <summary>
+    /// 早退分支执行一次与真实验证等价的哈希计算（结果丢弃），防止按时序枚举账号
+    /// </summary>
+    private void PerformDummyPasswordWork(string password)
+    {
+        _passwordHasher.VerifyPassword(DummyPasswordHash, password);
+    }
+
     public AccountAppService(
         ISqlSugarRepository<User, Guid> userRepository,
         ISqlSugarRepository<Role, Guid> roleRepository,
@@ -115,6 +129,7 @@ public class AccountAppService
                 _logger.LogWarning("登录失败：用户名不存在");
                 attempts.Count++;
                 wideAttempts.Count++;
+                PerformDummyPasswordWork(input.Password);
                 throw new BusinessException("用户名或密码错误");
             }
 
@@ -123,6 +138,7 @@ public class AccountAppService
                 _logger.LogWarning("登录失败：用户 {UserName} 已停用", user.UserName);
                 attempts.Count++;
                 wideAttempts.Count++;
+                PerformDummyPasswordWork(input.Password);
                 throw new BusinessException("用户名或密码错误");
             }
 

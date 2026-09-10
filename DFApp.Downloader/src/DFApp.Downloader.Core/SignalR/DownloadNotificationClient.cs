@@ -57,7 +57,7 @@ public class DownloadNotificationClient : IAsyncDisposable
         var request = new LoginRequest
         {
             Username = settings.DfAppUsername,
-            Password = settings.DfAppPassword
+            Password = SettingsSecrets.DfAppPassword(settings)
         };
 
         try

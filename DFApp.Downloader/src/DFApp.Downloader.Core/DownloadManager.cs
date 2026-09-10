@@ -139,7 +139,7 @@ public class DownloadManager : IAsyncDisposable
         {
             if (string.IsNullOrEmpty(_settings.DfAppUrl) ||
                 string.IsNullOrEmpty(_settings.DfAppUsername) ||
-                string.IsNullOrEmpty(_settings.DfAppPassword))
+                string.IsNullOrEmpty(SettingsSecrets.DfAppPassword(_settings)))
             {
                 _logger.LogWarning("DFApp 后端未配置，请在设置页面配置连接信息");
                 return;

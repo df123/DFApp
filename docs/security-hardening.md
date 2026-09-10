@@ -169,3 +169,90 @@ export Jwt__SecretKey='至少32字节的随机密钥'
 
 - git 历史仍含旧代理令牌（commit d5e4ff9）与弱口令哈希：建议择机 `git filter-repo`/BFG 重写并通知克隆者；在此之前令牌继续视为已泄露（已轮换即可控）。
 - 正式服 Apache 侧建议补 HSTS/CSP/版本 banner 隐藏。
+
+## 2026-09-10 第三轮复测修复（dfapp_4c5c，27 项发现全量处置）
+
+针对 Strix 第三轮复测（8 项已修复确认、4 项部分、5 项未修复 + 新发现）的代码修复。
+全部修复通过 93 项单元测试（含新增归属校验架构测试）。
+
+### 提权与认证（新发现，P0）
+
+- **权限自提权封堵**（vuln-0026）：`PermissionGrantManagement` 的 Grant/Update/Revoke 拒绝
+  非管理员操作自己的权限、授予管理员级权限（UserManagement/RoleManagement/PermissionGrantManagement/
+  UserRoleManagement 前缀）、修改静态角色权限；`UserRoleManagement` 的 Assign/Remove 拒绝
+  非管理员修改自己的角色、分配或移除静态角色（如 `admin`）。
+- **改密接管封堵**（vuln-0027）：`change-password` 修改本人密码必须携带并校验 `currentPassword`；
+  对 admin 角色账户的改密/更新/删除仅限持有 admin 角色的调用者（`EnsureTargetUserModifiableAsync`）。
+- `IPermissionChecker` 新增 `IsInRoleAsync`，`AppServiceBase` 新增 `IsAdminUserAsync`（按静态 `admin` 角色 claim 判定）。
+- 前端"修改密码"对话框：目标为当前登录用户时展示并必填原密码字段。
+
+### aria2 SSRF 与任意文件写（新发现，P0）
+
+- 新增 `Services/Aria2/Aria2OptionGuard`：出站 URL 统一经 `SsrfGuard.EnsureAllowed`（磁力链接走 DHT 豁免）；
+  `savePath` 仅允许下载目录内相对子目录（拒绝绝对路径/盘符/上跳）；自定义 RPC 选项白名单仅放行 `select-file`。
+- 覆盖 `Aria2Service.AddDownloadAsync`（含 torrent 解析失败回退路径）与 `Aria2ManageService` 的
+  AddUri/BatchAddUri/AddTorrent/BatchAddTorrent 全部入口。
+
+### 对象级归属校验全面收口（vuln-0006/0010/0014/0016/0017/0018/0019/0020/0021/0022/0024）
+
+- **`CrudServiceBase.RequireOwnerCheck` 默认翻转为 `true`（fail-closed）**；全局共享数据服务
+  （Aria2 任务队列、系统配置、关键词过滤、彩票主数据/开奖结果）显式重写为 `false` 并标注
+  `[OwnerCheckDisabledForSharedData]` 特性留痕。
+- 补齐缺失归属校验的模块：电动车车辆+里程端点、RSS 源（手写 CRUD 逐方法补校验+列表过滤）、
+  记账分类（重名检查按归属范围）、记账支出 Get/Update/图表/月度统计/分类查找、充电记录
+  Get/Update/Delete（删除改为先校验再删关联成本行）、彩票模拟 delete-by-term/开奖计算/统计/分页明细
+  （KL8 与 SSQ）、媒体 completed 列表/外链标记/物理删除/清理/invalid 批量删除、外链删除（先校验再移除文件）、
+  文件上传 SHA1 去重（按归属范围收敛）。
+- **架构测试**（`test/DFApp.Web.Tests/Services/OwnerCheckArchitectureTests.cs`）：
+  ① 默认值必须为 true；② 未豁免服务重写 GetAsync/UpdateAsync/DeleteAsync 时，方法 IL
+  （含 async 状态机与 base 调用代理）必须调用 `EnsureOwnerAsync` 或基类实现——该回归已连犯两轮，现在构建即失败。
+  方法级豁免需标注 `[OwnerCheckSuppressed("原因")]`。
+
+### 媒体存储根接管（vuln-0023）
+
+- `ConfigurationInfoService`：`SaveDrive`、`SavePhotoPathPrefix`、`SaveVideoPathPrefix`、
+  `ReturnDownloadUrlPrefix`、`ReplaceUrlPrefix` 为安全敏感配置，创建/修改（含改名）仅特权用户可操作。
+- 新增 `Services/Media/MediaPathGuard` 围栏；媒体物理文件删除全部经围栏解析：
+  `MediaInfoService.DeletePhysicalFileAsync` / `CleanupRetrievedFilesAsync` / `ExternalLinkService.RemoveFileAsync`，
+  越出媒体根目录的路径一律拒绝。
+
+### 特权判定收紧
+
+- `IsPrivilegedUserAsync` 从"持有 UserManagement 权限"改为"持有静态 admin 角色"：
+  权限可被委托，被委托者不应绕过所有对象级归属校验（报告中期建议 #9）。
+
+### 登录时序侧信道（vuln-0025）
+
+- 账号不存在/停用的早退分支执行同参数哑 PBKDF2 计算（`PerformDummyPasswordWork`），
+  消除"存在账号走哈希、不存在账号直回"的 ~5ms 时序差。
+
+### SignalR 按组权限
+
+- `Aria2Hub.JoinMonitorGroup` 需 `DFApp.Aria2.Default`；`DownloadNotificationHub.JoinDownloadGroup`
+  需 `DFApp.Medias.Default`（直接读连接 JWT 的权限声明）。
+
+### Downloader 回环加固与机密不落盘（vuln-0002）
+
+- 新增 `LoopbackRequestGuard`：回环零配置放行仅限同源请求——Host 必须为本地主机名
+  （localhost/127.0.0.1/[::1]），携带 Origin/Referer 时其主机也必须本地，封堵 drive-by CSRF 与 DNS rebinding。
+- 新增 `SettingsSecrets`：三个机密（DFApp 密码、Apache 密码、管理令牌）支持环境变量注入
+  （`DFAPP_DOWNLOADER_DFAPP_PASSWORD` / `DFAPP_DOWNLOADER_APACHE_PASSWORD` / `DFAPP_DOWNLOADER_MANAGEMENT_TOKEN`），
+  优先于 settings.json，可实现明文密码不落盘。
+
+### Git 历史清理（vuln-0001）
+
+- 已执行 `git filter-repo --replace-text`：旧彩票代理令牌在全部历史中替换为 `REDACTED_LOTTERY_PROXY_TOKEN`，
+  全历史检索 0 残留。**待运维**：`git push --force origin master`（会改写全部提交哈希，通知协作者重新克隆；
+  fork/缓存中的旧对象仍存在，令牌已于 sql/26 轮换，无需再处理）。
+
+### 依赖 CVE（vuln-0003/0004/0005/0007/0008/0009/0011/0012/0013）
+
+- pnpm overrides 补齐：`lodash-es ^4.18.0`（此前只覆盖 lodash，element-plus 传递的 lodash-es 4.17.21 漏了）、
+  `ws ^7.5.11`、`defu ^6.1.5`、`tar ^7.5.19`、`postcss ^8.5.18`、`rollup ^4.59.0`。
+- vite：client 7.1.5 → 7.3.6；Downloader web 8.0.11 → 8.3.0。两端 pnpm build 通过。
+
+### 未实施（需部署决策）
+
+- PBKDF2 迭代次数 10000 低于 OWASP 建议（600k）：直接提高会使全部现存密码哈希失效（哈希格式未内嵌迭代数），
+  需要哈希格式迁移方案（如迭代数前缀 + 登录时透明重哈希），建议单独排期。
+- Apache 边缘 HSTS/CSP：部署侧配置，不在仓库内。

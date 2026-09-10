@@ -62,18 +62,30 @@ public class Program
 
             var app = builder.Build();
 
-            // 管理令牌认证：回环来源零配置放行；非回环必须携带匹配的 X-Management-Token，
+            // 管理令牌认证：回环来源零配置放行（仍需同源校验，防跨站 CSRF 与 DNS rebinding）；
+            // 非回环必须携带匹配的 X-Management-Token，
             // 未配置令牌时非回环一律拒绝（fail-closed），防止管理接口/凭据在局域网裸奔
             app.Use(async (context, next) =>
             {
                 var remote = context.Connection.RemoteIpAddress;
                 if (remote is not null && System.Net.IPAddress.IsLoopback(remote))
                 {
-                    await next();
+                    if (DFApp.Downloader.App.LoopbackRequestGuard.IsSameOriginLocalRequest(context.Request))
+                    {
+                        await next();
+                        return;
+                    }
+
+                    Log.Warning("拒绝回环但非同源的管理请求: {Origin} {Referer} {Method} {Path}",
+                        context.Request.Headers.Origin.ToString(),
+                        context.Request.Headers.Referer.ToString(),
+                        context.Request.Method, context.Request.Path);
+                    context.Response.StatusCode = StatusCodes.Status401Unauthorized;
+                    await context.Response.WriteAsync("401 Unauthorized: 跨站请求被拒绝");
                     return;
                 }
 
-                var expected = settings.ManagementToken ?? string.Empty;
+                var expected = DFApp.Downloader.Core.Configuration.SettingsSecrets.ManagementToken(settings);
                 var provided = context.Request.Headers["X-Management-Token"].ToString();
                 var allowed = expected.Length > 0 &&
                     System.Security.Cryptography.CryptographicOperations.FixedTimeEquals(
@@ -131,7 +143,7 @@ public class Program
 
             Log.Information("DFApp.Downloader 已启动，监听: {Bind}:{Port}（管理令牌: {TokenState}）",
                 settings.WebServerBind, settings.WebServerPort,
-                string.IsNullOrEmpty(settings.ManagementToken) ? "未配置，仅允许本机访问" : "已配置");
+                string.IsNullOrEmpty(DFApp.Downloader.Core.Configuration.SettingsSecrets.ManagementToken(settings)) ? "未配置，仅允许本机访问" : "已配置");
             await app.RunAsync($"http://{settings.WebServerBind}:{settings.WebServerPort}");
         }
         catch (Exception ex)
