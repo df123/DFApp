@@ -1,4 +1,5 @@
 import axios from 'axios'
+import { ref } from 'vue'
 
 export interface DownloadItem {
   id: number
@@ -37,58 +38,58 @@ export interface DownloaderSettings {
   syncMissedOnStartup: boolean
 }
 
-/** 管理令牌的本地存储键（非回环访问时需携带 X-Management-Token） */
-const MANAGEMENT_TOKEN_KEY = 'downloaderManagementToken'
-
 /** 密码回显掩码：提交该值表示保留原密码 */
 export const PASSWORD_MASK = '********'
 
-export function getManagementToken(): string {
-  return localStorage.getItem(MANAGEMENT_TOKEN_KEY) ?? ''
-}
-
-export function setManagementToken(token: string) {
-  localStorage.setItem(MANAGEMENT_TOKEN_KEY, token)
-}
+/** 当前认证状态（缓存会话检查结果，登录/登出后更新） */
+const authenticated = ref(false)
+const authChecked = ref(false)
 
 const api = axios.create({
   baseURL: '/api',
   timeout: 10000,
 })
 
-// 所有请求携带管理令牌（本机访问可留空）
-api.interceptors.request.use(config => {
-  const token = getManagementToken()
-  if (token) {
-    config.headers['X-Management-Token'] = token
-  }
-  return config
-})
-
-// 401 时提示输入令牌，保存后引导手动重试（避免自动重试造成循环）
+// 会话失效时跳转登录页（整页跳转以重置应用状态）
 api.interceptors.response.use(
   response => response,
   async error => {
-    if (error?.response?.status === 401 && !error.config?.__tokenPrompted) {
-      error.config.__tokenPrompted = true
-      const { ElMessageBox } = await import('element-plus')
-      try {
-        const { value } = await ElMessageBox.prompt(
-          '访问被拒绝：本界面来自非本机地址，需要管理令牌（settings.json 中的 ManagementToken）',
-          '管理令牌',
-          { confirmButtonText: '保存并刷新', cancelButtonText: '取消', inputType: 'password' }
-        )
-        if (value) {
-          setManagementToken(value.trim())
-          window.location.reload()
-        }
-      } catch {
-        /* 用户取消 */
+    const status = error?.response?.status
+    const url: string = error?.config?.url ?? ''
+    if (status === 401 && !url.includes('/auth/login')) {
+      authenticated.value = false
+      const redirect = window.location.pathname + window.location.search
+      if (window.location.pathname !== '/login') {
+        window.location.href = `/login?redirect=${encodeURIComponent(redirect)}`
       }
     }
     return Promise.reject(error)
   }
 )
+
+/** 检查会话（结果缓存，登出或 401 后重置） */
+export async function checkAuth(): Promise<boolean> {
+  if (!authChecked.value) {
+    try {
+      await api.get('/auth/session')
+      authenticated.value = true
+    } catch {
+      authenticated.value = false
+    }
+    authChecked.value = true
+  }
+  return authenticated.value
+}
+
+/** 登录成功/登出后由页面更新认证状态 */
+export function setAuthenticated(value: boolean) {
+  authenticated.value = value
+  authChecked.value = true
+}
+
+export function isAuthenticated(): boolean {
+  return authenticated.value
+}
 
 export interface GlobalStatus {
   isConnected: boolean
@@ -137,6 +138,17 @@ export interface LogContent {
 }
 
 export type LogOrder = 'tail' | 'head'
+
+export const authApi = {
+  login: (username: string, password: string) =>
+    api.post<{ username: string }>('/auth/login', { username, password }),
+
+  logout: () =>
+    api.post('/auth/logout'),
+
+  changePassword: (oldPassword: string, newPassword: string) =>
+    api.post<{ message: string }>('/auth/change-password', { oldPassword, newPassword }),
+}
 
 export const downloadApi = {
   getList: (page = 1, pageSize = 20, status?: string) =>

@@ -26,7 +26,15 @@ cd DFApp.Downloader
 dotnet run --project src/DFApp.Downloader.App
 ```
 
-首次启动后打开浏览器访问 `http://localhost:9550` 进行配置。
+首次启动后打开浏览器访问 `http://localhost:9550`，使用默认账号 `admin / admin` 登录（请尽快在设置页修改密码）。
+
+### 认证说明
+
+- Web 管理界面使用账号密码登录（含本机访问），会话有效期 7 天
+- 默认账号 `admin/admin`，首次启动时自动种子；可用环境变量 `DFAPP_DOWNLOADER_ADMIN_PASSWORD` 指定初始密码
+- 脚本/程序化调用可通过 `settings.json` 的 `ManagementToken`（或环境变量 `DFAPP_DOWNLOADER_MANAGEMENT_TOKEN`）携带 `X-Management-Token` 请求头访问 API
+- 旧版本升级：`downloader.db` 与 `settings.json` 自动兼容，Accounts 表自动创建并种子管理员
+- 局域网访问：将 `WebServerBind` 改为 `0.0.0.0`（设置页或 settings.json）
 
 ### 3. 发布（Windows 单文件）
 
@@ -83,7 +91,11 @@ dotnet run --project src/DFApp.Downloader.App
 
 | 方法 | 路由 | 说明 |
 |------|------|------|
-| GET | `/api/downloads` | 下载列表（分页） |
+| POST | `/api/auth/login` | 登录（成功设置会话 Cookie） |
+| POST | `/api/auth/logout` | 注销 |
+| GET | `/api/auth/session` | 会话探测（200/401） |
+| POST | `/api/auth/change-password` | 修改登录密码 |
+| GET | `/api/downloads` | 下载列表（分页，需登录） |
 | GET | `/api/downloads/{id}` | 下载详情 |
 | GET | `/api/downloads/active` | 活跃下载 |
 | GET | `/api/downloads/queue` | 等待队列 |

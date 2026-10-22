@@ -1,9 +1,26 @@
 <script setup lang="ts">
-import { ref } from 'vue'
-import { useRouter } from 'vue-router'
+import { ref, computed } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
+import { authApi, setAuthenticated } from './api/downloader'
+import { ElMessage } from 'element-plus'
 
 const router = useRouter()
+const route = useRoute()
 const activeMenu = ref('/dashboard')
+
+// 登录页等公开页面不渲染管理布局
+const isPublicRoute = computed(() => route.meta.public === true)
+
+const handleLogout = async () => {
+  try {
+    await authApi.logout()
+  } catch {
+    /* 会话已失效时忽略 */
+  }
+  setAuthenticated(false)
+  ElMessage.success('已退出登录')
+  router.replace('/login')
+}
 
 router.afterEach((to) => {
   activeMenu.value = to.path
@@ -11,8 +28,9 @@ router.afterEach((to) => {
 </script>
 
 <template>
-  <el-container style="height: 100vh">
-    <el-aside width="200px" style="background-color: #304156">
+  <router-view v-if="isPublicRoute" />
+  <el-container v-else style="height: 100vh">
+    <el-aside width="200px" style="background-color: #304156; display: flex; flex-direction: column">
       <div style="padding: 20px; text-align: center; color: #fff; font-size: 16px; font-weight: bold">
         DFApp Downloader
       </div>
@@ -44,6 +62,12 @@ router.afterEach((to) => {
           <span>设置</span>
         </el-menu-item>
       </el-menu>
+      <div style="margin-top: auto; padding: 16px 20px">
+        <el-button style="width: 100%" @click="handleLogout">
+          <el-icon style="margin-right: 6px"><SwitchButton /></el-icon>
+          退出登录
+        </el-button>
+      </div>
     </el-aside>
     <el-main id="main-content" style="padding: 20px; background-color: #f5f7fa">
       <router-view />

@@ -52,6 +52,7 @@ public class Program
             builder.Services.AddSingleton<DownloadEngine>();
             builder.Services.AddSingleton<DownloadNotificationClient>();
             builder.Services.AddSingleton<DownloadManager>();
+            builder.Services.AddSingleton<Core.Security.AccountService>();
 
             // 配置控制器
             builder.Services.AddControllers()
@@ -62,41 +63,48 @@ public class Program
 
             var app = builder.Build();
 
-            // 管理令牌认证：回环来源零配置放行（仍需同源校验，防跨站 CSRF 与 DNS rebinding）；
-            // 非回环必须携带匹配的 X-Management-Token，
-            // 未配置令牌时非回环一律拒绝（fail-closed），防止管理接口/凭据在局域网裸奔
+            // 初始化数据库表并种子默认管理员账号（旧库自动升级：Accounts 表不存在时由 CodeFirst 创建）
+            var dbContext = app.Services.GetRequiredService<DownloaderDbContext>();
+            dbContext.EnsureTablesCreated();
+            app.Services.GetRequiredService<Core.Security.AccountService>().EnsureAdminInitialized();
+
+            // 登录认证：Web 界面使用账号密码登录（HttpOnly 会话 Cookie）；
+            // 保留 X-Management-Token 作为脚本/程序化调用的兼容凭据；
+            // 登录接口与静态页面资源匿名放行，其余 /api/* 与 /media/* 一律要求认证（含本机访问）
             app.Use(async (context, next) =>
             {
-                var remote = context.Connection.RemoteIpAddress;
-                if (remote is not null && System.Net.IPAddress.IsLoopback(remote))
-                {
-                    if (DFApp.Downloader.App.LoopbackRequestGuard.IsSameOriginLocalRequest(context.Request))
-                    {
-                        await next();
-                        return;
-                    }
+                var path = context.Request.Path;
+                var isLoginApi = HttpMethods.IsPost(context.Request.Method)
+                    && path.Equals("/api/auth/login", StringComparison.OrdinalIgnoreCase);
+                var isProtected = path.StartsWithSegments("/api") || path.StartsWithSegments("/media");
 
-                    Log.Warning("拒绝回环但非同源的管理请求: {Origin} {Referer} {Method} {Path}",
-                        context.Request.Headers.Origin.ToString(),
-                        context.Request.Headers.Referer.ToString(),
-                        context.Request.Method, context.Request.Path);
-                    context.Response.StatusCode = StatusCodes.Status401Unauthorized;
-                    await context.Response.WriteAsync("401 Unauthorized: 跨站请求被拒绝");
+                if (isLoginApi || !isProtected)
+                {
+                    await next();
                     return;
                 }
 
-                var expected = DFApp.Downloader.Core.Configuration.SettingsSecrets.ManagementToken(settings);
-                var provided = context.Request.Headers["X-Management-Token"].ToString();
-                var allowed = expected.Length > 0 &&
-                    System.Security.Cryptography.CryptographicOperations.FixedTimeEquals(
-                        System.Text.Encoding.UTF8.GetBytes(provided),
-                        System.Text.Encoding.UTF8.GetBytes(expected));
-                if (!allowed)
+                var accountService = context.RequestServices.GetRequiredService<Core.Security.AccountService>();
+                var authorized = accountService.ValidateSession(context.Request.Cookies[Controllers.AuthController.SessionCookieName]);
+
+                if (!authorized)
                 {
-                    Log.Warning("拒绝未授权的管理请求: {Remote} {Method} {Path}",
-                        remote, context.Request.Method, context.Request.Path);
+                    // 兼容令牌凭据：非浏览器调用可继续携带 X-Management-Token
+                    var settings = context.RequestServices.GetRequiredService<DownloaderSettings>();
+                    var expected = Core.Configuration.SettingsSecrets.ManagementToken(settings);
+                    var provided = context.Request.Headers["X-Management-Token"].ToString();
+                    authorized = expected.Length > 0 &&
+                        System.Security.Cryptography.CryptographicOperations.FixedTimeEquals(
+                            System.Text.Encoding.UTF8.GetBytes(provided),
+                            System.Text.Encoding.UTF8.GetBytes(expected));
+                }
+
+                if (!authorized)
+                {
+                    Log.Warning("拒绝未认证的管理请求: {Remote} {Method} {Path}",
+                        context.Connection.RemoteIpAddress, context.Request.Method, context.Request.Path);
                     context.Response.StatusCode = StatusCodes.Status401Unauthorized;
-                    await context.Response.WriteAsync("401 Unauthorized: 需要 X-Management-Token");
+                    await context.Response.WriteAsync("401 Unauthorized: 请先登录");
                     return;
                 }
 
@@ -141,9 +149,8 @@ public class Program
                 catch { }
             }
 
-            Log.Information("DFApp.Downloader 已启动，监听: {Bind}:{Port}（管理令牌: {TokenState}）",
-                settings.WebServerBind, settings.WebServerPort,
-                string.IsNullOrEmpty(DFApp.Downloader.Core.Configuration.SettingsSecrets.ManagementToken(settings)) ? "未配置，仅允许本机访问" : "已配置");
+            Log.Information("DFApp.Downloader 已启动，监听: {Bind}:{Port}（登录认证已启用，默认账号 admin/admin，请尽快修改密码）",
+                settings.WebServerBind, settings.WebServerPort);
             await app.RunAsync($"http://{settings.WebServerBind}:{settings.WebServerPort}");
         }
         catch (Exception ex)

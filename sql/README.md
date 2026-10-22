@@ -54,6 +54,11 @@
 | 24 | `add-lottery-proxy-token-config.sql` | 新增彩票代理令牌配置项 |
 | 25 | `add-telegram-management-permission.sql` | 新增 Telegram 管理权限并授予 admin |
 | 26 | `invalidate-lottery-proxy-token.sql` | 使已泄露的彩票代理令牌失效 |
+| 27 | `add-ev-mileage-updated-time.sql` | 电动车表新增总里程更新时间列 |
+| 28 | `create-ev-mileage-record.sql` | 创建电动车里程快照表 |
+| 29 | `drop-charging-record-current-mileage.sql` | 删除充电记录表当前里程列 |
+| 30 | `fix-ev-mileage-record-id-format.sql` | 修复里程快照表 Id 存储格式 |
+| 31 | `add-downloader-account-table.sql` | 新增下载器登录账号表（变更记录，CodeFirst 自动建表） |
 
 ## 使用说明
 

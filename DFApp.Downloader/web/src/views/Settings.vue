@@ -1,8 +1,10 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
-import { downloadApi, type DownloaderSettings } from '../api/downloader'
+import { ref, reactive, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
+import { downloadApi, authApi, setAuthenticated, type DownloaderSettings } from '../api/downloader'
 import { ElMessage } from 'element-plus'
 
+const router = useRouter()
 const settings = ref<DownloaderSettings>({
   dfAppUrl: '',
   dfAppUsername: '',
@@ -60,6 +62,40 @@ const handleSyncMissed = async () => {
 }
 
 onMounted(fetchSettings)
+
+const changingPassword = ref(false)
+const passwordForm = reactive({
+  oldPassword: '',
+  newPassword: '',
+  confirmPassword: '',
+})
+
+const handleChangePassword = async () => {
+  if (!passwordForm.oldPassword || !passwordForm.newPassword) {
+    ElMessage.warning('请填写旧密码和新密码')
+    return
+  }
+  if (passwordForm.newPassword.length < 4) {
+    ElMessage.warning('新密码长度至少 4 位')
+    return
+  }
+  if (passwordForm.newPassword !== passwordForm.confirmPassword) {
+    ElMessage.warning('两次输入的新密码不一致')
+    return
+  }
+
+  changingPassword.value = true
+  try {
+    await authApi.changePassword(passwordForm.oldPassword, passwordForm.newPassword)
+    ElMessage.success('密码已修改，请重新登录')
+    setAuthenticated(false)
+    router.replace('/login')
+  } catch (e: any) {
+    ElMessage.error(e?.response?.data?.message ?? '修改失败')
+  } finally {
+    changingPassword.value = false
+  }
+}
 </script>
 
 <template>
@@ -102,13 +138,29 @@ onMounted(fetchSettings)
 
       <el-divider content-position="left">管理访问</el-divider>
 
-      <el-form-item label="监听地址">
-        <el-input v-model="settings.webServerBind" placeholder="127.0.0.1（默认仅本机）；改为 0.0.0.0 需配置管理令牌" />
+      <el-form-item label="登录账号">
+        <span>当前使用账号密码登录（默认 admin），可在下方修改密码</span>
       </el-form-item>
 
-      <el-form-item label="管理令牌">
+      <el-form-item label="修改密码">
+        <div style="width: 100%">
+          <el-input v-model="passwordForm.oldPassword" type="password" show-password placeholder="旧密码"
+            style="margin-bottom: 8px" />
+          <el-input v-model="passwordForm.newPassword" type="password" show-password placeholder="新密码（至少 4 位）"
+            style="margin-bottom: 8px" />
+          <el-input v-model="passwordForm.confirmPassword" type="password" show-password placeholder="确认新密码"
+            style="margin-bottom: 8px" />
+          <el-button :loading="changingPassword" @click="handleChangePassword">修改登录密码</el-button>
+        </div>
+      </el-form-item>
+
+      <el-form-item label="监听地址">
+        <el-input v-model="settings.webServerBind" placeholder="127.0.0.1（默认仅本机）；改为 0.0.0.0 可局域网访问，需账号登录" />
+      </el-form-item>
+
+      <el-form-item label="API 令牌">
         <el-input v-model="settings.managementToken" type="password" show-password
-          placeholder="非本机访问必须携带；显示 ******** 表示已保存，清空并保存可移除" />
+          placeholder="仅供脚本调用 API 时携带 X-Management-Token；Web 界面用账号密码登录；显示 ******** 表示已保存" />
       </el-form-item>
 
       <el-divider content-position="left">下载配置</el-divider>

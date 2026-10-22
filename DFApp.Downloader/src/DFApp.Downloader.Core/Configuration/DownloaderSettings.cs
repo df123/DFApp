@@ -37,13 +37,13 @@ public class DownloaderSettings
 
     /// <summary>
     /// Web 管理界面绑定地址，默认仅回环（127.0.0.1）。
-    /// 需要局域网访问时显式配置为 0.0.0.0，并务必同时配置管理令牌
+    /// 需要局域网访问时显式配置为 0.0.0.0（Web 界面已启用账号密码登录）
     /// </summary>
     public string WebServerBind { get; set; } = "127.0.0.1";
 
     /// <summary>
-    /// 管理令牌：非回环来源的请求必须携带匹配的 X-Management-Token 请求头；
-    /// 为空时非回环请求一律拒绝（fail-closed），仅本机可访问
+    /// 管理令牌（兼容性凭据）：供脚本/程序化调用携带 X-Management-Token 请求头访问 API；
+    /// Web 界面使用账号密码登录，无需配置此令牌
     /// </summary>
     public string ManagementToken { get; set; } = string.Empty;
 

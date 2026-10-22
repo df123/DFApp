@@ -37,7 +37,8 @@ public class DownloaderDbContext
         db.CodeFirst.InitTables(
             typeof(Entities.DownloadItem),
             typeof(Entities.DownloadSegment),
-            typeof(Entities.DownloadSpeedSample)
+            typeof(Entities.DownloadSpeedSample),
+            typeof(Entities.Account)
         );
 
         // 兼容旧库：补充新增的失败重试计数字段
